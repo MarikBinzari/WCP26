@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-
+import trophy from "./assets/hands-trophy.png";
 const BG = "#EBEBEB";
 const SHADOW_OUT = "6px 6px 14px #c8c8c8, -4px -4px 10px #ffffff";
 const SHADOW_IN = "inset 4px 4px 10px #c8c8c8, inset -3px -3px 8px #ffffff";
@@ -2437,31 +2437,51 @@ function LangSelector({ lang, setLang }) {
 }
 
 function SplashScreen({ onNext, lang, setLang }) {
-  const {d,h,m,s}=useCountdown();
+  const { d, h, m, s } = useCountdown();
   return (
-    <div style={{flex:1,display:"flex",flexDirection:"column",position:"relative",overflow:"hidden",background:"#fff"}}>
-      <div style={{position:"absolute",width:"100%",height:"100%",background:"linear-gradient(180deg,rgba(0,32,91,0.04) 0%,rgba(200,16,46,0.07) 100%)",zIndex:0,pointerEvents:"none"}}/>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"20px 22px 0",position:"relative",zIndex:10}}>
-        <div style={{width:44}}/>
-        <div style={{textAlign:"center"}}>
-          <p style={{fontSize:10,color:"#C8102E",margin:"0 0 2px",letterSpacing:3,textTransform:"uppercase",fontWeight:800}}>FIFA</p>
-          <h1 style={{fontSize:20,fontWeight:900,color:"#00205B",margin:0}}>WORLD CUP 2026</h1>
-          <p style={{fontSize:11,color:"#888",margin:"3px 0 0"}}>{T[lang].location}</p>
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", position: "relative", overflow: "hidden", background: "#fff" }}>
+      {/* Background trophy image */}
+      <img
+        src={trophy}
+        alt="FIFA World Cup Trophy"
+        style={{
+          position: "absolute",
+          width: "130%",
+          height: "85%",
+          left: "-30%",
+          top: "20%",
+          objectFit: "cover",
+          objectPosition: "center 20%",
+          zIndex: 0,
+          mixBlendMode: "multiply",
+          opacity: 0.9,
+        }}
+      />
+
+      {/* Header */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "20px 22px 0", position: "relative", zIndex: 10 }}>
+        <div style={{ width: 44 }} />
+        <div style={{ textAlign: "center" }}>
+          <p style={{ fontSize: 10, color: "#C8102E", margin: "0 0 2px", letterSpacing: 3, textTransform: "uppercase", fontWeight: 800 }}>FIFA</p>
+          <h1 style={{ fontSize: 20, fontWeight: 900, color: "#00205B", margin: 0, letterSpacing: -0.5 }}>WORLD CUP 2026</h1>
+          <p style={{ fontSize: 11, color: "#888", margin: "3px 0 0", letterSpacing: 0.5 }}>{T[lang].location}</p>
         </div>
-        <LangSelector lang={lang} setLang={setLang}/>
+        <LangSelector lang={lang} setLang={setLang} />
       </div>
-      <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",fontSize:90,position:"relative",zIndex:1}}>🏆</div>
-      <div style={{margin:"0 20px 14px",background:"rgba(0,32,91,0.6)",borderRadius:20,padding:"16px 8px 12px",display:"flex",position:"relative",zIndex:10}}>
-        {[{v:d,l:"days"},{v:h,l:"hours"},{v:m,l:"minutes"},{v:s,l:"seconds"}].map(({v,l},i)=>(
-          <div key={l} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",position:"relative"}}>
-            <span style={{fontSize:30,fontWeight:800,color:"#fff",lineHeight:1}}>{String(v).padStart(2,"0")}</span>
-            {i<3&&<span style={{position:"absolute",right:-2,top:2,fontSize:20,color:"rgba(255,255,255,0.25)"}}>:</span>}
-            <span style={{fontSize:8,color:"rgba(255,255,255,0.5)",textTransform:"uppercase",letterSpacing:1.5,marginTop:6}}>{T[lang][l]||l}</span>
+      <div style={{ flex: 1 }} />
+      <div style={{ margin: "0 20px 14px", background: "rgba(0, 32, 91, 0.6)", borderRadius: 20, padding: "16px 8px 12px", display: "flex", position: "relative", zIndex: 10 }}>
+        {[{ v: d, l: "days" }, { v: h, l: "hours" }, { v: m, l: "minutes" }, { v: s, l: "seconds" }].map(({ v, l }, i) => (
+          <div key={l} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", position: "relative" }}>
+            <span style={{ fontSize: 30, fontWeight: 800, color: "#fff", lineHeight: 1 }}>{String(v).padStart(2, "0")}</span>
+            {i < 3 && <span style={{ position: "absolute", right: -2, top: 2, fontSize: 20, fontWeight: 700, color: "rgba(255,255,255,0.25)" }}>:</span>}
+            <span style={{ fontSize: 8, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: 1.5, marginTop: 6 }}>{T[lang][l.toLowerCase()] || l}</span>
           </div>
         ))}
       </div>
-      <div style={{padding:"0 20px 32px",position:"relative",zIndex:10}}>
-        <button onClick={onNext} style={{width:"100%",background:"linear-gradient(135deg,#C8102E 0%,#EF3340 50%,#009A44 100%)",color:"#fff",border:"none",borderRadius:16,padding:"17px 0",fontSize:16,fontWeight:800,cursor:"pointer",boxShadow:"0 8px 24px rgba(0,32,91,0.3)"}}>{T[lang].cta}</button>
+      <div style={{ padding: "0 20px 32px", position: "relative", zIndex: 10 }}>
+        <button onClick={onNext} style={{ width: "100%", background: "linear-gradient(135deg, #C8102E 0%, #EF3340 50%, #009A44 100%)", color: "#fff", border: "none", borderRadius: 16, padding: "17px 0", fontSize: 16, fontWeight: 800, cursor: "pointer", boxShadow: "0 8px 24px rgba(0,32,91,0.3)", letterSpacing: 0.5 }}>
+          {T[lang].cta}
+        </button>
       </div>
     </div>
   );
