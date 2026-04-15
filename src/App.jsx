@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import trophy from "./assets/hands-trophy.png";
+
 const BG = "#EBEBEB";
 const SHADOW_OUT = "6px 6px 14px #c8c8c8, -4px -4px 10px #ffffff";
 const SHADOW_IN = "inset 4px 4px 10px #c8c8c8, inset -3px -3px 8px #ffffff";
