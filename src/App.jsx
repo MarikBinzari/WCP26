@@ -1,9 +1,8 @@
 import { useState, useEffect, useRef } from "react";
-import trophy from "./assets/hands-trophy.png";
 
-const BG = "#EBEBEB";
-const SHADOW_OUT = "6px 6px 14px #c8c8c8, -4px -4px 10px #ffffff";
-const SHADOW_IN = "inset 4px 4px 10px #c8c8c8, inset -3px -3px 8px #ffffff";
+const BG = "#F8F8F8";
+const SHADOW_OUT = "4px 4px 12px rgba(0,0,0,0.08), -3px -3px 8px #ffffff";
+const SHADOW_IN = "inset 3px 3px 8px rgba(0,0,0,0.08), inset -2px -2px 6px #ffffff";
 const DARK = "#3D3D3D";
 const NAVY = "#00205B";
 const RED = "#C8102E";
@@ -27,9 +26,9 @@ const AVAILABLE_BOARDS = [
 ];
 const BOARD_LEADERS = {
   global: [
-    { rank:1, name:"Alex", pts:342, prize:"250 lei", emoji:"🥇", accent:"#FFF3DC" },
-    { rank:2, name:"Maria", pts:318, prize:"150 lei", emoji:"🥈", accent:BG },
-    { rank:3, name:"David", pts:295, prize:"100 lei", emoji:"🥉", accent:"#F5EDE0" },
+    { rank:1, name:"Alex", pts:342, prize:"250 lei", emoji:"🥇", accent:"#fff" },
+    { rank:2, name:"Maria", pts:318, prize:"150 lei", emoji:"🥈", accent:"#fff" },
+    { rank:3, name:"David", pts:295, prize:"100 lei", emoji:"🥉", accent:"#fff" },
     { rank:4, name:"Andreea V.", pts:271, accent:BG },
     { rank:5, name:"Bogdan C.", pts:248, accent:BG },
     { rank:7, name:"Tu (You)", pts:201, accent:"#E8F0FF", isMe:true },
@@ -102,48 +101,185 @@ const TEAM_COLORS = {
 
 // Week unlock logic — Sunday after 20:00
 const now = new Date();
-const june = (d) => new Date(2026, 5, d, 20, 0, 0);
+const june = (d) => new Date(2026, 5, d, 8, 0, 0);
 const WEEK_UNLOCKED = {
-  8:  true,                    // always open
-  15: now >= june(14),         // Sun June 14 after 20:00
+  8:  true,                    // week 1 always open (unlocked before tournament)
+  15: now >= june(14),         // Sun June 14 after 08:00
   22: now >= june(21),         // Sun June 21
   29: now >= june(28),         // Sun June 28
 };
-const isWeekUnlocked = (day) => {
+const isMatchPast = (matchDay, matchTime, simDay=null, simHour=12) => {
+  const mHour = parseInt((matchTime||"23:00").split(":")[0]);
+  const nowDay = simDay || new Date().getDate();
+  const nowHour = simDay ? (simHour||0) : new Date().getHours();
+  return matchDay < nowDay || (matchDay === nowDay && mHour <= nowHour);
+};
+
+const isWeekUnlocked = (day, simDay=null, simHour=12, simMin=0) => {
+  if(simDay) {
+    const simDate = new Date(2026,5,simDay,simHour,simMin,0);
+    if(day >= 29) return simDate >= new Date(2026,5,28,8,0,0);
+    if(day >= 22) return simDate >= new Date(2026,5,21,8,0,0);
+    if(day >= 15) return simDate >= new Date(2026,5,14,8,0,0);
+    return true; // week 1 always open
+  }
   if(day >= 29) return WEEK_UNLOCKED[29];
   if(day >= 22) return WEEK_UNLOCKED[22];
   if(day >= 15) return WEEK_UNLOCKED[15];
   return WEEK_UNLOCKED[8];
 };
 
-// Mock live scores — replace with real API later
-// All matches not started yet — will be populated by real API
-const LIVE_SCORES = {};
+
 
 const CALENDAR_EVENTS = [
-  // Week 1: June 8-14
-  {day:11,matches:[{home:"Brazil",homeFlag:"🇧🇷",away:"Morocco",awayFlag:"🇲🇦",time:"19:00",group:"A"},{home:"France",homeFlag:"🇫🇷",away:"Mexico",awayFlag:"🇲🇽",time:"22:00",group:"A"}]},
-  {day:12,matches:[{home:"Argentina",homeFlag:"🇦🇷",away:"Poland",awayFlag:"🇵🇱",time:"19:00",group:"B"},{home:"England",homeFlag:"🏴󠁧󠁢󠁥󠁧󠁿",away:"USA",awayFlag:"🇺🇸",time:"22:00",group:"B"}]},
-  {day:13,matches:[{home:"Spain",homeFlag:"🇪🇸",away:"Canada",awayFlag:"🇨🇦",time:"19:00",group:"C"},{home:"Portugal",homeFlag:"🇵🇹",away:"Japan",awayFlag:"🇯🇵",time:"22:00",group:"C"}]},
-  {day:14,matches:[{home:"Germany",homeFlag:"🇩🇪",away:"Australia",awayFlag:"🇦🇺",time:"19:00",group:"D"},{home:"Netherlands",homeFlag:"🇳🇱",away:"Senegal",awayFlag:"🇸🇳",time:"22:00",group:"D"}]},
-  // Week 2: June 15-21
-  {day:15,matches:[{home:"Brazil",homeFlag:"🇧🇷",away:"France",awayFlag:"🇫🇷",time:"19:00",group:"A"},{home:"Mexico",homeFlag:"🇲🇽",away:"Morocco",awayFlag:"🇲🇦",time:"22:00",group:"A"}]},
-  {day:16,matches:[{home:"USA",homeFlag:"🇺🇸",away:"Argentina",awayFlag:"🇦🇷",time:"19:00",group:"B"},{home:"Poland",homeFlag:"🇵🇱",away:"England",awayFlag:"🏴󠁧󠁢󠁥󠁧󠁿",time:"22:00",group:"B"}]},
-  {day:17,matches:[{home:"Belgium",homeFlag:"🇧🇪",away:"Iran",awayFlag:"🇮🇷",time:"19:00",group:"E"},{home:"Croatia",homeFlag:"🇭🇷",away:"Serbia",awayFlag:"🇷🇸",time:"22:00",group:"E"}]},
-  {day:18,matches:[{home:"Denmark",homeFlag:"🇩🇰",away:"Tunisia",awayFlag:"🇹🇳",time:"19:00",group:"F"},{home:"Ecuador",homeFlag:"🇪🇨",away:"Cameroon",awayFlag:"🇨🇲",time:"22:00",group:"F"}]},
-  {day:19,matches:[{home:"Japan",homeFlag:"🇯🇵",away:"Spain",awayFlag:"🇪🇸",time:"19:00",group:"C"},{home:"Canada",homeFlag:"🇨🇦",away:"Portugal",awayFlag:"🇵🇹",time:"22:00",group:"C"}]},
-  {day:20,matches:[{home:"Australia",homeFlag:"🇦🇺",away:"Germany",awayFlag:"🇩🇪",time:"19:00",group:"D"},{home:"Senegal",homeFlag:"🇸🇳",away:"Netherlands",awayFlag:"🇳🇱",time:"22:00",group:"D"}]},
-  // Week 3: June 22-28
-  {day:22,matches:[{home:"Morocco",homeFlag:"🇲🇦",away:"France",awayFlag:"🇫🇷",time:"19:00",group:"A"},{home:"Mexico",homeFlag:"🇲🇽",away:"Brazil",awayFlag:"🇧🇷",time:"19:00",group:"A"}]},
-  {day:23,matches:[{home:"Poland",homeFlag:"🇵🇱",away:"USA",awayFlag:"🇺🇸",time:"19:00",group:"B"},{home:"England",homeFlag:"🏴󠁧󠁢󠁥󠁧󠁿",away:"Argentina",awayFlag:"🇦🇷",time:"19:00",group:"B"}]},
-  {day:24,matches:[{home:"Serbia",homeFlag:"🇷🇸",away:"Belgium",awayFlag:"🇧🇪",time:"19:00",group:"E"},{home:"Iran",homeFlag:"🇮🇷",away:"Croatia",awayFlag:"🇭🇷",time:"19:00",group:"E"}]},
-  {day:25,matches:[{home:"Cameroon",homeFlag:"🇨🇲",away:"Denmark",awayFlag:"🇩🇰",time:"19:00",group:"F"},{home:"Tunisia",homeFlag:"🇹🇳",away:"Ecuador",awayFlag:"🇪🇨",time:"19:00",group:"F"}]},
-  {day:26,matches:[{home:"Portugal",homeFlag:"🇵🇹",away:"Spain",awayFlag:"🇪🇸",time:"19:00",group:"C"},{home:"Japan",homeFlag:"🇯🇵",away:"Canada",awayFlag:"🇨🇦",time:"19:00",group:"C"}]},
-  {day:27,matches:[{home:"Netherlands",homeFlag:"🇳🇱",away:"Germany",awayFlag:"🇩🇪",time:"19:00",group:"D"},{home:"Australia",homeFlag:"🇦🇺",away:"Senegal",awayFlag:"🇸🇳",time:"19:00",group:"D"}]},
-  // Week 4: June 29+
-  {day:29,matches:[{home:"Argentina",homeFlag:"🇦🇷",away:"France",awayFlag:"🇫🇷",time:"20:00",group:"R16"},{home:"Brazil",homeFlag:"🇧🇷",away:"England",awayFlag:"🏴󠁧󠁢󠁥󠁧󠁿",time:"20:00",group:"R16"}]},
-  {day:30,matches:[{home:"Spain",homeFlag:"🇪🇸",away:"Netherlands",awayFlag:"🇳🇱",time:"20:00",group:"R16"},{home:"Germany",homeFlag:"🇩🇪",away:"Portugal",awayFlag:"🇵🇹",time:"20:00",group:"R16"}]},
+  // ── WEEK 1: June 11-14 (Group stage matchday 1) ─────────────────────────────
+  {day:11,matches:[
+    {home:"Mexico",homeFlag:"🇲🇽",away:"Poland",awayFlag:"🇵🇱",time:"13:00",group:"B"},
+    {home:"Argentina",homeFlag:"🇦🇷",away:"Iceland",awayFlag:"🇮🇸",time:"16:00",group:"A"},
+    {home:"USA",homeFlag:"🇺🇸",away:"Wales",awayFlag:"🏴󠁧󠁢󠁷󠁬󠁳󠁿",time:"19:00",group:"B"},
+    {home:"Canada",homeFlag:"🇨🇦",away:"Morocco",awayFlag:"🇲🇦",time:"22:00",group:"C"},
+  ]},
+  {day:12,matches:[
+    {home:"Germany",homeFlag:"🇩🇪",away:"Scotland",awayFlag:"🏴󠁧󠁢󠁳󠁣󠁴󠁿",time:"13:00",group:"A"},
+    {home:"Spain",homeFlag:"🇪🇸",away:"Croatia",awayFlag:"🇭🇷",time:"16:00",group:"D"},
+    {home:"Brazil",homeFlag:"🇧🇷",away:"Serbia",awayFlag:"🇷🇸",time:"19:00",group:"G"},
+    {home:"Japan",homeFlag:"🇯🇵",away:"Costa Rica",awayFlag:"🇨🇷",time:"22:00",group:"E"},
+  ]},
+  {day:13,matches:[
+    {home:"France",homeFlag:"🇫🇷",away:"Australia",awayFlag:"🇦🇺",time:"13:00",group:"D"},
+    {home:"Portugal",homeFlag:"🇵🇹",away:"Ghana",awayFlag:"🇬🇭",time:"16:00",group:"H"},
+    {home:"Belgium",homeFlag:"🇧🇪",away:"New Zealand",awayFlag:"🇳🇿",time:"19:00",group:"F"},
+    {home:"Netherlands",homeFlag:"🇳🇱",away:"Senegal",awayFlag:"🇸🇳",time:"22:00",group:"A"},
+  ]},
+  {day:14,matches:[
+    {home:"England",homeFlag:"🏴󠁧󠁢󠁥󠁧󠁿",away:"Iran",awayFlag:"🇮🇷",time:"13:00",group:"B"},
+    {home:"Ecuador",homeFlag:"🇪🇨",away:"Qatar",awayFlag:"🇶🇦",time:"16:00",group:"A"},
+    {home:"Switzerland",homeFlag:"🇨🇭",away:"Cameroon",awayFlag:"🇨🇲",time:"19:00",group:"G"},
+    {home:"Uruguay",homeFlag:"🇺🇾",away:"South Korea",awayFlag:"🇰🇷",time:"22:00",group:"H"},
+  ]},
+  // ── WEEK 2: June 15-21 (Group stage matchday 1 cont. + matchday 2) ──────────
+  {day:15,matches:[
+    {home:"Colombia",homeFlag:"🇨🇴",away:"Romania",awayFlag:"🇷🇴",time:"13:00",group:"E"},
+    {home:"Denmark",homeFlag:"🇩🇰",away:"Tunisia",awayFlag:"🇹🇳",time:"16:00",group:"C"},
+    {home:"Mexico",homeFlag:"🇲🇽",away:"Argentina",awayFlag:"🇦🇷",time:"19:00",group:"A"},
+    {home:"Saudi Arabia",homeFlag:"🇸🇦",away:"Australia",awayFlag:"🇦🇺",time:"22:00",group:"D"},
+  ]},
+  {day:16,matches:[
+    {home:"Poland",homeFlag:"🇵🇱",away:"Saudi Arabia",awayFlag:"🇸🇦",time:"13:00",group:"C"},
+    {home:"France",homeFlag:"🇫🇷",away:"Denmark",awayFlag:"🇩🇰",time:"16:00",group:"D"},
+    {home:"Argentina",homeFlag:"🇦🇷",away:"Mexico",awayFlag:"🇲🇽",time:"19:00",group:"C"},
+    {home:"Tunisia",homeFlag:"🇹🇳",away:"Australia",awayFlag:"🇦🇺",time:"22:00",group:"D"},
+  ]},
+  {day:17,matches:[
+    {home:"Germany",homeFlag:"🇩🇪",away:"Spain",awayFlag:"🇪🇸",time:"13:00",group:"E"},
+    {home:"Croatia",homeFlag:"🇭🇷",away:"Canada",awayFlag:"🇨🇦",time:"16:00",group:"F"},
+    {home:"Morocco",homeFlag:"🇲🇦",away:"Belgium",awayFlag:"🇧🇪",time:"19:00",group:"F"},
+    {home:"USA",homeFlag:"🇺🇸",away:"England",awayFlag:"🏴󠁧󠁢󠁥󠁧󠁿",time:"22:00",group:"B"},
+  ]},
+  {day:18,matches:[
+    {home:"Netherlands",homeFlag:"🇳🇱",away:"Ecuador",awayFlag:"🇪🇨",time:"13:00",group:"A"},
+    {home:"Iran",homeFlag:"🇮🇷",away:"Wales",awayFlag:"🏴󠁧󠁢󠁷󠁬󠁳󠁿",time:"16:00",group:"B"},
+    {home:"Senegal",homeFlag:"🇸🇳",away:"Qatar",awayFlag:"🇶🇦",time:"19:00",group:"A"},
+    {home:"Brazil",homeFlag:"🇧🇷",away:"Switzerland",awayFlag:"🇨🇭",time:"22:00",group:"G"},
+  ]},
+  {day:19,matches:[
+    {home:"Portugal",homeFlag:"🇵🇹",away:"Uruguay",awayFlag:"🇺🇾",time:"13:00",group:"H"},
+    {home:"Japan",homeFlag:"🇯🇵",away:"Germany",awayFlag:"🇩🇪",time:"16:00",group:"E"},
+    {home:"Ghana",homeFlag:"🇬🇭",away:"South Korea",awayFlag:"🇰🇷",time:"19:00",group:"H"},
+    {home:"Colombia",homeFlag:"🇨🇴",away:"Belgium",awayFlag:"🇧🇪",time:"22:00",group:"F"},
+  ]},
+  {day:20,matches:[
+    {home:"Spain",homeFlag:"🇪🇸",away:"Costa Rica",awayFlag:"🇨🇷",time:"13:00",group:"E"},
+    {home:"Scotland",homeFlag:"🏴󠁧󠁢󠁳󠁣󠁴󠁿",away:"Switzerland",awayFlag:"🇨🇭",time:"16:00",group:"A"},
+    {home:"Iceland",homeFlag:"🇮🇸",away:"Netherlands",awayFlag:"🇳🇱",time:"19:00",group:"A"},
+    {home:"Serbia",homeFlag:"🇷🇸",away:"Cameroon",awayFlag:"🇨🇲",time:"22:00",group:"G"},
+  ]},
+  {day:21,matches:[
+    {home:"Romania",homeFlag:"🇷🇴",away:"Colombia",awayFlag:"🇨🇴",time:"13:00",group:"E"},
+    {home:"Morocco",homeFlag:"🇲🇦",away:"Croatia",awayFlag:"🇭🇷",time:"16:00",group:"F"},
+    {home:"Canada",homeFlag:"🇨🇦",away:"Belgium",awayFlag:"🇧🇪",time:"19:00",group:"F"},
+    {home:"Wales",homeFlag:"🏴󠁧󠁢󠁷󠁬󠁳󠁿",away:"England",awayFlag:"🏴󠁧󠁢󠁥󠁧󠁿",time:"22:00",group:"B"},
+  ]},
+  // ── WEEK 3: June 22-28 (Group stage matchday 3 - all simultaneous) ───────────
+  {day:22,matches:[
+    {home:"Netherlands",homeFlag:"🇳🇱",away:"Qatar",awayFlag:"🇶🇦",time:"19:00",group:"A"},
+    {home:"Ecuador",homeFlag:"🇪🇨",away:"Senegal",awayFlag:"🇸🇳",time:"19:00",group:"A"},
+    {home:"Iceland",homeFlag:"🇮🇸",away:"Scotland",awayFlag:"🏴󠁧󠁢󠁳󠁣󠁴󠁿",time:"22:00",group:"A"},
+  ]},
+  {day:23,matches:[
+    {home:"Poland",homeFlag:"🇵🇱",away:"Argentina",awayFlag:"🇦🇷",time:"19:00",group:"C"},
+    {home:"Australia",homeFlag:"🇦🇺",away:"Denmark",awayFlag:"🇩🇰",time:"19:00",group:"D"},
+    {home:"Tunisia",homeFlag:"🇹🇳",away:"France",awayFlag:"🇫🇷",time:"19:00",group:"D"},
+    {home:"Saudi Arabia",homeFlag:"🇸🇦",away:"Mexico",awayFlag:"🇲🇽",time:"22:00",group:"C"},
+  ]},
+  {day:24,matches:[
+    {home:"Japan",homeFlag:"🇯🇵",away:"Spain",awayFlag:"🇪🇸",time:"19:00",group:"E"},
+    {home:"Costa Rica",homeFlag:"🇨🇷",away:"Germany",awayFlag:"🇩🇪",time:"19:00",group:"E"},
+    {home:"Belgium",homeFlag:"🇧🇪",away:"Croatia",awayFlag:"🇭🇷",time:"22:00",group:"F"},
+    {home:"Canada",homeFlag:"🇨🇦",away:"Morocco",awayFlag:"🇲🇦",time:"22:00",group:"F"},
+  ]},
+  {day:25,matches:[
+    {home:"South Korea",homeFlag:"🇰🇷",away:"Portugal",awayFlag:"🇵🇹",time:"19:00",group:"H"},
+    {home:"Ghana",homeFlag:"🇬🇭",away:"Uruguay",awayFlag:"🇺🇾",time:"19:00",group:"H"},
+    {home:"Cameroon",homeFlag:"🇨🇲",away:"Brazil",awayFlag:"🇧🇷",time:"22:00",group:"G"},
+    {home:"Serbia",homeFlag:"🇷🇸",away:"Switzerland",awayFlag:"🇨🇭",time:"22:00",group:"G"},
+  ]},
+  {day:26,matches:[
+    {home:"Iran",homeFlag:"🇮🇷",away:"USA",awayFlag:"🇺🇸",time:"19:00",group:"B"},
+    {home:"Wales",homeFlag:"🏴󠁧󠁢󠁷󠁬󠁳󠁿",away:"England",awayFlag:"🏴󠁧󠁢󠁥󠁧󠁿",time:"19:00",group:"B"},
+    {home:"Colombia",homeFlag:"🇨🇴",away:"Romania",awayFlag:"🇷🇴",time:"22:00",group:"E"},
+  ]},
+  // ── WEEK 4: June 29 - July 6 (Round of 16) ───────────────────────────────────
+  {day:29,matches:[
+    {home:"1A",homeFlag:"🏆",away:"2B",awayFlag:"🏆",time:"18:00",group:"R16"},
+    {home:"1C",homeFlag:"🏆",away:"2D",awayFlag:"🏆",time:"22:00",group:"R16"},
+  ]},
+  {day:30,matches:[
+    {home:"1B",homeFlag:"🏆",away:"2A",awayFlag:"🏆",time:"18:00",group:"R16"},
+    {home:"1D",homeFlag:"🏆",away:"2C",awayFlag:"🏆",time:"22:00",group:"R16"},
+  ]},
 ];
+
+// Compute live scores dynamically based on sim time
+// In production replace with real API
+const computeLiveScores = (simDay=null, simHour=12, simMin=0) => {
+  const scores = {};
+  // Match duration: 90+5 mins = ~105 min = ~1h45m
+  const MATCH_DURATION_H = 2; // hours after kickoff = finished
+  CALENDAR_EVENTS.forEach(e => {
+    e.matches.forEach((m, idx) => {
+      const key = `${e.day}-${idx}`;
+      const kickH = parseInt((m.time||"23:00").split(":")[0]);
+      const kickM = parseInt((m.time||"00:00").split(":")[1]||0);
+      const nowDay = simDay || new Date().getDate();
+      const nowH   = simDay ? simHour : new Date().getHours();
+      const nowM   = simDay ? simMin  : new Date().getMinutes();
+      if(e.day > nowDay) { scores[key] = {status:"NS"}; return; }
+      if(e.day < nowDay) {
+        // Use mock final scores if available
+        const mockFinals = {"11-0":[2,1],"11-1":[0,0],"11-2":[2,0]};
+        const mf = mockFinals[key];
+        scores[key] = mf ? {status:"FT",home:mf[0],away:mf[1]} : {status:"FT",home:null,away:null};
+        return;
+      }
+      // Same day
+      const startMins = kickH*60 + kickM;
+      const nowMins   = nowH*60 + nowM;
+      if(nowMins < startMins)       { scores[key] = {status:"NS"}; return; }
+      if(nowMins > startMins + 115) {
+        const mockFinals = {"11-0":[2,1],"11-1":[0,0],"11-2":[2,0]};
+        const mf = mockFinals[key];
+        scores[key] = mf ? {status:"FT",home:mf[0],away:mf[1]} : {status:"FT",home:null,away:null};
+        return;
+      }
+      // Currently live — score 0-0 until real API provides it
+      scores[key] = {status:"LIVE", home:0, away:0, min: Math.min(90, nowMins - startMins)};
+    });
+  });
+  return scores;
+};
+const LIVE_SCORES_DEFAULT = computeLiveScores();
+let LIVE_SCORES = LIVE_SCORES_DEFAULT;
 
 function useCountdown() {
   const target = new Date("2026-06-11T18:00:00");
@@ -164,13 +300,14 @@ function CalendarSlider() {
   const weekIdx = weeks.indexOf(weekStart);
   const days = Array.from({length:7}, (_,i) => weekStart + i).filter(d => d >= 1 && d <= 30);
   const sm = sel ? mm[sel] : null;
-  const weekLabel = `${weekStart} – ${Math.min(weekStart+6,30)} Iunie`;
+  const days2 = Array.from({length:7}, (_,i) => weeks[weekIdx+1] ? weeks[weekIdx+1]+i : null).filter(d=>d&&d>=1&&d<=30);
+  const weekLabel = `${weekStart} – ${Math.min(weekStart+13,30)} Iunie`;
 
   return (
     <div style={{marginBottom:14}}>
       {/* Header */}
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
-        <button onClick={()=>weekIdx>0&&setWeekStart(weeks[weekIdx-1])}
+        <button onClick={()=>weekIdx>1?setWeekStart(weeks[weekIdx-2]):weekIdx>0&&setWeekStart(weeks[weekIdx-1])}
           style={{width:30,height:30,borderRadius:"50%",border:"none",
             background:weekIdx>0?BG:"transparent",
             boxShadow:weekIdx>0?SHADOW_OUT:"none",
@@ -211,33 +348,35 @@ function CalendarSlider() {
         ))}
       </div>
 
-      {/* Days */}
-      <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:4}}>
-        {days.map((day,i)=>{
-          const isS=day===11, has=!!mm[day], isSel=sel===day, isSun=i%7===6;
-          let bg="transparent", border="1.5px solid transparent", shadow="none";
-          let tc=isSun?RED:"#777", fw=400;
-          if(isSel){bg=`linear-gradient(135deg,${NAVY},#001840)`;shadow="0 3px 10px rgba(0,32,91,0.35)";tc="#fff";fw=800;}
-          else if(isS){bg="#E8F0FF";border=`1.5px solid ${NAVY}`;tc=NAVY;fw=800;}
-          else if(has){fw=700;tc=DARK;}
-          return (
-            <div key={day} onClick={()=>has&&(onDaySelect?onDaySelect(day):null)}
-              style={{position:"relative",display:"flex",flexDirection:"column",alignItems:"center",
-                justifyContent:"center",borderRadius:10,padding:"8px 2px",
-                cursor:has?"pointer":"default",
-                background:bg,border,boxShadow:shadow,transition:"all 0.15s"}}>
-              <span style={{fontSize:13,fontWeight:fw,color:tc,lineHeight:1}}>{day}</span>
-              {has&&!isSel&&<div style={{width:4,height:4,borderRadius:"50%",background:isS?NAVY:RED,marginTop:3}}/>}
-              {isS&&!isSel&&(
-                <div style={{position:"absolute",top:-6,right:-2,background:RED,
-                  borderRadius:4,padding:"1px 4px",fontSize:7,fontWeight:800,color:"#fff"}}>
-                  START
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
+      {/* Days - 2 weeks */}
+      {[days, days2].map((week, wi)=>(
+        <div key={wi} style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:4,marginBottom:wi===0&&days2.length>0?4:0}}>
+          {week.map((day,i)=>{
+            const isS=day===11, has=!!mm[day], isSel=sel===day, isSun=i%7===6;
+            let bg="transparent", border="1.5px solid transparent", shadow="none";
+            let tc=isSun?RED:"#777", fw=400;
+            if(isSel){bg=`linear-gradient(135deg,${NAVY},#001840)`;shadow="0 3px 10px rgba(0,32,91,0.35)";tc="#fff";fw=800;}
+            else if(isS){bg="#E8F0FF";border=`1.5px solid ${NAVY}`;tc=NAVY;fw=800;}
+            else if(has){fw=700;tc=DARK;}
+            return (
+              <div key={day} onClick={()=>has&&(onDaySelect?onDaySelect(day):null)}
+                style={{position:"relative",display:"flex",flexDirection:"column",alignItems:"center",
+                  justifyContent:"center",borderRadius:10,padding:"8px 2px",
+                  cursor:has?"pointer":"default",
+                  background:bg,border,boxShadow:shadow,transition:"all 0.15s"}}>
+                <span style={{fontSize:13,fontWeight:fw,color:tc,lineHeight:1}}>{day}</span>
+                {has&&!isSel&&<div style={{width:4,height:4,borderRadius:"50%",background:isS?NAVY:RED,marginTop:3}}/>}
+                {isS&&!isSel&&(
+                  <div style={{position:"absolute",top:-6,right:-2,background:RED,
+                    borderRadius:4,padding:"1px 4px",fontSize:7,fontWeight:800,color:"#fff"}}>
+                    START
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      ))}
 
       {/* Match popup */}
       {sm&&(
@@ -2153,7 +2292,7 @@ function CircleTab({ label, name, isActive, onClick }) {
 }
 
 // ── HOME ──────────────────────────────────────────────────────────────────────
-function HomeScreen({ onPredict, onLeaderboard, onBoards, onOpenGroups, myBoards, predictionsComplete, instantPickDone, exactScores, activeBoardId, setActiveBoardId, tournamentStarted }) {
+function HomeScreen({ onPredict, onLeaderboard, onBoards, onOpenGroups, myBoards, predictionsComplete, instantPickDone, exactScores, activeBoardId, setActiveBoardId, tournamentStarted, simDay, simHour, simMin }) {
   const activeId = activeBoardId;
   const setActiveId = setActiveBoardId;
   const leaders = BOARD_LEADERS.global;
@@ -2183,36 +2322,39 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onOpenGroups, myBoards
       </div>
       <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",padding:"14px 20px 0"}}>
         {/* Top Players */}
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-          <p style={{fontSize:13,fontWeight:700,color:DARK,margin:0}}>🏆 Top Players</p>
-          <span onClick={onLeaderboard} style={{fontSize:12,color:NAVY,fontWeight:700,cursor:"pointer"}}>Vezi tot ›</span>
-        </div>
-        <div style={{background:BG,borderRadius:16,boxShadow:SHADOW_OUT,overflow:"hidden",marginBottom:14}}>
-          {top3.map(u=>(
-            <div key={u.rank} style={{display:"flex",alignItems:"center",background:u.accent||BG,padding:"9px 14px",gap:10,borderBottom:"1px solid rgba(0,0,0,0.05)"}}>
-              <span style={{fontSize:20,width:26,textAlign:"center"}}>{u.emoji||`#${u.rank}`}</span>
-              <div style={{flex:1}}>
-                <span style={{fontSize:13,fontWeight:700,color:u.isMe?NAVY:DARK}}>{u.name}</span>
-                {u.prize&&<span style={{fontSize:10,color:"#D4820A",fontWeight:600,marginLeft:6}}>🎁 {u.prize}</span>}
+
+        {/* Top 3 + locul meu */}
+        <div style={{marginBottom:14}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+            <p style={{fontSize:13,fontWeight:700,color:DARK,margin:0}}>🏆 Top Players</p>
+            <span onClick={onLeaderboard} style={{fontSize:12,color:NAVY,fontWeight:700,cursor:"pointer"}}>Vezi tot ›</span>
+          </div>
+          <div style={{background:"#fff",borderRadius:16,boxShadow:"0 4px 20px rgba(0,0,0,0.08)",overflow:"hidden"}}>
+            {top3.map((u,i)=>(
+              <div key={u.rank} style={{display:"flex",alignItems:"center",padding:"10px 14px",gap:10,borderBottom:"1px solid rgba(0,0,0,0.05)",background:u.accent||"#fff"}}>
+                <span style={{fontSize:22,width:28,textAlign:"center"}}>{u.emoji}</span>
+                <div style={{flex:1}}>
+                  <span style={{fontSize:13,fontWeight:700,color:DARK}}>{u.name}</span>
+                  {u.prize&&<span style={{fontSize:10,color:"#D4820A",fontWeight:600,marginLeft:6}}>🎁 {u.prize}</span>}
+                </div>
+                <span style={{fontSize:13,fontWeight:800,color:"#aaa"}}>{tournamentStarted?`${u.pts} pts`:"—"}</span>
               </div>
-              <span style={{fontSize:13,fontWeight:800,color:u.isMe?NAVY:DARK}}>{u.pts} pts</span>
-            </div>
-          ))}
-          {!meInTop3&&me&&(
-            <>
-              <div style={{display:"flex",alignItems:"center",padding:"4px 14px"}}>
+            ))}
+            {!meInTop3&&me&&(<>
+              <div style={{display:"flex",alignItems:"center",padding:"3px 14px"}}>
                 <div style={{flex:1,height:1,background:"rgba(0,0,0,0.06)"}}/>
-                <span style={{fontSize:11,color:"#ccc",padding:"0 6px"}}>···</span>
+                <span style={{fontSize:10,color:"#ccc",padding:"0 6px"}}>···</span>
                 <div style={{flex:1,height:1,background:"rgba(0,0,0,0.06)"}}/>
               </div>
-              <div style={{display:"flex",alignItems:"center",background:"#E8F0FF",padding:"9px 14px",gap:10}}>
-                <span style={{fontSize:13,fontWeight:700,color:NAVY,width:26,textAlign:"center"}}>#{me.rank}</span>
+              <div style={{display:"flex",alignItems:"center",background:"#E8F0FF",padding:"10px 14px",gap:10}}>
+                <span style={{fontSize:13,fontWeight:800,color:NAVY,width:28,textAlign:"center"}}>#{me.rank}</span>
                 <div style={{flex:1}}><span style={{fontSize:13,fontWeight:700,color:NAVY}}>{me.name}</span></div>
-                <span style={{fontSize:13,fontWeight:800,color:NAVY}}>{me.pts} pts</span>
+                <span style={{fontSize:13,fontWeight:800,color:NAVY}}>{tournamentStarted?`${me.pts} pts`:"—"}</span>
               </div>
-            </>
-          )}
+            </>)}
+          </div>
         </div>
+
         <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:14}}>
           {/* Instant Pick ⚡ button */}
           {(() => {
@@ -2268,12 +2410,12 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onOpenGroups, myBoards
             {(()=>{
               // Unlock next week every Sunday after 20:00
               // Week windows: W1=June 8-14, W2=June 15-21, W3=June 22-28, W4=June 29+
-              const now = new Date();
-              const june = (d) => new Date(2026, 5, d, 20, 0, 0); // June, 20:00
-              const w1Open = true;                          // always open
-              const w2Open = now >= june(14);               // Sun June 14 after 20:00
-              const w3Open = now >= june(21);               // Sun June 21
-              const w4Open = now >= june(28);               // Sun June 28
+              const simNowDate = simDay ? new Date(2026, 5, simDay, simHour||12, simMin||0, 0) : new Date();
+              const june = (d) => new Date(2026, 5, d, 8, 0, 0);
+              const w1Open = true;
+              const w2Open = simNowDate >= june(14);
+              const w3Open = simNowDate >= june(21);
+              const w4Open = simNowDate >= june(28);
               // Check how many matches per week have scores
               const matchesInWeek = (start) => {
                 const days = Array.from({length:7},(_,i)=>start+i).filter(d=>d>=1&&d<=30);
@@ -2291,16 +2433,17 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onOpenGroups, myBoards
               const w2done = w2Open && scoredInWeek(15)>0 && scoredInWeek(15)===matchesInWeek(15);
               const w3done = w3Open && scoredInWeek(22)>0 && scoredInWeek(22)===matchesInWeek(22);
               const w4done = w4Open && scoredInWeek(29)>0 && scoredInWeek(29)===matchesInWeek(29);
+              const todaySim = simDay || simNowDate.getDate();
               const weeks = [
-                {label:"8-14 Iun",  locked:!w1Open, done:w1done, deadline:"deadline 11 Iun"},
-                {label:"15-21 Iun", locked:!w2Open, done:w2done, deadline:"deadline 14 Iun"},
-                {label:"22-28 Iun", locked:!w3Open, done:w3done, deadline:"deadline 21 Iun"},
-                {label:"29+ Iun",   locked:!w4Open, done:w4done, deadline:"deadline 28 Iun"},
+                {label:"8-14 Iun",  locked:!w1Open, done:w1done, past:todaySim>14, deadline:"deadline 11 Iun"},
+                {label:"15-21 Iun", locked:!w2Open, done:w2done, past:todaySim>21, deadline:"deadline 14 Iun"},
+                {label:"22-28 Iun", locked:!w3Open, done:w3done, past:todaySim>28, deadline:"deadline 21 Iun"},
+                {label:"29+ Iun",   locked:!w4Open, done:w4done, past:false, deadline:"deadline 28 Iun"},
               ];
               return (
                 <>
-                  <div style={{background:`linear-gradient(135deg,${RED},#EF3340 40%,${GREEN} 100%)`,
-                    padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                  <div onClick={()=>onOpenGroups&&onOpenGroups()} style={{background:`linear-gradient(135deg,${RED},#EF3340 40%,${GREEN} 100%)`,
+                    padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer"}}>
                     <div style={{display:"flex",flexDirection:"column",alignItems:"flex-start",gap:2}}>
                       <p style={{fontSize:14,fontWeight:800,color:"#fff",margin:0}}>⚽ Exact Score & 🏆 Bracket</p>
                       <p style={{fontSize:10,color:"rgba(255,255,255,0.7)",margin:0}}>Se deblochează săptămânal · Tot turneul</p>
@@ -2316,18 +2459,19 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onOpenGroups, myBoards
                   <div style={{padding:"12px 14px",display:"flex",alignItems:"center",gap:4}}>
                     {weeks.map((s,i)=>(
                       <div key={i}
-                        onClick={()=>!s.locked&&onOpenGroups&&onOpenGroups()}
+                        onClick={()=>!s.locked&&!s.past&&onOpenGroups&&onOpenGroups()}
                         style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:3,
-                          cursor:s.locked?"default":"pointer"}}>
+                          cursor:s.locked||s.past?"default":"pointer"}}>
                         <div style={{width:34,height:34,borderRadius:"50%",
                           background:s.locked?"rgba(0,0,0,0.04)":s.done?GREEN:"#E8F0FF",
                           border:s.locked?"1.5px dashed #ddd":s.done?`1.5px solid ${GREEN}`:`1.5px solid ${NAVY}`,
                           display:"flex",alignItems:"center",justifyContent:"center",
                           fontSize:s.locked?12:14,
+                          opacity:s.past&&!s.done?0.4:1,
                           boxShadow:s.locked?"none":`0 2px 8px ${s.done?"rgba(0,154,68,0.3)":"rgba(0,32,91,0.15)"}`}}>
                           {s.locked ? "🔒" : s.done ? "✅" : "⚽"}
                         </div>
-                        <span style={{fontSize:8,fontWeight:600,color:s.locked?"#ccc":s.done?GREEN:NAVY,textAlign:"center",lineHeight:1.2}}>
+                        <span style={{fontSize:8,fontWeight:600,color:s.locked?"#ccc":s.done?GREEN:s.past?"#bbb":NAVY,textAlign:"center",lineHeight:1.2}}>
                           {s.label}
                         </span>
 
@@ -2338,6 +2482,7 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onOpenGroups, myBoards
               );
             })()}
           </div>
+
         </div>
       </div>
     </div>
@@ -2389,26 +2534,29 @@ function BoardsScreen({ onBack, myBoards, setMyBoards }) {
 // ── FOOTER ────────────────────────────────────────────────────────────────────
 function Footer({ active, onNavigate, lang }) {
   const tabs = [
-    {key:SCREENS.HOME,icon:"🏟️",label:"Boards"},
-    {key:SCREENS.RULES,icon:"📖",label:"Rules"},
-    {key:SCREENS.ACCOUNT,icon:"👤",label:"Account"},
+    {key:SCREENS.HOME,   icon:"🏟️", label:"Home"},
+    {key:SCREENS.RULES,  icon:"📖", label:"Rules"},
+    {key:SCREENS.ACCOUNT,icon:"👤", label:"Account"},
   ];
   return (
-    <div style={{flexShrink:0,background:BG,borderTop:"1px solid rgba(0,0,0,0.08)",display:"flex",alignItems:"stretch",height:64}}>
+    <div style={{flexShrink:0,background:"#fff",borderTop:"1px solid rgba(0,0,0,0.06)",display:"flex",alignItems:"stretch",height:64,paddingBottom:4}}>
       {tabs.map(tab=>{
         const isActive=active===tab.key;
         return (
-          <button key={tab.key} onClick={()=>onNavigate(tab.key)} style={{flex:1,background:"transparent",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:3,padding:0}}>
-            {tab.accent?(
-              <div style={{width:44,height:44,borderRadius:14,background:`linear-gradient(135deg,${NAVY},#001840)`,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 4px 14px rgba(0,32,91,0.4)",marginTop:-16}}>
-                <span style={{fontSize:20}}>{tab.icon}</span>
-              </div>
-            ):(
-              <>
-                <span style={{fontSize:22,opacity:isActive?1:0.35}}>{tab.icon}</span>
-                <span style={{fontSize:10,fontWeight:isActive?700:500,color:isActive?NAVY:"#aaa"}}>{tab.label}</span>
-              </>
-            )}
+          <button key={tab.key} onClick={()=>onNavigate(tab.key)}
+            style={{flex:1,background:"transparent",border:"none",cursor:"pointer",
+              display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4,padding:0}}>
+            <div style={{
+              width:36,height:36,borderRadius:12,
+              background:isActive?`linear-gradient(135deg,${NAVY},#001840)`:BG,
+              boxShadow:isActive?"0 4px 12px rgba(0,32,91,0.3)":SHADOW_OUT,
+              display:"flex",alignItems:"center",justifyContent:"center",
+              fontSize:18,transition:"all 0.2s"}}>
+              {tab.icon}
+            </div>
+            <span style={{fontSize:9,fontWeight:isActive?700:500,color:isActive?NAVY:"#bbb",transition:"all 0.2s"}}>
+              {tab.label}
+            </span>
           </button>
         );
       })}
@@ -2437,52 +2585,152 @@ function LangSelector({ lang, setLang }) {
   );
 }
 
-function SplashScreen({ onNext, lang, setLang }) {
-  const { d, h, m, s } = useCountdown();
-  return (
-    <div style={{ flex: 1, display: "flex", flexDirection: "column", position: "relative", overflow: "hidden", background: "#fff" }}>
-      {/* Background trophy image */}
-      <img
-        src={trophy}
-        alt="FIFA World Cup Trophy"
-        style={{
-          position: "absolute",
-          width: "130%",
-          height: "85%",
-          left: "-30%",
-          top: "20%",
-          objectFit: "cover",
-          objectPosition: "center 20%",
-          zIndex: 0,
-          mixBlendMode: "multiply",
-          opacity: 0.9,
-        }}
-      />
+function DevPanel({ onStart }) {
+  const [simDay, setSimDay] = useState(11);
+  const [simHour, setSimHour] = useState(12);
+  const [simMin, setSimMin] = useState(0);
 
-      {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "20px 22px 0", position: "relative", zIndex: 10 }}>
-        <div style={{ width: 44 }} />
-        <div style={{ textAlign: "center" }}>
-          <p style={{ fontSize: 10, color: "#C8102E", margin: "0 0 2px", letterSpacing: 3, textTransform: "uppercase", fontWeight: 800 }}>FIFA</p>
-          <h1 style={{ fontSize: 20, fontWeight: 900, color: "#00205B", margin: 0, letterSpacing: -0.5 }}>WORLD CUP 2026</h1>
-          <p style={{ fontSize: 11, color: "#888", margin: "3px 0 0", letterSpacing: 0.5 }}>{T[lang].location}</p>
-        </div>
-        <LangSelector lang={lang} setLang={setLang} />
+  const tournamentStart = new Date(2026,5,11,19,0,0);
+  const simDate = new Date(2026,5,simDay,simHour,simMin,0);
+  const simStarted = simDate >= tournamentStart;
+
+  // Countdown to tournament
+  const diffMs = tournamentStart - simDate;
+  const dLeft = Math.max(0,Math.floor(diffMs/(1000*60*60*24)));
+  const hLeft = Math.max(0,Math.floor((diffMs%(1000*60*60*24))/(1000*60*60)));
+
+  const presets = [
+    {label:"9 Iun 12:00", day:9, hour:12, min:0},
+    {label:"10 Iun 20:00", day:10, hour:20, min:0},
+    {label:"11 Iun 18:00 (înainte)", day:11, hour:18, min:0},
+    {label:"11 Iun 20:00 (start!)", day:11, hour:20, min:0},
+    {label:"14 Iun 10:00", day:14, hour:10, min:0},
+    {label:"14 Iun 19:30 (live!)", day:14, hour:19, min:30},
+  ];
+
+  return (
+    <div style={{flex:1,display:"flex",flexDirection:"column",background:"#1a1a2e",overflow:"auto"}}>
+      <div style={{padding:"40px 24px 24px",textAlign:"center"}}>
+        <div style={{fontSize:36,marginBottom:8}}>🛠️</div>
+        <h2 style={{fontSize:22,fontWeight:900,color:"#fff",margin:"0 0 4px"}}>Dev Mode</h2>
+        <p style={{fontSize:12,color:"rgba(255,255,255,0.4)",margin:0}}>Simulează data și ora curentă</p>
       </div>
-      <div style={{ flex: 1 }} />
-      <div style={{ margin: "0 20px 14px", background: "rgba(0, 32, 91, 0.6)", borderRadius: 20, padding: "16px 8px 12px", display: "flex", position: "relative", zIndex: 10 }}>
-        {[{ v: d, l: "days" }, { v: h, l: "hours" }, { v: m, l: "minutes" }, { v: s, l: "seconds" }].map(({ v, l }, i) => (
-          <div key={l} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", position: "relative" }}>
-            <span style={{ fontSize: 30, fontWeight: 800, color: "#fff", lineHeight: 1 }}>{String(v).padStart(2, "0")}</span>
-            {i < 3 && <span style={{ position: "absolute", right: -2, top: 2, fontSize: 20, fontWeight: 700, color: "rgba(255,255,255,0.25)" }}>:</span>}
-            <span style={{ fontSize: 8, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: 1.5, marginTop: 6 }}>{T[lang][l.toLowerCase()] || l}</span>
+
+      {/* Date/time pickers */}
+      <div style={{padding:"0 24px",marginBottom:20}}>
+        <p style={{fontSize:11,fontWeight:700,color:"rgba(255,255,255,0.4)",textTransform:"uppercase",letterSpacing:1,margin:"0 0 10px"}}>Data și ora simulată</p>
+        <div style={{background:"rgba(255,255,255,0.06)",borderRadius:16,padding:"16px"}}>
+          {/* Date: June day */}
+          <div style={{marginBottom:14}}>
+            <p style={{fontSize:11,color:"rgba(255,255,255,0.5)",margin:"0 0 8px"}}>Ziua din Iunie 2026</p>
+            <div style={{display:"flex",alignItems:"center",gap:12}}>
+              <button onClick={()=>setSimDay(d=>Math.max(1,d-1))}
+                style={{width:36,height:36,borderRadius:10,border:"none",background:"rgba(255,255,255,0.1)",color:"#fff",fontSize:18,cursor:"pointer"}}>−</button>
+              <span style={{flex:1,textAlign:"center",fontSize:24,fontWeight:900,color:"#fff"}}>{simDay} Iunie</span>
+              <button onClick={()=>setSimDay(d=>Math.min(30,d+1))}
+                style={{width:36,height:36,borderRadius:10,border:"none",background:"rgba(255,255,255,0.1)",color:"#fff",fontSize:18,cursor:"pointer"}}>+</button>
+            </div>
           </div>
-        ))}
+          {/* Time */}
+          <div>
+            <p style={{fontSize:11,color:"rgba(255,255,255,0.5)",margin:"0 0 8px"}}>Ora</p>
+            <div style={{display:"flex",alignItems:"center",gap:8}}>
+              <div style={{display:"flex",alignItems:"center",gap:8,flex:1}}>
+                <button onClick={()=>setSimHour(h=>Math.max(0,h-1))}
+                  style={{width:32,height:32,borderRadius:8,border:"none",background:"rgba(255,255,255,0.1)",color:"#fff",fontSize:16,cursor:"pointer"}}>−</button>
+                <span style={{flex:1,textAlign:"center",fontSize:22,fontWeight:900,color:"#fff"}}>{String(simHour).padStart(2,"0")}</span>
+                <button onClick={()=>setSimHour(h=>Math.min(23,h+1))}
+                  style={{width:32,height:32,borderRadius:8,border:"none",background:"rgba(255,255,255,0.1)",color:"#fff",fontSize:16,cursor:"pointer"}}>+</button>
+              </div>
+              <span style={{fontSize:20,color:"rgba(255,255,255,0.4)",fontWeight:700}}>:</span>
+              <div style={{display:"flex",alignItems:"center",gap:8,flex:1}}>
+                <button onClick={()=>setSimMin(m=>m<=0?55:m-5)}
+                  style={{width:32,height:32,borderRadius:8,border:"none",background:"rgba(255,255,255,0.1)",color:"#fff",fontSize:16,cursor:"pointer"}}>−</button>
+                <span style={{flex:1,textAlign:"center",fontSize:22,fontWeight:900,color:"#fff"}}>{String(simMin).padStart(2,"0")}</span>
+                <button onClick={()=>setSimMin(m=>m>=55?0:m+5)}
+                  style={{width:32,height:32,borderRadius:8,border:"none",background:"rgba(255,255,255,0.1)",color:"#fff",fontSize:16,cursor:"pointer"}}>+</button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-      <div style={{ padding: "0 20px 32px", position: "relative", zIndex: 10 }}>
-        <button onClick={onNext} style={{ width: "100%", background: "linear-gradient(135deg, #C8102E 0%, #EF3340 50%, #009A44 100%)", color: "#fff", border: "none", borderRadius: 16, padding: "17px 0", fontSize: 16, fontWeight: 800, cursor: "pointer", boxShadow: "0 8px 24px rgba(0,32,91,0.3)", letterSpacing: 0.5 }}>
-          {T[lang].cta}
+
+
+
+      {/* Status */}
+      <div style={{margin:"0 24px 24px",background:simStarted?"rgba(0,154,68,0.15)":"rgba(200,16,46,0.15)",borderRadius:14,padding:"12px 16px",border:`1px solid ${simStarted?"rgba(0,154,68,0.3)":"rgba(200,16,46,0.3)"}`}}>
+        <p style={{fontSize:12,fontWeight:700,color:simStarted?"#00C853":"#FF6B6B",margin:"0 0 4px"}}>
+          {simStarted?"✅ Turneul a început":"⏳ Înainte de turneu"}
+        </p>
+        <p style={{fontSize:11,color:"rgba(255,255,255,0.4)",margin:0}}>
+          {simStarted
+            ? `${simDay} Iunie ${String(simHour).padStart(2,"0")}:${String(simMin).padStart(2,"0")} · Meciuri active`
+            : `Mai sunt ${dLeft}z ${hLeft}h până la start`}
+        </p>
+      </div>
+
+      <div style={{padding:"0 24px 40px"}}>
+        <button onClick={()=>onStart(simDay, simHour, simMin, simStarted)}
+          style={{width:"100%",padding:"16px 0",borderRadius:16,border:"none",
+            background:"linear-gradient(135deg,#C8102E,#EF3340 40%,#009A44)",
+            color:"#fff",fontSize:16,fontWeight:900,cursor:"pointer",
+            boxShadow:"0 6px 20px rgba(200,16,46,0.4)"}}>
+          Intră în App →
         </button>
+      </div>
+    </div>
+  );
+}
+
+function SplashScreen({ onNext, lang, setLang, simDay, simHour=12, simMin=0, tournamentStarted }) {
+  const {d,h,m,s}=useCountdown();
+  // Calculate days left based on simDay or real date
+  const target = new Date("2026-06-11T19:00:00");
+  const simNow = simDay ? new Date(2026, 5, simDay, simHour, simMin, 0) : new Date();
+  const diffMs = target - simNow;
+  const daysLeft = Math.max(0, Math.floor(diffMs / (1000*60*60*24)));
+  const hoursLeft = Math.max(0, Math.floor((diffMs % (1000*60*60*24)) / (1000*60*60)));
+  const minsLeft = Math.max(0, Math.floor((diffMs % (1000*60*60)) / (1000*60)));
+  const secsLeft = Math.max(0, Math.floor((diffMs % (1000*60)) / 1000));
+  const sd = simDay ? daysLeft : d;
+  const sh = simDay ? hoursLeft : h;
+  const sm2 = simDay ? minsLeft : m;
+  const ss = simDay ? secsLeft : s;
+  return (
+    <div style={{flex:1,display:"flex",flexDirection:"column",position:"relative",overflow:"hidden",background:"#fff"}}>
+      <div style={{position:"absolute",width:"100%",height:"100%",background:"linear-gradient(180deg,rgba(0,32,91,0.04) 0%,rgba(200,16,46,0.07) 100%)",zIndex:0,pointerEvents:"none"}}/>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"20px 22px 0",position:"relative",zIndex:10}}>
+        <div style={{width:44}}/>
+        <div style={{textAlign:"center"}}>
+          <p style={{fontSize:10,color:"#C8102E",margin:"0 0 2px",letterSpacing:3,textTransform:"uppercase",fontWeight:800}}>FIFA</p>
+          <h1 style={{fontSize:20,fontWeight:900,color:"#00205B",margin:0}}>WORLD CUP 2026</h1>
+          <p style={{fontSize:11,color:"#888",margin:"3px 0 0"}}>{T[lang].location}</p>
+        </div>
+        <LangSelector lang={lang} setLang={setLang}/>
+      </div>
+      <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",fontSize:90,position:"relative",zIndex:1}}>🏆</div>
+      <div style={{margin:"0 20px 14px",background:"rgba(0,32,91,0.6)",borderRadius:20,padding:"16px 8px 12px",display:"flex",position:"relative",zIndex:10}}>
+        {tournamentStarted ? (
+          <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4}}>
+            <div style={{display:"flex",alignItems:"center",gap:8}}>
+              <span style={{width:8,height:8,borderRadius:"50%",background:RED,display:"inline-block"}}/>
+              <span style={{fontSize:24,fontWeight:900,color:"#fff",letterSpacing:3}}>LIVE NOW</span>
+              <span style={{width:8,height:8,borderRadius:"50%",background:RED,display:"inline-block"}}/>
+            </div>
+            <span style={{fontSize:9,color:"rgba(255,255,255,0.5)",textTransform:"uppercase",letterSpacing:1.5}}>Campionatul Mondial 2026</span>
+          </div>
+        ) : (
+          [{ v:sd,l:"days"},{ v:sh,l:"hours"},{ v:sm2,l:"minutes"},{ v:ss,l:"seconds"}].map(({v,l},i)=>(
+            <div key={l} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",position:"relative"}}>
+              <span style={{fontSize:30,fontWeight:800,color:"#fff",lineHeight:1}}>{String(v).padStart(2,"0")}</span>
+              {i<3&&<span style={{position:"absolute",right:-2,top:2,fontSize:20,color:"rgba(255,255,255,0.25)"}}>:</span>}
+              <span style={{fontSize:8,color:"rgba(255,255,255,0.5)",textTransform:"uppercase",letterSpacing:1.5,marginTop:6}}>{T[lang][l]||l}</span>
+            </div>
+          ))
+        )}
+      </div>
+      <div style={{padding:"0 20px 32px",position:"relative",zIndex:10}}>
+        <button onClick={onNext} style={{width:"100%",background:"linear-gradient(135deg,#C8102E 0%,#EF3340 50%,#009A44 100%)",color:"#fff",border:"none",borderRadius:16,padding:"17px 0",fontSize:16,fontWeight:800,cursor:"pointer",boxShadow:"0 8px 24px rgba(0,32,91,0.3)"}}>{T[lang].cta}</button>
       </div>
     </div>
   );
@@ -2507,32 +2755,45 @@ function LoginScreen({ onNext }) {
   );
 }
 
-function LeaderboardScreen({ onBack }) {
+function LeaderboardScreen({ onBack, tournamentStarted }) {
   const leaders = BOARD_LEADERS.global;
+  const top3 = leaders.filter(u=>u.rank<=3);
+  const me = leaders.find(u=>u.isMe);
+  const meInTop3 = me && me.rank<=3;
+
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG}}>
       <div style={{background:`linear-gradient(135deg,${NAVY},#001840)`,padding:"16px 20px 20px",flexShrink:0}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
           <div onClick={onBack} style={{width:36,height:36,borderRadius:10,background:"rgba(255,255,255,0.12)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:"#fff"}}>&#8249;</div>
           <div style={{textAlign:"center"}}>
-            <p style={{fontSize:10,color:RED,margin:0,letterSpacing:2,textTransform:"uppercase",fontWeight:800}}>FIFA</p>
+            <p style={{fontSize:10,color:RED,margin:0,letterSpacing:2,textTransform:"uppercase",fontWeight:800}}>FIFA WORLD CUP 2026</p>
             <span style={{fontSize:16,fontWeight:800,color:"#fff"}}>Clasament</span>
           </div>
           <div style={{width:36}}/>
         </div>
       </div>
-      <div style={{flex:1,overflowY:"auto",padding:"12px 20px"}}>
-        {leaders.map(u=>(
-          <div key={u.rank} style={{display:"flex",alignItems:"center",background:u.isMe?"#E8F0FF":u.accent||BG,borderRadius:14,padding:"11px 14px",gap:10,marginBottom:8,boxShadow:u.isMe?`0 0 0 2px ${NAVY},${SHADOW_OUT}`:SHADOW_OUT}}>
-            <span style={{fontSize:u.emoji?22:13,fontWeight:700,color:u.isMe?NAVY:"#aaa",width:28,textAlign:"center"}}>{u.emoji||`#${u.rank}`}</span>
-            <div style={{flex:1}}>
-              <span style={{fontSize:14,fontWeight:700,color:u.isMe?NAVY:DARK}}>{u.name}</span>
-              {u.prize&&<span style={{fontSize:11,color:"#D4820A",fontWeight:600,marginLeft:8}}>{u.prize}</span>}
+
+      {!tournamentStarted ? (
+        <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"0 32px",textAlign:"center"}}>
+          <span style={{fontSize:48,marginBottom:16}}>⏳</span>
+          <p style={{fontSize:18,fontWeight:800,color:DARK,margin:"0 0 8px"}}>Turneul nu a început</p>
+          <p style={{fontSize:13,color:"#aaa",lineHeight:1.5,margin:0}}>Clasamentul va fi disponibil după startul turneului pe 11 Iunie 2026. Fă-ți predicțiile acum!</p>
+        </div>
+      ) : (
+        <div style={{flex:1,overflowY:"auto",padding:"12px 20px"}}>
+          {leaders.map((u,i)=>(
+            <div key={u.rank} style={{display:"flex",alignItems:"center",background:u.isMe?"#E8F0FF":u.accent||BG,borderRadius:14,padding:"11px 14px",gap:10,marginBottom:8,boxShadow:u.isMe?`0 0 0 2px ${NAVY},${SHADOW_OUT}`:SHADOW_OUT}}>
+              <span style={{fontSize:u.emoji?22:13,fontWeight:700,color:u.isMe?NAVY:"#aaa",width:28,textAlign:"center"}}>{u.emoji||`#${u.rank}`}</span>
+              <div style={{flex:1}}>
+                <span style={{fontSize:14,fontWeight:700,color:u.isMe?NAVY:DARK}}>{u.name}</span>
+                {u.prize&&<span style={{fontSize:11,color:"#D4820A",fontWeight:600,marginLeft:8}}>{u.prize}</span>}
+              </div>
+              <span style={{fontSize:14,fontWeight:800,color:u.isMe?NAVY:DARK}}>{u.pts} pts</span>
             </div>
-            <span style={{fontSize:14,fontWeight:800,color:u.isMe?NAVY:DARK}}>{u.pts} pts</span>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -2665,7 +2926,8 @@ function ScorePicker({ match, day, savedScore, onSave, onBack }) {
   );
 }
 
-function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScoresProp }) {
+function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScoresProp, simDay, simHour=12, simMin=0 }) {
+  const LIVE_SCORES = computeLiveScores(simDay, simHour, simMin);
   const GROUPS_DATA = [
     { id:"A", teams:[{name:"Brazil",flag:"🇧🇷"},{name:"France",flag:"🇫🇷"},{name:"Mexico",flag:"🇲🇽"},{name:"Morocco",flag:"🇲🇦"}] },
     { id:"B", teams:[{name:"Argentina",flag:"🇦🇷"},{name:"England",flag:"🏴󠁧󠁢󠁥󠁧󠁿"},{name:"USA",flag:"🇺🇸"},{name:"Poland",flag:"🇵🇱"}] },
@@ -2680,9 +2942,15 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
   CALENDAR_EVENTS.forEach(e => { mm0[e.day] = e.matches; });
   // Find first day with matches in first week
   const firstMatchDay = Array.from({length:7},(_,i)=>8+i).find(d=>!!mm0[d]) || null;
-  const [weekStart, setWeekStart] = useState(8);
+  // Auto-select today if it has matches, else first match day
+  const todayDay = simDay || new Date().getDate();
+  const todayHasMatches = !!mm0[todayDay];
+  const defaultDay = todayHasMatches ? todayDay : firstMatchDay;
+  // Auto-select the week that contains today
+  const defaultWeek = [8,15,22,29].find(w=>todayDay>=w&&todayDay<=w+6) || 8;
+  const [weekStart, setWeekStart] = useState(defaultWeek);
   const [selGroup, setSelGroup] = useState(null);
-  const [selDay, setSelDay] = useState(firstMatchDay);
+  const [selDay, setSelDay] = useState(defaultDay);
   const [_scores, _setScores] = useState(scoresProp||{});
   const scores = scoresProp||_scores;
   const setScores = (updater) => {
@@ -2691,6 +2959,17 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
   };
   const [scorePick, setScorePick] = useState(null);
   const [showReal, setShowReal] = useState(true);
+  const [showStanding, setShowStanding] = useState(false);
+  const [pickerHome, setPickerHome] = useState(0);
+  const [pickerAway, setPickerAway] = useState(0);
+
+  useEffect(()=>{
+    if(scorePick){
+      const saved = scores[scorePick.key];
+      setPickerHome(saved?saved[0]:0);
+      setPickerAway(saved?saved[1]:0);
+    }
+  },[scorePick]);
   const weekIdx = weeks.indexOf(weekStart);
 
   const getGroupsForDays = (days) => {
@@ -2759,19 +3038,6 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
   });
   standing.sort((a,b)=>b.pts-a.pts||b.gd-a.gd||b.gf-a.gf);
 
-  // ScorePicker subscreen
-  if(scorePick) {
-    return (
-      <ScorePicker
-        match={scorePick.match}
-        day={scorePick.day}
-        savedScore={scores[scorePick.key]}
-        onSave={(h,a)=>{ setScores(s=>({...s,[scorePick.key]:[h,a]})); setScorePick(null); }}
-        onBack={()=>setScorePick(null)}
-      />
-    );
-  }
-
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden"}}>
       <div style={{background:`linear-gradient(135deg,${NAVY},#001840)`,padding:"14px 20px 16px",flexShrink:0}}>
@@ -2788,49 +3054,20 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
         {/* Weekly Calendar with clickable matches */}
         <WeeklyCalendar weekStart={weekStart} setWeekStart={handleWeekChange} weeks={weeks} weekIdx={weekIdx}
           selDay={selDay} onDaySelect={handleDaySelect} scores={scores}
-          onMatchClick={(match,day,idx)=>isWeekUnlocked(day)&&setScorePick({match,day,idx,key:`${day}-${idx}`})}/>
+          showStanding={showStanding} setShowStanding={setShowStanding}
+          selGroup={selGroup} setSelGroup={setSelGroup}
+          GROUPS_DATA={GROUPS_DATA} showReal={showReal} setShowReal={setShowReal}
+          standing={standing} isGroupLocked={isGroupLocked} simDay={simDay} simHour={simHour} simMin={simMin}
+          liveScores={LIVE_SCORES}
+          onMatchClick={(match,day,idx)=>{
+            if(!isWeekUnlocked(day, simDay, simHour, simMin)) return;
+            if(isMatchPast(day, match.time, simDay, simHour)) return;
+            setScorePick({match,day,idx,key:`${day}-${idx}`});
+          }}/>
 
-        {/* Group pills */}
-        <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"14px 0 8px"}}>
-          {selDay ? `Grupe · ${selDay} Iunie` : `Grupe · ${weekStart}–${Math.min(weekStart+6,30)} Iunie`}
-        </p>
-        <div style={{display:"flex",gap:6,marginBottom:14}}>
-          {GROUPS_DATA.map(g=>{
-            const locked = isGroupLocked(g.id);
-            const active = selGroup===g.id;
-            const hasMatchToday = highlightGroups.includes(g.id);
-            return (
-              <button key={g.id} onClick={()=>{
-                if(locked) return;
-                setSelGroup(g.id);
-                // Jump to first day this group plays
-                const firstDay = CALENDAR_EVENTS.find(e=>e.matches.some(m=>m.group===g.id))?.day;
-                if(firstDay) {
-                  // Find which week this day belongs to
-                  const targetWeek = weeks.find(w=>firstDay>=w&&firstDay<=w+6)||weeks[0];
-                  if(targetWeek!==weekStart) setWeekStart(targetWeek);
-                  setSelDay(firstDay);
-                }
-              }}
-                style={{flex:1,padding:"8px 0",borderRadius:10,border:"none",fontSize:13,fontWeight:800,
-                  cursor:locked?"default":"pointer",
-                  background:active?`linear-gradient(135deg,${NAVY},#001840)`:locked?"rgba(0,0,0,0.04)":BG,
-                  color:active?"#fff":locked?"#ccc":DARK,
-                  boxShadow:active?"0 3px 10px rgba(0,32,91,0.3)":locked?"none":SHADOW_OUT,
-                  transition:"all 0.2s",
-                  position:"relative"}}>
-                {locked ? <span style={{fontSize:10}}>🔒</span> : g.id}
-                {/* Green dot if has match today */}
-                {!locked && !active && hasMatchToday && selDay && (
-                  <div style={{position:"absolute",top:3,right:3,width:6,height:6,
-                    borderRadius:"50%",background:GREEN}}/>
-                )}
-              </button>
-            );
-          })}
-        </div>
 
-        {!isGroupLocked(selGroup) && (
+
+        {false && !isGroupLocked(selGroup) && (
           <>
             {/* Standing — real / predicted toggle */}
             {(()=>{
@@ -2897,10 +3134,19 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
                 const sc = scores[m.key];
                 const live = LIVE_SCORES[m.key];
                 const inCurrentWeek = weekDays.includes(m.day);
-                const isFinished = live?.status==="FT";
-                const isLive = live?.status==="LIVE";
-                const isNS = !live || live.status==="NS";
-                const hasLive = live && (live.home!==null);
+                // Compute status from sim time
+                const matchH = parseInt((m.time||"23:00").split(":")[0]);
+                const matchMin2 = parseInt((m.time||"00:00").split(":")[1]||0);
+                const nowDay2 = simDay || new Date().getDate();
+                const nowH2   = simDay!=null ? (simHour||0) : new Date().getHours();
+                const nowM2   = simDay!=null ? (simMin||0)  : new Date().getMinutes();
+                const nowMins2 = nowH2*60 + nowM2;
+                const kickMins2 = matchH*60 + matchMin2;
+                const isFinished = live?.status==="FT" || (m.day < nowDay2) || (m.day===nowDay2 && nowMins2 > kickMins2+115);
+                const isLive = !isFinished && (live?.status==="LIVE" || (m.day===nowDay2 && nowMins2>=kickMins2 && nowMins2<=kickMins2+115));
+                const isNS = !isFinished && !isLive;
+                const liveMin = isLive ? Math.min(90, nowMins2-kickMins2) : 0;
+                const hasLive = live && live.home !== undefined && live.home !== null;
 
                 // Check prediction accuracy
                 let exactMatch = false, resultMatch = false;
@@ -2916,14 +3162,14 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
                     {/* Status bar */}
                     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",
                       padding:"5px 12px",
-                      background:isLive?"rgba(200,16,46,0.08)":isFinished?"rgba(0,154,68,0.06)":"rgba(0,0,0,0.03)"}}>
+                      background:isLive?"rgba(0,32,91,0.06)":isFinished?"rgba(0,154,68,0.06)":"rgba(0,0,0,0.03)"}}>
                       <span style={{fontSize:9,color:"#aaa",fontWeight:600}}>{m.day} Iunie · {m.time}</span>
                       {isLive&&<span style={{fontSize:9,fontWeight:800,color:RED,display:"flex",alignItems:"center",gap:3}}>
                         <span style={{width:6,height:6,borderRadius:"50%",background:RED,display:"inline-block"}}/>
-                        LIVE {live.min}'
+                        LIVE {liveMin}'
                       </span>}
                       {isFinished&&<span style={{fontSize:9,fontWeight:700,color:GREEN}}>FT</span>}
-                      {isNS&&<span style={{fontSize:9,fontWeight:600,color:"#bbb"}}>Neînceput</span>}
+                      {isNS&&<span style={{fontSize:9,fontWeight:600,color:"#bbb"}}>Not Started</span>}
                     </div>
 
                     {/* Main match row */}
@@ -2935,43 +3181,46 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
                           <span style={{fontSize:11,fontWeight:600,color:DARK}}>{m.home.length>8?m.home.split(" ")[0]:m.home}</span>
                         </div>
 
-                        {/* Scores */}
-                        <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
-                          {/* Live score */}
-                          <div style={{
-                            background:isLive?RED:isFinished?`linear-gradient(135deg,${NAVY},#001840)`:"rgba(0,0,0,0.06)",
-                            borderRadius:8,padding:"4px 12px",minWidth:52,textAlign:"center"}}>
-                            <span style={{fontSize:14,fontWeight:900,color:hasLive?"#fff":"#ddd"}}>
-                              {hasLive ? `${live.home}-${live.away}` : "-"}
-                            </span>
-                          </div>
-                          {/* Prediction */}
-                          {sc ? (
-                            <div style={{display:"flex",alignItems:"center",gap:4}}>
-                              <span style={{fontSize:9,color:"#aaa"}}>Tu:</span>
-                              <div style={{background:exactMatch?"rgba(0,154,68,0.12)":resultMatch?"rgba(0,32,91,0.08)":"rgba(0,0,0,0.05)",
-                                borderRadius:6,padding:"2px 8px",display:"flex",alignItems:"center",gap:4}}>
-                                <span style={{fontSize:11,fontWeight:700,
-                                  color:exactMatch?GREEN:resultMatch?NAVY:"#888"}}>
-                                  {sc[0]}-{sc[1]}
-                                </span>
-                                {isFinished&&(exactMatch
-                                  ? <span style={{fontSize:10}}>🎯</span>
-                                  : resultMatch
-                                    ? <span style={{fontSize:10}}>✓</span>
-                                    : <span style={{fontSize:10,color:"#ccc"}}>✗</span>
-                                )}
-                              </div>
-                            </div>
-                          ) : isWeekUnlocked(m.day) ? (
-                            <div onClick={()=>setScorePick({match:m,day:m.day,idx:m.idx,key:m.key})}
-                              style={{background:"rgba(0,32,91,0.06)",borderRadius:6,padding:"2px 10px",cursor:"pointer"}}>
-                              <span style={{fontSize:10,color:NAVY,fontWeight:700}}>+ predicție</span>
+                        {/* Scores — compact single center block */}
+                        {(()=>{
+                          const isPast = isMatchPast(m.day, m.time, simDay, simHour);
+                          const canPredict = !isLive && !isFinished && !isPast && isWeekUnlocked(m.day, simDay, simHour, simMin);
+                          const scoreDisplay = isLive ? (hasLive?`${live.home}-${live.away}`:"0-0") : hasLive ? `${live.home}-${live.away}` : "-";
+                          const predBox = (isPast||isLive||isFinished) ? (sc ? (
+                            <div style={{background:exactMatch?`linear-gradient(135deg,${GREEN},#007A36)`:resultMatch?`linear-gradient(135deg,${NAVY},#001840)`:`linear-gradient(135deg,${RED},#EF3340)`,
+                              borderRadius:6,padding:"3px 8px",display:"flex",alignItems:"center",gap:3}}>
+                              <span style={{fontSize:11,fontWeight:900,color:"#fff"}}>{sc[0]}-{sc[1]}</span>
+                              {isFinished&&(exactMatch?<span style={{fontSize:9}}>🎯</span>:resultMatch?<span style={{fontSize:9}}>✓</span>:<span style={{fontSize:9}}>✗</span>)}
                             </div>
                           ) : (
-                            <span style={{fontSize:10,color:"#ccc"}}>🔒</span>
-                          )}
-                        </div>
+                            <div style={{background:"rgba(0,0,0,0.06)",borderRadius:6,padding:"3px 8px"}}>
+                              <span style={{fontSize:11,fontWeight:700,color:"#ccc"}}>?-?</span>
+                            </div>
+                          )) : canPredict ? (
+                            <div onClick={()=>setScorePick({match:m,day:m.day,idx:m.idx,key:m.key})}
+                              style={{background:`linear-gradient(135deg,${RED},${GREEN})`,borderRadius:6,padding:"3px 8px",cursor:"pointer"}}>
+                              <span style={{fontSize:10,color:"#fff",fontWeight:700}}>+ scor</span>
+                            </div>
+                          ) : (
+                            <div style={{background:"rgba(0,0,0,0.06)",borderRadius:6,padding:"3px 8px"}}>
+                              <span style={{fontSize:11,color:"#ccc"}}>🔒</span>
+                            </div>
+                          );
+                          return (
+                            <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,minWidth:70}}>
+                              {/* Real score */}
+                              <div style={{background:isLive||isFinished?`linear-gradient(135deg,${NAVY},#001840)`:"rgba(0,0,0,0.06)",
+                                borderRadius:8,padding:"5px 12px",width:"100%",textAlign:"center"}}>
+                                <span style={{fontSize:14,fontWeight:900,color:isLive||hasLive?"#fff":"#bbb"}}>{scoreDisplay}</span>
+                              </div>
+                              {/* Prediction */}
+                              <div style={{display:"flex",alignItems:"center",gap:4}}>
+                                <span style={{fontSize:8,color:"#bbb",fontWeight:600}}>tu:</span>
+                                {predBox}
+                              </div>
+                            </div>
+                          );
+                        })()}
 
                         {/* Away */}
                         <div style={{flex:1,display:"flex",alignItems:"center",gap:6,justifyContent:"flex-end"}}>
@@ -2981,12 +3230,12 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
                       </div>
 
                       {/* Points earned */}
-                      {isFinished && sc && (
+                      {(isFinished || isMatchPast(m.day, m.time, simDay, simHour)) && (
                         <div style={{marginTop:6,display:"flex",justifyContent:"center"}}>
-                          <div style={{background:exactMatch?"rgba(0,154,68,0.1)":resultMatch?"rgba(0,32,91,0.07)":"rgba(0,0,0,0.03)",
+                          <div style={{background:exactMatch?"rgba(0,154,68,0.1)":resultMatch?"rgba(0,32,91,0.07)":"rgba(200,16,46,0.08)",
                             borderRadius:20,padding:"3px 12px",display:"flex",alignItems:"center",gap:6}}>
                             <span style={{fontSize:10,fontWeight:700,
-                              color:exactMatch?GREEN:resultMatch?NAVY:"#bbb"}}>
+                              color:exactMatch?GREEN:resultMatch?NAVY:RED}}>
                               {exactMatch?"🎯 +90 pts · Scor exact":resultMatch?"✓ +30 pts · Rezultat corect":"✗ +0 pts"}
                             </span>
                           </div>
@@ -2995,7 +3244,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
                     </div>
 
                     {/* Edit prediction */}
-                    {sc && isWeekUnlocked(m.day) && (
+                    {!isMatchPast(m.day, m.time, simDay, simHour) && !isLive && !isFinished && sc && isWeekUnlocked(m.day, simDay, simHour, simMin) && (
                       <div onClick={()=>setScorePick({match:m,day:m.day,idx:m.idx,key:m.key})}
                         style={{padding:"6px 12px",borderTop:"1px solid rgba(0,0,0,0.05)",
                           display:"flex",alignItems:"center",justifyContent:"center",gap:4,cursor:"pointer"}}>
@@ -3009,18 +3258,82 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
           </>
         )}
       </div>
+
+      {/* Score Picker Modal */}
+      {scorePick&&(
+        <div style={{position:"fixed",inset:0,zIndex:100,display:"flex",flexDirection:"column",justifyContent:"flex-end"}}
+          onClick={()=>setScorePick(null)}>
+          <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.5)"}}/>
+          <div onClick={e=>e.stopPropagation()}
+            style={{position:"relative",background:"#1C1C1E",borderRadius:"20px 20px 0 0",padding:"0 0 34px",zIndex:1}}>
+            <div style={{display:"flex",justifyContent:"center",padding:"10px 0 0"}}>
+              <div style={{width:36,height:4,borderRadius:2,background:"rgba(255,255,255,0.2)"}}/>
+            </div>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 20px 8px"}}>
+              <button onClick={()=>setScorePick(null)}
+                style={{background:"rgba(255,255,255,0.1)",border:"none",borderRadius:10,padding:"6px 14px",color:"rgba(255,255,255,0.6)",fontSize:13,cursor:"pointer"}}>
+                Anulează
+              </button>
+              <div style={{textAlign:"center"}}>
+                <div style={{display:"flex",alignItems:"center",gap:10}}>
+                  <span style={{fontSize:26}}>{scorePick.match.homeFlag}</span>
+                  <span style={{fontSize:11,fontWeight:700,color:"rgba(255,255,255,0.4)"}}>VS</span>
+                  <span style={{fontSize:26}}>{scorePick.match.awayFlag}</span>
+                </div>
+                <p style={{fontSize:10,color:"rgba(255,255,255,0.35)",margin:"2px 0 0"}}>{scorePick.match.home} · {scorePick.match.away}</p>
+              </div>
+              <button onClick={()=>{ setScores(s=>({...s,[scorePick.key]:[pickerHome,pickerAway]})); setScorePick(null); }}
+                style={{background:"#FF9500",border:"none",borderRadius:10,padding:"6px 14px",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer"}}>
+                ✓ Save
+              </button>
+            </div>
+            <div style={{textAlign:"center",padding:"4px 0 8px"}}>
+              <span style={{fontSize:38,fontWeight:900,color:"#fff",letterSpacing:6}}>{pickerHome} - {pickerAway}</span>
+            </div>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"center",padding:"0 20px",position:"relative"}}>
+              <div style={{position:"absolute",left:20,right:20,top:"50%",transform:"translateY(-50%)",height:52,background:"rgba(255,255,255,0.08)",borderRadius:12,pointerEvents:"none"}}/>
+              <div style={{flex:1,height:200,overflowY:"auto",scrollSnapType:"y mandatory",scrollbarWidth:"none",WebkitOverflowScrolling:"touch"}}
+                onScroll={e=>setPickerHome(Math.max(0,Math.min(9,Math.round(e.target.scrollTop/52))))}>
+                <div style={{height:74}}/>
+                {[0,1,2,3,4,5,6,7,8,9].map(n=>(
+                  <div key={n} style={{height:52,display:"flex",alignItems:"center",justifyContent:"center",scrollSnapAlign:"center"}}>
+                    <span style={{fontSize:30,fontWeight:700,color:pickerHome===n?"#fff":"rgba(255,255,255,0.2)"}}>{n}</span>
+                  </div>
+                ))}
+                <div style={{height:74}}/>
+              </div>
+              <span style={{fontSize:34,fontWeight:900,color:"rgba(255,255,255,0.4)",padding:"0 20px",flexShrink:0}}>-</span>
+              <div style={{flex:1,height:200,overflowY:"auto",scrollSnapType:"y mandatory",scrollbarWidth:"none",WebkitOverflowScrolling:"touch"}}
+                onScroll={e=>setPickerAway(Math.max(0,Math.min(9,Math.round(e.target.scrollTop/52))))}>
+                <div style={{height:74}}/>
+                {[0,1,2,3,4,5,6,7,8,9].map(n=>(
+                  <div key={n} style={{height:52,display:"flex",alignItems:"center",justifyContent:"center",scrollSnapAlign:"center"}}>
+                    <span style={{fontSize:30,fontWeight:700,color:pickerAway===n?"#fff":"rgba(255,255,255,0.2)"}}>{n}</span>
+                  </div>
+                ))}
+                <div style={{height:74}}/>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDaySelect, scores, onMatchClick }) {
+function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDaySelect, scores, onMatchClick, showStanding, setShowStanding, selGroup, setSelGroup, GROUPS_DATA, showReal, setShowReal, standing, isGroupLocked, simDay, simHour=12, simMin=0, liveScores }) {
+  const LIVE_SCORES = liveScores || LIVE_SCORES_DEFAULT;
+  const [collapsedGroups, setCollapsedGroups] = useState({});
   const mm = {};
   CALENDAR_EVENTS.forEach(e => { mm[e.day] = e.matches; });
   const dl = ["L","M","M","J","V","S","D"];
-  const days = Array.from({length:7},(_,i)=>weekStart+i).filter(d=>d>=1&&d<=30);
+  const days = Array.from({length:14},(_,i)=>weekStart+i).filter(d=>d>=1&&d<=30);
   const sel = selDay;
   const sm = sel ? mm[sel] : null;
-  const weekLabel = `${weekStart} – ${Math.min(weekStart+6,30)} Iunie`;
+  const nextWeekStart = weeks[weekIdx+1];
+  const weekLabel = nextWeekStart
+    ? `${weekStart} – ${Math.min(weekStart+13,30)} Iunie`
+    : `${weekStart} – ${Math.min(weekStart+6,30)} Iunie`;
 
   return (
     <div style={{marginBottom:4}}>
@@ -3033,7 +3346,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
           <p style={{fontSize:13,fontWeight:700,color:DARK,margin:0}}>{weekLabel}</p>
           <span style={{fontSize:10,color:NAVY,fontWeight:700}}>Iunie 2026 · FIFA WC</span>
         </div>
-        <button onClick={()=>weekIdx<weeks.length-1&&setWeekStart(weeks[weekIdx+1])}
+        <button onClick={()=>weekIdx+2<weeks.length?setWeekStart(weeks[weekIdx+2]):weekIdx<weeks.length-1&&setWeekStart(weeks[weekIdx+1])}
           style={{width:30,height:30,borderRadius:"50%",border:"none",background:weekIdx<weeks.length-1?BG:"transparent",
             boxShadow:weekIdx<weeks.length-1?SHADOW_OUT:"none",cursor:weekIdx<weeks.length-1?"pointer":"default",
             fontSize:16,color:weekIdx<weeks.length-1?DARK:"#ddd",display:"flex",alignItems:"center",justifyContent:"center"}}>›</button>
@@ -3047,14 +3360,24 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
       <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:4,marginBottom:4}}>
         {dl.map((d,i)=><div key={i} style={{textAlign:"center",fontSize:10,fontWeight:700,color:i===6?RED:"#bbb"}}>{d}</div>)}
       </div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:4}}>
-        {days.map((day,i)=>{
+      {[0,1].map(week=>(
+      <div key={week} style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:4,marginBottom:4}}>
+        {days.slice(week*7,(week+1)*7).map((day,i)=>{
           const isS=day===11,has=!!mm[day],isSel=sel===day,isSun=i%7===6;
-          const locked = has && !isWeekUnlocked(day);
+          const today = simDay || new Date().getDate();
+          const isPast = has && day < today;
+          const isToday2 = day === today;
+          const locked = has && !isWeekUnlocked(day, simDay, simHour, simMin);
+          const dayMatches = mm[day]||[];
+          const allPredicted = has && !locked && !isPast && dayMatches.length>0 && dayMatches.every((_,idx)=>scores&&scores[`${day}-${idx}`]);
           let bg="transparent",border="1.5px solid transparent",shadow="none";
           let tc=isSun?RED:"#777",fw=400;
-          if(isSel){bg=`linear-gradient(135deg,${NAVY},#001840)`;shadow="0 3px 10px rgba(0,32,91,0.35)";tc="#fff";fw=800;}
-          else if(isS){bg="#E8F0FF";border=`1.5px solid ${NAVY}`;tc=NAVY;fw=800;}
+          if(isSel&&allPredicted&&!isPast){bg=`linear-gradient(135deg,${GREEN},#007A36)`;shadow="0 3px 10px rgba(0,154,68,0.3)";tc="#fff";fw=800;border=`2px solid #fff`;}
+          else if(isSel&&isPast){bg="rgba(0,0,0,0.08)";border="1.5px solid #ccc";tc="#888";fw=800;}
+          else if(isSel){bg=`linear-gradient(135deg,${NAVY},#001840)`;shadow="0 3px 10px rgba(0,32,91,0.35)";tc="#fff";fw=800;}
+          else if(allPredicted){bg=`linear-gradient(135deg,${GREEN},#007A36)`;shadow="0 3px 10px rgba(0,154,68,0.3)";tc="#fff";fw=800;}
+          else if(isToday2&&has){bg="#E8F0FF";border=`1.5px solid ${NAVY}`;tc=NAVY;fw=800;}
+          else if(isPast&&has){fw=700;tc="#ccc";}
           else if(has&&!locked){fw=700;tc=DARK;}
           else if(locked){tc="#bbb";}
           return (
@@ -3064,83 +3387,298 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                 cursor:has?"pointer":"default",background:bg,border,boxShadow:shadow,transition:"all 0.15s",
                 opacity:locked?0.6:1}}>
               <span style={{fontSize:13,fontWeight:fw,color:tc,lineHeight:1}}>{day}</span>
-              {has&&!isSel&&!locked&&<div style={{width:4,height:4,borderRadius:"50%",background:isS?NAVY:RED,marginTop:3}}/>}
+              {has&&!isSel&&!allPredicted&&!locked&&<div style={{width:4,height:4,borderRadius:"50%",background:isPast?"#ccc":isS?NAVY:RED,marginTop:3}}/>}
               {has&&!isSel&&locked&&<span style={{fontSize:8,lineHeight:1,marginTop:2}}>🔒</span>}
-              {isS&&!isSel&&<div style={{position:"absolute",top:-6,right:-2,background:RED,borderRadius:4,padding:"1px 4px",fontSize:7,fontWeight:800,color:"#fff"}}>START</div>}
+              {isS&&!isSel&&!allPredicted&&<div style={{position:"absolute",top:-6,right:-2,background:RED,borderRadius:4,padding:"1px 4px",fontSize:7,fontWeight:800,color:"#fff"}}>START</div>}
             </div>
           );
         })}
       </div>
+      ))}
       {sm&&(
-        <div style={{marginTop:10,background:BG,borderRadius:14,boxShadow:SHADOW_OUT,overflow:"hidden"}}>
-          <div style={{background:`linear-gradient(135deg,${NAVY},#001840)`,padding:"8px 14px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-            <span style={{fontSize:12,fontWeight:800,color:"#fff"}}>{sel} Iunie · {sm.length} meciuri</span>
-            <span onClick={()=>onDaySelect&&onDaySelect(sel)} style={{fontSize:18,color:"rgba(255,255,255,0.5)",cursor:"pointer",padding:"0 4px",lineHeight:1}}>✕</span>
-          </div>
-          {sm.map((m,i)=>{
-            const key=`${sel}-${i}`;
-            const sc = scores&&scores[key];
-            const live = LIVE_SCORES[key];
-            const isLive = live?.status==="LIVE";
-            const isFT = live?.status==="FT";
-            const hasScore = live && live.home!==null;
-            const exactMatch = sc&&hasScore&&isFT&&sc[0]===live.home&&sc[1]===live.away;
-            const predRes = sc?sc[0]>sc[1]?"H":sc[0]<sc[1]?"A":"D":null;
-            const realRes = hasScore?live.home>live.away?"H":live.home<live.away?"A":"D":null;
-            const resultMatch = predRes&&realRes&&predRes===realRes&&isFT;
-            const pts = exactMatch?90:resultMatch?30:0;
+        <div style={{marginTop:10}}>
+          {(()=>{
+            const groups = [...new Set(sm.map(m=>m.group))].filter(Boolean);
+            const activeGrp = selGroup || groups[0];
             return (
-              <div key={i} style={{borderBottom:i<sm.length-1?"1px solid rgba(0,0,0,0.06)":"none",background:"#fff"}}>
-                {/* Match header */}
-                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",
-                  padding:"4px 14px",background:isLive?"rgba(200,16,46,0.06)":isFT?"rgba(0,154,68,0.05)":"rgba(0,0,0,0.02)"}}>
-                  <span style={{fontSize:9,fontWeight:600,color:"#aaa"}}>{m.time} · Gr.{m.group}</span>
-                  {isLive&&<span style={{fontSize:9,fontWeight:800,color:RED,display:"flex",alignItems:"center",gap:3}}>
-                    <span style={{width:5,height:5,borderRadius:"50%",background:RED,display:"inline-block",animation:"pulse 1s infinite"}}/>
-                    LIVE {live.min}'
-                  </span>}
-                  {isFT&&<span style={{fontSize:9,fontWeight:700,color:GREEN}}>FT</span>}
-                  {!hasScore&&!isLive&&<span style={{fontSize:9,color:"#ccc"}}>Neînceput</span>}
-                </div>
-                {/* Match row */}
-                <div onClick={()=>onMatchClick&&onMatchClick(m,sel,i)}
-                  style={{display:"flex",alignItems:"center",padding:"10px 14px",cursor:"pointer",gap:6}}>
-                  {/* Home */}
-                  <span style={{fontSize:18,flexShrink:0}}>{m.homeFlag}</span>
-                  <span style={{flex:1,fontSize:11,fontWeight:600,color:DARK}}>{m.home.length>7?m.home.split(" ")[0]:m.home}</span>
-                  {/* Center */}
-                  <div style={{flexShrink:0,display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
-                    <div style={{background:isLive?RED:hasScore?`linear-gradient(135deg,${NAVY},#001840)`:"rgba(0,0,0,0.08)",borderRadius:6,padding:"4px 10px",minWidth:54,textAlign:"center"}}>
-                      <span style={{fontSize:13,fontWeight:900,color:hasScore?"#fff":"#bbb"}}>{hasScore?`${live.home}-${live.away}`:"-"}</span>
-                    </div>
-                    {sc ? (
-                      <span style={{fontSize:9,fontWeight:700,color:exactMatch?GREEN:resultMatch?NAVY:"#999"}}>
-                        tu: {sc[0]}-{sc[1]}{isFT?(exactMatch?" 🎯":resultMatch?" ✓":" ✗"):""}
-                      </span>
-                    ) : (
-                      isWeekUnlocked(sel||0)
-                        ? <span style={{fontSize:9,color:NAVY,fontWeight:700}}>+ predicție</span>
-                        : <span style={{fontSize:9,color:"#bbb"}}>🔒</span>
-                    )}
-                  </div>
-                  {/* Away */}
-                  <span style={{flex:1,fontSize:11,fontWeight:600,color:DARK,textAlign:"right"}}>{m.away.length>7?m.away.split(" ")[0]:m.away}</span>
-                  <span style={{fontSize:18,flexShrink:0}}>{m.awayFlag}</span>
-                </div>
-                {/* Points pill */}
-                {isFT&&sc&&(
-                  <div style={{padding:"4px 14px 8px",display:"flex",justifyContent:"center"}}>
-                    <div style={{background:exactMatch?"rgba(0,154,68,0.1)":resultMatch?"rgba(0,32,91,0.07)":"rgba(0,0,0,0.04)",
-                      borderRadius:20,padding:"3px 14px"}}>
-                      <span style={{fontSize:10,fontWeight:700,color:exactMatch?GREEN:resultMatch?NAVY:"#bbb"}}>
-                        {exactMatch?"🎯 +90 pts · Scor exact":resultMatch?"✓ +30 pts · Rezultat corect":"✗ +0 pts · Greșit"}
-                      </span>
+              <div style={{background:BG,borderRadius:14,boxShadow:SHADOW_OUT,overflow:"hidden"}}>
+                {/* Header */}
+                <div style={{background:`linear-gradient(135deg,${NAVY},#001840)`,padding:"8px 14px 0"}}>
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+                    <span style={{fontSize:12,fontWeight:800,color:"#fff"}}>{sel} Iunie · {sm.length} meciuri</span>
+                    <div style={{display:"flex",background:"rgba(255,255,255,0.12)",borderRadius:20,padding:"2px",gap:0}}>
+                      <button onClick={()=>setShowStanding(false)}
+                        style={{padding:"4px 10px",borderRadius:18,border:"none",cursor:"pointer",fontSize:10,fontWeight:700,
+                          background:!showStanding?"rgba(255,255,255,0.95)":"transparent",
+                          color:!showStanding?NAVY:"rgba(255,255,255,0.6)",transition:"all 0.2s"}}>
+                        ⚽ Meciuri
+                      </button>
+                      <button onClick={()=>setShowStanding(true)}
+                        style={{padding:"4px 10px",borderRadius:18,border:"none",cursor:"pointer",fontSize:10,fontWeight:700,
+                          background:showStanding?"rgba(255,255,255,0.95)":"transparent",
+                          color:showStanding?NAVY:"rgba(255,255,255,0.6)",transition:"all 0.2s"}}>
+                        📊 Standing
+                      </button>
                     </div>
                   </div>
+                  <div style={{height:1,background:"rgba(255,255,255,0.2)",marginTop:4}}/>
+                  {showStanding && <>
+                    {/* All groups slider A-L */}
+                    <div style={{display:"flex",gap:6,overflowX:"auto",scrollbarWidth:"none",padding:"10px 0"}}>
+                      {["A","B","C","D","E","F","G","H","I","J","K","L"].map(g=>{
+                        const hasMatchToday = groups.includes(g);
+                        const isActive = activeGrp===g;
+                        return (
+                          <div key={g} onClick={()=>setSelGroup(g)}
+                            style={{flexShrink:0,display:"flex",flexDirection:"column",alignItems:"center",gap:3,cursor:"pointer"}}>
+                            <div style={{
+                              width:isActive?42:36, height:isActive?42:36,
+                              borderRadius:"50%",
+                              background:isActive?"rgba(255,255,255,0.95)":hasMatchToday?"rgba(255,255,255,0.18)":"rgba(255,255,255,0.07)",
+                              border:isActive?"3px solid #fff":"none",
+                              display:"flex",alignItems:"center",justifyContent:"center",
+                              fontSize:isActive?14:12,fontWeight:800,
+                              color:isActive?NAVY:"#fff",
+                              boxShadow:isActive?"0 4px 14px rgba(0,0,0,0.25)":"none",
+                              transition:"all 0.2s",position:"relative"}}>
+                              {g}
+                              {hasMatchToday&&<div style={{position:"absolute",bottom:2,left:"50%",transform:"translateX(-50%)",width:5,height:5,borderRadius:"50%",background:`linear-gradient(135deg,${RED},${GREEN})`}}/>}
+                            </div>
+
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div style={{height:1,background:"rgba(255,255,255,0.15)"}}/>
+                  </>}
+                </div>
+
+                {showStanding ? (
+                  /* Standing panel */
+                  <div style={{padding:"12px 14px"}}>
+                    {/**/}
+                    {/* Standing table */}
+                    {(()=>{
+                      const cur2 = GROUPS_DATA.find(g=>g.id===activeGrp)||GROUPS_DATA[0];
+
+                      // Helper to compute standing from a score source
+                      const computeStanding = (getScore) => {
+                        const st = cur2.teams.map(t=>({...t,pts:0,gf:0,ga:0,gd:0,p:0}));
+                        CALENDAR_EVENTS.forEach(e=>{
+                          e.matches.forEach((m,idx)=>{
+                            if(m.group!==activeGrp) return;
+                            const sc = getScore(e.day, idx);
+                            if(!sc) return;
+                            const [h,a]=sc;
+                            const home=st.find(t=>t.name===m.home);
+                            const away=st.find(t=>t.name===m.away);
+                            if(!home||!away) return;
+                            home.gf+=h;home.ga+=a;home.gd+=h-a;home.p++;
+                            away.gf+=a;away.ga+=h;away.gd+=a-h;away.p++;
+                            if(h>a)home.pts+=3;else if(h===a){home.pts+=1;away.pts+=1;}else away.pts+=3;
+                          });
+                        });
+                        st.sort((a,b)=>b.pts-a.pts||b.gd-a.gd||b.gf-a.gf);
+                        return st;
+                      };
+
+                      // Real standing — from liveScores (FT matches with real scores)
+                      const realRows = computeStanding((day,idx)=>{
+                        const live = LIVE_SCORES[`${day}-${idx}`];
+                        if(!live || live.status!=="FT" || live.home===null || live.home===undefined) return null;
+                        return [live.home, live.away];
+                      });
+
+                      // Predicted standing — from user scores
+                      const predRows = computeStanding((day,idx)=>{
+                        return scores&&scores[`${day}-${idx}`]||null;
+                      });
+
+                      const rows2 = showReal ? realRows : predRows;
+                      return (<>
+                        <div style={{display:"flex",justifyContent:"flex-end",marginBottom:8}}>
+                          <div style={{display:"flex",background:BG,borderRadius:8,boxShadow:SHADOW_IN,padding:2,gap:2}}>
+                            <button onClick={()=>setShowReal(true)} style={{padding:"3px 10px",borderRadius:6,border:"none",fontSize:10,fontWeight:700,cursor:"pointer",background:showReal?`linear-gradient(135deg,${NAVY},#001840)`:BG,color:showReal?"#fff":"#888"}}>Real</button>
+                            <button onClick={()=>setShowReal(false)} style={{padding:"3px 10px",borderRadius:6,border:"none",fontSize:10,fontWeight:700,cursor:"pointer",background:!showReal?`linear-gradient(135deg,${NAVY},#001840)`:BG,color:!showReal?"#fff":"#888"}}>Prezis</button>
+                          </div>
+                        </div>
+                        <div style={{borderRadius:10,overflow:"hidden",boxShadow:SHADOW_OUT,marginBottom:12}}>
+                          <div style={{display:"flex",padding:"5px 10px",background:"rgba(0,0,0,0.04)"}}>
+                            <span style={{fontSize:9,fontWeight:700,color:"#bbb",width:20}}>#</span>
+                            <span style={{flex:1,fontSize:9,fontWeight:700,color:"#bbb"}}>Echipă</span>
+                            {["J","GF","GA","GD","Pts"].map(h=><span key={h} style={{fontSize:9,fontWeight:700,color:"#bbb",width:26,textAlign:"center"}}>{h}</span>)}
+                          </div>
+                          {rows2.map((t,i)=>(
+                            <div key={t.name} style={{display:"flex",alignItems:"center",padding:"8px 10px",background:"#fff",borderBottom:i<rows2.length-1?"1px solid rgba(0,0,0,0.05)":"none"}}>
+                              <span style={{fontSize:11,fontWeight:800,color:i<2?NAVY:"#bbb",width:20}}>{i+1}</span>
+                              <span style={{fontSize:16,marginRight:4}}>{t.flag}</span>
+                              <span style={{flex:1,fontSize:11,fontWeight:600,color:DARK}}>{t.name.length>8?t.name.split(" ")[0]:t.name}</span>
+                              <span style={{fontSize:11,color:"#888",width:26,textAlign:"center"}}>{t.p||0}</span>
+                              <span style={{fontSize:11,color:"#888",width:26,textAlign:"center"}}>{t.gf||0}</span>
+                              <span style={{fontSize:11,color:"#888",width:26,textAlign:"center"}}>{t.ga||0}</span>
+                              <span style={{fontSize:11,color:(t.gd||0)>0?GREEN:(t.gd||0)<0?RED:"#888",width:26,textAlign:"center"}}>{(t.gd||0)>0?"+":(t.gd||0)<0?"-":""}{Math.abs(t.gd||0)}</span>
+                              <span style={{fontSize:12,fontWeight:800,color:NAVY,width:26,textAlign:"center"}}>{t.pts||0}</span>
+                            </div>
+                          ))}
+                        </div>
+                        {/* Matches for this group */}
+                        <p style={{fontSize:10,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 8px"}}>Toate meciurile · Gr.{activeGrp}</p>
+                        <div style={{borderRadius:10,overflow:"hidden",boxShadow:SHADOW_OUT}}>
+                          {(()=>{
+                            const allGM = [];
+                            CALENDAR_EVENTS.forEach(e=>{
+                              e.matches.forEach((m,idx)=>{
+                                if(m.group===activeGrp) allGM.push({...m,day:e.day,_i:idx,key:`${e.day}-${idx}`});
+                              });
+                            });
+                            return allGM.map((m,idx2)=>{
+                              const sc2=scores&&scores[m.key];
+                              const live2=LIVE_SCORES[m.key];
+                              // Compute status from sim time directly
+                              const _mH=parseInt((m.time||"23:00").split(":")[0]);
+                              const _mM=parseInt((m.time||"00:00").split(":")[1]||0);
+                              const _nd=simDay||new Date().getDate();
+                              const _nh=simDay!=null?(simHour||0):new Date().getHours();
+                              const _nm=simDay!=null?(simMin||0):new Date().getMinutes();
+                              const _kick=_mH*60+_mM, _now=_nh*60+_nm;
+                              const isFT2 = m.day<_nd || (m.day===_nd && _now>_kick+115);
+                              const isLive2 = !isFT2 && m.day===_nd && _now>=_kick && _now<=_kick+115;
+                              const liveScore2 = live2&&live2.home!==null&&live2.home!==undefined ? live2 : (isLive2?{home:0,away:0}:null);
+                              const hasScore2 = !!liveScore2;
+                              const matchHourM=parseInt((m.time||"23:00").split(":")[0]);
+                              const nowDM = simDay || new Date().getDate();
+                              const nowHM = simDay ? (simHour||0) : new Date().getHours();
+                              const isPastM = m.day < nowDM || (m.day === nowDM && matchHourM <= nowHM);
+                              const canEdit=!isLive2&&!isFT2&&!isPastM&&isWeekUnlocked(m.day,simDay,simHour,simMin);
+                              return (
+                                <div key={idx2} style={{background:"#fff",borderBottom:idx2<allGM.length-1?"1px solid rgba(0,0,0,0.05)":"none",
+                                  padding:"10px 14px",display:"flex",alignItems:"center",gap:8}}
+                                  onClick={()=>canEdit&&onMatchClick&&onMatchClick(m,m.day,m._i)}>
+                                  <span style={{fontSize:18}}>{m.homeFlag}</span>
+                                  <span style={{flex:1,fontSize:12,fontWeight:600,color:isPastM?"#bbb":DARK}}>{m.home.length>7?m.home.split(" ")[0]:m.home}</span>
+                                  <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
+                                    <span style={{fontSize:9,fontWeight:600,color:"#bbb"}}>{m.day} Iun · {m.time}</span>
+                                    {isPastM?<span style={{fontSize:7,color:"#ccc",fontWeight:700}}>Terminat</span>
+                                      :isLive2?<span style={{fontSize:7,fontWeight:800,color:RED,animation:"blink 1s infinite"}}>● LIVE</span>
+                                      :<span style={{fontSize:7,color:"#bbb",fontWeight:700}}>{isFT2?"Final":"● Live"}</span>}
+                                    <div style={{background:hasScore2?`linear-gradient(135deg,${NAVY},#001840)`:"rgba(0,0,0,0.07)",borderRadius:6,padding:"3px 10px",minWidth:46,textAlign:"center"}}>
+                                      <span style={{fontSize:12,fontWeight:900,color:hasScore2?"#fff":"#bbb"}}>{hasScore2?`${liveScore2.home}-${liveScore2.away}`:"-"}</span>
+                                    </div>
+                                    <span style={{fontSize:7,fontWeight:700,color:"#bbb",textTransform:"uppercase",letterSpacing:0.5}}>Predicție</span>
+                                    {!isWeekUnlocked(m.day,simDay,simHour,simMin)?<span style={{fontSize:10,color:"#ccc"}}>🔒</span>
+                                      :sc2?<div style={{background:canEdit?`rgba(0,32,91,0.1)`:"rgba(0,0,0,0.06)",border:canEdit?`1.5px solid ${NAVY}`:"none",borderRadius:6,padding:"2px 8px",minWidth:46,textAlign:"center",opacity:isPastM?0.5:1}}>
+                                          <span style={{fontSize:11,fontWeight:900,color:canEdit?NAVY:"#888"}}>{sc2[0]}-{sc2[1]}</span>
+                                        </div>
+                                      :<div style={{background:`linear-gradient(135deg,${RED},${GREEN})`,borderRadius:6,padding:"2px 8px",minWidth:46,textAlign:"center",cursor:canEdit?"pointer":"default",opacity:isPastM||isFT2||isLive2?0.5:1}}>
+                                          <span style={{fontSize:9,color:"#fff",fontWeight:700}}>+ scor</span>
+                                        </div>
+                                    }
+                                  </div>
+                                  <span style={{flex:1,fontSize:12,fontWeight:600,color:isPastM?"#bbb":DARK,textAlign:"right"}}>{m.away.length>7?m.away.split(" ")[0]:m.away}</span>
+                                  <span style={{fontSize:18,opacity:isPastM?0.5:1}}>{m.awayFlag}</span>
+                                </div>
+                              );
+                            });
+                          })()}
+                        </div>
+                      </>);
+                    })()}
+                  </div>
+                ) : (
+                  /* All matches list */
+                  sm.map((m0,i)=>{
+                    const m = {...m0, _i:i};
+                    const key=`${sel}-${i}`;
+                    const sc = scores&&scores[key];
+                    const live = LIVE_SCORES[key];
+                    const mH2 = parseInt((m.time||"23:00").split(":")[0]);
+                    const mM2 = parseInt((m.time||"00:00").split(":")[1]||0);
+                    const _nowDay = simDay || new Date().getDate();
+                    const _nowH   = simDay!=null?(simHour||0):new Date().getHours();
+                    const _nowM   = simDay!=null?(simMin||0):new Date().getMinutes();
+                    const _kick = mH2*60+mM2, _now2 = _nowH*60+_nowM;
+                    const isFT = (sel||0)<_nowDay || (sel===_nowDay && _now2>_kick+115);
+                    const isLive = !isFT && sel===_nowDay && _now2>=_kick && _now2<=_kick+115;
+                    const isNS2 = !isFT && !isLive;
+                    const liveMin2 = isLive?Math.min(90,_now2-_kick):0;
+                    const hasScore = live && live.home !== undefined && live.home !== null;
+                    const exactMatch = sc&&hasScore&&isFT&&sc[0]===live.home&&sc[1]===live.away;
+                    const predRes = sc?sc[0]>sc[1]?"H":sc[0]<sc[1]?"A":"D":null;
+                    const realRes = hasScore?live.home>live.away?"H":live.home<live.away?"A":"D":null;
+                    const resultMatch = predRes&&realRes&&predRes===realRes&&isFT;
+                    const isPastDay2 = !!(simDay && sel < simDay);
+                    return (
+                      <div key={i} style={{borderBottom:i<sm.length-1?"1px solid rgba(0,0,0,0.06)":"none",background:"#fff"}}>
+                        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",
+                          padding:"4px 14px",background:isLive?"rgba(0,32,91,0.06)":isFT?"rgba(0,154,68,0.05)":"rgba(0,0,0,0.02)"}}>
+                          <span style={{fontSize:9,fontWeight:600,color:"#aaa"}}>{m.time} · Gr.{m.group}</span>
+                          {isLive&&<span style={{fontSize:9,fontWeight:800,color:RED,display:"flex",alignItems:"center",gap:3}}>
+                            <span style={{width:5,height:5,borderRadius:"50%",background:RED,display:"inline-block"}}/>
+                            LIVE {liveMin2}'
+                          </span>}
+                          {isFT&&<span style={{fontSize:9,fontWeight:700,color:GREEN}}>FT</span>}
+                          {isNS2&&<span style={{fontSize:9,color:"#ccc"}}>Not Started</span>}
+                        </div>
+                        {(()=>{ return (
+                        <div onClick={()=>!isMatchPast(m.day||sel,m.time,simDay,simHour)&&!isPastDay2&&onMatchClick&&onMatchClick(m,sel,m._i)}
+                          style={{display:"flex",alignItems:"center",padding:"10px 14px",cursor:isPastDay2?"default":"pointer",gap:6,opacity:isPastDay2?0.6:1}}>
+                          <span style={{fontSize:18,flexShrink:0}}>{m.homeFlag}</span>
+                          <span style={{flex:1,fontSize:11,fontWeight:600,color:DARK}}>{m.home.length>7?m.home.split(" ")[0]:m.home}</span>
+                          <div style={{flexShrink:0,display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
+                            {isLive?<span style={{fontSize:7,fontWeight:800,color:RED,animation:"blink 1s infinite"}}>● LIVE</span>
+                              :<span style={{fontSize:7,fontWeight:700,color:"#bbb",textTransform:"uppercase",letterSpacing:0.5}}>{isFT?"Final":"● Live"}</span>}
+                            <div style={{background:isLive||hasScore?`linear-gradient(135deg,${NAVY},#001840)`:"rgba(0,0,0,0.08)",borderRadius:6,padding:"4px 10px",minWidth:54,textAlign:"center"}}>
+                              <span style={{fontSize:13,fontWeight:900,color:isLive||hasScore?"#fff":"#bbb"}}>{isLive?(hasScore?`${live.home}-${live.away}`:"0-0"):hasScore?`${live.home}-${live.away}`:"-"}</span>
+                            </div>
+                            <span style={{fontSize:7,fontWeight:700,color:"#bbb",textTransform:"uppercase",letterSpacing:0.5}}>Predicție</span>
+                            {(()=>{
+                              const isPast = isMatchPast(sel, m.time, simDay, simHour);
+                              const canPredict = !isLive && !isFT && !isPast && isWeekUnlocked(sel||0, simDay, simHour, simMin);
+                              if(isPast || isLive || isFT) {
+                                return sc ? (
+                                  <div style={{background:exactMatch?`linear-gradient(135deg,${GREEN},#007A36)`:resultMatch?`linear-gradient(135deg,${NAVY},#001840)`:`linear-gradient(135deg,${RED},#EF3340)`,
+                                    borderRadius:6,padding:"3px 10px",minWidth:54,textAlign:"center",display:"flex",alignItems:"center",justifyContent:"center",gap:3}}>
+                                    <span style={{fontSize:12,fontWeight:900,color:"#fff"}}>{sc[0]}-{sc[1]}</span>
+                                    {isFT&&(exactMatch?<span style={{fontSize:10}}>🎯</span>:resultMatch?<span style={{fontSize:10}}>✓</span>:<span style={{fontSize:10}}>✗</span>)}
+                                  </div>
+                                ) : (
+                                  <div style={{background:"rgba(0,0,0,0.06)",borderRadius:6,padding:"3px 10px",minWidth:54,textAlign:"center"}}>
+                                    <span style={{fontSize:12,fontWeight:700,color:"#ccc"}}>?-?</span>
+                                  </div>
+                                );
+                              }
+                              return canPredict ? (
+                                <div onClick={e=>{e.stopPropagation();onMatchClick&&onMatchClick(m,sel,m._i);}}
+                                  style={{background:`linear-gradient(135deg,${RED},${GREEN})`,borderRadius:6,padding:"3px 10px",minWidth:54,textAlign:"center",cursor:"pointer"}}>
+                                  <span style={{fontSize:10,color:"#fff",fontWeight:700}}>+ scor</span>
+                                </div>
+                              ) : (
+                                <div style={{background:"rgba(0,0,0,0.06)",borderRadius:6,padding:"3px 10px",minWidth:54,textAlign:"center"}}>
+                                  <span style={{fontSize:12,fontWeight:700,color:"#ccc"}}>🔒</span>
+                                </div>
+                              );
+                            })()}
+                          </div>
+                          <span style={{flex:1,fontSize:11,fontWeight:600,color:DARK,textAlign:"right"}}>{m.away.length>7?m.away.split(" ")[0]:m.away}</span>
+                          <span style={{fontSize:18,flexShrink:0}}>{m.awayFlag}</span>
+                        </div>
+                        ); })()}
+                        {(isFT||isMatchPast(sel,m.time,simDay,simHour))&&(
+                          <div style={{padding:"4px 14px 8px",display:"flex",justifyContent:"center"}}>
+                            <div style={{background:exactMatch?"rgba(0,154,68,0.1)":resultMatch?"rgba(0,32,91,0.07)":"rgba(0,0,0,0.04)",borderRadius:20,padding:"3px 14px"}}>
+                              <span style={{fontSize:10,fontWeight:700,color:exactMatch?GREEN:resultMatch?NAVY:RED}}>
+                                {exactMatch?"🎯 +90 pts":resultMatch?"✓ +30 pts":"✗ +0 pts"}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
                 )}
               </div>
             );
-          })}
+          })()}
         </div>
       )}
     </div>
@@ -3307,14 +3845,24 @@ function RulesScreen({ onBack }) {
 }
 
 export default function App() {
-  const [screen, setScreen] = useState(SCREENS.SPLASH);
+  const [screen, setScreen] = useState("dev");
+  const [simDay, setSimDay] = useState(null);
+  const [simHour, setSimHour] = useState(12);
+  const [simMin, setSimMin] = useState(0);
+  const [simStarted, setSimStarted] = useState(false);
+  // Simulated current date used across app
+  const simDate = simDay ? new Date(2026,5,simDay,simHour,simMin,0) : null;
   const [lang, setLang] = useState("en");
   const [myBoards, setMyBoards] = useState(INITIAL_BOARDS);
   // Predictions complete per board id
   const [predictionsComplete, setPredictionsComplete] = useState({});
   const [activeBoardId, setActiveBoardId] = useState("global");
   const [allInstantPickStates, setAllInstantPickStates] = useState({});
-  const [exactScores, setExactScores] = useState({}); // lifted from GroupsScheduleScreen
+  const [exactScores, setExactScores] = useState({
+    "11-0": [2,1],  // Brazil 2-1 Morocco
+    "11-1": [1,0],  // France 1-0 Mexico
+    "11-2": [1,0],  // predicted 1-0
+  });
   const [allInstantPickDone, setAllInstantPickDone] = useState({});
   const instantPickState = allInstantPickStates[activeBoardId]||null;
   const instantPickDone = allInstantPickDone[activeBoardId]||false;
@@ -3329,11 +3877,11 @@ export default function App() {
     return {...a, [boardId]: next};
   });
   // Tournament starts June 11 2026
-  const tournamentStarted = new Date() >= new Date("2026-06-11T18:00:00");
+  const tournamentStarted = simDate ? simDate >= new Date(2026,5,11,19,0,0) : new Date() >= new Date("2026-06-11T19:00:00");
 
   const noFooter = [SCREENS.SPLASH, SCREENS.LOGIN, SCREENS.PREDICTIONS, SCREENS.INSTANT_PICK, SCREENS.GROUPS_SCHEDULE];
   const showFooter = !noFooter.includes(screen);
-  const footerActive = screen===SCREENS.STATS?SCREENS.STATS:screen===SCREENS.FAST_PREDICTION?SCREENS.FAST_PREDICTION:screen===SCREENS.ACCOUNT?SCREENS.ACCOUNT:SCREENS.HOME;
+  const footerActive = screen===SCREENS.RULES?SCREENS.RULES:screen===SCREENS.ACCOUNT?SCREENS.ACCOUNT:SCREENS.HOME;
 
   return (
     <div style={{display:"flex",justifyContent:"center",alignItems:"center",minHeight:"100vh",background:"#D4D4D4",fontFamily:"-apple-system,'SF Pro Display',sans-serif"}}>
@@ -3342,7 +3890,23 @@ export default function App() {
           <span>9:41</span><span>5G 🔋</span>
         </div>
         <div style={{flex:1,overflow:"hidden",display:"flex",flexDirection:"column"}}>
-          {screen===SCREENS.SPLASH&&<SplashScreen onNext={()=>setScreen(SCREENS.LOGIN)} lang={lang} setLang={setLang}/>}
+          {screen==="dev"&&<DevPanel onStart={(day,hour,min,started)=>{
+            setSimDay(day);
+            setSimHour(hour);
+            setSimMin(min);
+            setSimStarted(started);
+            if(started && day>=11) {
+              LIVE_SCORES = {
+                "11-0": { home:2, away:1, status:"FT" },
+                "11-1": { home:1, away:1, status:"LIVE", min:45 },
+                "11-2": { home:2, away:0, status:"FT" },
+              };
+            } else {
+              LIVE_SCORES = {};
+            }
+            setScreen(SCREENS.SPLASH);
+          }}/>}
+          {screen===SCREENS.SPLASH&&<SplashScreen simDay={simDay} simHour={simHour} simMin={simMin} tournamentStarted={tournamentStarted} onNext={()=>setScreen(SCREENS.LOGIN)} lang={lang} setLang={setLang}/>}
           {screen===SCREENS.LOGIN&&<LoginScreen onNext={()=>setScreen(SCREENS.HOME)}/>}
           {screen===SCREENS.HOME&&<HomeScreen
             onPredict={(boardId)=>{ setActiveBoardId(boardId); setScreen(SCREENS.INSTANT_PICK); }}
@@ -3353,11 +3917,12 @@ export default function App() {
             predictionsComplete={predictionsComplete}
             instantPickDone={instantPickDone}
             exactScores={exactScores}
+            simDay={simDay} simHour={simHour} simMin={simMin}
             activeBoardId={activeBoardId}
             setActiveBoardId={setActiveBoardId}
             tournamentStarted={tournamentStarted}/>}
           {screen===SCREENS.BOARDS&&<BoardsScreen onBack={()=>setScreen(SCREENS.HOME)} myBoards={myBoards} setMyBoards={setMyBoards}/>}
-          {screen===SCREENS.LEADERBOARD&&<LeaderboardScreen onBack={()=>setScreen(SCREENS.HOME)}/>}
+          {screen===SCREENS.LEADERBOARD&&<LeaderboardScreen onBack={()=>setScreen(SCREENS.HOME)} tournamentStarted={tournamentStarted}/>}
           {screen===SCREENS.INSTANT_PICK&&<InstantPickScreen
             savedState={instantPickState}
             onStateChange={setInstantPickState}
@@ -3374,7 +3939,7 @@ export default function App() {
           {screen===SCREENS.FAST_PREDICTION&&<FastPredictionScreen onHome={()=>setScreen(SCREENS.HOME)}/>}
           {screen===SCREENS.STATS&&<StatsScreen lang={lang}/>}
           {screen===SCREENS.RULES&&<RulesScreen onBack={()=>setScreen(SCREENS.HOME)}/>}
-          {screen===SCREENS.GROUPS_SCHEDULE&&<GroupsScheduleScreen scores={exactScores} setScores={setExactScores} onBack={()=>setScreen(SCREENS.HOME)}/>}
+          {screen===SCREENS.GROUPS_SCHEDULE&&<GroupsScheduleScreen scores={exactScores} setScores={setExactScores} simDay={simDay} simHour={simHour} simMin={simMin} onBack={()=>setScreen(SCREENS.HOME)}/>}
           {screen===SCREENS.ACCOUNT&&<AccountScreen lang={lang}/>}
         </div>
         {showFooter&&<Footer active={footerActive} onNavigate={setScreen} lang={lang}/>}
