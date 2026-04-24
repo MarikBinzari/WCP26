@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import trophy from "./assets/hands-trophy.png";
+import stadiumImg from "./assets/stadium.jpg";
 
 const BG = "#F8F8F8";
 const SHADOW_OUT = "4px 4px 12px rgba(0,0,0,0.08), -3px -3px 8px #ffffff";
@@ -1226,196 +1227,1095 @@ const KO_MATCHUP_TEMPLATE = [
   {id:"final",round:"Final"},
 ];
 
+
+function ConfettiCanvas({ colors, active }) {
+  const canvasRef = useRef(null);
+  const animRef = useRef(null);
+  const particlesRef = useRef([]);
+
+  useEffect(() => {
+    if (!active) { cancelAnimationFrame(animRef.current); return; }
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    const W = canvas.width = canvas.offsetWidth;
+    const H = canvas.height = canvas.offsetHeight;
+    const SHAPES = ["rect","circle","tri"];
+    particlesRef.current = Array.from({length:120},()=>({
+      x: Math.random()*W,
+      y: -20 - Math.random()*H*0.4,
+      w: 7 + Math.random()*9,
+      h: 4 + Math.random()*6,
+      rot: Math.random()*360,
+      rotV: (Math.random()-0.5)*8,
+      vx: (Math.random()-0.5)*3,
+      vy: 2 + Math.random()*5,
+      color: colors[Math.floor(Math.random()*colors.length)],
+      shape: SHAPES[Math.floor(Math.random()*SHAPES.length)],
+      alpha: 0.9+Math.random()*0.1,
+    }));
+    const draw = () => {
+      ctx.clearRect(0,0,W,H);
+      particlesRef.current.forEach(p => {
+        ctx.save();
+        ctx.globalAlpha = p.alpha;
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot*Math.PI/180);
+        ctx.fillStyle = p.color;
+        if(p.shape==="rect"){ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);}
+        else if(p.shape==="circle"){ctx.beginPath();ctx.arc(0,0,p.w/2,0,Math.PI*2);ctx.fill();}
+        else{ctx.beginPath();ctx.moveTo(0,-p.h);ctx.lineTo(p.w/2,p.h/2);ctx.lineTo(-p.w/2,p.h/2);ctx.closePath();ctx.fill();}
+        ctx.restore();
+        p.x += p.vx; p.y += p.vy; p.rot += p.rotV; p.vy += 0.07;
+        p.alpha -= 0.003;
+        if(p.y > H+20 || p.alpha <= 0){
+          p.y = -20; p.x = Math.random()*W; p.vy = 2+Math.random()*4; p.alpha = 0.9;
+        }
+      });
+      animRef.current = requestAnimationFrame(draw);
+    };
+    draw();
+    return () => cancelAnimationFrame(animRef.current);
+  }, [active, colors.join()]);
+
+  return (
+    <canvas ref={canvasRef} style={{position:"absolute",inset:0,width:"100%",height:"100%",pointerEvents:"none",zIndex:10}}/>
+  );
+}
+
+// ── REALISTIC FLAG RENDERER ───────────────────────────────────────────────────
+// Draws each flag as real colored stripes/shapes, not just a gradient blob
+function FlagBg({ team, style }) {
+  const s = { position:"absolute", inset:0, ...style };
+  // Each flag is a set of absolutely-positioned divs recreating real flag bands
+  const renders = {
+    "Brazil": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,background:"#009C3B"}}/>
+        <div style={{position:"absolute",top:"20%",left:"10%",right:"10%",bottom:"20%",
+          background:"#FFDF00",clipPath:"polygon(50% 0%,100% 50%,50% 100%,0% 50%)"}}/>
+        <div style={{position:"absolute",top:"50%",left:"50%",
+          width:"32%",height:"32%",transform:"translate(-50%,-50%)",
+          background:"#002776",borderRadius:"50%"}}/>
+        <div style={{position:"absolute",inset:0,
+          background:"repeating-linear-gradient(90deg,rgba(255,255,255,0.03) 0px,rgba(255,255,255,0.03) 1px,transparent 1px,transparent 6px)"}}/>
+      </div>
+    ),
+    "France": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,display:"flex"}}>
+          <div style={{flex:1,background:"#002395"}}/>
+          <div style={{flex:1,background:"#EDEDED"}}/>
+          <div style={{flex:1,background:"#ED2939"}}/>
+        </div>
+        <div style={{position:"absolute",inset:0,
+          background:"repeating-linear-gradient(90deg,rgba(0,0,0,0.03) 0px,rgba(0,0,0,0.03) 1px,transparent 1px,transparent 6px)"}}/>
+      </div>
+    ),
+    "Argentina": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column"}}>
+          <div style={{flex:1,background:"#74ACDF"}}/>
+          <div style={{flex:1,background:"#fff"}}/>
+          <div style={{flex:1,background:"#74ACDF"}}/>
+        </div>
+      </div>
+    ),
+    "England": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,background:"#fff"}}/>
+        <div style={{position:"absolute",top:0,bottom:0,left:"calc(50% - 6%)",width:"12%",background:"#CF081F"}}/>
+        <div style={{position:"absolute",left:0,right:0,top:"calc(50% - 10%)",height:"20%",background:"#CF081F"}}/>
+      </div>
+    ),
+    "Germany": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column"}}>
+          <div style={{flex:1,background:"#000"}}/>
+          <div style={{flex:1,background:"#DD0000"}}/>
+          <div style={{flex:1,background:"#FFCE00"}}/>
+        </div>
+      </div>
+    ),
+    "Spain": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column"}}>
+          <div style={{flex:1,background:"#AA151B"}}/>
+          <div style={{flex:2,background:"#F1BF00"}}/>
+          <div style={{flex:1,background:"#AA151B"}}/>
+        </div>
+      </div>
+    ),
+    "Portugal": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,display:"flex"}}>
+          <div style={{width:"40%",background:"#006600"}}/>
+          <div style={{flex:1,background:"#FF0000"}}/>
+        </div>
+      </div>
+    ),
+    "Netherlands": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column"}}>
+          <div style={{flex:1,background:"#AE1C28"}}/>
+          <div style={{flex:1,background:"#fff"}}/>
+          <div style={{flex:1,background:"#21468B"}}/>
+        </div>
+      </div>
+    ),
+    "Croatia": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column"}}>
+          <div style={{flex:1,background:"#171796"}}/>
+          <div style={{flex:1,background:"#fff"}}/>
+          <div style={{flex:1,background:"#FF0000"}}/>
+        </div>
+      </div>
+    ),
+    "Mexico": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,display:"flex"}}>
+          <div style={{flex:1,background:"#006847"}}/>
+          <div style={{flex:1,background:"#fff"}}/>
+          <div style={{flex:1,background:"#CE1126"}}/>
+        </div>
+      </div>
+    ),
+    "USA": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,background:"#B22234"}}/>
+        {[0,1,2,3,4,5,6].map(i=>(
+          <div key={i} style={{position:"absolute",left:0,right:0,
+            top:`${(i*2/13)*100}%`,height:`${(1/13)*100}%`,background:"#fff"}}/>
+        ))}
+        <div style={{position:"absolute",top:0,left:0,width:"38%",height:"54%",background:"#3C3B6E"}}/>
+      </div>
+    ),
+    "Morocco": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,background:"#C1272D"}}/>
+        <div style={{position:"absolute",top:"50%",left:"50%",
+          width:"28%",height:"28%",transform:"translate(-50%,-50%)",
+          background:"none",border:"3px solid #006233",borderRadius:"50%"}}/>
+      </div>
+    ),
+    "Canada": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,display:"flex"}}>
+          <div style={{width:"25%",background:"#FF0000"}}/>
+          <div style={{flex:1,background:"#fff"}}/>
+          <div style={{width:"25%",background:"#FF0000"}}/>
+        </div>
+      </div>
+    ),
+    "Japan": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,background:"#fff"}}/>
+        <div style={{position:"absolute",top:"50%",left:"50%",
+          width:"36%",height:"36%",transform:"translate(-50%,-50%)",
+          background:"#BC002D",borderRadius:"50%"}}/>
+      </div>
+    ),
+    "Poland": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column"}}>
+          <div style={{flex:1,background:"#fff"}}/>
+          <div style={{flex:1,background:"#DC143C"}}/>
+        </div>
+      </div>
+    ),
+    "Belgium": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,display:"flex"}}>
+          <div style={{flex:1,background:"#000"}}/>
+          <div style={{flex:1,background:"#FAE042"}}/>
+          <div style={{flex:1,background:"#EF3340"}}/>
+        </div>
+      </div>
+    ),
+    "Australia": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,background:"#00008B"}}/>
+        <div style={{position:"absolute",top:0,left:0,width:"50%",height:"50%",
+          background:"linear-gradient(135deg,#012169 50%,#C8102E 50%)"}}/>
+      </div>
+    ),
+    "Senegal": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,display:"flex"}}>
+          <div style={{flex:1,background:"#00853F"}}/>
+          <div style={{flex:1,background:"#FDEF42"}}/>
+          <div style={{flex:1,background:"#E31B23"}}/>
+        </div>
+      </div>
+    ),
+    "Serbia": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column"}}>
+          <div style={{flex:1,background:"#C6363C"}}/>
+          <div style={{flex:1,background:"#0C4076"}}/>
+          <div style={{flex:1,background:"#fff"}}/>
+        </div>
+      </div>
+    ),
+    "Denmark": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,background:"#C60C30"}}/>
+        <div style={{position:"absolute",top:0,bottom:0,left:"35%",width:"12%",background:"#fff"}}/>
+        <div style={{position:"absolute",left:0,right:0,top:"40%",height:"20%",background:"#fff"}}/>
+      </div>
+    ),
+    "Tunisia": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,background:"#E70013"}}/>
+        <div style={{position:"absolute",top:"50%",left:"50%",
+          width:"36%",height:"36%",transform:"translate(-50%,-50%)",
+          background:"#fff",borderRadius:"50%"}}/>
+      </div>
+    ),
+    "Ecuador": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column"}}>
+          <div style={{flex:2,background:"#FFD100"}}/>
+          <div style={{flex:1,background:"#003893"}}/>
+          <div style={{flex:1,background:"#EF3340"}}/>
+        </div>
+      </div>
+    ),
+    "Cameroon": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,display:"flex"}}>
+          <div style={{flex:1,background:"#007A5E"}}/>
+          <div style={{flex:1,background:"#CE1126"}}/>
+          <div style={{flex:1,background:"#FCD116"}}/>
+        </div>
+      </div>
+    ),
+    "Iran": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column"}}>
+          <div style={{flex:1,background:"#239F40"}}/>
+          <div style={{flex:1,background:"#fff"}}/>
+          <div style={{flex:1,background:"#DA0000"}}/>
+        </div>
+      </div>
+    ),
+    "South Korea": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,background:"#fff"}}/>
+        <div style={{position:"absolute",top:"50%",left:"50%",
+          width:"30%",height:"30%",transform:"translate(-50%,-50%)",
+          background:"linear-gradient(180deg,#C60C30 50%,#003478 50%)",borderRadius:"50%"}}/>
+      </div>
+    ),
+    "Qatar": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,display:"flex"}}>
+          <div style={{width:"35%",background:"#fff"}}/>
+          <div style={{flex:1,background:"#8A1538"}}/>
+        </div>
+      </div>
+    ),
+    "Costa Rica": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column"}}>
+          <div style={{flex:1,background:"#002B7F"}}/>
+          <div style={{flex:1,background:"#fff"}}/>
+          <div style={{flex:2,background:"#CE1126"}}/>
+          <div style={{flex:1,background:"#fff"}}/>
+          <div style={{flex:1,background:"#002B7F"}}/>
+        </div>
+      </div>
+    ),
+    "Switzerland": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,background:"#FF0000"}}/>
+        <div style={{position:"absolute",top:0,bottom:0,left:"calc(50% - 6%)",width:"12%",background:"#fff"}}/>
+        <div style={{position:"absolute",left:0,right:0,top:"calc(50% - 9%)",height:"18%",background:"#fff"}}/>
+      </div>
+    ),
+    "Saudi Arabia": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,background:"#006C35"}}/>
+        <div style={{position:"absolute",top:"35%",left:"15%",right:"15%",height:"22%",
+          background:"#fff",opacity:0.9,borderRadius:"4px"}}/>
+        <div style={{position:"absolute",bottom:"22%",left:"22%",right:"22%",height:"6%",background:"#fff",opacity:0.85}}/>
+      </div>
+    ),
+    "Nigeria": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,display:"flex"}}>
+          <div style={{flex:1,background:"#008751"}}/>
+          <div style={{flex:1,background:"#fff"}}/>
+          <div style={{flex:1,background:"#008751"}}/>
+        </div>
+      </div>
+    ),
+    "Uruguay": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,background:"#fff"}}/>
+        {[0,1,2,3].map(i=>(
+          <div key={i} style={{position:"absolute",left:"40%",right:0,
+            top:`${(i*2+1)*(100/9)}%`,height:`${100/9}%`,background:"#7CB9E8"}}/>
+        ))}
+        <div style={{position:"absolute",top:0,left:0,width:"40%",height:`${100/9*5}%`,background:"#fff",borderRight:"1px solid rgba(0,0,0,0.05)",borderBottom:"1px solid rgba(0,0,0,0.05)"}}/>
+        <div style={{position:"absolute",top:`${100/9*1.5}%`,left:"12%",
+          width:"16%",height:"22%",background:"#FCD116",borderRadius:"50%",border:"1.5px solid #FF8C00"}}/>
+      </div>
+    ),
+    "Colombia": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column"}}>
+          <div style={{flex:2,background:"#FCD116"}}/>
+          <div style={{flex:1,background:"#003893"}}/>
+          <div style={{flex:1,background:"#CE1126"}}/>
+        </div>
+      </div>
+    ),
+    "Ghana": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column"}}>
+          <div style={{flex:1,background:"#CE1126"}}/>
+          <div style={{flex:1,background:"#FCD116"}}/>
+          <div style={{flex:1,background:"#006B3F"}}/>
+        </div>
+        <div style={{position:"absolute",top:"42%",left:"42%",width:"16%",height:"16%",
+          background:"#000",clipPath:"polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%)"}}/>
+      </div>
+    ),
+    "Italy": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,display:"flex"}}>
+          <div style={{flex:1,background:"#008C45"}}/>
+          <div style={{flex:1,background:"#F4F5F0"}}/>
+          <div style={{flex:1,background:"#CD212A"}}/>
+        </div>
+      </div>
+    ),
+    "Peru": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,display:"flex"}}>
+          <div style={{flex:1,background:"#D91023"}}/>
+          <div style={{flex:1,background:"#fff"}}/>
+          <div style={{flex:1,background:"#D91023"}}/>
+        </div>
+      </div>
+    ),
+    "South Africa": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,background:"#FFB81C"}}/>
+        <div style={{position:"absolute",top:0,left:0,right:0,height:"50%",background:"#DE3831"}}/>
+        <div style={{position:"absolute",left:0,top:0,bottom:0,width:"32%",background:"#000",
+          clipPath:"polygon(0 0, 70% 0, 100% 50%, 70% 100%, 0 100%)"}}/>
+        <div style={{position:"absolute",left:0,top:"40%",bottom:"40%",right:0,background:"#007A4D"}}/>
+        <div style={{position:"absolute",left:0,top:"32%",bottom:"32%",right:0,background:"#fff",
+          clipPath:"polygon(0 0, 50% 0, 30% 50%, 50% 100%, 0 100%)"}}/>
+      </div>
+    ),
+    "Czechia": (
+      <div style={s}>
+        <div style={{position:"absolute",top:0,left:0,right:0,height:"50%",background:"#fff"}}/>
+        <div style={{position:"absolute",bottom:0,left:0,right:0,height:"50%",background:"#D7141A"}}/>
+        <div style={{position:"absolute",left:0,top:0,bottom:0,width:"50%",background:"#11457E",
+          clipPath:"polygon(0 0, 100% 50%, 0 100%)"}}/>
+      </div>
+    ),
+    "Bosnia-Herzegovina": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,background:"#002F6C"}}/>
+        <div style={{position:"absolute",top:0,right:"15%",bottom:0,width:"35%",background:"#FECB00",
+          clipPath:"polygon(100% 0, 0 100%, 100% 100%)"}}/>
+      </div>
+    ),
+    "Scotland": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,background:"#0065BD"}}/>
+        <div style={{position:"absolute",inset:0,background:"linear-gradient(45deg,transparent 47%,#fff 47%,#fff 53%,transparent 53%)"}}/>
+        <div style={{position:"absolute",inset:0,background:"linear-gradient(-45deg,transparent 47%,#fff 47%,#fff 53%,transparent 53%)"}}/>
+      </div>
+    ),
+    "Haiti": (
+      <div style={s}>
+        <div style={{position:"absolute",top:0,left:0,right:0,height:"50%",background:"#00209F"}}/>
+        <div style={{position:"absolute",bottom:0,left:0,right:0,height:"50%",background:"#D21034"}}/>
+        <div style={{position:"absolute",top:"30%",left:"35%",right:"35%",height:"40%",background:"#fff"}}/>
+      </div>
+    ),
+    "Paraguay": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column"}}>
+          <div style={{flex:1,background:"#D52B1E"}}/>
+          <div style={{flex:1,background:"#fff"}}/>
+          <div style={{flex:1,background:"#0038A8"}}/>
+        </div>
+      </div>
+    ),
+    "Turkiye": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,background:"#E30A17"}}/>
+        <div style={{position:"absolute",top:"50%",left:"30%",
+          width:"22%",height:"50%",transform:"translate(-50%,-50%)",
+          background:"#fff",borderRadius:"50%"}}/>
+        <div style={{position:"absolute",top:"50%",left:"33%",
+          width:"18%",height:"42%",transform:"translate(-50%,-50%)",
+          background:"#E30A17",borderRadius:"50%"}}/>
+        <div style={{position:"absolute",top:"50%",left:"48%",
+          color:"#fff",fontSize:"160%",fontWeight:"bold",lineHeight:1,
+          transform:"translateY(-50%)"}}>★</div>
+      </div>
+    ),
+    "Ivory Coast": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,display:"flex"}}>
+          <div style={{flex:1,background:"#FF8200"}}/>
+          <div style={{flex:1,background:"#fff"}}/>
+          <div style={{flex:1,background:"#009E60"}}/>
+        </div>
+      </div>
+    ),
+    "Curacao": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,background:"#002B7F"}}/>
+        <div style={{position:"absolute",left:0,right:0,top:"58%",height:"12%",background:"#F9E814"}}/>
+      </div>
+    ),
+    "Sweden": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,background:"#006AA7"}}/>
+        <div style={{position:"absolute",top:0,bottom:0,left:"30%",width:"12%",background:"#FECC00"}}/>
+        <div style={{position:"absolute",left:0,right:0,top:"40%",height:"20%",background:"#FECC00"}}/>
+      </div>
+    ),
+    "Egypt": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column"}}>
+          <div style={{flex:1,background:"#CE1126"}}/>
+          <div style={{flex:1,background:"#fff"}}/>
+          <div style={{flex:1,background:"#000"}}/>
+        </div>
+      </div>
+    ),
+    "New Zealand": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,background:"#012169"}}/>
+        <div style={{position:"absolute",top:0,left:0,width:"50%",height:"50%",
+          background:"linear-gradient(135deg,#012169 50%,#C8102E 50%)"}}/>
+      </div>
+    ),
+    "Cape Verde": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,background:"#003893"}}/>
+        <div style={{position:"absolute",left:0,right:0,top:"55%",height:"15%",background:"#fff"}}/>
+        <div style={{position:"absolute",left:0,right:0,top:"63%",height:"5%",background:"#CF2027"}}/>
+      </div>
+    ),
+    "Norway": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,background:"#EF2B2D"}}/>
+        <div style={{position:"absolute",top:0,bottom:0,left:"32%",width:"14%",background:"#fff"}}/>
+        <div style={{position:"absolute",left:0,right:0,top:"42%",height:"16%",background:"#fff"}}/>
+        <div style={{position:"absolute",top:0,bottom:0,left:"35%",width:"8%",background:"#002868"}}/>
+        <div style={{position:"absolute",left:0,right:0,top:"46%",height:"8%",background:"#002868"}}/>
+      </div>
+    ),
+    "Iraq": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column"}}>
+          <div style={{flex:1,background:"#CE1126"}}/>
+          <div style={{flex:1,background:"#fff"}}/>
+          <div style={{flex:1,background:"#000"}}/>
+        </div>
+        <div style={{position:"absolute",top:"45%",left:"38%",color:"#007A3D",
+          fontSize:"60%",fontWeight:"bold",lineHeight:1}}>الله أكبر</div>
+      </div>
+    ),
+    "Austria": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column"}}>
+          <div style={{flex:1,background:"#ED2939"}}/>
+          <div style={{flex:1,background:"#fff"}}/>
+          <div style={{flex:1,background:"#ED2939"}}/>
+        </div>
+      </div>
+    ),
+    "Algeria": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,display:"flex"}}>
+          <div style={{flex:1,background:"#006233"}}/>
+          <div style={{flex:1,background:"#fff"}}/>
+        </div>
+        <div style={{position:"absolute",top:"50%",left:"50%",
+          width:"22%",height:"36%",transform:"translate(-50%,-50%)",
+          color:"#D21034",fontSize:"180%",lineHeight:1,textAlign:"center"}}>☪</div>
+      </div>
+    ),
+    "Jordan": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column"}}>
+          <div style={{flex:1,background:"#000"}}/>
+          <div style={{flex:1,background:"#fff"}}/>
+          <div style={{flex:1,background:"#007A3D"}}/>
+        </div>
+        <div style={{position:"absolute",left:0,top:0,bottom:0,width:"35%",background:"#CE1126",
+          clipPath:"polygon(0 0, 100% 50%, 0 100%)"}}/>
+      </div>
+    ),
+    "Uzbekistan": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column"}}>
+          <div style={{flex:1,background:"#0099B5"}}/>
+          <div style={{flex:0.15,background:"#CE1126"}}/>
+          <div style={{flex:1,background:"#fff"}}/>
+          <div style={{flex:0.15,background:"#CE1126"}}/>
+          <div style={{flex:1,background:"#1EB53A"}}/>
+        </div>
+      </div>
+    ),
+    "DR Congo": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,background:"#007FFF"}}/>
+        <div style={{position:"absolute",inset:0,
+          background:"linear-gradient(20deg,transparent 40%,#F7D618 40%,#F7D618 50%,transparent 50%)"}}/>
+        <div style={{position:"absolute",inset:0,
+          background:"linear-gradient(20deg,transparent 35%,#CE1126 35%,#CE1126 40%,transparent 40%,transparent 50%,#CE1126 50%,#CE1126 55%,transparent 55%)"}}/>
+        <div style={{position:"absolute",top:"12%",left:"8%",
+          color:"#F7D618",fontSize:"120%",lineHeight:1}}>★</div>
+      </div>
+    ),
+    "Panama": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,background:"#fff"}}/>
+        <div style={{position:"absolute",top:0,right:0,width:"50%",height:"50%",background:"#005AA7"}}/>
+        <div style={{position:"absolute",bottom:0,left:0,width:"50%",height:"50%",background:"#D21034"}}/>
+        <div style={{position:"absolute",top:"12%",left:"12%",
+          color:"#005AA7",fontSize:"180%",lineHeight:1}}>★</div>
+        <div style={{position:"absolute",bottom:"12%",right:"12%",
+          color:"#D21034",fontSize:"180%",lineHeight:1}}>★</div>
+      </div>
+    ),
+  };
+  return renders[team] || (
+    <div style={s}>
+      <div style={{position:"absolute",inset:0,
+        background:`linear-gradient(135deg,${(TEAM_COLORS[team]||[NAVY,"#001840"])[0]},${(TEAM_COLORS[team]||[NAVY,"#001840"])[1]})`}}/>
+    </div>
+  );
+}
+
 function MatchSwipeCard({ home, away, onPick, onFlash, groupLabel, matchNum, totalMatches, existingPick, onBack, canGoBack, isKo }) {
   const startX = useRef(null);
   const startY = useRef(null);
   const [offset, setOffset] = useState({ x:0, y:0 });
   const [picked, setPicked] = useState(existingPick||null);
+  const [overlayState, setOverlayState] = useState(null);
+  const [winnerExpanded, setWinnerExpanded] = useState(false);
+  const [confettiActive, setConfettiActive] = useState(false);
+  const [nextReady, setNextReady] = useState(false);
   const pickRef = useRef(false);
 
   const homeColors = TEAM_COLORS[home] || [NAVY, "#001840"];
   const awayColors = TEAM_COLORS[away] || [GREEN, "#004d1a"];
 
-  const getColors = (p) => {
-    if(p==="home") return homeColors;
-    if(p==="away") return awayColors;
-    return ["#444","#222"];
-  };
+  const confettiColors = overlayState==="home"
+    ? [...homeColors, "#fff", "#FFD700"]
+    : overlayState==="away"
+      ? [...awayColors, "#fff", "#FFD700"]
+      : [];
 
   const pick = (winner) => {
-    if(pickRef.current) return;
+    if(pickRef.current || overlayState) return;
     pickRef.current = true;
-    setPicked(winner);
     setOffset({x:0,y:0});
-    setTimeout(()=>{ pickRef.current = false; }, 100);
+    if(winner === "draw") {
+      setPicked(winner);
+      setOverlayState(winner);
+      setConfettiActive(false);
+      setTimeout(()=>{ setNextReady(true); pickRef.current=false; }, 300);
+    } else {
+      // Tranziție imediată — fără fly animation care cauzează lag
+      setPicked(winner);
+      setOverlayState(winner);
+      setWinnerExpanded(true);
+      setConfettiActive(true);
+      setTimeout(()=>{ setNextReady(true); pickRef.current=false; }, 350);
+    }
   };
 
   const onTouchStart = e => {
-    if(picked) return;
+    if(overlayState) return;
     startX.current=e.touches[0].clientX;
     startY.current=e.touches[0].clientY;
   };
   const onTouchMove = e => {
-    if(startX.current===null||picked) return;
+    if(startX.current===null||overlayState) return;
     const dx=e.touches[0].clientX-startX.current;
     const dy=e.touches[0].clientY-startY.current;
-    setOffset({x:dx*0.55,y:dy*0.4});
+    setOffset({x:dx*0.65,y:dy*0.5});
   };
   const onTouchEnd = e => {
-    if(startX.current===null||picked) return;
+    if(startX.current===null||overlayState) return;
     const dx=e.changedTouches[0].clientX-startX.current;
     const dy=startY.current-e.changedTouches[0].clientY;
     if(!isKo&&dy>55&&Math.abs(dx)<80) pick("draw");
-    else if(dx<-55) pick("home");
-    else if(dx>55) pick("away");
+    else if(dx<-60) pick("home");
+    else if(dx>60) pick("away");
     else setOffset({x:0,y:0});
     startX.current=null;
   };
 
-  const swipeLeft = !picked && offset.x < -25;
-  const swipeRight = !picked && offset.x > 25;
-  const swipeUp = !picked && offset.y < -25 && Math.abs(offset.x) < 60;
+  const swipeLeft = !overlayState && offset.x < -25;
+  const swipeRight = !overlayState && offset.x > 25;
+  const swipeUp = !overlayState && offset.y < -25 && Math.abs(offset.x) < 60;
   const leftPct = Math.min(1,(-offset.x-25)/80);
   const rightPct = Math.min(1,(offset.x-25)/80);
-  const rotation = picked ? 0 : offset.x * 0.04;
+  const upPct = !isKo ? Math.min(1,(-offset.y-25)/70) : 0;
+  const rotation = overlayState ? 0 : offset.x * 0.045;
+  const isFlying = Math.abs(offset.x)>200 || offset.y < -200;
 
-  const pickedColors = picked ? getColors(picked) : null;
-  const cardBg = picked
-    ? `linear-gradient(160deg,${pickedColors[0]},${pickedColors[1]})`
-    : "linear-gradient(160deg,#1a1a2e,#16213e)";
+  // ── DRAW OVERLAY — background FIFA WC 2026 ──────────────────────────────
+  if (overlayState === "draw") {
+    return (
+      <div style={{flex:1,display:"flex",flexDirection:"column",userSelect:"none",position:"relative",overflow:"hidden",background:"#0a1228"}}>
+        <style>{`
+          @keyframes drawBounce{0%{transform:scale(0.5);opacity:0}60%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
+          @keyframes shimmer{0%,100%{opacity:0.6}50%{opacity:1}}
+        `}</style>
+
+        {/* FIFA WC 2026 gradient */}
+        <div style={{position:"absolute",inset:0,
+          background:`
+            radial-gradient(ellipse at 18% 20%, rgba(228,0,43,0.35) 0%, transparent 42%),
+            radial-gradient(ellipse at 82% 25%, rgba(0,47,108,0.45) 0%, transparent 45%),
+            radial-gradient(ellipse at 50% 90%, rgba(0,104,71,0.30) 0%, transparent 50%),
+            linear-gradient(160deg, #0d1730 0%, #0a1228 35%, #150a1f 65%, #0a1228 100%)
+          `}}/>
+
+        {/* Content */}
+        <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
+          position:"relative",zIndex:5,padding:"24px 20px"}}>
+          <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:16,
+            animation:"drawBounce 0.5s cubic-bezier(0.175,0.885,0.32,1.275) forwards"}}>
+            <div style={{display:"flex",alignItems:"center",gap:20}}>
+              <span style={{fontSize:80,filter:"drop-shadow(0 8px 24px rgba(0,0,0,0.6))"}}>{FLAGS[home]||"🏳"}</span>
+              <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
+                <span style={{fontSize:40}}>🤝</span>
+                <span style={{fontSize:22,fontWeight:900,color:"#FFD700",letterSpacing:3,
+                  textShadow:"0 2px 12px rgba(0,0,0,0.8)"}}>EGAL</span>
+              </div>
+              <span style={{fontSize:80,filter:"drop-shadow(0 8px 24px rgba(0,0,0,0.6))"}}>{FLAGS[away]||"🏳"}</span>
+            </div>
+            <div style={{background:"rgba(255,255,255,0.08)",borderRadius:16,padding:"10px 24px",
+              border:"1px solid rgba(255,255,255,0.15)",animation:"shimmer 2s ease infinite"}}>
+              <span style={{fontSize:14,fontWeight:700,color:"rgba(255,255,255,0.85)"}}>{home} vs {away}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom actions */}
+        <div style={{flexShrink:0,padding:"14px 20px 24px",position:"relative",zIndex:5,
+          background:"rgba(0,0,0,0.5)",borderTop:"1px solid rgba(255,255,255,0.08)",
+          display:"flex",gap:10,
+          opacity:nextReady?1:0,transform:nextReady?"translateY(0)":"translateY(20px)",
+          transition:"all 0.35s ease"}}>
+          <button onClick={()=>{ setOverlayState(null); setPicked(null); setNextReady(false); pickRef.current=false; }}
+            style={{flex:1,padding:"13px 0",borderRadius:14,border:"2px solid rgba(255,255,255,0.25)",
+              background:"rgba(255,255,255,0.08)",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer"}}>
+            ← Schimbă
+          </button>
+          <button onClick={()=>onPick(overlayState)}
+            style={{flex:2,padding:"13px 0",borderRadius:14,border:"none",
+              background:"rgba(255,255,255,0.92)",color:"#111",fontSize:14,fontWeight:900,
+              cursor:"pointer",boxShadow:"0 4px 20px rgba(0,0,0,0.3)"}}>
+            Următorul →
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── WINNER OVERLAY — steagul câștigătorului scalat estetic pe tot ecranul ─
+  if (overlayState === "home" || overlayState === "away") {
+    const winnerTeam = overlayState==="home" ? home : away;
+    const loserTeam  = overlayState==="home" ? away : home;
+    const winnerFlag = FLAGS[winnerTeam]||"🏳";
+
+    return (
+      <div style={{flex:1,display:"flex",flexDirection:"column",userSelect:"none",position:"relative",overflow:"hidden",background:"#0a1228"}}>
+        <style>{`
+          @keyframes bgReveal{0%{opacity:0}100%{opacity:1}}
+          @keyframes popIn{0%{transform:scale(0.3) rotate(-10deg);opacity:0}60%{transform:scale(1.18) rotate(3deg)}80%{transform:scale(0.94) rotate(-1deg)}100%{transform:scale(1) rotate(0deg);opacity:1}}
+          @keyframes slideUp{0%{transform:translateY(40px);opacity:0}100%{transform:translateY(0);opacity:1}}
+          @keyframes flagWallpaperFloat{0%,100%{transform:translateY(0px) rotate(-2deg)}50%{transform:translateY(-8px) rotate(2deg)}}
+        `}</style>
+
+        {/* FIFA WC 2026 gradient background */}
+        <div style={{position:"absolute",inset:0,
+          background:`
+            radial-gradient(ellipse at 18% 20%, rgba(228,0,43,0.35) 0%, transparent 42%),
+            radial-gradient(ellipse at 82% 25%, rgba(0,47,108,0.45) 0%, transparent 45%),
+            radial-gradient(ellipse at 50% 90%, rgba(0,104,71,0.30) 0%, transparent 50%),
+            linear-gradient(160deg, #0d1730 0%, #0a1228 35%, #150a1f 65%, #0a1228 100%)
+          `}}/>
+
+        {/* Wrapper centrat — fix poziționare */}
+        <div style={{
+          position:"absolute", top:"18%", left:"50%",
+          transform:"translateX(-50%)",
+          width:"75%", maxWidth:360,
+          zIndex:2, pointerEvents:"none",
+        }}>
+          {/* Glow halo în spatele steagului */}
+          <div style={{
+            position:"absolute", top:"-10%", left:"-8%", right:"-8%", bottom:"-10%",
+            background:"radial-gradient(ellipse, rgba(255,255,255,0.22) 0%, transparent 70%)",
+            filter:"blur(24px)",
+          }}/>
+
+          {/* Steagul mare — emoji nativ frumos */}
+          <div style={{
+            position:"relative",
+            display:"flex", alignItems:"center", justifyContent:"center",
+            animation:"bgReveal 0.5s ease forwards, flagWallpaperFloat 5s ease-in-out 0.5s infinite",
+          }}>
+            <span style={{
+              fontSize:200, lineHeight:1, display:"block",
+              filter:"drop-shadow(0 16px 40px rgba(0,0,0,0.85)) drop-shadow(0 4px 8px rgba(0,0,0,0.6))",
+            }}>
+              {winnerFlag}
+            </span>
+          </div>
+        </div>
+
+        {/* Bottom gradient for action buttons readability */}
+        <div style={{position:"absolute",bottom:0,left:0,right:0,height:"30%",zIndex:1,pointerEvents:"none",
+          background:"linear-gradient(to top, rgba(0,0,0,0.65) 0%, transparent 100%)"}}/>
+
+        {/* Confetti */}
+        <ConfettiCanvas colors={confettiColors} active={confettiActive}/>
+
+        {/* Content — aliniat în partea de jos sub steagul mare */}
+        <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"flex-end",
+          position:"relative",zIndex:5,padding:"24px 20px 24px"}}>
+
+          {/* Winner name */}
+          <div style={{animation:"slideUp 0.45s ease 0.15s both",marginBottom:8}}>
+            <div style={{background:"rgba(0,0,0,0.55)",borderRadius:20,padding:"10px 32px",
+              border:"2px solid rgba(255,255,255,0.4)",backdropFilter:"blur(10px)",
+              boxShadow:"0 6px 24px rgba(0,0,0,0.5)"}}>
+              <span style={{fontSize:28,fontWeight:900,color:"#FFD700",letterSpacing:2,
+                textShadow:"0 2px 16px rgba(0,0,0,0.9)"}}>
+                {winnerTeam}
+              </span>
+            </div>
+          </div>
+
+          {/* CÂȘTIGĂ */}
+          <div style={{animation:"slideUp 0.45s ease 0.25s both",marginBottom:18}}>
+            <span style={{fontSize:13,fontWeight:800,color:"rgba(255,255,255,0.85)",letterSpacing:3,textTransform:"uppercase",
+              textShadow:"0 1px 6px rgba(0,0,0,0.8)"}}>
+              CÂȘTIGĂ ✓
+            </span>
+          </div>
+
+          {/* Loser mini */}
+          <div style={{display:"flex",alignItems:"center",gap:8,opacity:0.6,
+            animation:"slideUp 0.45s ease 0.35s both"}}>
+            <span style={{fontSize:11,color:"#fff",fontWeight:600}}>vs</span>
+            <span style={{fontSize:28}}>{FLAGS[loserTeam]||"🏳"}</span>
+            <span style={{fontSize:11,color:"#fff",fontWeight:600}}>{loserTeam}</span>
+          </div>
+        </div>
+
+        {/* Bottom actions */}
+        <div style={{flexShrink:0,padding:"14px 20px 24px",position:"relative",zIndex:5,
+          background:"rgba(0,0,0,0.35)",borderTop:"1px solid rgba(255,255,255,0.12)",
+          display:"flex",gap:10,
+          opacity:nextReady?1:0,transform:nextReady?"translateY(0)":"translateY(20px)",
+          transition:"all 0.35s ease"}}>
+          <button
+            onClick={()=>{ setOverlayState(null); setPicked(null); setWinnerExpanded(false); setConfettiActive(false); setNextReady(false); pickRef.current=false; }}
+            style={{flex:1,padding:"13px 0",borderRadius:14,border:"2px solid rgba(255,255,255,0.3)",
+              background:"rgba(255,255,255,0.1)",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer"}}>
+            ← Schimbă
+          </button>
+          <button
+            onClick={()=>{ setConfettiActive(false); onPick(overlayState); }}
+            style={{flex:2,padding:"13px 0",borderRadius:14,border:"none",
+              background:"rgba(255,255,255,0.95)",color:"#111",fontSize:14,fontWeight:900,
+              cursor:"pointer",boxShadow:"0 4px 20px rgba(0,0,0,0.3)"}}>
+            Următorul →
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── DEFAULT CARD — MK-style diagonal split ───────────────────────────────
+  const homeDim  = swipeLeft  ? Math.min(1, 0.85 + leftPct * 0.15)  : swipeRight ? 0.5 : 0.85;
+  const awayDim  = swipeRight ? Math.min(1, 0.85 + rightPct * 0.15) : swipeLeft  ? 0.5 : 0.85;
 
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",userSelect:"none",position:"relative"}}>
-      {/* Full screen card */}
+      <style>{`
+        @keyframes xPulse{0%,100%{opacity:0.45}50%{opacity:0.9}}
+        @keyframes neonPulseHome{0%,100%{box-shadow:0 0 18px 4px ${homeColors[0]}aa,0 0 40px 8px ${homeColors[0]}44,0 0 0 3px rgba(255,255,255,0.9),inset 0 0 12px rgba(255,255,255,0.1)}50%{box-shadow:0 0 30px 8px ${homeColors[0]}ee,0 0 65px 15px ${homeColors[0]}66,0 0 0 3px rgba(255,255,255,0.9),inset 0 0 12px rgba(255,255,255,0.15)}}
+        @keyframes neonPulseAway{0%,100%{box-shadow:0 0 18px 4px ${awayColors[0]}aa,0 0 40px 8px ${awayColors[0]}44,0 0 0 3px rgba(255,255,255,0.9),inset 0 0 12px rgba(255,255,255,0.1)}50%{box-shadow:0 0 30px 8px ${awayColors[0]}ee,0 0 65px 15px ${awayColors[0]}66,0 0 0 3px rgba(255,255,255,0.9),inset 0 0 12px rgba(255,255,255,0.15)}}
+        @keyframes slideInTopLeft{0%{opacity:0;transform:translate(-80px,-60px) scale(0.6)}100%{opacity:1;transform:translate(0,0) scale(1)}}
+        @keyframes slideInBottomRight{0%{opacity:0;transform:translate(80px,60px) scale(0.6)}100%{opacity:1;transform:translate(0,0) scale(1)}}
+        @keyframes vsAppear{0%{opacity:0;transform:translate(-50%,-50%) scale(0.3) rotate(-15deg)}100%{opacity:1;transform:translate(-50%,-50%) scale(1) rotate(-8deg)}}
+        @keyframes ballDrop{0%{opacity:0;transform:translate(-50%,-50%) translateY(-40px) scale(0.6)}100%{opacity:1;transform:translate(-50%,-50%) translateY(0) scale(1)}}
+        @keyframes ballBob{0%,100%{transform:translate(-50%,-50%) translateY(0px)}50%{transform:translate(-50%,-50%) translateY(-8px)}}
+        @keyframes lightBeamLeft{0%,100%{opacity:0.3}50%{opacity:0.6}}
+        @keyframes lightBeamRight{0%,100%{opacity:0.25}50%{opacity:0.55}}
+        @keyframes particleFloat{0%{transform:translateY(0px) translateX(0px);opacity:0.8}50%{opacity:1}100%{transform:translateY(-60px) translateX(10px);opacity:0}}
+      `}</style>
+
       <div
         onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}
         style={{
-          flex:1,overflow:"hidden",touchAction:"none",
-          transform:`translateX(${picked?0:offset.x}px) translateY(${picked?0:offset.y}px) rotate(${rotation}deg)`,
-          transition:offset.x===0&&offset.y===0?"transform 0.35s cubic-bezier(0.175,0.885,0.32,1.275)":"transform 0.04s",
-          background:cardBg,
-          display:"flex",flexDirection:"column",
+          flex:1, overflow:"hidden", touchAction:"none",
+          transform:`translateX(${offset.x}px) translateY(${offset.y}px) rotate(${rotation}deg)`,
+          transition: isFlying
+            ? "transform 0.30s cubic-bezier(0.55,0,1,0.45)"
+            : (offset.x===0&&offset.y===0 ? "transform 0.35s cubic-bezier(0.175,0.885,0.32,1.275)" : "transform 0.04s"),
           position:"relative",
+          background:"#050d1a",
         }}>
 
-        {/* Header */}
-        <div style={{padding:"14px 20px 12px",textAlign:"center",borderBottom:"1px solid rgba(255,255,255,0.12)",flexShrink:0}}>
-          <p style={{fontSize:12,fontWeight:900,color:"rgba(255,255,255,0.9)",margin:"0 0 2px",letterSpacing:2,textTransform:"uppercase"}}>
-            {picked ? (picked==="draw" ? "EGAL 🤝" : `${picked==="home"?home:away} WINS 🏆`) : "Predictions"}
-          </p>
-          <p style={{fontSize:12,color:"rgba(255,255,255,0.55)",margin:0,fontWeight:600}}>
-            {picked ? "YOUR PICK" : "Swipe to predict!"}
-          </p>
+        {/* ── BACKGROUND — gradient din culorile echipelor ── */}
+        <div style={{position:"absolute",inset:0,
+          background:`linear-gradient(135deg, ${homeColors[0]}cc 0%, ${homeColors[0]}88 25%, #0a0e1a 50%, ${awayColors[0]}88 75%, ${awayColors[0]}cc 100%)`}}/>
+
+        {/* ── STADIUM IMAGE BACKGROUND ── */}
+        <div style={{position:"absolute",inset:0,zIndex:0,pointerEvents:"none",overflow:"hidden"}}>
+          <img src={stadiumImg} alt="" style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"center",opacity:0.7,filter:"brightness(0.75) saturate(0.8)"}}/>
+          <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.35)"}}/>
         </div>
 
-        {/* Content */}
-        <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"20px",position:"relative"}}>
+        {/* Dark overlay pentru contrast */}
+        <div style={{position:"absolute",inset:0,pointerEvents:"none",
+          background:"linear-gradient(180deg, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.1) 40%, rgba(0,0,0,0.1) 60%, rgba(0,0,0,0.55) 100%)"}}/>
+        {/* Radial glow home */}
+        <div style={{position:"absolute",inset:0,pointerEvents:"none",
+          background:`radial-gradient(ellipse at 15% 20%, ${homeColors[0]}55 0%, transparent 50%)`,
+          animation:"lightBeamLeft 3s ease-in-out infinite"}}/>
+        {/* Radial glow away */}
+        <div style={{position:"absolute",inset:0,pointerEvents:"none",
+          background:`radial-gradient(ellipse at 85% 80%, ${awayColors[0]}55 0%, transparent 50%)`,
+          animation:"lightBeamRight 3s ease-in-out 1.5s infinite"}}/>
 
-          {/* Swipe color overlays */}
-          {swipeLeft&&<div style={{position:"absolute",inset:0,opacity:leftPct*0.5,background:`linear-gradient(160deg,${homeColors[0]},${homeColors[1]})`}}/>}
-          {swipeRight&&<div style={{position:"absolute",inset:0,opacity:rightPct*0.5,background:`linear-gradient(160deg,${awayColors[0]},${awayColors[1]})`}}/>}
-          {swipeUp&&<div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",opacity:Math.min(1,(-offset.y-25)/70)}}><span style={{fontSize:52,fontWeight:900,color:"#fff",letterSpacing:3}}>EGAL</span><div style={{width:0,height:0,borderLeft:"26px solid transparent",borderRight:"26px solid transparent",borderBottom:"44px solid rgba(255,255,255,0.85)",marginTop:16}}/></div>}
+        {/* Confetti particles */}
+        {[...Array(8)].map((_,i)=>(
+          <div key={i} style={{
+            position:"absolute",
+            left:`${10+i*12}%`,
+            top:`${60+Math.sin(i)*15}%`,
+            width:4, height:4, borderRadius:"50%",
+            background:i%2===0?homeColors[0]:awayColors[0],
+            opacity:0.5, pointerEvents:"none",
+            animation:`particleFloat ${2+i*0.3}s ease-in ${i*0.4}s infinite`,
+          }}/>
+        ))}
 
-          {/* PICKED STATE — big flag center */}
-          {picked ? (
-            picked==="draw" ? (
-              <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:12}}>
-                <div style={{display:"flex",alignItems:"center",gap:20}}>
-                  <span style={{fontSize:72}}>{FLAGS[home]||"🏳"}</span>
-                  <span style={{fontSize:36}}>🤝</span>
-                  <span style={{fontSize:72}}>{FLAGS[away]||"🏳"}</span>
-                </div>
-                <span style={{fontSize:16,color:"rgba(255,255,255,0.7)",fontWeight:700,marginTop:4}}>{home} vs {away}</span>
+        {/* DRAW overlay — swipe up */}
+        {!isKo&&swipeUp&&(
+          <div style={{position:"absolute",inset:0,zIndex:8,pointerEvents:"none",
+            background:`rgba(0,0,0,${upPct*0.78})`,
+            display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:8}}>
+            <span style={{fontSize:50,fontWeight:900,color:"#FFD700",letterSpacing:4,
+              textShadow:"0 2px 20px rgba(0,0,0,0.9)",
+              transform:`scale(${0.7+upPct*0.3})`,transition:"transform 0.05s"}}>EGAL</span>
+            <span style={{fontSize:34,transform:`scale(${0.7+upPct*0.3})`,transition:"transform 0.05s"}}>🤝</span>
+          </div>
+        )}
+
+        {/* ── HOME TEAM — top-left ── */}
+        <div onClick={()=>pick("home")} style={{
+          position:"absolute", top:"9%", left:"4%",
+          zIndex:5, cursor:"pointer",
+          display:"flex", flexDirection:"column", alignItems:"flex-start", gap:10,
+          animation:"slideInTopLeft 0.55s cubic-bezier(0.22,1,0.36,1) both",
+          transform: swipeLeft
+            ? `scale(${1+leftPct*0.07}) translate(${-leftPct*10}px,${-leftPct*10}px)`
+            : "scale(1)",
+          transition:"transform 0.12s",
+        }}>
+          {/* Flag card with neon border */}
+          <div style={{
+            width:170, aspectRatio:"3/2",
+            borderRadius:16, overflow:"hidden", position:"relative",
+            animation:`neonPulseHome ${swipeLeft?"0.6s":"2.5s"} ease-in-out infinite`,
+            transform:"rotate(-4deg)",
+          }}>
+            <FlagBg team={home} style={{}}/>
+            {/* Glossy shine on top */}
+            <div style={{position:"absolute",inset:0,
+              background:"linear-gradient(135deg, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.05) 40%, transparent 60%)",
+              pointerEvents:"none"}}/>
+          </div>
+          {/* Team name */}
+          <span style={{
+            fontSize:17, fontWeight:900, color:"#fff",
+            letterSpacing:2, textTransform:"uppercase",
+            textShadow:`0 0 20px ${homeColors[0]}, 0 2px 8px rgba(0,0,0,0.9)`,
+            paddingLeft:4,
+          }}>{home}</span>
+        </div>
+
+        {/* ── VS — diagonal center ── */}
+        <div style={{
+          position:"absolute", top:"40%", left:"52%",
+          transform:"translate(-50%,-50%)",
+          zIndex:7, pointerEvents:"none",
+          animation:"vsAppear 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.2s both",
+        }}>
+          <svg viewBox="0 0 160 100" width="140" height="88" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="vsG" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%"   stopColor="#FFD700"/>
+                <stop offset="30%"  stopColor="#FF6B00"/>
+                <stop offset="65%"  stopColor="#CC0000"/>
+                <stop offset="100%" stopColor="#660000"/>
+              </linearGradient>
+              <filter id="vsGlow">
+                <feGaussianBlur stdDeviation="3" result="b"/>
+                <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+              </filter>
+              <filter id="vsRuf">
+                <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" result="n"/>
+                <feDisplacementMap in="SourceGraphic" in2="n" scale="2.8" xChannelSelector="R" yChannelSelector="G"/>
+              </filter>
+            </defs>
+            {/* White outline sticker */}
+            <text x="6" y="82" fontFamily="Arial Black,Impact,sans-serif"
+              fontSize="90" fontWeight="900" fontStyle="italic"
+              fill="white" stroke="white" strokeWidth="10"
+              strokeLinejoin="round" strokeLinecap="round"
+              filter="url(#vsRuf)" letterSpacing="-6">VS</text>
+            {/* Colored gradient text */}
+            <text x="6" y="82" fontFamily="Arial Black,Impact,sans-serif"
+              fontSize="90" fontWeight="900" fontStyle="italic"
+              fill="url(#vsG)" filter="url(#vsRuf)" letterSpacing="-6">VS</text>
+          </svg>
+        </div>
+
+        {/* ── SOCCER BALL — center-left of VS ── */}
+        <div style={{
+          position:"absolute", top:"56%", left:"44%",
+          transform:"translate(-50%,-50%)",
+          zIndex:6,
+          width:110, height:110,
+          display:"flex", alignItems:"center", justifyContent:"center",
+          animation:"ballDrop 0.6s cubic-bezier(0.22,1,0.36,1) 0.35s both, ballBob 2.8s ease-in-out 1s infinite",
+        }}>
+          {/* Glow under ball */}
+          <div style={{
+            position:"absolute", bottom:-8, left:"50%",
+            width:60, height:14, transform:"translateX(-50%)",
+            background:`radial-gradient(ellipse, rgba(255,255,255,0.35) 0%, transparent 70%)`,
+            filter:"blur(4px)", pointerEvents:"none",
+          }}/>
+          <span style={{
+            fontSize:96, lineHeight:1,
+            filter:"saturate(0) contrast(3) brightness(1.1) drop-shadow(0 8px 20px rgba(0,0,0,0.5))",
+          }}>⚽</span>
+        </div>
+
+        {/* ── AWAY TEAM — bottom-right ── */}
+        <div onClick={()=>pick("away")} style={{
+          position:"absolute", bottom:"18%", right:"4%",
+          zIndex:5, cursor:"pointer",
+          display:"flex", flexDirection:"column", alignItems:"flex-end", gap:10,
+          animation:"slideInBottomRight 0.55s cubic-bezier(0.22,1,0.36,1) 0.1s both",
+          transform: swipeRight
+            ? `scale(${1+rightPct*0.07}) translate(${rightPct*10}px,${rightPct*10}px)`
+            : "scale(1)",
+          transition:"transform 0.12s",
+        }}>
+          {/* Flag card with neon border */}
+          <div style={{
+            width:170, aspectRatio:"3/2",
+            borderRadius:16, overflow:"hidden", position:"relative",
+            animation:`neonPulseAway ${swipeRight?"0.6s":"2.5s"} ease-in-out 1.2s infinite`,
+            transform:"rotate(4deg)",
+          }}>
+            <FlagBg team={away} style={{}}/>
+            <div style={{position:"absolute",inset:0,
+              background:"linear-gradient(135deg, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.05) 40%, transparent 60%)",
+              pointerEvents:"none"}}/>
+          </div>
+          {/* Team name */}
+          <span style={{
+            fontSize:17, fontWeight:900, color:"#fff",
+            letterSpacing:2, textTransform:"uppercase",
+            textShadow:`0 0 20px ${awayColors[0]}, 0 2px 8px rgba(0,0,0,0.9)`,
+            paddingRight:4,
+          }}>{away}</span>
+        </div>
+
+        {/* ── BOTTOM ROW — Swipe pills + X ── */}
+        <div style={{
+          position:"absolute", zIndex:6, bottom:20, left:14, right:14,
+          display:"flex", justifyContent:"space-between", alignItems:"flex-end",
+        }}>
+          <div onClick={()=>pick("home")} style={{
+            cursor:"pointer",
+            background:"rgba(0,0,0,0.65)", backdropFilter:"blur(12px)",
+            borderRadius:14, padding:"8px 14px",
+            border:"1.5px solid rgba(255,255,255,0.18)",
+            transform:swipeLeft?`scale(${1+leftPct*0.05}) translateY(${-leftPct*4}px)`:"scale(1)",
+            transition:"transform 0.08s",
+            boxShadow:swipeLeft?`0 0 22px ${homeColors[0]}88`:"0 2px 12px rgba(0,0,0,0.6)",
+          }}>
+            <div style={{fontSize:8,color:"rgba(255,255,255,0.35)",fontWeight:700,letterSpacing:1.5,marginBottom:3}}>← SWIPE</div>
+            <div style={{fontSize:15,fontWeight:900,color:"#fff"}}>{home}</div>
+          </div>
+
+          {!isKo&&(
+            <div onClick={()=>pick("draw")} style={{cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
+              <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:1,animation:"xPulse 2.5s ease-in-out infinite"}}>
+                <span style={{fontSize:13,color:"rgba(255,255,255,0.55)",lineHeight:1}}>↑</span>
+                <span style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,0.45)",letterSpacing:1,textTransform:"uppercase"}}>egal</span>
               </div>
-            ) : (
-              <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:8}}>
-                <div style={{position:"relative"}}>
-                  <span style={{fontSize:120,lineHeight:1,filter:"drop-shadow(0 10px 30px rgba(0,0,0,0.5))"}}>
-                    {FLAGS[picked==="home"?home:away]||"🏳"}
-                  </span>
-                  <div style={{position:"absolute",top:-4,right:-4,width:36,height:36,borderRadius:"50%",background:"#fff",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 4px 12px rgba(0,0,0,0.3)"}}>
-                    <span style={{fontSize:18}}>✅</span>
-                  </div>
-                </div>
-                <span style={{fontSize:32,fontWeight:900,color:"#FFD700",textShadow:"0 2px 12px rgba(0,0,0,0.5)",textAlign:"center",marginTop:8}}>
-                  {picked==="home"?home:away}
-                </span>
-              </div>
-            )
-          ) : (
-            /* DEFAULT: teams face to face */
-            <div style={{width:"100%",opacity:Math.max(0,1-Math.max(leftPct,rightPct)),transition:"opacity 0.1s"}}>
-              <div style={{display:"flex",alignItems:"center",gap:12,width:"100%",marginBottom:16}}>
-                <div onClick={()=>pick("home")} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:10,cursor:"pointer"}}>
-                  <div style={{background:offset.x<-15?"rgba(255,255,255,0.35)":"rgba(255,255,255,0.12)",borderRadius:20,padding:"14px",border:offset.x<-15?"3px solid rgba(255,255,255,0.9)":"2px solid rgba(255,255,255,0.2)",transform:offset.x<-15?"scale(1.08)":"scale(1)",transition:"all 0.15s",boxShadow:offset.x<-15?"0 0 24px rgba(255,255,255,0.4)":"none"}}>
-                    <span style={{fontSize:60,lineHeight:1}}>{FLAGS[home]||"🏳"}</span>
-                  </div>
-                  <span style={{fontSize:13,fontWeight:800,color:"#fff",textAlign:"center"}}>{home.length>9?home.split(" ")[0]:home}</span>
-                </div>
-                <div style={{flexShrink:0,display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
-                  <div style={{background:"rgba(255,255,255,0.18)",borderRadius:12,padding:"10px 14px",border:"1px solid rgba(255,255,255,0.3)"}}>
-                    <span style={{fontSize:16,fontWeight:900,color:"#fff",letterSpacing:2}}>VS</span>
-                  </div>
-                  {!isKo&&<span style={{fontSize:11,color:"rgba(255,255,255,0.4)",fontWeight:600}}>↑ egal</span>}
-                </div>
-                <div onClick={()=>!picked&&pick("away")} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:10,cursor:picked?"default":"pointer"}}>
-                  <div style={{background:offset.x>15?"rgba(255,255,255,0.35)":"rgba(255,255,255,0.12)",borderRadius:20,padding:"14px",border:offset.x>15?"3px solid rgba(255,255,255,0.9)":"2px solid rgba(255,255,255,0.2)",transform:offset.x>15?"scale(1.08)":"scale(1)",transition:"all 0.15s",boxShadow:offset.x>15?"0 0 24px rgba(255,255,255,0.4)":"none"}}>
-                    <span style={{fontSize:60,lineHeight:1}}>{FLAGS[away]||"🏳"}</span>
-                  </div>
-                  <span style={{fontSize:13,fontWeight:800,color:"#fff",textAlign:"center"}}>{away.length>9?away.split(" ")[0]:away}</span>
-                </div>
+              <div style={{background:"rgba(0,0,0,0.65)",backdropFilter:"blur(12px)",
+                borderRadius:14,padding:"8px 18px",
+                border:"1.5px solid rgba(255,215,0,0.5)",boxShadow:"0 2px 16px rgba(255,215,0,0.2)"}}>
+                <span style={{fontSize:22,fontWeight:900,color:"#FFD700",textShadow:"0 2px 12px rgba(0,0,0,0.8)",lineHeight:1}}>X</span>
               </div>
             </div>
           )}
+
+          <div onClick={()=>pick("away")} style={{
+            cursor:"pointer",
+            background:"rgba(0,0,0,0.65)", backdropFilter:"blur(12px)",
+            borderRadius:14, padding:"8px 14px", textAlign:"right",
+            border:"1.5px solid rgba(255,255,255,0.18)",
+            transform:swipeRight?`scale(${1+rightPct*0.05}) translateY(${-rightPct*4}px)`:"scale(1)",
+            transition:"transform 0.08s",
+            boxShadow:swipeRight?`0 0 22px ${awayColors[0]}88`:"0 2px 12px rgba(0,0,0,0.6)",
+          }}>
+            <div style={{fontSize:8,color:"rgba(255,255,255,0.35)",fontWeight:700,letterSpacing:1.5,marginBottom:3}}>SWIPE →</div>
+            <div style={{fontSize:15,fontWeight:900,color:"#fff"}}>{away}</div>
+          </div>
         </div>
 
-        {/* Bottom: 1X2 or Next/Back */}
-        <div style={{flexShrink:0,borderTop:"1px solid rgba(255,255,255,0.12)",padding:"12px 20px 18px",
-          background:picked?`linear-gradient(135deg,${pickedColors[0]}99,${pickedColors[1]}99)`:"transparent"}}>
-          {picked ? (
-            <div style={{display:"flex",gap:10}}>
-                <button onClick={()=>setPicked(null)}
-                style={{flex:1,padding:"12px 0",borderRadius:14,border:"2px solid rgba(255,255,255,0.4)",background:"rgba(255,255,255,0.1)",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer"}}>
-                ← Schimbă
-              </button>
-              <button onClick={()=>onPick(picked)}
-                style={{flex:2,padding:"12px 0",borderRadius:14,border:"none",background:"rgba(255,255,255,0.95)",color:"#222",fontSize:14,fontWeight:900,cursor:"pointer",boxShadow:"0 4px 16px rgba(0,0,0,0.2)"}}>
-                Următorul →
-              </button>
-            </div>
-          ) : (
-            <>
-              <div style={{display:"flex",gap:8,marginBottom:10}}>
-                {(isKo
-                  ? [{v:"1",action:"home"},{v:"2",action:"away"}]
-                  : [{v:"1",action:"home"},{v:"X",action:"draw"},{v:"2",action:"away"}]
-                ).map(({v,action})=>(
-                  <div key={v} onClick={()=>pick(action)}
-                    style={{flex:1,textAlign:"center",background:"rgba(255,255,255,0.15)",borderRadius:10,padding:"10px 0",cursor:"pointer",border:"1px solid rgba(255,255,255,0.2)"}}>
-                    <span style={{fontSize:18,fontWeight:900,color:"#fff"}}>{v}</span>
-                  </div>
-                ))}
-              </div>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                {canGoBack ? (
-                  <button onClick={onBack}
-                    style={{background:"rgba(255,255,255,0.1)",border:"none",borderRadius:10,padding:"6px 12px",cursor:"pointer",display:"flex",alignItems:"center",gap:4,color:"rgba(255,255,255,0.7)"}}>
-                    <span style={{fontSize:14}}>←</span>
-                    <span style={{fontSize:12,fontWeight:700,textTransform:"uppercase",letterSpacing:1}}>Back</span>
-                  </button>
-                ) : <div/>}
-                <div style={{display:"flex",alignItems:"center",gap:5,opacity:offset.x>15?1:0.4,transition:"opacity 0.15s"}}>
-                  <span style={{fontSize:12,fontWeight:800,color:"#fff",textTransform:"uppercase",letterSpacing:1}}>Swipe Dreapta</span>
-                  <span style={{fontSize:14,color:"#fff"}}>→</span>
-                </div>
-              </div>
-            </>
-          )}
-        </div>
+        {canGoBack&&(
+          <button onClick={onBack} style={{
+            position:"absolute", zIndex:6, bottom:110, left:14,
+            background:"rgba(0,0,0,0.5)", border:"1px solid rgba(255,255,255,0.15)",
+            borderRadius:10, padding:"6px 10px", cursor:"pointer",
+            display:"flex", alignItems:"center", gap:3, color:"rgba(255,255,255,0.45)",
+            backdropFilter:"blur(6px)",
+          }}>
+            <span style={{fontSize:13}}>←</span>
+            <span style={{fontSize:9,fontWeight:700,textTransform:"uppercase",letterSpacing:1}}>Înapoi</span>
+          </button>
+        )}
       </div>
     </div>
   );
 }
+
 
 function GroupSummaryCard({ group, picks, onNext, onReset, isLastGroup }) {
   const teams = ALL_GROUPS_DATA[group]||[];
@@ -2431,8 +3331,9 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
   const me = leaders.find(u=>u.isMe);
   const meInTop3 = top3.some(u=>u.isMe);
   return (
-    <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden"}}>
-      <div style={{background:`linear-gradient(135deg,${NAVY},#001840)`,padding:"10px 20px 12px",flexShrink:0}}>
+    <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",position:"relative"}}>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"85%",left:"-30%",top:"20%",objectFit:"cover",objectPosition:"center 20%",opacity:0.15,filter:"grayscale(1)",pointerEvents:"none",zIndex:0}}/>
+      <div style={{background:`linear-gradient(135deg,${NAVY},#001840)`,padding:"10px 20px 12px",flexShrink:0,position:"relative",zIndex:1}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16}}>
           <div>
             <p style={{fontSize:11,color:RED,margin:"0 0 2px",letterSpacing:2,textTransform:"uppercase",fontWeight:800}}>FIFA - WORLD CUP 2026</p>
@@ -2449,7 +3350,7 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
           </div>
         </div>
       </div>
-      <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",padding:"10px 16px 0"}}>
+      <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",padding:"10px 16px 0",position:"relative",zIndex:1}}>
 
         {/* User stats card */}
         <div style={{background:"#fff",borderRadius:16,boxShadow:SHADOW_OUT,padding:"10px 14px",marginBottom:10}}>
