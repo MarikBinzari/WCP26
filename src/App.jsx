@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import trophy from "./assets/hands-trophy.png";
 
 const BG = "#F8F8F8";
 const SHADOW_OUT = "4px 4px 12px rgba(0,0,0,0.08), -3px -3px 8px #ffffff";
@@ -3341,59 +3342,57 @@ function DevPanel({ onStart }) {
   );
 }
 
-function SplashScreen({ onNext, lang, setLang, simDay, simHour=12, simMin=0, tournamentStarted }) {
-  const {d,h,m,s}=useCountdown();
-  // Calculate days left based on simDay or real date
-  const target = new Date("2026-06-11T19:00:00");
-  const simNow = simDay ? new Date(2026, 5, simDay, simHour, simMin, 0) : new Date();
-  const diffMs = target - simNow;
-  const daysLeft = Math.max(0, Math.floor(diffMs / (1000*60*60*24)));
-  const hoursLeft = Math.max(0, Math.floor((diffMs % (1000*60*60*24)) / (1000*60*60)));
-  const minsLeft = Math.max(0, Math.floor((diffMs % (1000*60*60)) / (1000*60)));
-  const secsLeft = Math.max(0, Math.floor((diffMs % (1000*60)) / 1000));
-  const sd = simDay ? daysLeft : d;
-  const sh = simDay ? hoursLeft : h;
-  const sm2 = simDay ? minsLeft : m;
-  const ss = simDay ? secsLeft : s;
+function SplashScreen({ onNext, lang, setLang }) {
+  const { d, h, m, s } = useCountdown();
   return (
-    <div style={{flex:1,display:"flex",flexDirection:"column",position:"relative",overflow:"hidden",background:"#fff"}}>
-      <div style={{position:"absolute",width:"100%",height:"100%",background:"linear-gradient(180deg,rgba(0,32,91,0.04) 0%,rgba(200,16,46,0.07) 100%)",zIndex:0,pointerEvents:"none"}}/>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"20px 22px 0",position:"relative",zIndex:10}}>
-        <div style={{width:44}}/>
-        <div style={{textAlign:"center"}}>
-          <p style={{fontSize:12,color:"#C8102E",margin:"0 0 2px",letterSpacing:3,textTransform:"uppercase",fontWeight:800}}>FIFA</p>
-          <h1 style={{fontSize:20,fontWeight:900,color:"#00205B",margin:0}}>WORLD CUP 2026</h1>
-          <p style={{fontSize:11,color:"#888",margin:"3px 0 0"}}>{T[lang].location}</p>
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", position: "relative", overflow: "hidden", background: "#fff" }}>
+      {/* Background trophy image */}
+      <img
+        src={trophy}
+        alt="FIFA World Cup Trophy"
+        style={{
+          position: "absolute",
+          width: "130%",
+          height: "85%",
+          left: "-30%",
+          top: "20%",
+          objectFit: "cover",
+          objectPosition: "center 20%",
+          zIndex: 0,
+          mixBlendMode: "multiply",
+          opacity: 0.9,
+        }}
+      />
+ 
+      {/* Header */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "20px 22px 0", position: "relative", zIndex: 10 }}>
+        <div style={{ width: 44 }} />
+        <div style={{ textAlign: "center" }}>
+          <p style={{ fontSize: 10, color: "#C8102E", margin: "0 0 2px", letterSpacing: 3, textTransform: "uppercase", fontWeight: 800 }}>FIFA</p>
+          <h1 style={{ fontSize: 20, fontWeight: 900, color: "#00205B", margin: 0, letterSpacing: -0.5 }}>WORLD CUP 2026</h1>
+          <p style={{ fontSize: 11, color: "#888", margin: "3px 0 0", letterSpacing: 0.5 }}>{T[lang].location}</p>
         </div>
-        <LangSelector lang={lang} setLang={setLang}/>
+        <LangSelector lang={lang} setLang={setLang} />
       </div>
-      <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",fontSize:90,position:"relative",zIndex:1}}>🏆</div>
-      <div style={{margin:"0 20px 14px",background:"rgba(0,32,91,0.6)",borderRadius:20,padding:"16px 8px 12px",display:"flex",position:"relative",zIndex:10}}>
-        {tournamentStarted ? (
-          <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4}}>
-            <div style={{display:"flex",alignItems:"center",gap:8}}>
-              <span style={{width:8,height:8,borderRadius:"50%",background:RED,display:"inline-block"}}/>
-              <span style={{fontSize:24,fontWeight:900,color:"#fff",letterSpacing:3}}>LIVE NOW</span>
-              <span style={{width:8,height:8,borderRadius:"50%",background:RED,display:"inline-block"}}/>
-            </div>
-            <span style={{fontSize:11,color:"rgba(255,255,255,0.5)",textTransform:"uppercase",letterSpacing:1.5}}>Campionatul Mondial 2026</span>
+      <div style={{ flex: 1 }} />
+      <div style={{ margin: "0 20px 14px", background: "rgba(0, 32, 91, 0.6)", borderRadius: 20, padding: "16px 8px 12px", display: "flex", position: "relative", zIndex: 10 }}>
+        {[{ v: d, l: "days" }, { v: h, l: "hours" }, { v: m, l: "minutes" }, { v: s, l: "seconds" }].map(({ v, l }, i) => (
+          <div key={l} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", position: "relative" }}>
+            <span style={{ fontSize: 30, fontWeight: 800, color: "#fff", lineHeight: 1 }}>{String(v).padStart(2, "0")}</span>
+            {i < 3 && <span style={{ position: "absolute", right: -2, top: 2, fontSize: 20, fontWeight: 700, color: "rgba(255,255,255,0.25)" }}>:</span>}
+            <span style={{ fontSize: 8, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: 1.5, marginTop: 6 }}>{T[lang][l.toLowerCase()] || l}</span>
           </div>
-        ) : (
-          [{ v:sd,l:"days"},{ v:sh,l:"hours"},{ v:sm2,l:"minutes"},{ v:ss,l:"seconds"}].map(({v,l},i)=>(
-            <div key={l} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",position:"relative"}}>
-              <span style={{fontSize:30,fontWeight:800,color:"#fff",lineHeight:1}}>{String(v).padStart(2,"0")}</span>
-              {i<3&&<span style={{position:"absolute",right:-2,top:2,fontSize:20,color:"rgba(255,255,255,0.25)"}}>:</span>}
-              <span style={{fontSize:8,color:"rgba(255,255,255,0.5)",textTransform:"uppercase",letterSpacing:1.5,marginTop:6}}>{T[lang][l]||l}</span>
-            </div>
-          ))
-        )}
+        ))}
       </div>
-      <div style={{padding:"0 20px 32px",position:"relative",zIndex:10}}>
-        <button onClick={onNext} style={{width:"100%",background:"linear-gradient(135deg,#C8102E 0%,#EF3340 50%,#009A44 100%)",color:"#fff",border:"none",borderRadius:16,padding:"17px 0",fontSize:16,fontWeight:800,cursor:"pointer",boxShadow:"0 8px 24px rgba(0,32,91,0.3)"}}>{T[lang].cta}</button>
+      <div style={{ padding: "0 20px 32px", position: "relative", zIndex: 10 }}>
+        <button onClick={onNext} style={{ width: "100%", background: "linear-gradient(135deg, #C8102E 0%, #EF3340 50%, #009A44 100%)", color: "#fff", border: "none", borderRadius: 16, padding: "17px 0", fontSize: 16, fontWeight: 800, cursor: "pointer", boxShadow: "0 8px 24px rgba(0,32,91,0.3)", letterSpacing: 0.5 }}>
+          {T[lang].cta}
+        </button>
       </div>
     </div>
   );
 }
+ 
 
 function OnboardingSheet({ onDone }) {
   const [slide, setSlide] = useState(0);
