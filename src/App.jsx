@@ -3332,7 +3332,7 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
   const meInTop3 = top3.some(u=>u.isMe);
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",position:"relative"}}>
-      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"85%",left:"-30%",top:"20%",objectFit:"cover",objectPosition:"center 20%",opacity:0.15,filter:"grayscale(1)",pointerEvents:"none",zIndex:0}}/>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"85%",left:"-30%",top:"20%",objectFit:"cover",objectPosition:"center 20%",opacity:0.35,pointerEvents:"none",zIndex:0}}/>
       <div style={{background:`linear-gradient(135deg,${NAVY},#001840)`,padding:"10px 20px 12px",flexShrink:0,position:"relative",zIndex:1}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16}}>
           <div>
