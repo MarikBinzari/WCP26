@@ -43,31 +43,40 @@ const T = {
 };
 
 const ECHIPE_DATA = {
-  A:["Brazil","France","Mexico","Morocco"],
-  B:["Argentina","England","USA","Poland"],
-  C:["Spain","Portugal","Japan","Canada"],
-  D:["Germany","Netherlands","Senegal","Australia"],
-  E:["Belgium","Croatia","Serbia","Morocco"],
-  F:["Denmark","Tunisia","Australia","France"],
+  A:["Mexico","South Africa","South Korea","Czechia"],
+  B:["Canada","Switzerland","Qatar","Bosnia-Herzegovina"],
+  C:["Brazil","Morocco","Scotland","Haiti"],
+  D:["USA","Paraguay","Australia","Turkiye"],
+  E:["Germany","Ecuador","Ivory Coast","Curacao"],
+  F:["Netherlands","Japan","Tunisia","Sweden"],
 };
 const FLAGS = {
   "Brazil":"🇧🇷","France":"🇫🇷","Mexico":"🇲🇽","Morocco":"🇲🇦",
-  "Argentina":"🇦🇷","England":"🏴󠁧󠁢󠁥󠁧󠁿","USA":"🇺🇸","Poland":"🇵🇱",
+  "Argentina":"🇦🇷","England":"🇬🇧","USA":"🇺🇸","Poland":"🇵🇱",
   "Spain":"🇪🇸","Portugal":"🇵🇹","Japan":"🇯🇵","Canada":"🇨🇦",
   "Germany":"🇩🇪","Netherlands":"🇳🇱","Senegal":"🇸🇳","Australia":"🇦🇺",
   "Belgium":"🇧🇪","Croatia":"🇭🇷","Serbia":"🇷🇸",
   "Denmark":"🇩🇰","Tunisia":"🇹🇳","Iran":"🇮🇷","South Korea":"🇰🇷",
   "Ecuador":"🇪🇨","Cameroon":"🇨🇲","Qatar":"🇶🇦","Costa Rica":"🇨🇷",
+  "Switzerland":"🇨🇭","Saudi Arabia":"🇸🇦","Nigeria":"🇳🇬",
+  "Uruguay":"🇺🇾","Colombia":"🇨🇴","Ghana":"🇬🇭","Italy":"🇮🇹","Peru":"🇵🇪",
+  // FIFA WC 2026 — additional teams
+  "South Africa":"🇿🇦","Czechia":"🇨🇿","Bosnia-Herzegovina":"🇧🇦",
+  "Scotland":"🏴󠁧󠁢󠁳󠁣󠁴󠁿","Haiti":"🇭🇹","Paraguay":"🇵🇾","Turkiye":"🇹🇷",
+  "Ivory Coast":"🇨🇮","Curacao":"🇨🇼","Sweden":"🇸🇪",
+  "Egypt":"🇪🇬","New Zealand":"🇳🇿","Cape Verde":"🇨🇻",
+  "Norway":"🇳🇴","Iraq":"🇮🇶","Austria":"🇦🇹","Algeria":"🇩🇿","Jordan":"🇯🇴",
+  "Uzbekistan":"🇺🇿","DR Congo":"🇨🇩","Panama":"🇵🇦",
 };
 
 // Mock real final standings per group — replace with API later
 const REAL_STANDINGS = {
-  A: ["France","Brazil","Mexico","Morocco"],
-  B: ["England","Argentina","USA","Poland"],
-  C: ["Spain","Canada","Japan","Portugal"],
-  D: ["Netherlands","Germany","Senegal","Australia"],
-  E: ["Croatia","Belgium","Iran","Serbia"],
-  F: ["Denmark","Ecuador","Tunisia","Cameroon"],
+  A: ["Mexico","South Korea","South Africa","Czechia"],
+  B: ["Switzerland","Canada","Qatar","Bosnia-Herzegovina"],
+  C: ["Brazil","Morocco","Scotland","Haiti"],
+  D: ["USA","Paraguay","Australia","Turkiye"],
+  E: ["Germany","Ecuador","Ivory Coast","Curacao"],
+  F: ["Netherlands","Japan","Sweden","Tunisia"],
 };
 const GROUP_STAGE_FINISHED = true; // flip to true to show comparison
 
@@ -97,6 +106,39 @@ const TEAM_COLORS = {
   "Tunisia":    ["#E70013","#FFFFFF"],
   "Ecuador":    ["#FFD100","#003893"],
   "Cameroon":   ["#007A5E","#CE1126"],
+  "South Korea":["#003478","#C60C30"],
+  "Qatar":      ["#8A1538","#FFFFFF"],
+  "Costa Rica": ["#002B7F","#CE1126"],
+  "Switzerland":["#FF0000","#FFFFFF"],
+  "Saudi Arabia":["#006C35","#FFFFFF"],
+  "Nigeria":    ["#008751","#FFFFFF"],
+  "Uruguay":    ["#7CB9E8","#FFFFFF"],
+  "Colombia":   ["#FCD116","#003893"],
+  "Ghana":      ["#CE1126","#FCD116"],
+  "Italy":      ["#008C45","#CD212A"],
+  "Peru":       ["#D91023","#FFFFFF"],
+  // FIFA WC 2026 — additional teams
+  "South Africa":["#007A4D","#FFB81C"],
+  "Czechia":    ["#11457E","#D7141A"],
+  "Bosnia-Herzegovina":["#002F6C","#FECB00"],
+  "Scotland":   ["#0065BD","#FFFFFF"],
+  "Haiti":      ["#00209F","#D21034"],
+  "Paraguay":   ["#D52B1E","#0038A8"],
+  "Turkiye":    ["#E30A17","#FFFFFF"],
+  "Ivory Coast":["#FF8200","#009E60"],
+  "Curacao":    ["#002B7F","#F9E814"],
+  "Sweden":     ["#006AA7","#FECC00"],
+  "Egypt":      ["#CE1126","#000000"],
+  "New Zealand":["#012169","#C8102E"],
+  "Cape Verde": ["#003893","#CF2027"],
+  "Norway":     ["#EF2B2D","#002868"],
+  "Iraq":       ["#CE1126","#007A3D"],
+  "Austria":    ["#ED2939","#FFFFFF"],
+  "Algeria":    ["#006233","#D21034"],
+  "Jordan":     ["#000000","#CE1126"],
+  "Uzbekistan": ["#1EB53A","#0099B5"],
+  "DR Congo":   ["#007FFF","#F7D618"],
+  "Panama":     ["#005AA7","#D21034"],
 };
 
 // Week unlock logic — Sunday after 20:00
@@ -120,28 +162,28 @@ const isWeekUnlocked = (day) => {
 const LIVE_SCORES = {};
 
 const CALENDAR_EVENTS = [
-  // Week 1: June 8-14
-  {day:11,matches:[{home:"Brazil",homeFlag:"🇧🇷",away:"Morocco",awayFlag:"🇲🇦",time:"19:00",group:"A"},{home:"France",homeFlag:"🇫🇷",away:"Mexico",awayFlag:"🇲🇽",time:"22:00",group:"A"}]},
-  {day:12,matches:[{home:"Argentina",homeFlag:"🇦🇷",away:"Poland",awayFlag:"🇵🇱",time:"19:00",group:"B"},{home:"England",homeFlag:"🏴󠁧󠁢󠁥󠁧󠁿",away:"USA",awayFlag:"🇺🇸",time:"22:00",group:"B"}]},
-  {day:13,matches:[{home:"Spain",homeFlag:"🇪🇸",away:"Canada",awayFlag:"🇨🇦",time:"19:00",group:"C"},{home:"Portugal",homeFlag:"🇵🇹",away:"Japan",awayFlag:"🇯🇵",time:"22:00",group:"C"}]},
-  {day:14,matches:[{home:"Germany",homeFlag:"🇩🇪",away:"Australia",awayFlag:"🇦🇺",time:"19:00",group:"D"},{home:"Netherlands",homeFlag:"🇳🇱",away:"Senegal",awayFlag:"🇸🇳",time:"22:00",group:"D"}]},
-  // Week 2: June 15-21
-  {day:15,matches:[{home:"Brazil",homeFlag:"🇧🇷",away:"France",awayFlag:"🇫🇷",time:"19:00",group:"A"},{home:"Mexico",homeFlag:"🇲🇽",away:"Morocco",awayFlag:"🇲🇦",time:"22:00",group:"A"}]},
-  {day:16,matches:[{home:"USA",homeFlag:"🇺🇸",away:"Argentina",awayFlag:"🇦🇷",time:"19:00",group:"B"},{home:"Poland",homeFlag:"🇵🇱",away:"England",awayFlag:"🏴󠁧󠁢󠁥󠁧󠁿",time:"22:00",group:"B"}]},
-  {day:17,matches:[{home:"Belgium",homeFlag:"🇧🇪",away:"Iran",awayFlag:"🇮🇷",time:"19:00",group:"E"},{home:"Croatia",homeFlag:"🇭🇷",away:"Serbia",awayFlag:"🇷🇸",time:"22:00",group:"E"}]},
-  {day:18,matches:[{home:"Denmark",homeFlag:"🇩🇰",away:"Tunisia",awayFlag:"🇹🇳",time:"19:00",group:"F"},{home:"Ecuador",homeFlag:"🇪🇨",away:"Cameroon",awayFlag:"🇨🇲",time:"22:00",group:"F"}]},
-  {day:19,matches:[{home:"Japan",homeFlag:"🇯🇵",away:"Spain",awayFlag:"🇪🇸",time:"19:00",group:"C"},{home:"Canada",homeFlag:"🇨🇦",away:"Portugal",awayFlag:"🇵🇹",time:"22:00",group:"C"}]},
-  {day:20,matches:[{home:"Australia",homeFlag:"🇦🇺",away:"Germany",awayFlag:"🇩🇪",time:"19:00",group:"D"},{home:"Senegal",homeFlag:"🇸🇳",away:"Netherlands",awayFlag:"🇳🇱",time:"22:00",group:"D"}]},
-  // Week 3: June 22-28
-  {day:22,matches:[{home:"Morocco",homeFlag:"🇲🇦",away:"France",awayFlag:"🇫🇷",time:"19:00",group:"A"},{home:"Mexico",homeFlag:"🇲🇽",away:"Brazil",awayFlag:"🇧🇷",time:"19:00",group:"A"}]},
-  {day:23,matches:[{home:"Poland",homeFlag:"🇵🇱",away:"USA",awayFlag:"🇺🇸",time:"19:00",group:"B"},{home:"England",homeFlag:"🏴󠁧󠁢󠁥󠁧󠁿",away:"Argentina",awayFlag:"🇦🇷",time:"19:00",group:"B"}]},
-  {day:24,matches:[{home:"Serbia",homeFlag:"🇷🇸",away:"Belgium",awayFlag:"🇧🇪",time:"19:00",group:"E"},{home:"Iran",homeFlag:"🇮🇷",away:"Croatia",awayFlag:"🇭🇷",time:"19:00",group:"E"}]},
-  {day:25,matches:[{home:"Cameroon",homeFlag:"🇨🇲",away:"Denmark",awayFlag:"🇩🇰",time:"19:00",group:"F"},{home:"Tunisia",homeFlag:"🇹🇳",away:"Ecuador",awayFlag:"🇪🇨",time:"19:00",group:"F"}]},
-  {day:26,matches:[{home:"Portugal",homeFlag:"🇵🇹",away:"Spain",awayFlag:"🇪🇸",time:"19:00",group:"C"},{home:"Japan",homeFlag:"🇯🇵",away:"Canada",awayFlag:"🇨🇦",time:"19:00",group:"C"}]},
-  {day:27,matches:[{home:"Netherlands",homeFlag:"🇳🇱",away:"Germany",awayFlag:"🇩🇪",time:"19:00",group:"D"},{home:"Australia",homeFlag:"🇦🇺",away:"Senegal",awayFlag:"🇸🇳",time:"19:00",group:"D"}]},
-  // Week 4: June 29+
-  {day:29,matches:[{home:"Argentina",homeFlag:"🇦🇷",away:"France",awayFlag:"🇫🇷",time:"20:00",group:"R16"},{home:"Brazil",homeFlag:"🇧🇷",away:"England",awayFlag:"🏴󠁧󠁢󠁥󠁧󠁿",time:"20:00",group:"R16"}]},
-  {day:30,matches:[{home:"Spain",homeFlag:"🇪🇸",away:"Netherlands",awayFlag:"🇳🇱",time:"20:00",group:"R16"},{home:"Germany",homeFlag:"🇩🇪",away:"Portugal",awayFlag:"🇵🇹",time:"20:00",group:"R16"}]},
+  // Week 1: June 8-14 — Round 1 of group stage (FIFA WC 2026)
+  {day:11,matches:[{home:"Mexico",homeFlag:"🇲🇽",away:"South Africa",awayFlag:"🇿🇦",time:"19:00",group:"A"},{home:"South Korea",homeFlag:"🇰🇷",away:"Czechia",awayFlag:"🇨🇿",time:"22:00",group:"A"}]},
+  {day:12,matches:[{home:"Canada",homeFlag:"🇨🇦",away:"Qatar",awayFlag:"🇶🇦",time:"19:00",group:"B"},{home:"Switzerland",homeFlag:"🇨🇭",away:"Bosnia-Herzegovina",awayFlag:"🇧🇦",time:"22:00",group:"B"}]},
+  {day:13,matches:[{home:"Brazil",homeFlag:"🇧🇷",away:"Morocco",awayFlag:"🇲🇦",time:"19:00",group:"C"},{home:"Scotland",homeFlag:"🏴󠁧󠁢󠁳󠁣󠁴󠁿",away:"Haiti",awayFlag:"🇭🇹",time:"22:00",group:"C"}]},
+  {day:14,matches:[{home:"USA",homeFlag:"🇺🇸",away:"Paraguay",awayFlag:"🇵🇾",time:"19:00",group:"D"},{home:"Australia",homeFlag:"🇦🇺",away:"Turkiye",awayFlag:"🇹🇷",time:"22:00",group:"D"}]},
+  // Week 2: June 15-21 — Round 2 of group stage
+  {day:15,matches:[{home:"Germany",homeFlag:"🇩🇪",away:"Curacao",awayFlag:"🇨🇼",time:"19:00",group:"E"},{home:"Ecuador",homeFlag:"🇪🇨",away:"Ivory Coast",awayFlag:"🇨🇮",time:"22:00",group:"E"}]},
+  {day:16,matches:[{home:"Netherlands",homeFlag:"🇳🇱",away:"Sweden",awayFlag:"🇸🇪",time:"19:00",group:"F"},{home:"Japan",homeFlag:"🇯🇵",away:"Tunisia",awayFlag:"🇹🇳",time:"22:00",group:"F"}]},
+  {day:17,matches:[{home:"Mexico",homeFlag:"🇲🇽",away:"South Korea",awayFlag:"🇰🇷",time:"19:00",group:"A"},{home:"South Africa",homeFlag:"🇿🇦",away:"Czechia",awayFlag:"🇨🇿",time:"22:00",group:"A"}]},
+  {day:18,matches:[{home:"Canada",homeFlag:"🇨🇦",away:"Switzerland",awayFlag:"🇨🇭",time:"19:00",group:"B"},{home:"Qatar",homeFlag:"🇶🇦",away:"Bosnia-Herzegovina",awayFlag:"🇧🇦",time:"22:00",group:"B"}]},
+  {day:19,matches:[{home:"Brazil",homeFlag:"🇧🇷",away:"Scotland",awayFlag:"🏴󠁧󠁢󠁳󠁣󠁴󠁿",time:"19:00",group:"C"},{home:"Morocco",homeFlag:"🇲🇦",away:"Haiti",awayFlag:"🇭🇹",time:"22:00",group:"C"}]},
+  {day:20,matches:[{home:"USA",homeFlag:"🇺🇸",away:"Australia",awayFlag:"🇦🇺",time:"19:00",group:"D"},{home:"Paraguay",homeFlag:"🇵🇾",away:"Turkiye",awayFlag:"🇹🇷",time:"22:00",group:"D"}]},
+  // Week 3: June 22-28 — Round 3 of group stage
+  {day:22,matches:[{home:"Czechia",homeFlag:"🇨🇿",away:"Mexico",awayFlag:"🇲🇽",time:"19:00",group:"A"},{home:"South Korea",homeFlag:"🇰🇷",away:"South Africa",awayFlag:"🇿🇦",time:"19:00",group:"A"}]},
+  {day:23,matches:[{home:"Bosnia-Herzegovina",homeFlag:"🇧🇦",away:"Canada",awayFlag:"🇨🇦",time:"19:00",group:"B"},{home:"Qatar",homeFlag:"🇶🇦",away:"Switzerland",awayFlag:"🇨🇭",time:"19:00",group:"B"}]},
+  {day:24,matches:[{home:"Haiti",homeFlag:"🇭🇹",away:"Brazil",awayFlag:"🇧🇷",time:"19:00",group:"C"},{home:"Scotland",homeFlag:"🏴󠁧󠁢󠁳󠁣󠁴󠁿",away:"Morocco",awayFlag:"🇲🇦",time:"19:00",group:"C"}]},
+  {day:25,matches:[{home:"Turkiye",homeFlag:"🇹🇷",away:"USA",awayFlag:"🇺🇸",time:"19:00",group:"D"},{home:"Australia",homeFlag:"🇦🇺",away:"Paraguay",awayFlag:"🇵🇾",time:"19:00",group:"D"}]},
+  {day:26,matches:[{home:"Curacao",homeFlag:"🇨🇼",away:"Germany",awayFlag:"🇩🇪",time:"19:00",group:"E"},{home:"Ivory Coast",homeFlag:"🇨🇮",away:"Ecuador",awayFlag:"🇪🇨",time:"19:00",group:"E"}]},
+  {day:27,matches:[{home:"Sweden",homeFlag:"🇸🇪",away:"Netherlands",awayFlag:"🇳🇱",time:"19:00",group:"F"},{home:"Tunisia",homeFlag:"🇹🇳",away:"Japan",awayFlag:"🇯🇵",time:"19:00",group:"F"}]},
+  // Week 4: June 29+ — Round of 16
+  {day:29,matches:[{home:"Mexico",homeFlag:"🇲🇽",away:"Switzerland",awayFlag:"🇨🇭",time:"20:00",group:"R16"},{home:"Brazil",homeFlag:"🇧🇷",away:"Turkiye",awayFlag:"🇹🇷",time:"20:00",group:"R16"}]},
+  {day:30,matches:[{home:"USA",homeFlag:"🇺🇸",away:"Morocco",awayFlag:"🇲🇦",time:"20:00",group:"R16"},{home:"Germany",homeFlag:"🇩🇪",away:"Japan",awayFlag:"🇯🇵",time:"20:00",group:"R16"}]},
 ];
 
 function useCountdown() {
@@ -915,32 +957,35 @@ function GrupeTab({ groupRank, setRank, onComplete }) {
 // CM 2026: 16 grupe, 4 echipe per grupă
 // Prototip: grupele A, B, C sunt interactive; restul auto-generate
 const ALL_GROUPS_DATA = {
-  A:["Brazil","France","Mexico","Morocco"],
-  B:["Argentina","England","USA","Poland"],
-  C:["Spain","Portugal","Japan","Canada"],
-  D:["Germany","Netherlands","Senegal","Australia"],
-  E:["Belgium","Croatia","Serbia","Iran"],
-  F:["Denmark","Tunisia","Ecuador","Cameroon"],
-  G:["Uruguay","Colombia","South Korea","Ghana"],
-  H:["Portugal","Switzerland","Nigeria","Costa Rica"],
-  I:["Netherlands","Peru","Qatar","Ecuador"],
-  J:["Brazil","Mexico","Saudi Arabia","Cameroon"],
-  K:["France","Australia","Japan","Tunisia"],
-  L:["Argentina","Poland","USA","Iran"],
-  M:["Spain","Senegal","Germany","Costa Rica"],
-  N:["England","Croatia","Denmark","Ghana"],
-  O:["Belgium","Uruguay","Colombia","Switzerland"],
-  P:["Italy","Serbia","South Korea","Nigeria"],
+  A:["Mexico","South Africa","South Korea","Czechia"],
+  B:["Canada","Switzerland","Qatar","Bosnia-Herzegovina"],
+  C:["Brazil","Morocco","Scotland","Haiti"],
+  D:["USA","Paraguay","Australia","Turkiye"],
+  E:["Germany","Ecuador","Ivory Coast","Curacao"],
+  F:["Netherlands","Japan","Tunisia","Sweden"],
+  G:["Belgium","Iran","Egypt","New Zealand"],
+  H:["Spain","Uruguay","Saudi Arabia","Cape Verde"],
+  I:["France","Senegal","Norway","Iraq"],
+  J:["Argentina","Austria","Algeria","Jordan"],
+  K:["Portugal","Colombia","Uzbekistan","DR Congo"],
+  L:["England","Croatia","Panama","Ghana"],
 };
 
-const INTERACTIVE_GROUPS = ["A","B","C"]; // groups user picks manually
+const INTERACTIVE_GROUPS = ["A","B","C","D","E","F","G","H","I","J","K","L"]; // all 12 groups user ranks manually
 const ALL_GROUP_IDS = Object.keys(ALL_GROUPS_DATA);
 
-const makeMatchups = (teams) => {
-  const m = [];
-  for(let i=0;i<teams.length;i++) for(let j=i+1;j<teams.length;j++) m.push([teams[i],teams[j]]);
-  return m;
-};
+// Ordinea oficială FIFA WC 2026 per grupă:
+// R1: seed1 vs seed2, seed3 vs seed4
+// R2: seed1 vs seed3, seed2 vs seed4
+// R3: seed1 vs seed4, seed2 vs seed3
+const makeMatchups = (teams) => [
+  [teams[0], teams[1]],
+  [teams[2], teams[3]],
+  [teams[0], teams[2]],
+  [teams[1], teams[3]],
+  [teams[0], teams[3]],
+  [teams[1], teams[2]],
+];
 
 const GROUP_MATCHUPS = {};
 ALL_GROUP_IDS.forEach(g=>{ GROUP_MATCHUPS[g] = makeMatchups(ALL_GROUPS_DATA[g]); });
@@ -1253,6 +1298,299 @@ function FlagBg({ team, style }) {
         </div>
       </div>
     ),
+    "South Korea": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,background:"#fff"}}/>
+        <div style={{position:"absolute",top:"50%",left:"50%",
+          width:"30%",height:"30%",transform:"translate(-50%,-50%)",
+          background:"linear-gradient(180deg,#C60C30 50%,#003478 50%)",borderRadius:"50%"}}/>
+      </div>
+    ),
+    "Qatar": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,display:"flex"}}>
+          <div style={{width:"35%",background:"#fff"}}/>
+          <div style={{flex:1,background:"#8A1538"}}/>
+        </div>
+      </div>
+    ),
+    "Costa Rica": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column"}}>
+          <div style={{flex:1,background:"#002B7F"}}/>
+          <div style={{flex:1,background:"#fff"}}/>
+          <div style={{flex:2,background:"#CE1126"}}/>
+          <div style={{flex:1,background:"#fff"}}/>
+          <div style={{flex:1,background:"#002B7F"}}/>
+        </div>
+      </div>
+    ),
+    "Switzerland": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,background:"#FF0000"}}/>
+        <div style={{position:"absolute",top:0,bottom:0,left:"calc(50% - 6%)",width:"12%",background:"#fff"}}/>
+        <div style={{position:"absolute",left:0,right:0,top:"calc(50% - 9%)",height:"18%",background:"#fff"}}/>
+      </div>
+    ),
+    "Saudi Arabia": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,background:"#006C35"}}/>
+        <div style={{position:"absolute",top:"35%",left:"15%",right:"15%",height:"22%",
+          background:"#fff",opacity:0.9,borderRadius:"4px"}}/>
+        <div style={{position:"absolute",bottom:"22%",left:"22%",right:"22%",height:"6%",background:"#fff",opacity:0.85}}/>
+      </div>
+    ),
+    "Nigeria": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,display:"flex"}}>
+          <div style={{flex:1,background:"#008751"}}/>
+          <div style={{flex:1,background:"#fff"}}/>
+          <div style={{flex:1,background:"#008751"}}/>
+        </div>
+      </div>
+    ),
+    "Uruguay": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,background:"#fff"}}/>
+        {[0,1,2,3].map(i=>(
+          <div key={i} style={{position:"absolute",left:"40%",right:0,
+            top:`${(i*2+1)*(100/9)}%`,height:`${100/9}%`,background:"#7CB9E8"}}/>
+        ))}
+        <div style={{position:"absolute",top:0,left:0,width:"40%",height:`${100/9*5}%`,background:"#fff",borderRight:"1px solid rgba(0,0,0,0.05)",borderBottom:"1px solid rgba(0,0,0,0.05)"}}/>
+        <div style={{position:"absolute",top:`${100/9*1.5}%`,left:"12%",
+          width:"16%",height:"22%",background:"#FCD116",borderRadius:"50%",border:"1.5px solid #FF8C00"}}/>
+      </div>
+    ),
+    "Colombia": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column"}}>
+          <div style={{flex:2,background:"#FCD116"}}/>
+          <div style={{flex:1,background:"#003893"}}/>
+          <div style={{flex:1,background:"#CE1126"}}/>
+        </div>
+      </div>
+    ),
+    "Ghana": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column"}}>
+          <div style={{flex:1,background:"#CE1126"}}/>
+          <div style={{flex:1,background:"#FCD116"}}/>
+          <div style={{flex:1,background:"#006B3F"}}/>
+        </div>
+        <div style={{position:"absolute",top:"42%",left:"42%",width:"16%",height:"16%",
+          background:"#000",clipPath:"polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%)"}}/>
+      </div>
+    ),
+    "Italy": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,display:"flex"}}>
+          <div style={{flex:1,background:"#008C45"}}/>
+          <div style={{flex:1,background:"#F4F5F0"}}/>
+          <div style={{flex:1,background:"#CD212A"}}/>
+        </div>
+      </div>
+    ),
+    "Peru": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,display:"flex"}}>
+          <div style={{flex:1,background:"#D91023"}}/>
+          <div style={{flex:1,background:"#fff"}}/>
+          <div style={{flex:1,background:"#D91023"}}/>
+        </div>
+      </div>
+    ),
+    "South Africa": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,background:"#FFB81C"}}/>
+        <div style={{position:"absolute",top:0,left:0,right:0,height:"50%",background:"#DE3831"}}/>
+        <div style={{position:"absolute",left:0,top:0,bottom:0,width:"32%",background:"#000",
+          clipPath:"polygon(0 0, 70% 0, 100% 50%, 70% 100%, 0 100%)"}}/>
+        <div style={{position:"absolute",left:0,top:"40%",bottom:"40%",right:0,background:"#007A4D"}}/>
+        <div style={{position:"absolute",left:0,top:"32%",bottom:"32%",right:0,background:"#fff",
+          clipPath:"polygon(0 0, 50% 0, 30% 50%, 50% 100%, 0 100%)"}}/>
+      </div>
+    ),
+    "Czechia": (
+      <div style={s}>
+        <div style={{position:"absolute",top:0,left:0,right:0,height:"50%",background:"#fff"}}/>
+        <div style={{position:"absolute",bottom:0,left:0,right:0,height:"50%",background:"#D7141A"}}/>
+        <div style={{position:"absolute",left:0,top:0,bottom:0,width:"50%",background:"#11457E",
+          clipPath:"polygon(0 0, 100% 50%, 0 100%)"}}/>
+      </div>
+    ),
+    "Bosnia-Herzegovina": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,background:"#002F6C"}}/>
+        <div style={{position:"absolute",top:0,right:"15%",bottom:0,width:"35%",background:"#FECB00",
+          clipPath:"polygon(100% 0, 0 100%, 100% 100%)"}}/>
+      </div>
+    ),
+    "Scotland": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,background:"#0065BD"}}/>
+        <div style={{position:"absolute",inset:0,background:"linear-gradient(45deg,transparent 47%,#fff 47%,#fff 53%,transparent 53%)"}}/>
+        <div style={{position:"absolute",inset:0,background:"linear-gradient(-45deg,transparent 47%,#fff 47%,#fff 53%,transparent 53%)"}}/>
+      </div>
+    ),
+    "Haiti": (
+      <div style={s}>
+        <div style={{position:"absolute",top:0,left:0,right:0,height:"50%",background:"#00209F"}}/>
+        <div style={{position:"absolute",bottom:0,left:0,right:0,height:"50%",background:"#D21034"}}/>
+        <div style={{position:"absolute",top:"30%",left:"35%",right:"35%",height:"40%",background:"#fff"}}/>
+      </div>
+    ),
+    "Paraguay": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column"}}>
+          <div style={{flex:1,background:"#D52B1E"}}/>
+          <div style={{flex:1,background:"#fff"}}/>
+          <div style={{flex:1,background:"#0038A8"}}/>
+        </div>
+      </div>
+    ),
+    "Turkiye": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,background:"#E30A17"}}/>
+        <div style={{position:"absolute",top:"50%",left:"30%",
+          width:"22%",height:"50%",transform:"translate(-50%,-50%)",
+          background:"#fff",borderRadius:"50%"}}/>
+        <div style={{position:"absolute",top:"50%",left:"33%",
+          width:"18%",height:"42%",transform:"translate(-50%,-50%)",
+          background:"#E30A17",borderRadius:"50%"}}/>
+        <div style={{position:"absolute",top:"50%",left:"48%",
+          color:"#fff",fontSize:"160%",fontWeight:"bold",lineHeight:1,
+          transform:"translateY(-50%)"}}>★</div>
+      </div>
+    ),
+    "Ivory Coast": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,display:"flex"}}>
+          <div style={{flex:1,background:"#FF8200"}}/>
+          <div style={{flex:1,background:"#fff"}}/>
+          <div style={{flex:1,background:"#009E60"}}/>
+        </div>
+      </div>
+    ),
+    "Curacao": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,background:"#002B7F"}}/>
+        <div style={{position:"absolute",left:0,right:0,top:"58%",height:"12%",background:"#F9E814"}}/>
+      </div>
+    ),
+    "Sweden": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,background:"#006AA7"}}/>
+        <div style={{position:"absolute",top:0,bottom:0,left:"30%",width:"12%",background:"#FECC00"}}/>
+        <div style={{position:"absolute",left:0,right:0,top:"40%",height:"20%",background:"#FECC00"}}/>
+      </div>
+    ),
+    "Egypt": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column"}}>
+          <div style={{flex:1,background:"#CE1126"}}/>
+          <div style={{flex:1,background:"#fff"}}/>
+          <div style={{flex:1,background:"#000"}}/>
+        </div>
+      </div>
+    ),
+    "New Zealand": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,background:"#012169"}}/>
+        <div style={{position:"absolute",top:0,left:0,width:"50%",height:"50%",
+          background:"linear-gradient(135deg,#012169 50%,#C8102E 50%)"}}/>
+      </div>
+    ),
+    "Cape Verde": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,background:"#003893"}}/>
+        <div style={{position:"absolute",left:0,right:0,top:"55%",height:"15%",background:"#fff"}}/>
+        <div style={{position:"absolute",left:0,right:0,top:"63%",height:"5%",background:"#CF2027"}}/>
+      </div>
+    ),
+    "Norway": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,background:"#EF2B2D"}}/>
+        <div style={{position:"absolute",top:0,bottom:0,left:"32%",width:"14%",background:"#fff"}}/>
+        <div style={{position:"absolute",left:0,right:0,top:"42%",height:"16%",background:"#fff"}}/>
+        <div style={{position:"absolute",top:0,bottom:0,left:"35%",width:"8%",background:"#002868"}}/>
+        <div style={{position:"absolute",left:0,right:0,top:"46%",height:"8%",background:"#002868"}}/>
+      </div>
+    ),
+    "Iraq": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column"}}>
+          <div style={{flex:1,background:"#CE1126"}}/>
+          <div style={{flex:1,background:"#fff"}}/>
+          <div style={{flex:1,background:"#000"}}/>
+        </div>
+        <div style={{position:"absolute",top:"45%",left:"38%",color:"#007A3D",
+          fontSize:"60%",fontWeight:"bold",lineHeight:1}}>الله أكبر</div>
+      </div>
+    ),
+    "Austria": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column"}}>
+          <div style={{flex:1,background:"#ED2939"}}/>
+          <div style={{flex:1,background:"#fff"}}/>
+          <div style={{flex:1,background:"#ED2939"}}/>
+        </div>
+      </div>
+    ),
+    "Algeria": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,display:"flex"}}>
+          <div style={{flex:1,background:"#006233"}}/>
+          <div style={{flex:1,background:"#fff"}}/>
+        </div>
+        <div style={{position:"absolute",top:"50%",left:"50%",
+          width:"22%",height:"36%",transform:"translate(-50%,-50%)",
+          color:"#D21034",fontSize:"180%",lineHeight:1,textAlign:"center"}}>☪</div>
+      </div>
+    ),
+    "Jordan": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column"}}>
+          <div style={{flex:1,background:"#000"}}/>
+          <div style={{flex:1,background:"#fff"}}/>
+          <div style={{flex:1,background:"#007A3D"}}/>
+        </div>
+        <div style={{position:"absolute",left:0,top:0,bottom:0,width:"35%",background:"#CE1126",
+          clipPath:"polygon(0 0, 100% 50%, 0 100%)"}}/>
+      </div>
+    ),
+    "Uzbekistan": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column"}}>
+          <div style={{flex:1,background:"#0099B5"}}/>
+          <div style={{flex:0.15,background:"#CE1126"}}/>
+          <div style={{flex:1,background:"#fff"}}/>
+          <div style={{flex:0.15,background:"#CE1126"}}/>
+          <div style={{flex:1,background:"#1EB53A"}}/>
+        </div>
+      </div>
+    ),
+    "DR Congo": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,background:"#007FFF"}}/>
+        <div style={{position:"absolute",inset:0,
+          background:"linear-gradient(20deg,transparent 40%,#F7D618 40%,#F7D618 50%,transparent 50%)"}}/>
+        <div style={{position:"absolute",inset:0,
+          background:"linear-gradient(20deg,transparent 35%,#CE1126 35%,#CE1126 40%,transparent 40%,transparent 50%,#CE1126 50%,#CE1126 55%,transparent 55%)"}}/>
+        <div style={{position:"absolute",top:"12%",left:"8%",
+          color:"#F7D618",fontSize:"120%",lineHeight:1}}>★</div>
+      </div>
+    ),
+    "Panama": (
+      <div style={s}>
+        <div style={{position:"absolute",inset:0,background:"#fff"}}/>
+        <div style={{position:"absolute",top:0,right:0,width:"50%",height:"50%",background:"#005AA7"}}/>
+        <div style={{position:"absolute",bottom:0,left:0,width:"50%",height:"50%",background:"#D21034"}}/>
+        <div style={{position:"absolute",top:"12%",left:"12%",
+          color:"#005AA7",fontSize:"180%",lineHeight:1}}>★</div>
+        <div style={{position:"absolute",bottom:"12%",right:"12%",
+          color:"#D21034",fontSize:"180%",lineHeight:1}}>★</div>
+      </div>
+    ),
   };
   return renders[team] || (
     <div style={s}>
@@ -1262,7 +1600,6 @@ function FlagBg({ team, style }) {
   );
 }
 
-// ── MATCH SWIPE CARD ─────────────────────────────────────────────────────────
 function MatchSwipeCard({ home, away, onPick, onFlash, groupLabel, matchNum, totalMatches, existingPick, onBack, canGoBack, isKo }) {
   const startX = useRef(null);
   const startY = useRef(null);
@@ -1333,18 +1670,23 @@ function MatchSwipeCard({ home, away, onPick, onFlash, groupLabel, matchNum, tot
   const rotation = overlayState ? 0 : offset.x * 0.045;
   const isFlying = Math.abs(offset.x)>200 || offset.y < -200;
 
-  // ── DRAW OVERLAY — pur negru, fără steaguri ──────────────────────────────
+  // ── DRAW OVERLAY — background FIFA WC 2026 ──────────────────────────────
   if (overlayState === "draw") {
     return (
-      <div style={{flex:1,display:"flex",flexDirection:"column",userSelect:"none",position:"relative",overflow:"hidden",background:"#111"}}>
+      <div style={{flex:1,display:"flex",flexDirection:"column",userSelect:"none",position:"relative",overflow:"hidden",background:"#0a1228"}}>
         <style>{`
           @keyframes drawBounce{0%{transform:scale(0.5);opacity:0}60%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
           @keyframes shimmer{0%,100%{opacity:0.6}50%{opacity:1}}
         `}</style>
 
-        {/* subtle dark gradient — no flags */}
+        {/* FIFA WC 2026 gradient */}
         <div style={{position:"absolute",inset:0,
-          background:"radial-gradient(ellipse at 50% 45%, #2a2a2a 0%, #0d0d0d 100%)"}}/>
+          background:`
+            radial-gradient(ellipse at 18% 20%, rgba(228,0,43,0.35) 0%, transparent 42%),
+            radial-gradient(ellipse at 82% 25%, rgba(0,47,108,0.45) 0%, transparent 45%),
+            radial-gradient(ellipse at 50% 90%, rgba(0,104,71,0.30) 0%, transparent 50%),
+            linear-gradient(160deg, #0d1730 0%, #0a1228 35%, #150a1f 65%, #0a1228 100%)
+          `}}/>
 
         {/* Content */}
         <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
@@ -1396,58 +1738,69 @@ function MatchSwipeCard({ home, away, onPick, onFlash, groupLabel, matchNum, tot
     const winnerFlag = FLAGS[winnerTeam]||"🏳";
 
     return (
-      <div style={{flex:1,display:"flex",flexDirection:"column",userSelect:"none",position:"relative",overflow:"hidden"}}>
+      <div style={{flex:1,display:"flex",flexDirection:"column",userSelect:"none",position:"relative",overflow:"hidden",background:"#0a1228"}}>
         <style>{`
-          @keyframes bgReveal{0%{opacity:0;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+          @keyframes bgReveal{0%{opacity:0}100%{opacity:1}}
           @keyframes popIn{0%{transform:scale(0.3) rotate(-10deg);opacity:0}60%{transform:scale(1.18) rotate(3deg)}80%{transform:scale(0.94) rotate(-1deg)}100%{transform:scale(1) rotate(0deg);opacity:1}}
           @keyframes slideUp{0%{transform:translateY(40px);opacity:0}100%{transform:translateY(0);opacity:1}}
-          @keyframes subtlePulse{0%,100%{transform:scale(1)}50%{transform:scale(1.02)}}
+          @keyframes flagWallpaperFloat{0%,100%{transform:translateY(0px) rotate(-2deg)}50%{transform:translateY(-8px) rotate(2deg)}}
         `}</style>
 
-        {/* Flag as full-screen wallpaper — scaled & centered, aesthetic blur at edges */}
+        {/* FIFA WC 2026 gradient background */}
+        <div style={{position:"absolute",inset:0,
+          background:`
+            radial-gradient(ellipse at 18% 20%, rgba(228,0,43,0.35) 0%, transparent 42%),
+            radial-gradient(ellipse at 82% 25%, rgba(0,47,108,0.45) 0%, transparent 45%),
+            radial-gradient(ellipse at 50% 90%, rgba(0,104,71,0.30) 0%, transparent 50%),
+            linear-gradient(160deg, #0d1730 0%, #0a1228 35%, #150a1f 65%, #0a1228 100%)
+          `}}/>
+
+        {/* Wrapper centrat — fix poziționare */}
         <div style={{
-          position:"absolute", inset:"-8%",
-          animation:"bgReveal 0.5s cubic-bezier(0.22,1,0.36,1) forwards, subtlePulse 6s ease-in-out 0.5s infinite",
+          position:"absolute", top:"18%", left:"50%",
+          transform:"translateX(-50%)",
+          width:"75%", maxWidth:360,
+          zIndex:2, pointerEvents:"none",
         }}>
-          <FlagBg team={winnerTeam} style={{borderRadius:0}}/>
+          {/* Glow halo în spatele steagului */}
+          <div style={{
+            position:"absolute", top:"-10%", left:"-8%", right:"-8%", bottom:"-10%",
+            background:"radial-gradient(ellipse, rgba(255,255,255,0.22) 0%, transparent 70%)",
+            filter:"blur(24px)",
+          }}/>
+
+          {/* Steagul mare — emoji nativ frumos */}
+          <div style={{
+            position:"relative",
+            display:"flex", alignItems:"center", justifyContent:"center",
+            animation:"bgReveal 0.5s ease forwards, flagWallpaperFloat 5s ease-in-out 0.5s infinite",
+          }}>
+            <span style={{
+              fontSize:200, lineHeight:1, display:"block",
+              filter:"drop-shadow(0 16px 40px rgba(0,0,0,0.85)) drop-shadow(0 4px 8px rgba(0,0,0,0.6))",
+            }}>
+              {winnerFlag}
+            </span>
+          </div>
         </div>
-        {/* Edge blur/vignette so flag doesn't look clipped */}
-        <div style={{position:"absolute",inset:0,pointerEvents:"none",zIndex:1,
-          background:"radial-gradient(ellipse at 50% 40%, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.55) 100%)"}}/>
+
         {/* Bottom gradient for action buttons readability */}
-        <div style={{position:"absolute",bottom:0,left:0,right:0,height:"35%",zIndex:1,pointerEvents:"none",
-          background:"linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 100%)"}}/>
+        <div style={{position:"absolute",bottom:0,left:0,right:0,height:"30%",zIndex:1,pointerEvents:"none",
+          background:"linear-gradient(to top, rgba(0,0,0,0.65) 0%, transparent 100%)"}}/>
 
         {/* Confetti */}
         <ConfettiCanvas colors={confettiColors} active={confettiActive}/>
 
-        {/* Content */}
-        <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
-          position:"relative",zIndex:5,padding:"24px 20px"}}>
-
-          {/* Trophy */}
-          <div style={{
-            background:"rgba(0,0,0,0.4)",backdropFilter:"blur(8px)",borderRadius:"50%",
-            width:52,height:52,display:"flex",alignItems:"center",justifyContent:"center",
-            border:"2px solid rgba(255,255,255,0.4)",
-            animation:"slideUp 0.4s ease forwards",
-            boxShadow:"0 4px 20px rgba(0,0,0,0.4)",marginBottom:16}}>
-            <span style={{fontSize:26}}>🏆</span>
-          </div>
-
-          {/* Winner flag emoji — big */}
-          <div style={{animation:"popIn 0.5s cubic-bezier(0.175,0.885,0.32,1.275) 0.1s both",marginBottom:8}}>
-            <span style={{fontSize:130,lineHeight:1,
-              filter:"drop-shadow(0 12px 40px rgba(0,0,0,0.8))",display:"block",textAlign:"center"}}>
-              {winnerFlag}
-            </span>
-          </div>
+        {/* Content — aliniat în partea de jos sub steagul mare */}
+        <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"flex-end",
+          position:"relative",zIndex:5,padding:"24px 20px 24px"}}>
 
           {/* Winner name */}
-          <div style={{animation:"slideUp 0.45s ease 0.2s both",marginBottom:6}}>
-            <div style={{background:"rgba(0,0,0,0.45)",borderRadius:20,padding:"8px 28px",
-              border:"2px solid rgba(255,255,255,0.35)",backdropFilter:"blur(8px)"}}>
-              <span style={{fontSize:26,fontWeight:900,color:"#FFD700",letterSpacing:2,
+          <div style={{animation:"slideUp 0.45s ease 0.15s both",marginBottom:8}}>
+            <div style={{background:"rgba(0,0,0,0.55)",borderRadius:20,padding:"10px 32px",
+              border:"2px solid rgba(255,255,255,0.4)",backdropFilter:"blur(10px)",
+              boxShadow:"0 6px 24px rgba(0,0,0,0.5)"}}>
+              <span style={{fontSize:28,fontWeight:900,color:"#FFD700",letterSpacing:2,
                 textShadow:"0 2px 16px rgba(0,0,0,0.9)"}}>
                 {winnerTeam}
               </span>
@@ -1455,14 +1808,15 @@ function MatchSwipeCard({ home, away, onPick, onFlash, groupLabel, matchNum, tot
           </div>
 
           {/* CÂȘTIGĂ */}
-          <div style={{animation:"slideUp 0.45s ease 0.3s both",marginBottom:16}}>
-            <span style={{fontSize:12,fontWeight:700,color:"rgba(255,255,255,0.7)",letterSpacing:2,textTransform:"uppercase"}}>
+          <div style={{animation:"slideUp 0.45s ease 0.25s both",marginBottom:18}}>
+            <span style={{fontSize:13,fontWeight:800,color:"rgba(255,255,255,0.85)",letterSpacing:3,textTransform:"uppercase",
+              textShadow:"0 1px 6px rgba(0,0,0,0.8)"}}>
               CÂȘTIGĂ ✓
             </span>
           </div>
 
           {/* Loser mini */}
-          <div style={{display:"flex",alignItems:"center",gap:8,opacity:0.5,
+          <div style={{display:"flex",alignItems:"center",gap:8,opacity:0.6,
             animation:"slideUp 0.45s ease 0.35s both"}}>
             <span style={{fontSize:11,color:"#fff",fontWeight:600}}>vs</span>
             <span style={{fontSize:28}}>{FLAGS[loserTeam]||"🏳"}</span>
@@ -1501,9 +1855,17 @@ function MatchSwipeCard({ home, away, onPick, onFlash, groupLabel, matchNum, tot
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",userSelect:"none",position:"relative"}}>
       <style>{`
-        @keyframes flagFloat{0%,100%{transform:translateY(0px)}50%{transform:translateY(-9px)}}
         @keyframes xPulse{0%,100%{opacity:0.45}50%{opacity:0.9}}
-        @keyframes seamShine{0%{opacity:0.6}50%{opacity:1}100%{opacity:0.6}}
+        @keyframes neonPulseHome{0%,100%{box-shadow:0 0 18px 4px ${homeColors[0]}aa,0 0 40px 8px ${homeColors[0]}44,0 0 0 3px rgba(255,255,255,0.9),inset 0 0 12px rgba(255,255,255,0.1)}50%{box-shadow:0 0 30px 8px ${homeColors[0]}ee,0 0 65px 15px ${homeColors[0]}66,0 0 0 3px rgba(255,255,255,0.9),inset 0 0 12px rgba(255,255,255,0.15)}}
+        @keyframes neonPulseAway{0%,100%{box-shadow:0 0 18px 4px ${awayColors[0]}aa,0 0 40px 8px ${awayColors[0]}44,0 0 0 3px rgba(255,255,255,0.9),inset 0 0 12px rgba(255,255,255,0.1)}50%{box-shadow:0 0 30px 8px ${awayColors[0]}ee,0 0 65px 15px ${awayColors[0]}66,0 0 0 3px rgba(255,255,255,0.9),inset 0 0 12px rgba(255,255,255,0.15)}}
+        @keyframes slideInTopLeft{0%{opacity:0;transform:translate(-80px,-60px) scale(0.6)}100%{opacity:1;transform:translate(0,0) scale(1)}}
+        @keyframes slideInBottomRight{0%{opacity:0;transform:translate(80px,60px) scale(0.6)}100%{opacity:1;transform:translate(0,0) scale(1)}}
+        @keyframes vsAppear{0%{opacity:0;transform:translate(-50%,-50%) scale(0.3) rotate(-15deg)}100%{opacity:1;transform:translate(-50%,-50%) scale(1) rotate(-8deg)}}
+        @keyframes ballDrop{0%{opacity:0;transform:translate(-50%,-50%) translateY(-40px) scale(0.6)}100%{opacity:1;transform:translate(-50%,-50%) translateY(0) scale(1)}}
+        @keyframes ballBob{0%,100%{transform:translate(-50%,-50%) translateY(0px)}50%{transform:translate(-50%,-50%) translateY(-8px)}}
+        @keyframes lightBeamLeft{0%,100%{opacity:0.3}50%{opacity:0.6}}
+        @keyframes lightBeamRight{0%,100%{opacity:0.25}50%{opacity:0.55}}
+        @keyframes particleFloat{0%{transform:translateY(0px) translateX(0px);opacity:0.8}50%{opacity:1}100%{transform:translateY(-60px) translateX(10px);opacity:0}}
       `}</style>
 
       <div
@@ -1514,66 +1876,37 @@ function MatchSwipeCard({ home, away, onPick, onFlash, groupLabel, matchNum, tot
           transition: isFlying
             ? "transform 0.30s cubic-bezier(0.55,0,1,0.45)"
             : (offset.x===0&&offset.y===0 ? "transform 0.35s cubic-bezier(0.175,0.885,0.32,1.275)" : "transform 0.04s"),
-          position:"relative", background:"#000",
+          position:"relative",
+          background:"#050d1a",
         }}>
 
-        {/* ── LEFT TRIANGLE — steagul real al echipei home, clipat pe triunghi ── */}
-        <div onClick={()=>pick("home")} style={{
-          position:"absolute", inset:0,
-          clipPath:"polygon(0 0, 100% 0, 0 100%)",
-          cursor:"pointer",
-          filter:`brightness(${homeDim}) saturate(1.1)`,
-          transition:"filter 0.1s",
-        }}>
-          <FlagBg team={home} style={{}}/>
-          {swipeLeft&&<div style={{position:"absolute",inset:0,background:"rgba(255,255,255,0.1)",pointerEvents:"none"}}/>}
-        </div>
+        {/* ── BACKGROUND — gradient din culorile echipelor ── */}
+        <div style={{position:"absolute",inset:0,
+          background:`linear-gradient(135deg, ${homeColors[0]}cc 0%, ${homeColors[0]}88 25%, #0a0e1a 50%, ${awayColors[0]}88 75%, ${awayColors[0]}cc 100%)`}}/>
+        {/* Dark overlay pentru contrast */}
+        <div style={{position:"absolute",inset:0,pointerEvents:"none",
+          background:"linear-gradient(180deg, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.1) 40%, rgba(0,0,0,0.1) 60%, rgba(0,0,0,0.55) 100%)"}}/>
+        {/* Radial glow home */}
+        <div style={{position:"absolute",inset:0,pointerEvents:"none",
+          background:`radial-gradient(ellipse at 15% 20%, ${homeColors[0]}55 0%, transparent 50%)`,
+          animation:"lightBeamLeft 3s ease-in-out infinite"}}/>
+        {/* Radial glow away */}
+        <div style={{position:"absolute",inset:0,pointerEvents:"none",
+          background:`radial-gradient(ellipse at 85% 80%, ${awayColors[0]}55 0%, transparent 50%)`,
+          animation:"lightBeamRight 3s ease-in-out 1.5s infinite"}}/>
 
-        {/* ── RIGHT TRIANGLE — steagul real al echipei away ── */}
-        <div onClick={()=>pick("away")} style={{
-          position:"absolute", inset:0,
-          clipPath:"polygon(100% 0, 100% 100%, 0 100%)",
-          cursor:"pointer",
-          filter:`brightness(${awayDim}) saturate(1.1)`,
-          transition:"filter 0.1s",
-        }}>
-          <FlagBg team={away} style={{}}/>
-          {swipeRight&&<div style={{position:"absolute",inset:0,background:"rgba(255,255,255,0.1)",pointerEvents:"none"}}/>}
-        </div>
-
-        {/* ── FADE SPRE DIAGONALĂ ── */}
-        {/* Triunghi stânga-sus: fade spre colțul bottom-right (care e pe diagonală) */}
-        <div style={{
-          position:"absolute", inset:0, pointerEvents:"none", zIndex:3,
-          clipPath:"polygon(0 0, 100% 0, 0 100%)",
-          background:"linear-gradient(to bottom right, transparent 50%, rgba(255,255,255,0.25) 68%, rgba(255,255,255,0.65) 82%, rgba(255,255,255,0.92) 94%, rgba(255,255,255,0.98) 100%)",
-        }}/>
-        {/* Triunghi dreapta-jos: fade spre colțul top-left (care e pe diagonală) */}
-        <div style={{
-          position:"absolute", inset:0, pointerEvents:"none", zIndex:3,
-          clipPath:"polygon(100% 0, 100% 100%, 0 100%)",
-          background:"linear-gradient(to top left, transparent 50%, rgba(255,255,255,0.25) 68%, rgba(255,255,255,0.65) 82%, rgba(255,255,255,0.92) 94%, rgba(255,255,255,0.98) 100%)",
-        }}/>
-        {/* Linia albă subțire pe diagonală */}
-        <svg style={{position:"absolute",inset:0,width:"100%",height:"100%",pointerEvents:"none",zIndex:4}}>
-          <defs>
-            <linearGradient id="lineGrad" x1="100%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%"   stopColor="rgba(255,255,255,0)"/>
-              <stop offset="20%"  stopColor="rgba(255,255,255,0.9)"/>
-              <stop offset="50%"  stopColor="rgba(255,255,255,1)"/>
-              <stop offset="80%"  stopColor="rgba(255,255,255,0.9)"/>
-              <stop offset="100%" stopColor="rgba(255,255,255,0)"/>
-            </linearGradient>
-          </defs>
-          <line x1="100%" y1="0%" x2="0%" y2="100%"
-            stroke="url(#lineGrad)" strokeWidth="1.5"
-            style={{animation:"seamShine 3s ease-in-out infinite"}}/>
-        </svg>
-
-        {/* Top + bottom vignette */}
-        <div style={{position:"absolute",inset:0,pointerEvents:"none",zIndex:2,
-          background:"linear-gradient(to bottom, rgba(0,0,0,0.45) 0%, transparent 28%, transparent 62%, rgba(0,0,0,0.65) 100%)"}}/>
-
+        {/* Confetti particles */}
+        {[...Array(8)].map((_,i)=>(
+          <div key={i} style={{
+            position:"absolute",
+            left:`${10+i*12}%`,
+            top:`${60+Math.sin(i)*15}%`,
+            width:4, height:4, borderRadius:"50%",
+            background:i%2===0?homeColors[0]:awayColors[0],
+            opacity:0.5, pointerEvents:"none",
+            animation:`particleFloat ${2+i*0.3}s ease-in ${i*0.4}s infinite`,
+          }}/>
+        ))}
 
         {/* DRAW overlay — swipe up */}
         {!isKo&&swipeUp&&(
@@ -1587,43 +1920,128 @@ function MatchSwipeCard({ home, away, onPick, onFlash, groupLabel, matchNum, tot
           </div>
         )}
 
-        {/* ── VS + click areas ── */}
-        <div style={{
-          position:"absolute", zIndex:5, inset:0,
-          display:"flex", alignItems:"center", justifyContent:"center",
+        {/* ── HOME TEAM — top-left ── */}
+        <div onClick={()=>pick("home")} style={{
+          position:"absolute", top:"9%", left:"4%",
+          zIndex:5, cursor:"pointer",
+          display:"flex", flexDirection:"column", alignItems:"flex-start", gap:10,
+          animation:"slideInTopLeft 0.55s cubic-bezier(0.22,1,0.36,1) both",
+          transform: swipeLeft
+            ? `scale(${1+leftPct*0.07}) translate(${-leftPct*10}px,${-leftPct*10}px)`
+            : "scale(1)",
+          transition:"transform 0.12s",
         }}>
-          {/* Home click area */}
-          <div onClick={()=>pick("home")} style={{flex:1, height:"100%", cursor:"pointer"}}/>
-
-          {/* VS — brush stroke grunge */}
-          <div style={{flexShrink:0, zIndex:6, position:"relative", width:80, height:64,
-            filter:"drop-shadow(0 4px 16px rgba(0,0,0,0.9)) drop-shadow(0 2px 6px rgba(200,0,0,0.6))"}}>
-            <svg viewBox="0 0 120 90" width="80" height="64" xmlns="http://www.w3.org/2000/svg">
-              <defs>
-                <linearGradient id="vsGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%"   stopColor="#FFD700"/>
-                  <stop offset="25%"  stopColor="#FF6600"/>
-                  <stop offset="60%"  stopColor="#CC0000"/>
-                  <stop offset="100%" stopColor="#550000"/>
-                </linearGradient>
-                <filter id="vsRough">
-                  <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" result="noise"/>
-                  <feDisplacementMap in="SourceGraphic" in2="noise" scale="2.5" xChannelSelector="R" yChannelSelector="G"/>
-                </filter>
-              </defs>
-              <text x="8" y="72" fontFamily="Arial Black, Impact, sans-serif"
-                fontSize="78" fontWeight="900" fontStyle="italic"
-                fill="white" stroke="white" strokeWidth="8"
-                strokeLinejoin="round" strokeLinecap="round"
-                filter="url(#vsRough)" letterSpacing="-4">VS</text>
-              <text x="8" y="72" fontFamily="Arial Black, Impact, sans-serif"
-                fontSize="78" fontWeight="900" fontStyle="italic"
-                fill="url(#vsGrad)" filter="url(#vsRough)" letterSpacing="-4">VS</text>
-            </svg>
+          {/* Flag card with neon border */}
+          <div style={{
+            width:170, aspectRatio:"3/2",
+            borderRadius:16, overflow:"hidden", position:"relative",
+            animation:`neonPulseHome ${swipeLeft?"0.6s":"2.5s"} ease-in-out infinite`,
+            transform:"rotate(-4deg)",
+          }}>
+            <FlagBg team={home} style={{}}/>
+            {/* Glossy shine on top */}
+            <div style={{position:"absolute",inset:0,
+              background:"linear-gradient(135deg, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.05) 40%, transparent 60%)",
+              pointerEvents:"none"}}/>
           </div>
+          {/* Team name */}
+          <span style={{
+            fontSize:17, fontWeight:900, color:"#fff",
+            letterSpacing:2, textTransform:"uppercase",
+            textShadow:`0 0 20px ${homeColors[0]}, 0 2px 8px rgba(0,0,0,0.9)`,
+            paddingLeft:4,
+          }}>{home}</span>
+        </div>
 
-          {/* Away click area */}
-          <div onClick={()=>pick("away")} style={{flex:1, height:"100%", cursor:"pointer"}}/>
+        {/* ── VS — diagonal center ── */}
+        <div style={{
+          position:"absolute", top:"40%", left:"52%",
+          transform:"translate(-50%,-50%)",
+          zIndex:7, pointerEvents:"none",
+          animation:"vsAppear 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.2s both",
+        }}>
+          <svg viewBox="0 0 160 100" width="140" height="88" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="vsG" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%"   stopColor="#FFD700"/>
+                <stop offset="30%"  stopColor="#FF6B00"/>
+                <stop offset="65%"  stopColor="#CC0000"/>
+                <stop offset="100%" stopColor="#660000"/>
+              </linearGradient>
+              <filter id="vsGlow">
+                <feGaussianBlur stdDeviation="3" result="b"/>
+                <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+              </filter>
+              <filter id="vsRuf">
+                <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" result="n"/>
+                <feDisplacementMap in="SourceGraphic" in2="n" scale="2.8" xChannelSelector="R" yChannelSelector="G"/>
+              </filter>
+            </defs>
+            {/* White outline sticker */}
+            <text x="6" y="82" fontFamily="Arial Black,Impact,sans-serif"
+              fontSize="90" fontWeight="900" fontStyle="italic"
+              fill="white" stroke="white" strokeWidth="10"
+              strokeLinejoin="round" strokeLinecap="round"
+              filter="url(#vsRuf)" letterSpacing="-6">VS</text>
+            {/* Colored gradient text */}
+            <text x="6" y="82" fontFamily="Arial Black,Impact,sans-serif"
+              fontSize="90" fontWeight="900" fontStyle="italic"
+              fill="url(#vsG)" filter="url(#vsRuf)" letterSpacing="-6">VS</text>
+          </svg>
+        </div>
+
+        {/* ── SOCCER BALL — center-left of VS ── */}
+        <div style={{
+          position:"absolute", top:"56%", left:"44%",
+          transform:"translate(-50%,-50%)",
+          zIndex:6,
+          width:110, height:110,
+          display:"flex", alignItems:"center", justifyContent:"center",
+          animation:"ballDrop 0.6s cubic-bezier(0.22,1,0.36,1) 0.35s both, ballBob 2.8s ease-in-out 1s infinite",
+        }}>
+          {/* Glow under ball */}
+          <div style={{
+            position:"absolute", bottom:-8, left:"50%",
+            width:60, height:14, transform:"translateX(-50%)",
+            background:`radial-gradient(ellipse, rgba(255,255,255,0.35) 0%, transparent 70%)`,
+            filter:"blur(4px)", pointerEvents:"none",
+          }}/>
+          <span style={{
+            fontSize:96, lineHeight:1,
+            filter:"drop-shadow(0 12px 24px rgba(0,0,0,0.9)) drop-shadow(0 4px 8px rgba(0,0,0,0.7))",
+          }}>⚽</span>
+        </div>
+
+        {/* ── AWAY TEAM — bottom-right ── */}
+        <div onClick={()=>pick("away")} style={{
+          position:"absolute", bottom:"18%", right:"4%",
+          zIndex:5, cursor:"pointer",
+          display:"flex", flexDirection:"column", alignItems:"flex-end", gap:10,
+          animation:"slideInBottomRight 0.55s cubic-bezier(0.22,1,0.36,1) 0.1s both",
+          transform: swipeRight
+            ? `scale(${1+rightPct*0.07}) translate(${rightPct*10}px,${rightPct*10}px)`
+            : "scale(1)",
+          transition:"transform 0.12s",
+        }}>
+          {/* Flag card with neon border */}
+          <div style={{
+            width:170, aspectRatio:"3/2",
+            borderRadius:16, overflow:"hidden", position:"relative",
+            animation:`neonPulseAway ${swipeRight?"0.6s":"2.5s"} ease-in-out 1.2s infinite`,
+            transform:"rotate(4deg)",
+          }}>
+            <FlagBg team={away} style={{}}/>
+            <div style={{position:"absolute",inset:0,
+              background:"linear-gradient(135deg, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.05) 40%, transparent 60%)",
+              pointerEvents:"none"}}/>
+          </div>
+          {/* Team name */}
+          <span style={{
+            fontSize:17, fontWeight:900, color:"#fff",
+            letterSpacing:2, textTransform:"uppercase",
+            textShadow:`0 0 20px ${awayColors[0]}, 0 2px 8px rgba(0,0,0,0.9)`,
+            paddingRight:4,
+          }}>{away}</span>
         </div>
 
         {/* ── BOTTOM ROW — Swipe pills + X ── */}
@@ -1900,6 +2318,166 @@ function GroupIntroScreen({ group, teams: teamsProp, isKo, onStart }) {
   );
 }
 
+
+function InstantPickScreen({ onBack, onComplete, savedState, onStateChange, tournamentStarted }) {
+  const GROUPS = INTERACTIVE_GROUPS;
+  const [stage, setStage] = useState(savedState?.stage||"groups");
+  const [groupIdx, setGroupIdx] = useState(savedState?.groupIdx||0);
+  const [showIntro, setShowIntro] = useState(savedState?.showIntro!==undefined?savedState.showIntro:true);
+  const [groupRankings, setGroupRankings] = useState(savedState?.groupRankings||{});
+  const [best3, setBest3] = useState(savedState?.best3||[]);
+  const [koIdx, setKoIdx] = useState(savedState?.koIdx||0);
+  const [koPicks, setKoPicks] = useState(savedState?.koPicks||{});
+  const [koShowIntro, setKoShowIntro] = useState(savedState?.koShowIntro!==undefined?savedState.koShowIntro:true);
+  const [koRound, setKoRound] = useState(savedState?.koRound||"R16");
+  const [showFinalSummary, setShowFinalSummary] = useState(savedState?.showFinalSummary||false);
+
+  useEffect(()=>{
+    if(onStateChange) onStateChange({stage,groupIdx,showIntro,groupRankings,best3,koIdx,koPicks,koShowIntro,koRound,showFinalSummary});
+  },[stage,groupIdx,showIntro,groupRankings,best3,koIdx,koPicks,koShowIntro,koRound,showFinalSummary]);
+
+  const currentGroup = GROUPS[groupIdx];
+
+  const getGroupStanding = (group) => {
+    if(groupRankings[group]) return groupRankings[group];
+    return getAutoStanding(group);
+  };
+
+  const handleGroupConfirm = (ranking) => {
+    setGroupRankings(prev=>({...prev,[currentGroup]:ranking}));
+    if(groupIdx < GROUPS.length-1) { setGroupIdx(g=>g+1); setShowIntro(true); }
+    else setStage("best3");
+  };
+
+  const handleGroupBack = () => {
+    if(groupIdx>0) { setGroupIdx(g=>g-1); }
+    else { onBack&&onBack(); }
+  };
+
+  const allGroupStandings = {};
+  GROUPS.forEach(g=>{ allGroupStandings[g]=getGroupStanding(g); });
+  const top2 = GROUPS.flatMap(g=>(allGroupStandings[g]||[]).slice(0,2));
+
+  const koRoundMatchups = stage!=="groups" ? (()=>{
+    if(koRound==="R16") {
+      const pairs=[]; for(let i=0;i<Math.min(top2.length,32);i+=2) pairs.push({home:top2[i]||"TBD",away:top2[i+1]||"TBD"}); return pairs;
+    }
+    const prevKey={QF:"R16",SF:"QF",F:"SF"}[koRound];
+    const winners=Object.entries(koPicks).filter(([k])=>k.startsWith(prevKey))
+      .sort(([a],[b])=>parseInt(a.split("-")[1])-parseInt(b.split("-")[1]))
+      .map(([k,v])=>{ const idx=parseInt(k.split("-")[1]); return v==="home"?(top2[idx*2]||"TBD"):v==="away"?(top2[idx*2+1]||"TBD"):"TBD"; });
+    const pairs=[]; for(let i=0;i<winners.length;i+=2) pairs.push({home:winners[i]||"TBD",away:winners[i+1]||"TBD"}); return pairs;
+  })():[];
+
+  const koLabel={R16:"Round of 32",QF:"Quarter-Finals",SF:"Semi-Finals",F:"Final"}[koRound]||koRound;
+  const currentKo=koRoundMatchups[koIdx];
+
+  // BEST3
+  if(stage==="best3") {
+    const thirdTeams=GROUPS.map(g=>(allGroupStandings[g]||[])[2]).filter(Boolean);
+    return (
+      <div style={{flex:1,display:"flex",flexDirection:"column",background:"#0a0e1a"}}>
+        <div style={{padding:"16px",display:"flex",alignItems:"center",gap:12,background:"rgba(0,0,0,0.3)"}}>
+          <button onClick={()=>{setGroupIdx(GROUPS.length-1);setStage("groups");setShowIntro(false);}}
+            style={{background:"rgba(255,255,255,0.1)",border:"none",borderRadius:10,padding:"6px 12px",color:"#fff",fontSize:14,cursor:"pointer"}}>‹</button>
+          <div>
+            <div style={{fontSize:10,color:"rgba(255,255,255,0.5)",letterSpacing:2}}>FIFA WORLD CUP 2026</div>
+            <div style={{fontSize:16,fontWeight:900,color:"#fff"}}>Best 3rd Place</div>
+          </div>
+        </div>
+        <div style={{flex:1,padding:"16px",overflowY:"auto"}}>
+          <p style={{color:"rgba(255,255,255,0.55)",fontSize:13,textAlign:"center",marginBottom:16}}>
+            Select the 8 best 3rd-place teams that advance to the Round of 32
+          </p>
+          <div style={{display:"flex",flexWrap:"wrap",gap:10,justifyContent:"center"}}>
+            {thirdTeams.map(team=>{
+              const sel=best3.includes(team);
+              const c=(TEAM_COLORS[team]||["#555"])[0];
+              return (
+                <div key={team} onClick={()=>setBest3(prev=>sel?prev.filter(t=>t!==team):prev.length<8?[...prev,team]:prev)}
+                  style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4,padding:"10px 14px",borderRadius:14,cursor:"pointer",
+                    background:sel?`${c}33`:"rgba(255,255,255,0.07)",border:`2px solid ${sel?c:"rgba(255,255,255,0.12)"}`,
+                    transition:"all 0.15s",boxShadow:sel?`0 4px 16px ${c}55`:"none"}}>
+                  <span style={{fontSize:30}}>{FLAGS[team]||"🏳"}</span>
+                  <span style={{fontSize:10,fontWeight:800,color:"#fff",textTransform:"uppercase"}}>{team}</span>
+                  {sel&&<span style={{fontSize:10,color:c,fontWeight:700}}>✓</span>}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        <div style={{padding:"12px 16px 20px"}}>
+          <button onClick={()=>{setStage("ko");setKoShowIntro(true);}} disabled={best3.length<8}
+            style={{width:"100%",padding:"15px",borderRadius:16,border:"none",
+              background:best3.length>=8?"linear-gradient(135deg,#1a7a2a,#0d4015)":"rgba(255,255,255,0.08)",
+              color:best3.length>=8?"#fff":"rgba(255,255,255,0.25)",fontSize:15,fontWeight:900,
+              cursor:best3.length>=8?"pointer":"default"}}>
+            {best3.length>=8?"CONTINUE TO KNOCKOUT →":`SELECT ${8-best3.length} MORE`}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // KO PHASE
+  if(stage==="ko") {
+    if(showFinalSummary) return (
+      <InstantPickSummaryScreen picks={{}} koPicks={koPicks} best3={best3}
+        getGroupStanding={getGroupStanding} readOnly={tournamentStarted}
+        onConfirm={()=>{ onComplete&&onComplete(); }}/>
+    );
+    if(koShowIntro) return (
+      <GroupIntroScreen group={koRound} teams={koRoundMatchups.map(m=>[m.home,m.away])}
+        isKo={true} onStart={()=>setKoShowIntro(false)}/>
+    );
+    return (
+      <MatchSwipeCard key={`ko-${koRound}-${koIdx}`}
+        home={currentKo?.home||"TBD"} away={currentKo?.away||"TBD"}
+        onPick={(result)=>{
+          const key=`${koRound}-${koIdx}`;
+          setKoPicks(p=>({...p,[key]:result}));
+          if(koIdx<koRoundMatchups.length-1){ setKoIdx(i=>i+1); }
+          else {
+            const nxt={R16:"QF",QF:"SF",SF:"F"}[koRound];
+            if(nxt){setKoRound(nxt);setKoIdx(0);setKoShowIntro(true);}
+            else setShowFinalSummary(true);
+          }
+        }}
+        onFlash={()=>{}}
+        onBack={()=>{ if(koIdx>0)setKoIdx(k=>k-1); else setKoShowIntro(true); }}
+        canGoBack={koIdx>0} groupLabel={koLabel} matchNum={koIdx}
+        totalMatches={koRoundMatchups.length} isKo={true}/>
+    );
+  }
+
+  // GROUP STAGE
+  if(showIntro) return (
+    <GroupIntroScreen group={currentGroup}
+      teams={ALL_GROUPS_DATA[currentGroup]||[]}
+      onStart={()=>setShowIntro(false)}/>
+  );
+
+  return (
+    <GroupRankingScreen
+      key={currentGroup}
+      group={currentGroup}
+      teams={ALL_GROUPS_DATA[currentGroup]||[]}
+      existingRanking={groupRankings[currentGroup]||null}
+      onConfirm={handleGroupConfirm}
+      onBack={handleGroupBack}
+      groupIdx={groupIdx}
+      totalGroups={GROUPS.length}
+      groupRankings={groupRankings}
+      onNavigate={(dir)=>{
+        const next = groupIdx + dir;
+        if(next >= 0 && next < GROUPS.length) {
+          setGroupIdx(next);
+        }
+      }}
+    />
+  );
+}
+
 function InstantPickSummaryScreen({ picks, koPicks, best3, getGroupStanding, onConfirm, readOnly }) {
   const GROUPS = INTERACTIVE_GROUPS;
   const ALL_ROUNDS = ["R16","QF","SF","Final"];
@@ -1964,315 +2542,326 @@ function InstantPickSummaryScreen({ picks, koPicks, best3, getGroupStanding, onC
   );
 }
 
-function InstantPickScreen({ onBack, onComplete, savedState, onStateChange, tournamentStarted }) {
-  const [flashState, setFlashState] = useState(null);
-  const GROUPS = INTERACTIVE_GROUPS;
-  const [stage, setStage] = useState(savedState?.stage||"groups");
-  const [groupIdx, setGroupIdx] = useState(savedState?.groupIdx||0);
-  const [matchIdx, setMatchIdx] = useState(savedState?.matchIdx||0);
-  const [showSummary, setShowSummary] = useState(savedState?.showSummary||false);
-  const [showIntro, setShowIntro] = useState(savedState?.showIntro!==undefined?savedState.showIntro:true);
-  const [picks, setPicks] = useState(savedState?.picks||{});
-  const [best3, setBest3] = useState(savedState?.best3||[]);
-  const [koIdx, setKoIdx] = useState(savedState?.koIdx||0);
-  const [koPicks, setKoPicks] = useState(savedState?.koPicks||{});
-  const [koShowIntro, setKoShowIntro] = useState(savedState?.koShowIntro!==undefined?savedState.koShowIntro:true);
-  const [koRound, setKoRound] = useState(savedState?.koRound||"R16");
-  const [showFinalSummary, setShowFinalSummary] = useState(savedState?.showFinalSummary||false);
+// ── GROUP RANKING SCREEN — user picks final standings 1st-4th ─────────────────
+function GroupRankingScreen({ group, teams, existingRanking, onConfirm, onBack, groupIdx, totalGroups, onNavigate, groupRankings }) {
+  const [ranking, setRanking] = useState(existingRanking || [null, null, null, null]);
+  const [dragIdx, setDragIdx] = useState(null);
+  const [dragOverIdx, setDragOverIdx] = useState(null);
+  const rowRefs = useRef([]);
 
-  // Save state whenever anything changes
-  useEffect(()=>{
-    if(onStateChange) onStateChange({stage,groupIdx,matchIdx,showSummary,showIntro,picks,best3,koIdx,koPicks,koShowIntro,koRound,showFinalSummary});
-  },[stage,groupIdx,matchIdx,showSummary,showIntro,picks,best3,koIdx,koPicks,koShowIntro,koRound,showFinalSummary]);
-
-  const resetGroup = () => {
-    const keys = Object.keys(picks).filter(k=>k.startsWith(`${currentGroup}-`));
-    setPicks(p=>{ const n={...p}; keys.forEach(k=>delete n[k]); return n; });
-    setMatchIdx(0);
-    setShowSummary(false);
-    setShowIntro(false); // go straight to matches, not intro again
+  const CODE = {
+    "Mexico":"MEX","South Africa":"RSA","South Korea":"KOR","Czechia":"CZE",
+    "Canada":"CAN","Switzerland":"SUI","Qatar":"QAT","Bosnia-Herzegovina":"BIH",
+    "Brazil":"BRA","Morocco":"MAR","Scotland":"SCO","Haiti":"HAI",
+    "USA":"USA","Paraguay":"PAR","Australia":"AUS","Turkiye":"TUR",
+    "Germany":"GER","Ecuador":"ECU","Ivory Coast":"CIV","Curacao":"CUW",
+    "Netherlands":"NED","Japan":"JPN","Tunisia":"TUN","Sweden":"SWE",
+    "Belgium":"BEL","Iran":"IRI","Egypt":"EGY","New Zealand":"NZL",
+    "Spain":"ESP","Uruguay":"URU","Saudi Arabia":"KSA","Cape Verde":"CPV",
+    "France":"FRA","Senegal":"SEN","Norway":"NOR","Iraq":"IRQ",
+    "Argentina":"ARG","Austria":"AUT","Algeria":"ALG","Jordan":"JOR",
+    "Portugal":"POR","Colombia":"COL","Uzbekistan":"UZB","DR Congo":"COD",
+    "England":"ENG","Croatia":"CRO","Panama":"PAN","Ghana":"GHA",
   };
 
-  const currentGroup = GROUPS[groupIdx];
-  const matchups = GROUP_MATCHUPS[currentGroup]||[];
-  const totalGroupMatches = GROUPS.reduce((s,g)=>(GROUP_MATCHUPS[g]||[]).length+s,0);
-  const completedGroupMatches = GROUPS.slice(0,groupIdx).reduce((s,g)=>(GROUP_MATCHUPS[g]||[]).length+s,0)+matchIdx;
+  const ALL_GROUPS = ["A","B","C","D","E","F","G","H","I","J","K","L"];
+  const isComplete = ranking.every(t => t !== null);
 
-  const handleGroupPick = (result) => {
-    const key = `${currentGroup}-${matchIdx}`;
-    setPicks(p=>({...p,[key]:result}));
-    if(matchIdx < matchups.length-1) {
-      setMatchIdx(m=>m+1);
+  const handleTileClick = (team) => {
+    if (ranking.includes(team)) {
+      setRanking(prev => prev.map(t => t === team ? null : t));
     } else {
-      setShowSummary(true);
+      setRanking(prev => {
+        const next = [...prev];
+        const idx = next.indexOf(null);
+        if (idx !== -1) next[idx] = team;
+        return next;
+      });
     }
   };
 
-  const handleGroupBack = () => {
-    // Also clear the pick for the match we're going back to
-    if(matchIdx > 0) {
-      const prevKey = `${currentGroup}-${matchIdx-1}`;
-      setPicks(p=>{ const n={...p}; delete n[prevKey]; return n; });
-      setMatchIdx(m=>m-1);
-    } else if(groupIdx > 0) {
-      const prevGroup = GROUPS[groupIdx-1];
-      const prevMatchIdx = (GROUP_MATCHUPS[prevGroup]||[]).length-1;
-      const prevKey = `${prevGroup}-${prevMatchIdx}`;
-      setPicks(p=>{ const n={...p}; delete n[prevKey]; return n; });
-      setGroupIdx(g=>g-1);
-      setMatchIdx(prevMatchIdx);
-    }
+  const handleSlotClick = (idx) => {
+    setRanking(prev => { const n=[...prev]; n[idx]=null; return n; });
   };
 
-  const handleNextGroup = () => {
-    setShowSummary(false);
-    if(groupIdx < GROUPS.length-1) {
-      setGroupIdx(g=>g+1);
-      setMatchIdx(0);
-      setShowIntro(true);
-    } else {
-      setStage("best3"); // go to best3 after all groups
-    }
+  // Touch drag-to-reorder
+  const handleTouchStart = (e, idx) => {
+    setDragIdx(idx);
   };
-
-  // Compute top 2 and 3rd place from picks for each group
-  const getGroupStanding = (group) => {
-    if(!INTERACTIVE_GROUPS.includes(group)) return getAutoStanding(group);
-    const teams = ALL_GROUPS_DATA[group]||[];
-    const pts = {}; teams.forEach(t=>{ pts[t]=0; });
-    (GROUP_MATCHUPS[group]||[]).forEach(([h,a],i)=>{
-      const p=picks[`${group}-${i}`];
-      if(p==="home") pts[h]=(pts[h]||0)+3;
-      else if(p==="away") pts[a]=(pts[a]||0)+3;
-      else if(p==="draw"){pts[h]=(pts[h]||0)+1;pts[a]=(pts[a]||0)+1;}
+  const handleTouchMove = (e) => {
+    if (dragIdx === null) return;
+    e.preventDefault();
+    const y = e.touches[0].clientY;
+    rowRefs.current.forEach((ref, i) => {
+      if (!ref) return;
+      const rect = ref.getBoundingClientRect();
+      if (y >= rect.top && y <= rect.bottom && i !== dragIdx) setDragOverIdx(i);
     });
-    return [...teams].sort((a,b)=>(pts[b]||0)-(pts[a]||0));
   };
-
-  const handleKoPick = (result) => {
-    const matchup = currentKo;
-    if(!matchup) return;
-    const winner = result==="home"?matchup.home:result==="away"?matchup.away:null;
-    if(!winner) return; // no draw in KO
-    setKoPicks(p=>({...p,[matchup.id]:winner}));
-    const totalInRound = koRoundMatchups.length;
-    const isLast = koIdx >= totalInRound - 1;
-    if(!isLast) {
-      setKoIdx(k=>k+1);
-    } else {
-      const rounds = ["R16","QF","SF","Final"];
-      const nextRound = rounds[rounds.indexOf(koRound)+1];
-      if(nextRound) {
-        setKoRound(nextRound);
-        setKoIdx(0);
-        setKoShowIntro(true);
-      } else {
-        setShowFinalSummary(true);
-      }
+  const handleTouchEnd = () => {
+    if (dragIdx !== null && dragOverIdx !== null && dragIdx !== dragOverIdx) {
+      setRanking(prev => {
+        const next = [...prev];
+        const [item] = next.splice(dragIdx, 1);
+        next.splice(dragOverIdx, 0, item);
+        return next;
+      });
     }
+    setDragIdx(null); setDragOverIdx(null);
   };
 
-  // Build R16 matchups from group standings + best3
-  const buildKoMatchups = () => {
-    const s = (g) => getGroupStanding(g);
-    const b = best3;
-    return [
-      // R16
-      {id:"r16_0",round:"R16",home:s("A")[0],away:s("B")[1]},
-      {id:"r16_1",round:"R16",home:s("C")[0],away:s("D")[1]},
-      {id:"r16_2",round:"R16",home:s("E")[0],away:s("F")[1]},
-      {id:"r16_3",round:"R16",home:s("G")[0],away:s("H")[1]},
-      {id:"r16_4",round:"R16",home:s("B")[0],away:s("A")[1]},
-      {id:"r16_5",round:"R16",home:s("D")[0],away:s("C")[1]},
-      {id:"r16_6",round:"R16",home:s("F")[0],away:s("E")[1]},
-      {id:"r16_7",round:"R16",home:s("H")[0],away:s("G")[1]},
-      // QF - winners of R16
-      {id:"qf_0",round:"QF",home:koPicks["r16_0"]||"W R16-1",away:koPicks["r16_1"]||"W R16-2"},
-      {id:"qf_1",round:"QF",home:koPicks["r16_2"]||"W R16-3",away:koPicks["r16_3"]||"W R16-4"},
-      {id:"qf_2",round:"QF",home:koPicks["r16_4"]||"W R16-5",away:koPicks["r16_5"]||"W R16-6"},
-      {id:"qf_3",round:"QF",home:koPicks["r16_6"]||"W R16-7",away:koPicks["r16_7"]||"W R16-8"},
-      // SF
-      {id:"sf_0",round:"SF",home:koPicks["qf_0"]||"W QF-1",away:koPicks["qf_1"]||"W QF-2"},
-      {id:"sf_1",round:"SF",home:koPicks["qf_2"]||"W QF-3",away:koPicks["qf_3"]||"W QF-4"},
-      // Final
-      {id:"final",round:"Final",home:koPicks["sf_0"]||"W SF-1",away:koPicks["sf_1"]||"W SF-2"},
-    ];
-  };
-  const KO_MATCHUPS = buildKoMatchups();
-  const koRoundMatchups = KO_MATCHUPS.filter(m=>m.round===koRound);
-  const currentKo = koRoundMatchups[koIdx]||koRoundMatchups[0];
-  const koLabel = koRound;
-  const koTotal = koRoundMatchups.length;
+  const resetRanking = () => setRanking([null, null, null, null]);
+
+  const placeColors = ["#FFD700","#C0C0C0","#CD7F32","rgba(255,255,255,0.15)"];
+  const placeTextColor = ["#000","#000","#000","rgba(255,255,255,0.4)"];
 
   return (
-    <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden"}}>
-      {/* Fixed header - color changes with pick */}
-      <div style={{
-        background: flashState
-          ? flashState.winner==="draw"
-            ? "linear-gradient(135deg,#444,#222)"
-            : `linear-gradient(135deg,${flashState.colors[0]},${flashState.colors[1]})`
-          : `linear-gradient(135deg,${NAVY},#001840)`,
-        padding:"14px 20px 16px",flexShrink:0,transition:"background 0.2s"}}>
-        <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:12}}>
-          <div onClick={onBack} style={{width:36,height:36,borderRadius:10,background:"rgba(255,255,255,0.12)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:"#fff"}}>&#8249;</div>
+    <div style={{flex:1, display:"flex", flexDirection:"column", background:BG, userSelect:"none"}}>
+
+      {/* ── NAVY HEADER ── */}
+      <div style={{background:NAVY, paddingBottom:0}}>
+        {/* Top row */}
+        <div style={{display:"flex", alignItems:"center", gap:10, padding:"10px 14px 6px"}}>
+          <button onClick={onBack} style={{
+            background:"rgba(255,255,255,0.12)", border:"none", borderRadius:10,
+            width:34, height:34, color:"#fff", fontSize:16, cursor:"pointer",
+            display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0,
+          }}>‹</button>
           <div style={{flex:1}}>
-            <p style={{fontSize:9,color:RED,margin:"0 0 2px",letterSpacing:2,textTransform:"uppercase",fontWeight:800}}>FIFA - WORLD CUP 2026</p>
-            <h2 style={{fontSize:17,fontWeight:800,color:"#fff",margin:0}}>
-              {stage==="groups" ? (showSummary ? `Grupa ${currentGroup} · Done` : `Grupa ${currentGroup}`) : stage==="best3" ? "🥉 Best Third" : koLabel}
-            </h2>
+            <div style={{fontSize:10, color:RED, fontWeight:800, letterSpacing:1.5}}>FIFA - WORLD CUP 2026</div>
+            <div style={{fontSize:18, fontWeight:900, color:"#fff"}}>Group {group}</div>
           </div>
-          <div style={{textAlign:"right"}}>
-            <p style={{fontSize:9,color:"rgba(255,255,255,0.5)",margin:"0 0 1px"}}>
-              {stage==="groups" ? `${matchIdx+1}/${matchups.length}` : `${koIdx+1}/${koTotal}`}
-            </p>
-            <p style={{fontSize:9,color:"rgba(255,255,255,0.35)",margin:0}}>
-              {stage==="groups" ? "meciuri" : "meciuri"}
-            </p>
+          <div style={{textAlign:"right", flexShrink:0}}>
+            <div style={{fontSize:13, fontWeight:700, color:"#fff"}}>{groupIdx+1}/{totalGroups}</div>
+            <div style={{fontSize:10, color:"rgba(255,255,255,0.45)"}}>groups</div>
           </div>
         </div>
-        {/* Stage pills — clickable navigation */}
-        <div style={{display:"flex",gap:5,overflowX:"auto",scrollbarWidth:"none"}}>
-          {GROUPS.map((g,i)=>{
-            const done = (GROUP_MATCHUPS[GROUPS[i]]||[]).every((_,mi)=>picks[`${GROUPS[i]}-${mi}`]);
-            const active = i===groupIdx && stage==="groups";
-            const canNav = true; // all groups always navigable
-            return (
-              <div key={g} onClick={()=>{
-                if(!canNav && !active) return;
-                setStage("groups");
-                setGroupIdx(i);
-                // If group is done -> show summary, else show intro or matches
-                const groupDone = (GROUP_MATCHUPS[GROUPS[i]]||[]).every((_,mi)=>picks[`${GROUPS[i]}-${mi}`]);
-                if(groupDone) { setShowSummary(true); setShowIntro(false); }
-                else { setShowSummary(false); setShowIntro(true); }
-              }}
-                style={{flexShrink:0,width:32,height:32,borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:800,cursor:canNav?"pointer":"default",
-                  background:done?GREEN:active?"rgba(255,255,255,0.95)":"rgba(255,255,255,0.1)",
-                  color:done?"#fff":active?NAVY:"rgba(255,255,255,0.4)"}}>
-                {done?"✓":g}
+
+        {/* Group tabs — A-L cu slider stânga/dreapta */}
+        <div style={{display:"flex", alignItems:"center", gap:6, padding:"0 10px 12px"}}>
+          {/* Arrow left */}
+          <button onClick={()=>onNavigate&&onNavigate(-1)} disabled={groupIdx===0}
+            style={{
+              flexShrink:0, width:28, height:28, borderRadius:8, border:"none",
+              background:"rgba(255,255,255,0.12)",
+              color:groupIdx===0?"rgba(255,255,255,0.2)":"#fff",
+              fontSize:14, cursor:groupIdx===0?"default":"pointer",
+              display:"flex", alignItems:"center", justifyContent:"center",
+            }}>‹</button>
+
+          {/* Scrollable group tabs */}
+          <div style={{flex:1, display:"flex", gap:5, overflowX:"auto",
+            scrollbarWidth:"none", msOverflowStyle:"none"}}>
+            {["A","B","C","D","E","F","G","H","I","J","K","L"].map((g, i) => {
+              const isCurrent = g === group;
+              const isDone = groupRankings && groupRankings[g] && groupRankings[g].every(t=>t!==null);
+              return (
+                <button key={g} onClick={()=>onNavigate&&onNavigate(i-groupIdx)}
+                  style={{
+                    flexShrink:0, minWidth:34, height:34, borderRadius:9, border:"none",
+                    background: isCurrent ? "#fff" : isDone ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.1)",
+                    color: isCurrent ? NAVY : "#fff",
+                    fontSize:12, fontWeight:900, cursor:"pointer",
+                    display:"flex", alignItems:"center", justifyContent:"center",
+                    position:"relative",
+                    boxShadow: isCurrent ? "0 2px 8px rgba(0,0,0,0.2)" : "none",
+                  }}>
+                  {g}
+                  {isDone && !isCurrent && (
+                    <span style={{position:"absolute", top:-2, right:-2, width:7, height:7,
+                      borderRadius:"50%", background:GREEN, border:"1.5px solid "+NAVY}}/>
+                  )}
+                </button>
+              );
+            })}
+
+            {/* Divider */}
+            <div style={{flexShrink:0, width:1, background:"rgba(255,255,255,0.2)", margin:"4px 2px"}}/>
+
+            {/* Locked phases */}
+            {[{label:"R32",icon:"🔒"},{label:"QF",icon:"🔒"},{label:"SF",icon:"🔒"},{label:"🏆",icon:"🔒"}].map((phase,i)=>(
+              <div key={phase.label} style={{
+                flexShrink:0, minWidth:34, height:34, borderRadius:9,
+                background:"rgba(255,255,255,0.06)",
+                display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center",
+                gap:1, opacity:0.45,
+              }}>
+                <span style={{fontSize:9}}>🔒</span>
+                <span style={{fontSize:8, color:"rgba(255,255,255,0.6)", fontWeight:700, letterSpacing:0.5}}>{phase.label}</span>
               </div>
-            );
-          })}
-          <div style={{width:1,background:"rgba(255,255,255,0.2)",margin:"4px 2px"}}/>
-          {/* Best3 pill */}
-          {(()=>{
-            const allGroupsDone = GROUPS.every((_,i)=>i<groupIdx||(i===groupIdx&&showSummary)||stage==="best3"||stage==="ko");
-            const b3done = stage==="ko";
-            const b3active = stage==="best3";
-            const canNav = allGroupsDone;
-            return (
-              <div onClick={()=>canNav&&setStage("best3")}
-                style={{flexShrink:0,padding:"0 8px",height:32,borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,cursor:canNav?"pointer":"default",
-                  background:b3done?GREEN:b3active?"rgba(255,255,255,0.95)":"rgba(255,255,255,0.1)",
-                  color:b3done?"#fff":b3active?NAVY:"rgba(255,255,255,0.4)"}}>
-                {b3done?"✓":canNav?"B3":"🔒"}
-              </div>
-            );
-          })()}
-          <div style={{width:1,background:"rgba(255,255,255,0.2)",margin:"4px 2px"}}/>
-          {/* KO pills */}
-          {[{r:"R16",label:"R16"},{r:"QF",label:"QF"},{r:"SF",label:"SF"},{r:"Final",label:"F"}].map(({r,label})=>{
-            const rounds = ["R16","QF","SF","Final"];
-            const rIdx = rounds.indexOf(r);
-            const curRoundIdx = rounds.indexOf(koRound);
-            const done = stage==="ko" && rIdx < curRoundIdx;
-            const active = stage==="ko" && r===koRound;
-            const canNav = stage==="ko" && rIdx<=curRoundIdx;
-            return (
-              <div key={r} onClick={()=>canNav&&(setKoRound(r),setKoIdx(0),setKoShowIntro(true))}
-                style={{flexShrink:0,padding:"0 8px",height:32,borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,cursor:canNav?"pointer":"default",
-                  background:done?GREEN:active?"rgba(255,255,255,0.95)":stage==="ko"?"rgba(255,255,255,0.1)":"rgba(255,255,255,0.08)",
-                  color:done?"#fff":active?NAVY:"rgba(255,255,255,0.3)"}}>
-                {stage==="ko"||canNav?label:"🔒"}
-              </div>
-            );
-          })}
+            ))}
+          </div>
+
+          {/* Arrow right */}
+          <button onClick={()=>onNavigate&&onNavigate(1)} disabled={groupIdx===totalGroups-1}
+            style={{
+              flexShrink:0, width:28, height:28, borderRadius:8, border:"none",
+              background:"rgba(255,255,255,0.12)",
+              color:groupIdx===totalGroups-1?"rgba(255,255,255,0.2)":"#fff",
+              fontSize:14, cursor:groupIdx===totalGroups-1?"default":"pointer",
+              display:"flex", alignItems:"center", justifyContent:"center",
+            }}>›</button>
         </div>
-        {/* Progress bar in header */}
-        {(()=>{
-          const groupsDone = GROUPS.filter(g=>(GROUP_MATCHUPS[g]||[]).every((_,mi)=>picks[`${g}-${mi}`])).length;
-          const total = GROUPS.length; // 6 groups
-          const pct = stage==="ko" ? 100 : stage==="best3" ? 100 : (groupsDone/total)*100;
-          return (
-            <div style={{marginTop:10,height:4,background:"rgba(255,255,255,0.15)",borderRadius:2,overflow:"hidden"}}>
-              <div style={{height:"100%",width:`${pct}%`,
-                background:`linear-gradient(90deg,${RED},${GREEN})`,borderRadius:2,transition:"width 0.4s"}}/>
-            </div>
-          );
-        })()}
+
+        {/* Progress bar */}
+        <div style={{height:3, background:"rgba(255,255,255,0.1)"}}>
+          <div style={{height:"100%", width:`${(groupIdx/totalGroups)*100}%`,
+            background:`linear-gradient(to right, ${RED}, ${GREEN})`, transition:"width 0.3s"}}/>
+        </div>
       </div>
 
-      {/* Content */}
-      {stage==="best3" ? (
-        <Best3Screen
-          groups={ALL_GROUP_IDS}
-          getGroupStanding={getGroupStanding}
-          picks={picks}
-          best3={best3}
-          setBest3={setBest3}
-          onDone={(b3)=>{ setBest3(b3); setStage("ko"); }}
-        />
-      ) : stage==="groups" ? (
-        showIntro ? (
-          <GroupIntroScreen group={currentGroup} onStart={()=>setShowIntro(false)}/>
-        ) : showSummary ? (
-          <GroupSummaryCard
-            group={currentGroup}
-            picks={picks}
-            onNext={handleNextGroup}
-            onReset={resetGroup}
-            isLastGroup={groupIdx===GROUPS.length-1}
-          />
-        ) : (
-          <MatchSwipeCard
-            key={`${currentGroup}-${matchIdx}`}
-            home={matchups[matchIdx][0]}
-            away={matchups[matchIdx][1]}
-            onPick={handleGroupPick}
-            onFlash={setFlashState}
-            existingPick={picks[`${currentGroup}-${matchIdx}`]||null}
-            onBack={handleGroupBack}
-            canGoBack={matchIdx>0||groupIdx>0}
-            groupLabel={`Grupa ${currentGroup}`}
-            matchNum={completedGroupMatches}
-            totalMatches={totalGroupMatches}
-          />
-        )
-      ) : showFinalSummary ? (
-        <InstantPickSummaryScreen
-          picks={picks}
-          koPicks={koPicks}
-          best3={best3}
-          getGroupStanding={getGroupStanding}
-          readOnly={tournamentStarted}
-          onConfirm={()=>{ onComplete && onComplete(); }}
-        />
-      ) : koShowIntro ? (
-        <GroupIntroScreen
-          group={koRound}
-          teams={koRoundMatchups.map(m=>[m.home,m.away])}
-          isKo={true}
-          onStart={()=>setKoShowIntro(false)}
-        />
-      ) : (
-        <MatchSwipeCard
-          key={`ko-${koRound}-${koIdx}`}
-          home={currentKo?.home||"TBD"}
-          away={currentKo?.away||"TBD"}
-          onPick={handleKoPick}
-          onFlash={setFlashState}
-          onBack={()=>{ if(koIdx>0) setKoIdx(k=>k-1); else setKoShowIntro(true); }}
-          canGoBack={koIdx>0}
-          groupLabel={koLabel}
-          matchNum={koIdx}
-          totalMatches={koTotal}
-          isKo={true}
-        />
-      )}
+      {/* ── TEAM TILES ── */}
+      <div style={{background:"#f0f2f8", padding:"14px 14px 10px",
+        borderBottom:"1px solid rgba(0,0,0,0.08)"}}>
+        <div style={{fontSize:10, color:"rgba(0,0,0,0.4)", letterSpacing:2,
+          fontWeight:700, marginBottom:8, textAlign:"center"}}>TAP TO ASSIGN · TAP AGAIN TO REMOVE</div>
+        <div style={{display:"flex", gap:8, justifyContent:"space-between"}}>
+          {teams.map(team => {
+            const pos = ranking.indexOf(team);
+            const isPlaced = pos !== -1;
+            const teamColor = (TEAM_COLORS[team]||["#555"])[0];
+            return (
+              <div key={team} onClick={() => handleTileClick(team)} style={{
+                flex:1, background: isPlaced ? `${teamColor}18` : "#fff",
+                borderRadius:12, padding:"10px 4px",
+                display:"flex", flexDirection:"column", alignItems:"center", gap:5,
+                cursor:"pointer", position:"relative",
+                border:`2px solid ${isPlaced ? teamColor+"88" : "rgba(0,0,0,0.08)"}`,
+                transition:"all 0.15s",
+                opacity: isPlaced ? 0.6 : 1,
+                transform: isPlaced ? "scale(0.94)" : "scale(1)",
+                boxShadow: isPlaced ? "none" : "0 2px 8px rgba(0,0,0,0.08)",
+              }}>
+                {isPlaced && (
+                  <div style={{
+                    position:"absolute", top:-8, right:-6,
+                    background: placeColors[pos],
+                    borderRadius:"50%", width:20, height:20,
+                    display:"flex", alignItems:"center", justifyContent:"center",
+                    fontSize:11, fontWeight:900,
+                    color: placeTextColor[pos],
+                    border:"2px solid #f0f2f8",
+                    boxShadow:"0 1px 4px rgba(0,0,0,0.2)",
+                  }}>{pos+1}</div>
+                )}
+                <span style={{fontSize:28, lineHeight:1}}>{FLAGS[team]||"🏳"}</span>
+                <span style={{fontSize:9, fontWeight:800,
+                  color: isPlaced ? teamColor : "rgba(0,0,0,0.5)",
+                  letterSpacing:1, textTransform:"uppercase"}}>
+                  {CODE[team]||team.slice(0,3).toUpperCase()}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ── RANKING ROWS ── */}
+      <div style={{flex:1, overflowY:"auto", background:BG, padding:"8px 14px", display:"flex", flexDirection:"column", gap:6}}>
+        {[0,1,2,3].map(idx => {
+          const team = ranking[idx];
+          const teamColor = team ? (TEAM_COLORS[team]||["#555"])[0] : null;
+          const isDragging = dragIdx === idx;
+          const isOver = dragOverIdx === idx;
+          return (
+            <div key={idx} ref={el => rowRefs.current[idx] = el}
+              onTouchStart={team ? e=>handleTouchStart(e,idx) : undefined}
+              onTouchMove={team ? handleTouchMove : undefined}
+              onTouchEnd={team ? handleTouchEnd : undefined}
+              style={{
+                display:"flex", alignItems:"center", gap:12,
+                padding:"11px 14px", borderRadius:14,
+                background: isDragging ? "#e8eeff" : isOver ? "#dde8ff" : "#fff",
+                border:`1.5px solid ${isOver ? "#4a90e2" : isDragging ? "#7aaff5" : "rgba(0,0,0,0.06)"}`,
+                boxShadow: isDragging ? "0 6px 20px rgba(0,0,0,0.15)" : "0 1px 4px rgba(0,0,0,0.05)",
+                transform: isDragging ? "scale(1.02)" : "scale(1)",
+                transition:"background 0.1s, box-shadow 0.1s, transform 0.1s",
+                minHeight:58, cursor: team ? "grab" : "default",
+              }}>
+
+              {/* Place badge */}
+              <div style={{
+                width:30, height:30, borderRadius:8, flexShrink:0,
+                background: team ? placeColors[idx] : "rgba(0,0,0,0.05)",
+                display:"flex", alignItems:"center", justifyContent:"center",
+                fontSize:14, fontWeight:900,
+                color: team ? placeTextColor[idx] : "rgba(0,0,0,0.2)",
+                boxShadow: team && idx < 3 ? `0 2px 8px ${placeColors[idx]}88` : "none",
+              }}>{idx+1}</div>
+
+              {team ? (
+                <>
+                  {/* Flag */}
+                  <div style={{width:40, height:28, borderRadius:6, overflow:"hidden",
+                    boxShadow:"0 2px 8px rgba(0,0,0,0.15)", flexShrink:0, position:"relative"}}>
+                    <FlagBg team={team} style={{}}/>
+                  </div>
+                  {/* Name */}
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:14, fontWeight:800, color:"#111",
+                      letterSpacing:0.3, textTransform:"uppercase"}}>{team}</div>
+                    <div style={{fontSize:10, color:idx===0?GREEN:idx===1?"#4a90e2":idx===2?"#CD7F32":"rgba(0,0,0,0.35)",
+                      marginTop:1, fontWeight:600}}>
+                      {idx===0?"Group Winner · Advances":idx===1?"Runner-up · Advances":idx===2?"Possible 3rd Place":"Eliminated"}
+                    </div>
+                  </div>
+                  {/* Drag handle = */}
+                  <div onClick={() => handleSlotClick(idx)}
+                    style={{display:"flex", flexDirection:"column", gap:4,
+                      padding:"6px 4px", cursor:"pointer", opacity:0.4,
+                      flexShrink:0}}>
+                    <div style={{width:20, height:2.5, background:"#333", borderRadius:2}}/>
+                    <div style={{width:20, height:2.5, background:"#333", borderRadius:2}}/>
+                  </div>
+                </>
+              ) : (
+                <div style={{flex:1, display:"flex", alignItems:"center"}}>
+                  <span style={{fontSize:12, color:"rgba(0,0,0,0.2)", letterSpacing:0.5}}>
+                    — tap a team above —
+                  </span>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* ── BOTTOM ACTIONS ── */}
+      <div style={{background:"#fff", padding:"10px 14px 22px",
+        borderTop:"1px solid rgba(0,0,0,0.07)",
+        display:"flex", flexDirection:"column", gap:8}}>
+
+        {/* Reset row */}
+        <div style={{display:"flex", justifyContent:"flex-end"}}>
+          <button onClick={resetRanking} style={{
+            background:"rgba(0,0,0,0.04)", border:"1px solid rgba(0,0,0,0.08)",
+            borderRadius:10, padding:"7px 14px",
+            color:"rgba(0,0,0,0.45)", fontSize:12, cursor:"pointer", fontWeight:700,
+          }}>↺ Reset</button>
+        </div>
+
+        {/* Confirm */}
+        <button onClick={() => isComplete && onConfirm(ranking)} disabled={!isComplete}
+          style={{
+            width:"100%", padding:"14px 0", borderRadius:14, border:"none",
+            background: isComplete
+              ? `linear-gradient(135deg, ${NAVY}, #003580)`
+              : "rgba(0,0,0,0.06)",
+            color: isComplete ? "#fff" : "rgba(0,0,0,0.2)",
+            fontSize:15, fontWeight:900, letterSpacing:1,
+            cursor: isComplete ? "pointer" : "default",
+            transition:"all 0.2s",
+            boxShadow: isComplete ? `0 4px 20px rgba(0,32,91,0.35)` : "none",
+          }}>
+          {isComplete
+            ? groupIdx < totalGroups-1 ? `CONFIRM & NEXT GROUP →` : `CONFIRM ALL GROUPS ✓`
+            : `SELECT ALL 4 TEAMS`}
+        </button>
+      </div>
     </div>
   );
 }
+
 
 function PredictionsScreen({ boardId, predictions, setPredictions, onBack, onComplete, tournamentStarted }) {
   const TABS = [
@@ -3055,7 +3644,7 @@ function LeaderboardScreen({ onBack }) {
 }
 
 function FastPredictionScreen({ onHome }) {
-  const cards=[{home:"Brazil",homeFlag:"🇧🇷",away:"Portugal",awayFlag:"🇵🇹"},{home:"Spain",homeFlag:"🇪🇸",away:"Germany",awayFlag:"🇩🇪"},{home:"France",homeFlag:"🇫🇷",away:"England",awayFlag:"🏴󠁧󠁢󠁥󠁧󠁿"}];
+  const cards=[{home:"Brazil",homeFlag:"🇧🇷",away:"Portugal",awayFlag:"🇵🇹"},{home:"Spain",homeFlag:"🇪🇸",away:"Germany",awayFlag:"🇩🇪"},{home:"France",homeFlag:"🇫🇷",away:"England",awayFlag:"🇬🇧"}];
   const [idx,setIdx]=useState(0);
   const [chosen,setChosen]=useState(null);
   const pick=w=>{setChosen(w);setTimeout(()=>{setChosen(null);setIdx(i=>i+1);},650);};
@@ -3185,7 +3774,7 @@ function ScorePicker({ match, day, savedScore, onSave, onBack }) {
 function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScoresProp }) {
   const GROUPS_DATA = [
     { id:"A", teams:[{name:"Brazil",flag:"🇧🇷"},{name:"France",flag:"🇫🇷"},{name:"Mexico",flag:"🇲🇽"},{name:"Morocco",flag:"🇲🇦"}] },
-    { id:"B", teams:[{name:"Argentina",flag:"🇦🇷"},{name:"England",flag:"🏴󠁧󠁢󠁥󠁧󠁿"},{name:"USA",flag:"🇺🇸"},{name:"Poland",flag:"🇵🇱"}] },
+    { id:"B", teams:[{name:"Argentina",flag:"🇦🇷"},{name:"England",flag:"🇬🇧"},{name:"USA",flag:"🇺🇸"},{name:"Poland",flag:"🇵🇱"}] },
     { id:"C", teams:[{name:"Spain",flag:"🇪🇸"},{name:"Portugal",flag:"🇵🇹"},{name:"Japan",flag:"🇯🇵"},{name:"Canada",flag:"🇨🇦"}] },
     { id:"D", teams:[{name:"Germany",flag:"🇩🇪"},{name:"Netherlands",flag:"🇳🇱"},{name:"Senegal",flag:"🇸🇳"},{name:"Australia",flag:"🇦🇺"}] },
     { id:"E", teams:[{name:"Belgium",flag:"🇧🇪"},{name:"Croatia",flag:"🇭🇷"},{name:"Serbia",flag:"🇷🇸"},{name:"Iran",flag:"🇮🇷"}] },
@@ -3667,7 +4256,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
 function StatsScreen({ lang }) {
   const GROUPS = [
     { id:"A", teams:[{name:"Brazil",flag:"🇧🇷"},{name:"France",flag:"🇫🇷"},{name:"Mexico",flag:"🇲🇽"},{name:"Morocco",flag:"🇲🇦"}] },
-    { id:"B", teams:[{name:"Argentina",flag:"🇦🇷"},{name:"England",flag:"🏴󠁧󠁢󠁥󠁧󠁿"},{name:"USA",flag:"🇺🇸"},{name:"Poland",flag:"🇵🇱"}] },
+    { id:"B", teams:[{name:"Argentina",flag:"🇦🇷"},{name:"England",flag:"🇬🇧"},{name:"USA",flag:"🇺🇸"},{name:"Poland",flag:"🇵🇱"}] },
     { id:"C", teams:[{name:"Spain",flag:"🇪🇸"},{name:"Portugal",flag:"🇵🇹"},{name:"Japan",flag:"🇯🇵"},{name:"Canada",flag:"🇨🇦"}] },
     { id:"D", teams:[{name:"Germany",flag:"🇩🇪"},{name:"Netherlands",flag:"🇳🇱"},{name:"Senegal",flag:"🇸🇳"},{name:"Australia",flag:"🇦🇺"}] },
     { id:"E", teams:[{name:"Belgium",flag:"🇧🇪"},{name:"Croatia",flag:"🇭🇷"},{name:"Serbia",flag:"🇷🇸"},{name:"Iran",flag:"🇮🇷"}] },
