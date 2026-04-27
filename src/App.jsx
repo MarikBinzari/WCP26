@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import trophy from "./assets/hands-trophy.png";
-import stadiumImg from "./assets/stadium.jpg";
+import varBg from "./assets/var-bg.jpg";
 
 const BG = "#F8F8F8";
 const SHADOW_OUT = "4px 4px 12px rgba(0,0,0,0.08), -3px -3px 8px #ffffff";
@@ -2086,11 +2086,6 @@ function MatchSwipeCard({ home, away, onPick, onFlash, groupLabel, matchNum, tot
         <div style={{position:"absolute",inset:0,
           background:`linear-gradient(135deg, ${homeColors[0]}cc 0%, ${homeColors[0]}88 25%, #0a0e1a 50%, ${awayColors[0]}88 75%, ${awayColors[0]}cc 100%)`}}/>
 
-        {/* ── STADIUM IMAGE BACKGROUND ── */}
-        <div style={{position:"absolute",inset:0,zIndex:0,pointerEvents:"none",overflow:"hidden"}}>
-          <img src={stadiumImg} alt="" style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"center",opacity:0.7,filter:"brightness(0.75) saturate(0.8)"}}/>
-          <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.35)"}}/>
-        </div>
 
         {/* Dark overlay pentru contrast */}
         <div style={{position:"absolute",inset:0,pointerEvents:"none",
@@ -2217,6 +2212,7 @@ function MatchSwipeCard({ home, away, onPick, onFlash, groupLabel, matchNum, tot
           }}/>
           <span style={{
             fontSize:96, lineHeight:1,
+            colorScheme:"light",
             filter:"saturate(0) contrast(3) brightness(1.1) drop-shadow(0 8px 20px rgba(0,0,0,0.5))",
           }}>⚽</span>
         </div>
@@ -2564,7 +2560,9 @@ function InstantPickSummaryScreen({ picks, koPicks, best3, getGroupStanding, onC
           {SCORING.map((s,i)=>(
             <div key={i} style={{display:"flex",alignItems:"center",padding:"11px 16px",borderBottom:i<SCORING.length-1?"1px solid rgba(0,0,0,0.05)":"none",background:"#fff"}}>
               <span style={{fontSize:11,marginRight:8}}>{s.icon}</span>
-              <span style={{flex:1,fontSize:12,fontWeight:600,color:DARK}}>{s.label}</span>
+              <span style={{flex:1,fontSize:12,fontWeight:600,color:DARK}}>
+                {s.label.split("⚽").flatMap((p,i)=>i===0?[p]:[<span key={i} style={{colorScheme:"light",filter:"saturate(0) contrast(3) brightness(1.1)"}}>⚽</span>,p])}
+              </span>
               <div style={{background:`${s.color}15`,borderRadius:8,padding:"3px 10px"}}>
                 <span style={{fontSize:13,fontWeight:900,color:s.color}}>+{s.pts} pts</span>
               </div>
@@ -3015,7 +3013,7 @@ function PredictionsScreen({ boardId, predictions, setPredictions, onBack, onCom
         {activeTab==="grupe" && (
           <>
             <div style={{background:"#E8F0FF",borderRadius:12,padding:"10px 14px",marginBottom:14,display:"flex",gap:8,alignItems:"center"}}>
-              <span style={{fontSize:15}}>⚽</span>
+              <span style={{fontSize:15,colorScheme:"light",filter:"saturate(0) contrast(3) brightness(1.1)"}}>⚽</span>
               <div style={{flex:1}}>
                 <p style={{fontSize:12,fontWeight:700,color:NAVY,margin:"0 0 1px"}}>Group Stage</p>
                 <p style={{fontSize:11,color:"#666",margin:0}}>Select the final standings for Group A si B.</p>
@@ -3208,7 +3206,7 @@ function PredictionsScreen({ boardId, predictions, setPredictions, onBack, onCom
             <div style={{background:BG,borderRadius:16,boxShadow:SHADOW_OUT,overflow:"hidden",marginBottom:14}}>
               <div style={{background:`linear-gradient(135deg,${NAVY},#001840)`,padding:"12px 14px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                 <div>
-                  <p style={{fontSize:14,fontWeight:800,color:"#fff",margin:0}}>⚽ Golgheter</p>
+                  <p style={{fontSize:14,fontWeight:800,color:"#fff",margin:0}}><span style={{colorScheme:"light",filter:"saturate(0) contrast(3) brightness(1.1)"}}>⚽</span> Golgheter</p>
                   <p style={{fontSize:11,color:"rgba(255,255,255,0.7)",margin:"2px 0 0"}}>Jucatorul cu cele mai multe goluri</p>
                 </div>
                 <span style={{fontSize:13,background:"rgba(255,255,255,0.15)",color:"#fff",borderRadius:8,padding:"4px 10px",fontWeight:800}}>+100pts</span>
@@ -3217,7 +3215,7 @@ function PredictionsScreen({ boardId, predictions, setPredictions, onBack, onCom
                 {golgheter ? (
                   <div style={{display:"flex",alignItems:"center",gap:12,
                     background:"#E8F0FF",borderRadius:12,padding:"14px"}}>
-                    <span style={{fontSize:28}}>⚽</span>
+                    <span style={{fontSize:28,colorScheme:"light",filter:"saturate(0) contrast(3) brightness(1.1)"}}>⚽</span>
                     <div style={{flex:1}}>
                       <p style={{fontSize:15,fontWeight:800,color:NAVY,margin:0}}>{golgheter}</p>
                       <p style={{fontSize:11,color:"#6699CC",margin:"3px 0 0"}}>+100 pts bonus</p>
@@ -3332,7 +3330,7 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
   const meInTop3 = top3.some(u=>u.isMe);
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",position:"relative"}}>
-      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"85%",left:"-30%",top:"20%",objectFit:"cover",objectPosition:"center 20%",opacity:0.35,pointerEvents:"none",zIndex:0}}/>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"85%",left:"-30%",top:"20%",objectFit:"cover",objectPosition:"center 20%",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
       <div style={{background:`linear-gradient(135deg,${NAVY},#001840)`,padding:"10px 20px 12px",flexShrink:0,position:"relative",zIndex:1}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16}}>
           <div>
@@ -3459,7 +3457,7 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
                     <span style={{fontSize:10,fontWeight:800,color:"#fff"}}>{missing}</span>
                   </div>
                 )}
-                <div style={{fontSize:28,marginBottom:4}}>⚽</div>
+                <div style={{fontSize:28,marginBottom:4,colorScheme:"light",filter:"saturate(0) contrast(3) brightness(1.1)"}}>⚽</div>
                 <p style={{fontSize:13,fontWeight:800,color:DARK,margin:0}}>Exact Scores</p>
                 <p style={{fontSize:11,color:missing===0?GREEN:"#888",margin:"2px 0 0",fontWeight:600}}>
                   {missing===0?"✓ Week complete":`${missing} this week`}
@@ -3680,8 +3678,9 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
   const isJoined = id => myBoards.some(b=>b.id===id);
 
   if(view==="create") return (
-    <div style={{flex:1,display:"flex",flexDirection:"column",background:BG}}>
-      <div style={{background:`linear-gradient(135deg,${NAVY},#001840)`,padding:"16px 20px 22px",flexShrink:0}}>
+    <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,position:"relative",overflow:"hidden"}}>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"85%",left:"-30%",top:"20%",objectFit:"cover",objectPosition:"center 20%",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
+      <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY},#001840)`,padding:"16px 20px 22px",flexShrink:0}}>
         <div style={{display:"flex",alignItems:"center",gap:14}}>
           <div onClick={()=>setView("main")} style={{width:36,height:36,borderRadius:10,background:"rgba(255,255,255,0.12)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:"#fff"}}>&#8249;</div>
           <div>
@@ -3690,7 +3689,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
           </div>
         </div>
       </div>
-      <div style={{flex:1,overflowY:"auto",padding:"16px 20px 24px"}}>
+      <div style={{flex:1,overflowY:"auto",padding:"16px 20px 24px",position:"relative",zIndex:1}}>
         {/* Name */}
         <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 6px"}}>Nume grup</p>
         <div style={{display:"flex",gap:10,alignItems:"center",marginBottom:16}}>
@@ -3835,8 +3834,9 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
   );
 
   return (
-    <div style={{flex:1,display:"flex",flexDirection:"column",background:BG}}>
-      <div style={{background:`linear-gradient(135deg,${NAVY},#001840)`,padding:"16px 20px 22px",flexShrink:0}}>
+    <div style={{flex:1,display:"flex",flexDirection:"column",background:"transparent",position:"relative",overflow:"hidden"}}>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"85%",left:"-30%",top:"20%",objectFit:"cover",objectPosition:"center 20%",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
+      <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY},#001840)`,padding:"16px 20px 22px",flexShrink:0}}>
         <div style={{display:"flex",alignItems:"center",gap:14}}>
           <div onClick={onBack} style={{width:36,height:36,borderRadius:10,background:"rgba(255,255,255,0.12)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:"#fff"}}>&#8249;</div>
           <div style={{flex:1}}>
@@ -3888,7 +3888,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
           </div>
         </div>
       )}
-      <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",padding:"16px 20px 80px"}}>
+      <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",padding:"16px 20px 80px",position:"relative",zIndex:1}}>
 
 
         {/* My created boards */}
@@ -3898,7 +3898,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
             <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:0}}>Board Admin</p>
           </div>
           {createdBoards.map(b=>(
-            <div key={b.id} style={{background:BG,borderRadius:14,boxShadow:SHADOW_OUT,padding:"12px 14px",marginBottom:9}}>
+            <div key={b.id} style={{background:"#fff",borderRadius:14,boxShadow:"0 2px 12px rgba(0,0,0,0.10)",padding:"12px 14px",marginBottom:9}}>
               <div style={{display:"flex",alignItems:"center",gap:12}}>
                 <div style={{width:44,height:44,borderRadius:"50%",background:`linear-gradient(135deg,${GREEN},#007A36)`,
                   display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0,cursor:"pointer"}}
@@ -3980,7 +3980,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
             const latest = createdBoards.find(c=>c.id===b.id)||availBoards.find(c=>c.id===b.id)||b;
             return (
             <div key={b.id} onClick={()=>onJoin&&onJoin(b.id)}
-              style={{background:BG,borderRadius:14,boxShadow:SHADOW_OUT,padding:"12px 14px",marginBottom:9,cursor:"pointer"}}>
+              style={{background:"#fff",borderRadius:14,boxShadow:"0 2px 12px rgba(0,0,0,0.10)",padding:"12px 14px",marginBottom:9,cursor:"pointer"}}>
               <div style={{display:"flex",alignItems:"center",gap:12}}>
                 <div style={{width:44,height:44,borderRadius:"50%",
                   background:b.isGlobal?`linear-gradient(135deg,${NAVY},#001840)`:`linear-gradient(135deg,#5856D6,#3634A3)`,
@@ -4009,7 +4009,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
           const hasMore = !boardSearch.trim() && allAvail.length > 6;
           const isCode = /^[A-Z][0-9]{5}$/.test(boardSearch.trim().toUpperCase());
           return (<>
-          <div style={{background:BG,borderRadius:14,boxShadow:SHADOW_OUT,marginBottom:9,overflow:"hidden"}}>
+          <div style={{background:"#fff",borderRadius:14,boxShadow:"0 2px 12px rgba(0,0,0,0.10)",marginBottom:9,overflow:"hidden"}}>
             {/* Header */}
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 14px 8px"}}>
               <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:0}}>Available Boards</p>
@@ -4355,75 +4355,92 @@ function OnboardingSheet({ onDone }) {
       {/* Sheet */}
       <div onClick={e=>e.stopPropagation()}
         style={{position:"relative",zIndex:1,
-          background:`linear-gradient(170deg,#6B1525 0%,#3D1220 40%,#0F3320 70%,#1A4A2A 100%)`,
-          borderRadius:"24px 24px 0 0",paddingBottom:24,
-          height:540,display:"flex",flexDirection:"column"}}>
-        {/* Handle */}
-        <div style={{display:"flex",justifyContent:"center",padding:"12px 0 0"}}>
-          <div style={{width:40,height:4,borderRadius:2,background:"rgba(255,255,255,0.3)"}}/>
-        </div>
+          background:"#07041a",
+          borderRadius:"24px 24px 0 0",
+          height:540,display:"flex",flexDirection:"column",overflow:"hidden"}}>
 
-        {/* Slide area — swipe L/R */}
-        <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center"}}
-          onTouchStart={e=>{ startX.current=e.touches[0].clientX; }}
-          onTouchEnd={e=>{
-            const dx=e.changedTouches[0].clientX-startX.current;
-            if(dx<-50&&slide<slides.length-1) setSlide(s=>s+1);
-            if(dx>50&&slide>0) setSlide(s=>s-1);
-          }}>
-          <div style={{padding:"0 28px",textAlign:"center",width:"100%"}}>
-            <div style={{fontSize:56,marginBottom:12,lineHeight:1}}>{cur.emoji}</div>
-            <p style={{fontSize:11,color:"rgba(255,255,255,0.5)",fontWeight:700,
-              letterSpacing:2,textTransform:"uppercase",margin:"0 0 8px"}}>{cur.subtitle}</p>
-            <h2 style={{fontSize:22,fontWeight:900,color:"#fff",margin:"0 0 10px",lineHeight:1.2,
-              textShadow:"0 2px 8px rgba(0,0,0,0.2)"}}>
-              {cur.title}
-            </h2>
-            <p style={{fontSize:13,color:"rgba(255,255,255,0.65)",lineHeight:1.55,margin:"0 auto",maxWidth:280}}>
-              {cur.desc}
-            </p>
+        {/* VAR image — top:-96px shifts it so blue screen (img px 66-186) maps to popup px 0-90 (handle+emoji only) */}
+        <img src={varBg} alt="" style={{
+          position:"absolute",width:"100%",height:"auto",
+          top:"-96px",left:0,
+          zIndex:0,opacity:0.95,pointerEvents:"none",
+        }}/>
+        {/* Overlay: blue visible at top (0-17%), hard fade by 22% so all text sits on dark */}
+        <div style={{
+          position:"absolute",inset:0,zIndex:1,pointerEvents:"none",
+          background:"linear-gradient(180deg,rgba(7,4,26,0.05) 0%,rgba(7,4,26,0.45) 17%,rgba(7,4,26,0.94) 22%,rgba(7,4,26,0.98) 100%)",
+        }}/>
+
+        {/* Content above image+overlay */}
+        <div style={{position:"relative",zIndex:2,display:"flex",flexDirection:"column",flex:1,paddingBottom:24}}>
+          {/* Handle */}
+          <div style={{display:"flex",justifyContent:"center",padding:"12px 0 0"}}>
+            <div style={{width:40,height:4,borderRadius:2,background:"rgba(255,255,255,0.35)"}}/>
           </div>
-        </div>
 
-        {/* Dots */}
-        <div style={{display:"flex",justifyContent:"center",gap:8,padding:"10px 0 12px"}}>
-          {slides.map((_,i)=>(
-            <div key={i} onClick={()=>setSlide(i)}
-              style={{width:i===slide?22:7,height:7,borderRadius:4,cursor:"pointer",
-                background:i===slide?"rgba(255,255,255,0.95)":"rgba(255,255,255,0.3)",
-                transition:"all 0.3s"}}/>
-          ))}
-        </div>
-
-        {/* Bottom */}
-        <div style={{padding:"0 24px"}}>
-          <div style={{display:"flex",alignItems:"center",gap:8,justifyContent:"center",marginBottom:10}}
-            onClick={()=>setSkipNext(s=>!s)}>
-            <div style={{width:20,height:20,borderRadius:6,
-              border:`2px solid ${skipNext?"rgba(255,255,255,0.9)":"rgba(255,255,255,0.3)"}`,
-              background:skipNext?"rgba(255,255,255,0.9)":"transparent",
-              display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.2s",cursor:"pointer"}}>
-              {skipNext&&<span style={{fontSize:11,color:NAVY,fontWeight:900}}>✓</span>}
+          {/* Slide area — swipe L/R */}
+          <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center"}}
+            onTouchStart={e=>{ startX.current=e.touches[0].clientX; }}
+            onTouchEnd={e=>{
+              const dx=e.changedTouches[0].clientX-startX.current;
+              if(dx<-50&&slide<slides.length-1) setSlide(s=>s+1);
+              if(dx>50&&slide>0) setSlide(s=>s-1);
+            }}>
+            <div style={{padding:"0 28px",textAlign:"center",width:"100%"}}>
+              <div style={{fontSize:56,marginBottom:12,lineHeight:1,colorScheme:"light",
+                filter:cur.emoji==="⚽"?"saturate(0) contrast(3) brightness(1.1)":"none"}}>{cur.emoji}</div>
+              <p style={{fontSize:11,color:"rgba(255,255,255,0.55)",fontWeight:700,
+                letterSpacing:2,textTransform:"uppercase",margin:"0 0 8px"}}>{cur.subtitle}</p>
+              <h2 style={{fontSize:22,fontWeight:900,color:"#fff",margin:"0 0 10px",lineHeight:1.2,
+                textShadow:"0 2px 12px rgba(0,0,0,0.5)"}}>
+                {cur.title}
+              </h2>
+              <p style={{fontSize:13,color:"rgba(255,255,255,0.7)",lineHeight:1.55,margin:"0 auto",maxWidth:280}}>
+                {cur.desc}
+              </p>
             </div>
-            <span style={{fontSize:12,color:"rgba(255,255,255,0.55)",cursor:"pointer"}}>Don't show again</span>
           </div>
 
-          <div style={{display:"flex",gap:10}}>
-            {!isLast&&(
-              <button onClick={()=>onDone(skipNext)}
-                style={{flex:1,padding:"13px 0",borderRadius:14,border:"none",
-                  background:"rgba(255,255,255,0.15)",color:"rgba(255,255,255,0.7)",
-                  fontSize:14,fontWeight:700,cursor:"pointer"}}>
-                Skip
+          {/* Dots */}
+          <div style={{display:"flex",justifyContent:"center",gap:8,padding:"10px 0 12px"}}>
+            {slides.map((_,i)=>(
+              <div key={i} onClick={()=>setSlide(i)}
+                style={{width:i===slide?22:7,height:7,borderRadius:4,cursor:"pointer",
+                  background:i===slide?"rgba(255,255,255,0.95)":"rgba(255,255,255,0.3)",
+                  transition:"all 0.3s"}}/>
+            ))}
+          </div>
+
+          {/* Bottom */}
+          <div style={{padding:"0 24px"}}>
+            <div style={{display:"flex",alignItems:"center",gap:8,justifyContent:"center",marginBottom:10}}
+              onClick={()=>setSkipNext(s=>!s)}>
+              <div style={{width:20,height:20,borderRadius:6,
+                border:`2px solid ${skipNext?"rgba(255,255,255,0.9)":"rgba(255,255,255,0.3)"}`,
+                background:skipNext?"rgba(255,255,255,0.9)":"transparent",
+                display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.2s",cursor:"pointer"}}>
+                {skipNext&&<span style={{fontSize:11,color:NAVY,fontWeight:900}}>✓</span>}
+              </div>
+              <span style={{fontSize:12,color:"rgba(255,255,255,0.55)",cursor:"pointer"}}>Don't show again</span>
+            </div>
+
+            <div style={{display:"flex",gap:10}}>
+              {!isLast&&(
+                <button onClick={()=>onDone(skipNext)}
+                  style={{flex:1,padding:"13px 0",borderRadius:14,border:"none",
+                    background:"rgba(255,255,255,0.15)",color:"rgba(255,255,255,0.7)",
+                    fontSize:14,fontWeight:700,cursor:"pointer"}}>
+                  Skip
+                </button>
+              )}
+              <button onClick={()=>{ if(isLast) onDone(skipNext); else setSlide(s=>s+1); }}
+                style={{flex:2,padding:"13px 0",borderRadius:14,border:"none",cursor:"pointer",
+                  background:"rgba(255,255,255,0.95)",
+                  color:NAVY,fontSize:15,fontWeight:800,
+                  boxShadow:"0 6px 20px rgba(0,0,0,0.2)"}}>
+                {isLast?"Let's go! 🏆":cur.nextLabel||"Next →"}
               </button>
-            )}
-            <button onClick={()=>{ if(isLast) onDone(skipNext); else setSlide(s=>s+1); }}
-              style={{flex:2,padding:"13px 0",borderRadius:14,border:"none",cursor:"pointer",
-                background:"rgba(255,255,255,0.95)",
-                color:NAVY,fontSize:15,fontWeight:800,
-                boxShadow:"0 6px 20px rgba(0,0,0,0.2)"}}>
-              {isLast?"Let's go! 🏆":cur.nextLabel||"Next →"}
-            </button>
+            </div>
           </div>
         </div>
       </div>
@@ -4838,18 +4855,26 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
   standing.sort((a,b)=>b.pts-a.pts||b.gd-a.gd||b.gf-a.gf);
 
   return (
-    <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden"}}>
-      <div style={{background:`linear-gradient(135deg,${NAVY},#001840)`,padding:"14px 20px 16px",flexShrink:0}}>
-        <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:14}}>
-          <div onClick={onBack} style={{width:36,height:36,borderRadius:10,background:"rgba(255,255,255,0.12)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:"#fff"}}>&#8249;</div>
-          <div>
-            <p style={{fontSize:11,color:RED,margin:"0 0 2px",letterSpacing:2,textTransform:"uppercase",fontWeight:800}}>FIFA - WORLD CUP 2026</p>
-            <h2 style={{fontSize:17,fontWeight:800,color:"#fff",margin:0}}>Groups & Schedule</h2>
+    <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",position:"relative"}}>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"85%",left:"-30%",top:"20%",objectFit:"cover",objectPosition:"center 20%",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
+      <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY},#001840)`,padding:"14px 20px 16px",flexShrink:0,overflow:"hidden"}}>
+        <img src={varBg} alt="" style={{
+          position:"absolute",inset:0,width:"100%",height:"100%",
+          objectFit:"cover",objectPosition:"center 30%",
+          opacity:0.28,pointerEvents:"none",
+        }}/>
+        <div style={{position:"relative"}}>
+          <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:14}}>
+            <div onClick={onBack} style={{width:36,height:36,borderRadius:10,background:"rgba(255,255,255,0.12)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:"#fff"}}>&#8249;</div>
+            <div>
+              <p style={{fontSize:11,color:RED,margin:"0 0 2px",letterSpacing:2,textTransform:"uppercase",fontWeight:800}}>FIFA - WORLD CUP 2026</p>
+              <h2 style={{fontSize:17,fontWeight:800,color:"#fff",margin:0}}>Groups & Schedule</h2>
+            </div>
           </div>
         </div>
       </div>
 
-      <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",padding:"14px 20px"}}>
+      <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",padding:"14px 20px",position:"relative",zIndex:1}}>
         {/* Weekly Calendar with clickable matches */}
         <WeeklyCalendar weekStart={weekStart} setWeekStart={handleWeekChange} weeks={weeks} weekIdx={weekIdx}
           selDay={selDay} onDaySelect={handleDaySelect} scores={scores} scoresVersion={_v}
@@ -5232,7 +5257,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                         style={{padding:"4px 10px",borderRadius:18,border:"none",cursor:"pointer",fontSize:12,fontWeight:700,
                           background:!showStanding?"rgba(255,255,255,0.95)":"transparent",
                           color:!showStanding?NAVY:"rgba(255,255,255,0.6)",transition:"all 0.2s"}}>
-                        ⚽ Matches
+                        <span style={{colorScheme:"light",filter:"saturate(0) contrast(3) brightness(1.1)"}}>⚽</span> Matches
                       </button>
                       <button onClick={()=>setShowStanding(true)}
                         style={{padding:"4px 10px",borderRadius:18,border:"none",cursor:"pointer",fontSize:12,fontWeight:700,
@@ -5769,14 +5794,15 @@ function StatsScreen({ lang }) {
 
 function AccountScreen({ lang, onBoards, onSignOut, onShowGuide }) {
   return (
-    <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflowY:"auto"}}>
-      <div style={{background:`linear-gradient(135deg,${NAVY},#001840)`,padding:"28px 20px 32px",display:"flex",flexDirection:"column",alignItems:"center"}}>
+    <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflowY:"auto",position:"relative",overflow:"hidden"}}>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"85%",left:"-30%",top:"20%",objectFit:"cover",objectPosition:"center 20%",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
+      <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY},#001840)`,padding:"28px 20px 32px",display:"flex",flexDirection:"column",alignItems:"center"}}>
         <div style={{width:70,height:70,borderRadius:"50%",background:"rgba(255,255,255,0.18)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:34,marginBottom:12}}>👤</div>
         <p style={{fontSize:12,color:RED,margin:"0 0 4px",letterSpacing:2,textTransform:"uppercase",fontWeight:800}}>FIFA</p>
         <h2 style={{fontSize:18,fontWeight:800,color:"#fff",margin:"0 0 4px"}}>Alex Ionescu</h2>
         <p style={{fontSize:13,color:"rgba(255,255,255,0.5)",margin:0}}>Member since March 2026</p>
       </div>
-      <div style={{padding:"16px 20px"}}>
+      <div style={{padding:"16px 20px",position:"relative",zIndex:1}}>
         {[{icon:"🏆",label:"My Boards",sub:"3 active boards",action:onBoards},{icon:"📖",label:"App Guide",sub:"How it works",action:onShowGuide},{icon:"🔔",label:"Notifications",sub:"Match alerts on"},{icon:"🌍",label:"Language",sub:LANGS.find(l=>l.code===lang)?.name||"English"},{icon:"⭐",label:"Upgrade to Premium",sub:"Remove ads",highlight:true},{icon:"🚪",label:"Sign Out",sub:"",action:onSignOut}].map(item=>(
           <div key={item.label} onClick={item.action||undefined} style={{display:"flex",alignItems:"center",gap:14,background:item.highlight?"#E8F0FF":BG,borderRadius:14,boxShadow:item.highlight?`0 0 0 2px ${NAVY},${SHADOW_OUT}`:SHADOW_OUT,padding:"13px 16px",marginBottom:10,cursor:"pointer"}}>
             <span style={{fontSize:20}}>{item.icon}</span>
@@ -5814,13 +5840,14 @@ function RulesScreen({ onBack }) {
   const totalMax = rules.reduce((s,r)=>s+r.pts, 0);
 
   return (
-    <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden"}}>
-      <div style={{background:`linear-gradient(135deg,${NAVY},#001840)`,padding:"16px 20px 0",flexShrink:0}}>
+    <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",position:"relative"}}>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"85%",left:"-30%",top:"20%",objectFit:"cover",objectPosition:"center 20%",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
+      <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY},#001840)`,padding:"16px 20px 0",flexShrink:0}}>
         <p style={{fontSize:11,color:RED,margin:"0 0 4px",letterSpacing:2,textTransform:"uppercase",fontWeight:800}}>FIFA WORLD CUP 2026</p>
         <h2 style={{fontSize:20,fontWeight:900,color:"#fff",margin:"0 0 16px"}}>📖 Rules</h2>
         {/* Tabs */}
         <div style={{display:"flex",gap:0,borderBottom:"2px solid rgba(255,255,255,0.1)"}}>
-          {[{id:"predictions",label:"🎯 Predictions"},{id:"exact",label:"⚽ Exact Score"}].map(t=>(
+          {[{id:"predictions",label:"🎯 Predictions"},{id:"exact",label:<><span style={{colorScheme:"light",filter:"saturate(0) contrast(3) brightness(1.1)"}}>⚽</span>{" Exact Score"}</>}].map(t=>(
             <button key={t.id} onClick={()=>setTab(t.id)}
               style={{flex:1,background:"transparent",border:"none",cursor:"pointer",padding:"10px 0",
                 fontSize:12,fontWeight:700,color:tab===t.id?"#fff":"rgba(255,255,255,0.4)",
@@ -5832,7 +5859,7 @@ function RulesScreen({ onBack }) {
         </div>
       </div>
 
-      <div style={{flex:1,overflowY:"auto",padding:"16px 20px"}}>
+      <div style={{flex:1,overflowY:"auto",padding:"16px 20px",position:"relative",zIndex:1}}>
         {/* Description */}
         <div style={{background:BG,borderRadius:14,boxShadow:SHADOW_OUT,padding:"14px 16px",marginBottom:16}}>
           <p style={{fontSize:13,fontWeight:700,color:DARK,margin:"0 0 4px"}}>
@@ -5851,7 +5878,9 @@ function RulesScreen({ onBack }) {
           {rules.map((r,i)=>(
             <div key={i} style={{display:"flex",alignItems:"center",padding:"12px 16px",background:"#fff",borderBottom:i<rules.length-1?"1px solid rgba(0,0,0,0.05)":"none",gap:12}}>
               <div style={{flex:1}}>
-                <p style={{fontSize:13,fontWeight:700,color:DARK,margin:"0 0 2px"}}>{r.phase}</p>
+                <p style={{fontSize:13,fontWeight:700,color:DARK,margin:"0 0 2px"}}>
+                  {r.phase.split("⚽").flatMap((p,i)=>i===0?[p]:[<span key={i} style={{colorScheme:"light",filter:"saturate(0) contrast(3) brightness(1.1)"}}>⚽</span>,p])}
+                </p>
                 <p style={{fontSize:11,color:"#aaa",margin:0}}>{r.desc}</p>
               </div>
               <div style={{background:`linear-gradient(135deg,${NAVY},#001840)`,borderRadius:10,padding:"5px 12px",flexShrink:0}}>
