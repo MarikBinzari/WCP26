@@ -2461,68 +2461,99 @@ function Best3Screen({ groups, getGroupStanding, picks, best3, setBest3, onDone 
 }
 
 
-function GroupIntroScreen({ group, teams: teamsProp, isKo, onStart }) {
+function GroupIntroScreen({ group, teams: teamsProp, isKo, onStart, hideHeader=false }) {
   const teams = isKo ? null : (ALL_GROUPS_DATA[group]||[]);
   const matchCount = isKo ? (teamsProp||[]).length : (GROUP_MATCHUPS[group]||[]).length;
+  const nextRoundLabel = {R32:"Round of 16",R16:"Sferturi",QF:"Semifinale",SF:"Finală"}[group]||"Runda următoare";
+  const matches = teamsProp||[];
+  const matchPairs = [];
+  for(let i=0;i<matches.length;i+=2) matchPairs.push([matches[i],matches[i+1]]);
+
   return (
-    <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflowY:"auto",padding:"20px 24px"}}>
-      <div style={{background:`linear-gradient(135deg,${NAVY},#001840)`,borderRadius:20,padding:"20px",width:"100%",marginBottom:16,boxShadow:SHADOW_OUT}}>
-        <p style={{fontSize:12,color:RED,margin:"0 0 4px",letterSpacing:2,textTransform:"uppercase",fontWeight:800,textAlign:"center"}}>FIFA WORLD CUP 2026</p>
-        <h2 style={{fontSize:26,fontWeight:900,color:"#fff",margin:"0 0 20px",textAlign:"center",letterSpacing:1}}>{isKo?group:`GRUPA ${group}`}</h2>
-        {isKo ? (
-          <div style={{display:"flex",flexDirection:"column",gap:12}}>
-            {(teamsProp||[]).reduce((acc,pair,i)=>{
-              if(i%2===0) acc.push([pair, teamsProp[i+1]]);
-              return acc;
-            },[]).map((pair,gi)=>(
-              <div key={gi} style={{background:"rgba(255,255,255,0.06)",borderRadius:14,padding:"10px",border:"1px solid rgba(255,255,255,0.12)"}}>
-                <p style={{fontSize:11,color:"rgba(255,255,255,0.35)",fontWeight:700,textAlign:"center",margin:"0 0 8px",textTransform:"uppercase",letterSpacing:1}}>
-                  Winner advances →
-                </p>
-                {pair.filter(Boolean).map(([h,a],j)=>(
-                  <div key={j} style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:"rgba(255,255,255,0.1)",borderRadius:10,padding:"9px 12px",marginBottom:j===0&&pair[1]?6:0}}>
-                    <div style={{display:"flex",alignItems:"center",gap:8,flex:1}}>
-                      <span style={{fontSize:20}}>{FLAGS[h]||"🏳"}</span>
-                      <span style={{fontSize:12,fontWeight:700,color:"#fff"}}>{h&&h.length>8?h.split(" ")[0]:h}</span>
+    <div style={{flex:1,minHeight:0,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",userSelect:"none"}}>
+      {isKo ? (
+        <>
+          <div style={{flex:1,minHeight:0,overflowY:"auto",padding:"14px 14px 8px"}}>
+            <div style={{display:"flex",flexDirection:"column",gap:12}}>
+              {matchPairs.map(([m1,m2],gi)=>(
+                <div key={gi} style={{
+                  background:"#fff",borderRadius:16,
+                  border:"2px solid rgba(0,32,91,0.13)",
+                  boxShadow:"0 2px 10px rgba(0,32,91,0.07)",
+                  overflow:"hidden",
+                }}>
+                  {[m1,m2].filter(Boolean).map(([h,a],mi)=>(
+                    <div key={mi}>
+                      <div style={{
+                        padding:"11px 14px",
+                        display:"flex",alignItems:"center",justifyContent:"space-between",
+                      }}>
+                        <div style={{display:"flex",alignItems:"center",gap:9,flex:1}}>
+                          <span style={{fontSize:26,lineHeight:1}}>{FLAGS[h]||"🏳"}</span>
+                          <span style={{fontSize:12,fontWeight:800,color:NAVY,lineHeight:1.2}}>{h||"TBD"}</span>
+                        </div>
+                        <div style={{background:"rgba(0,32,91,0.08)",borderRadius:7,padding:"3px 9px",flexShrink:0}}>
+                          <span style={{fontSize:10,fontWeight:800,color:NAVY,letterSpacing:1}}>VS</span>
+                        </div>
+                        <div style={{display:"flex",alignItems:"center",gap:9,flex:1,justifyContent:"flex-end"}}>
+                          <span style={{fontSize:12,fontWeight:800,color:NAVY,lineHeight:1.2,textAlign:"right"}}>{a||"TBD"}</span>
+                          <span style={{fontSize:26,lineHeight:1}}>{FLAGS[a]||"🏳"}</span>
+                        </div>
+                      </div>
+                      {mi===0&&m2&&(
+                        <div style={{display:"flex",alignItems:"center",gap:8,padding:"0 14px",background:"rgba(0,32,91,0.04)",borderTop:"1px dashed rgba(0,32,91,0.1)",borderBottom:"1px dashed rgba(0,32,91,0.1)"}}>
+                          <div style={{flex:1,height:1,background:"rgba(0,32,91,0.12)"}}/>
+                          <span style={{fontSize:9,fontWeight:700,color:"rgba(0,32,91,0.45)",letterSpacing:0.5,padding:"5px 0"}}>
+                            câștigătorii se întâlnesc în {nextRoundLabel}
+                          </span>
+                          <div style={{flex:1,height:1,background:"rgba(0,32,91,0.12)"}}/>
+                        </div>
+                      )}
                     </div>
-                    <span style={{fontSize:12,color:"rgba(255,255,255,0.35)",fontWeight:700,flexShrink:0}}>VS</span>
-                    <div style={{display:"flex",alignItems:"center",gap:8,flex:1,justifyContent:"flex-end"}}>
-                      <span style={{fontSize:12,fontWeight:700,color:"#fff"}}>{a&&a.length>8?a.split(" ")[0]:a}</span>
-                      <span style={{fontSize:20}}>{FLAGS[a]||"🏳"}</span>
-                    </div>
-                  </div>
-                ))}
-                {pair[1]&&(
-                  <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:4,marginTop:6}}>
-                    <div style={{flex:1,height:1,background:"rgba(255,255,255,0.1)"}}/>
-                    <span style={{fontSize:11,color:"rgba(255,255,255,0.25)",fontWeight:600}}>winners meet in {teamsProp.length<=4?"SF":"QF"}</span>
-                    <div style={{flex:1,height:1,background:"rgba(255,255,255,0.1)"}}/>
-                  </div>
-                )}
-              </div>
-            ))}
+                  ))}
+                </div>
+              ))}
+            </div>
           </div>
-        ) : (
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
-            {teams.map((t)=>(
-              <div key={t} style={{background:"rgba(255,255,255,0.1)",borderRadius:14,padding:"14px 12px",display:"flex",flexDirection:"column",alignItems:"center",gap:8,border:"1px solid rgba(255,255,255,0.15)"}}>
-                <span style={{fontSize:44,lineHeight:1}}>{FLAGS[t]||"🏳"}</span>
-                <span style={{fontSize:12,fontWeight:700,color:"#fff",textAlign:"center",lineHeight:1.2}}>{t}</span>
-              </div>
-            ))}
+          <div style={{padding:"8px 14px",borderTop:"1px solid rgba(0,0,0,0.06)"}}>
+            <div style={{fontSize:11,color:"rgba(0,0,0,0.35)",fontWeight:700,textAlign:"center",marginBottom:10,letterSpacing:0.5}}>
+              {matchCount} meciuri de prezis
+            </div>
+            <button onClick={onStart}
+              style={{width:"100%",padding:"15px 0",borderRadius:14,border:"none",
+                background:`linear-gradient(135deg,${NAVY},#003580)`,
+                color:"#fff",fontSize:15,fontWeight:900,cursor:"pointer",
+                boxShadow:"0 4px 20px rgba(0,32,91,0.3)",letterSpacing:1}}>
+              Începe Meciurile →
+            </button>
           </div>
-        )}
-      </div>
-      <div style={{width:"100%",background:BG,borderRadius:14,boxShadow:SHADOW_OUT,padding:"14px 16px",marginBottom:20}}>
-        <p style={{fontSize:12,color:"#aaa",margin:0,textAlign:"center"}}>{matchCount} matches de prezis</p>
-      </div>
-      <button onClick={onStart}
-        style={{width:"100%",padding:"16px 0",borderRadius:16,border:"none",
-          background:`linear-gradient(135deg,${RED},#EF3340 40%,${GREEN})`,
-          color:"#fff",fontSize:16,fontWeight:900,cursor:"pointer",
-          boxShadow:"0 6px 20px rgba(200,16,46,0.3)",letterSpacing:1}}>
-        Start Matches →
-      </button>
+        </>
+      ) : (
+        <div style={{padding:"20px 24px"}}>
+          <div style={{background:`linear-gradient(135deg,${NAVY},#001840)`,borderRadius:20,padding:"20px",width:"100%",marginBottom:16,boxShadow:SHADOW_OUT}}>
+            {!hideHeader && <><p style={{fontSize:10,color:RED,margin:"0 0 4px",letterSpacing:2,textTransform:"uppercase",fontWeight:800,textAlign:"center"}}>FIFA WORLD CUP 2026</p>
+            <h2 style={{fontSize:26,fontWeight:900,color:"#fff",margin:"0 0 20px",textAlign:"center",letterSpacing:1}}>{group}</h2></>}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+              {teams.map((t)=>(
+                <div key={t} style={{background:"rgba(255,255,255,0.1)",borderRadius:14,padding:"14px 12px",display:"flex",flexDirection:"column",alignItems:"center",gap:8,border:"1px solid rgba(255,255,255,0.15)"}}>
+                  <span style={{fontSize:44,lineHeight:1}}>{FLAGS[t]||"🏳"}</span>
+                  <span style={{fontSize:12,fontWeight:700,color:"#fff",textAlign:"center",lineHeight:1.2}}>{t}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div style={{width:"100%",background:BG,borderRadius:14,boxShadow:SHADOW_OUT,padding:"14px 16px",marginBottom:20}}>
+            <p style={{fontSize:12,color:"#aaa",margin:0,textAlign:"center"}}>{matchCount} meciuri de prezis</p>
+          </div>
+          <button onClick={onStart}
+            style={{width:"100%",padding:"16px 0",borderRadius:16,border:"none",
+              background:`linear-gradient(135deg,${RED},#EF3340 40%,${GREEN})`,
+              color:"#fff",fontSize:16,fontWeight:900,cursor:"pointer",
+              boxShadow:"0 6px 20px rgba(200,16,46,0.3)",letterSpacing:1}}>
+            Începe Meciurile →
+          </button>
+        </div>
+      )}
     </div>
   );
 }
