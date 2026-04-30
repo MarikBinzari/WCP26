@@ -4170,7 +4170,7 @@ function DevPanel({ onStart }) {
   ];
 
   return (
-    <div style={{flex:1,display:"flex",flexDirection:"column",background:"#1a1a2e",overflow:"auto"}}>
+    <div style={{flex:1,display:"flex",flexDirection:"column",background:"#ff0000",overflow:"auto"}}>
       <div style={{padding:"40px 24px 24px",textAlign:"center"}}>
         <div style={{fontSize:36,marginBottom:8}}>🛠️</div>
         <h2 style={{fontSize:22,fontWeight:900,color:"#fff",margin:"0 0 4px"}}>Dev Mode</h2>
