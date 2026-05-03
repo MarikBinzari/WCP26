@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import trophy from "./assets/hands-trophy.png";
 import varBg from "./assets/var-bg.jpg";
+import { ALL_GROUPS_DATA, FLAGS, TEAM_COLORS, CALENDAR_EVENTS } from "./data/worldcup2026.js";
+
+const TEAM_CODE = {"Mexico":"MEX","South Africa":"RSA","South Korea":"KOR","Czechia":"CZE","Canada":"CAN","Switzerland":"SUI","Qatar":"QAT","Bosnia-Herzegovina":"BIH","Brazil":"BRA","Morocco":"MAR","Scotland":"SCO","Haiti":"HAI","USA":"USA","Paraguay":"PAR","Australia":"AUS","Turkiye":"TUR","Germany":"GER","Ecuador":"ECU","Ivory Coast":"CIV","Curacao":"CUW","Netherlands":"NED","Japan":"JPN","Tunisia":"TUN","Sweden":"SWE","Belgium":"BEL","Iran":"IRI","Egypt":"EGY","New Zealand":"NZL","Spain":"ESP","Uruguay":"URU","Saudi Arabia":"KSA","Cape Verde":"CPV","France":"FRA","Senegal":"SEN","Norway":"NOR","Iraq":"IRQ","Argentina":"ARG","Austria":"AUT","Algeria":"ALG","Jordan":"JOR","Portugal":"POR","Colombia":"COL","Uzbekistan":"UZB","DR Congo":"COD","England":"ENG","Croatia":"CRO","Panama":"PAN","Ghana":"GHA"};
 
 const BG = "#F8F8F8";
 const SHADOW_OUT = "4px 4px 12px rgba(0,0,0,0.08), -3px -3px 8px #ffffff";
@@ -69,62 +72,11 @@ const T = {
   fr:{ location:"USA, Canada & Mexique", cta:"Faites vos Pronostics", days:"JOURS", hours:"HEURES", minutes:"MIN", seconds:"SEC", footerHome:"Accueil", footerStats:"Groups", footerFast:"Instant Pick ⚡", footerAccount:"Compte" },
 };
 
-const ECHIPE_DATA = {
-  A:["Brazil","France","Mexico","Morocco"],
-  B:["Argentina","England","USA","Poland"],
-  C:["Spain","Portugal","Japan","Canada"],
-  D:["Germany","Netherlands","Senegal","Australia"],
-  E:["Belgium","Croatia","Serbia","Morocco"],
-  F:["Denmark","Tunisia","Australia","France"],
-};
-const FLAGS = {
-  "Brazil":"🇧🇷","France":"🇫🇷","Mexico":"🇲🇽","Morocco":"🇲🇦",
-  "Argentina":"🇦🇷","England":"🏴󠁧󠁢󠁥󠁧󠁿","USA":"🇺🇸","Poland":"🇵🇱",
-  "Spain":"🇪🇸","Portugal":"🇵🇹","Japan":"🇯🇵","Canada":"🇨🇦",
-  "Germany":"🇩🇪","Netherlands":"🇳🇱","Senegal":"🇸🇳","Australia":"🇦🇺",
-  "Belgium":"🇧🇪","Croatia":"🇭🇷","Serbia":"🇷🇸",
-  "Denmark":"🇩🇰","Tunisia":"🇹🇳","Iran":"🇮🇷","South Korea":"🇰🇷",
-  "Ecuador":"🇪🇨","Cameroon":"🇨🇲","Qatar":"🇶🇦","Costa Rica":"🇨🇷",
-};
+// ECHIPE_DATA, FLAGS, TEAM_COLORS — importate din ./data/worldcup2026.js
 
-// Mock real final standings per group — replace with API later
-const REAL_STANDINGS = {
-  A: ["France","Brazil","Mexico","Morocco"],
-  B: ["England","Argentina","USA","Poland"],
-  C: ["Spain","Canada","Japan","Portugal"],
-  D: ["Netherlands","Germany","Senegal","Australia"],
-  E: ["Croatia","Belgium","Iran","Serbia"],
-  F: ["Denmark","Ecuador","Tunisia","Cameroon"],
-};
-const GROUP_STAGE_FINISHED = true; // flip to true to show comparison
-
-// Team dominant colors [primary, secondary]
-const TEAM_COLORS = {
-  "Brazil":     ["#009C3B","#FFDF00"],
-  "France":     ["#002395","#ED2939"],
-  "Mexico":     ["#006847","#CE1126"],
-  "Morocco":    ["#C1272D","#006233"],
-  "Argentina":  ["#74ACDF","#FFFFFF"],
-  "England":    ["#FFFFFF","#CF081F"],
-  "USA":        ["#002868","#BF0A30"],
-  "Poland":     ["#FFFFFF","#DC143C"],
-  "Spain":      ["#AA151B","#F1BF00"],
-  "Portugal":   ["#006600","#FF0000"],
-  "Japan":      ["#FFFFFF","#BC002D"],
-  "Canada":     ["#FF0000","#FFFFFF"],
-  "Germany":    ["#000000","#DD0000"],
-  "Netherlands":["#FF4F00","#003DA5"],
-  "Senegal":    ["#00853F","#FDEF42"],
-  "Australia":  ["#00843D","#FFCD00"],
-  "Belgium":    ["#000000","#FAE042"],
-  "Croatia":    ["#171796","#FF0000"],
-  "Serbia":     ["#C6363C","#0C4076"],
-  "Iran":       ["#239F40","#DA0000"],
-  "Denmark":    ["#C60C30","#FFFFFF"],
-  "Tunisia":    ["#E70013","#FFFFFF"],
-  "Ecuador":    ["#FFD100","#003893"],
-  "Cameroon":   ["#007A5E","#CE1126"],
-};
+// Clasamente reale finale — se actualizează după încheierea turneului
+const REAL_STANDINGS = {};
+const GROUP_STAGE_FINISHED = false;
 
 // Week unlock logic — Sunday after 20:00
 const now = new Date();
@@ -165,158 +117,7 @@ const isWeekUnlocked = (day, simDay=null, simHour=12, simMin=0) => {
 };
 
 
-
-const CALENDAR_EVENTS = [
-  // WEEK 1: June 11-14 — Group stage matchday 1
-  {day:11,matches:[
-    {home:"USA",homeFlag:"🇺🇸",away:"Jamaica",awayFlag:"🇯🇲",time:"13:00",group:"A"},
-    {home:"Mexico",homeFlag:"🇲🇽",away:"Honduras",awayFlag:"🇭🇳",time:"16:00",group:"B"},
-    {home:"Canada",homeFlag:"🇨🇦",away:"Morocco",awayFlag:"🇲🇦",time:"19:00",group:"C"},
-    {home:"Brazil",homeFlag:"🇧🇷",away:"Germany",awayFlag:"🇩🇪",time:"22:00",group:"D"},
-  ]},
-  {day:12,matches:[
-    {home:"Argentina",homeFlag:"🇦🇷",away:"Spain",awayFlag:"🇪🇸",time:"13:00",group:"E"},
-    {home:"France",homeFlag:"🇫🇷",away:"England",awayFlag:"🏴󠁧󠁢󠁥󠁧󠁿",time:"16:00",group:"F"},
-    {home:"Portugal",homeFlag:"🇵🇹",away:"Italy",awayFlag:"🇮🇹",time:"19:00",group:"G"},
-    {home:"Netherlands",homeFlag:"🇳🇱",away:"Japan",awayFlag:"🇯🇵",time:"22:00",group:"H"},
-  ]},
-  {day:13,matches:[
-    {home:"Belgium",homeFlag:"🇧🇪",away:"Croatia",awayFlag:"🇭🇷",time:"13:00",group:"I"},
-    {home:"Uruguay",homeFlag:"🇺🇾",away:"Colombia",awayFlag:"🇨🇴",time:"16:00",group:"J"},
-    {home:"Senegal",homeFlag:"🇸🇳",away:"Ecuador",awayFlag:"🇪🇨",time:"19:00",group:"K"},
-    {home:"Australia",homeFlag:"🇦🇺",away:"Switzerland",awayFlag:"🇨🇭",time:"22:00",group:"L"},
-  ]},
-  {day:14,matches:[
-    {home:"Panama",homeFlag:"🇵🇦",away:"Trinidad",awayFlag:"🇹🇹",time:"13:00",group:"A"},
-    {home:"Costa Rica",homeFlag:"🇨🇷",away:"Guatemala",awayFlag:"🇬🇹",time:"16:00",group:"B"},
-    {home:"Chile",homeFlag:"🇨🇱",away:"Argentina",awayFlag:"🇦🇷",time:"19:00",group:"C"},
-    {home:"South Korea",homeFlag:"🇰🇷",away:"Nigeria",awayFlag:"🇳🇬",time:"22:00",group:"D"},
-  ]},
-  // WEEK 2: June 15-21 — Group stage matchday 2
-  {day:15,matches:[
-    {home:"Denmark",homeFlag:"🇩🇰",away:"Serbia",awayFlag:"🇷🇸",time:"13:00",group:"E"},
-    {home:"Poland",homeFlag:"🇵🇱",away:"Ukraine",awayFlag:"🇺🇦",time:"16:00",group:"F"},
-    {home:"Iran",homeFlag:"🇮🇷",away:"Saudi Arabia",awayFlag:"🇸🇦",time:"19:00",group:"G"},
-    {home:"Qatar",homeFlag:"🇶🇦",away:"South Africa",awayFlag:"🇿🇦",time:"22:00",group:"H"},
-  ]},
-  {day:16,matches:[
-    {home:"Wales",homeFlag:"🏴󠁧󠁢󠁷󠁬󠁳󠁿",away:"Scotland",awayFlag:"🏴󠁧󠁢󠁳󠁣󠁴󠁿",time:"13:00",group:"I"},
-    {home:"Venezuela",homeFlag:"🇻🇪",away:"Bolivia",awayFlag:"🇧🇴",time:"16:00",group:"J"},
-    {home:"Ghana",homeFlag:"🇬🇭",away:"Tunisia",awayFlag:"🇹🇳",time:"19:00",group:"K"},
-    {home:"New Zealand",homeFlag:"🇳🇿",away:"Romania",awayFlag:"🇷🇴",time:"22:00",group:"L"},
-  ]},
-  {day:17,matches:[
-    {home:"Jamaica",homeFlag:"🇯🇲",away:"Panama",awayFlag:"🇵🇦",time:"13:00",group:"A"},
-    {home:"USA",homeFlag:"🇺🇸",away:"Trinidad",awayFlag:"🇹🇹",time:"16:00",group:"A"},
-    {home:"Honduras",homeFlag:"🇭🇳",away:"Costa Rica",awayFlag:"🇨🇷",time:"19:00",group:"B"},
-    {home:"Mexico",homeFlag:"🇲🇽",away:"Guatemala",awayFlag:"🇬🇹",time:"22:00",group:"B"},
-  ]},
-  {day:18,matches:[
-    {home:"Morocco",homeFlag:"🇲🇦",away:"Chile",awayFlag:"🇨🇱",time:"13:00",group:"C"},
-    {home:"Canada",homeFlag:"🇨🇦",away:"Argentina",awayFlag:"🇦🇷",time:"16:00",group:"C"},
-    {home:"Germany",homeFlag:"🇩🇪",away:"South Korea",awayFlag:"🇰🇷",time:"19:00",group:"D"},
-    {home:"Brazil",homeFlag:"🇧🇷",away:"Nigeria",awayFlag:"🇳🇬",time:"22:00",group:"D"},
-  ]},
-  {day:19,matches:[
-    {home:"Spain",homeFlag:"🇪🇸",away:"Denmark",awayFlag:"🇩🇰",time:"13:00",group:"E"},
-    {home:"Argentina",homeFlag:"🇦🇷",away:"Serbia",awayFlag:"🇷🇸",time:"16:00",group:"E"},
-    {home:"England",homeFlag:"🏴󠁧󠁢󠁥󠁧󠁿",away:"Poland",awayFlag:"🇵🇱",time:"19:00",group:"F"},
-    {home:"France",homeFlag:"🇫🇷",away:"Ukraine",awayFlag:"🇺🇦",time:"22:00",group:"F"},
-  ]},
-  {day:20,matches:[
-    {home:"Italy",homeFlag:"🇮🇹",away:"Iran",awayFlag:"🇮🇷",time:"13:00",group:"G"},
-    {home:"Portugal",homeFlag:"🇵🇹",away:"Saudi Arabia",awayFlag:"🇸🇦",time:"16:00",group:"G"},
-    {home:"Japan",homeFlag:"🇯🇵",away:"Qatar",awayFlag:"🇶🇦",time:"19:00",group:"H"},
-    {home:"Netherlands",homeFlag:"🇳🇱",away:"South Africa",awayFlag:"🇿🇦",time:"22:00",group:"H"},
-  ]},
-  {day:21,matches:[
-    {home:"Croatia",homeFlag:"🇭🇷",away:"Wales",awayFlag:"🏴󠁧󠁢󠁷󠁬󠁳󠁿",time:"13:00",group:"I"},
-    {home:"Belgium",homeFlag:"🇧🇪",away:"Scotland",awayFlag:"🏴󠁧󠁢󠁳󠁣󠁴󠁿",time:"16:00",group:"I"},
-    {home:"Colombia",homeFlag:"🇨🇴",away:"Venezuela",awayFlag:"🇻🇪",time:"19:00",group:"J"},
-    {home:"Uruguay",homeFlag:"🇺🇾",away:"Bolivia",awayFlag:"🇧🇴",time:"22:00",group:"J"},
-  ]},
-  // WEEK 3: June 22-28 — Group stage matchday 3
-  {day:22,matches:[
-    {home:"Ecuador",homeFlag:"🇪🇨",away:"Ghana",awayFlag:"🇬🇭",time:"13:00",group:"K"},
-    {home:"Senegal",homeFlag:"🇸🇳",away:"Tunisia",awayFlag:"🇹🇳",time:"16:00",group:"K"},
-    {home:"Switzerland",homeFlag:"🇨🇭",away:"New Zealand",awayFlag:"🇳🇿",time:"19:00",group:"L"},
-    {home:"Australia",homeFlag:"🇦🇺",away:"Romania",awayFlag:"🇷🇴",time:"22:00",group:"L"},
-  ]},
-  {day:25,matches:[
-    {home:"Trinidad",homeFlag:"🇹🇹",away:"Jamaica",awayFlag:"🇯🇲",time:"19:00",group:"A"},
-    {home:"Panama",homeFlag:"🇵🇦",away:"USA",awayFlag:"🇺🇸",time:"19:00",group:"A"},
-  ]},
-  {day:26,matches:[
-    {home:"Guatemala",homeFlag:"🇬🇹",away:"Honduras",awayFlag:"🇭🇳",time:"19:00",group:"B"},
-    {home:"Costa Rica",homeFlag:"🇨🇷",away:"Mexico",awayFlag:"🇲🇽",time:"19:00",group:"B"},
-    {home:"Argentina",homeFlag:"🇦🇷",away:"Morocco",awayFlag:"🇲🇦",time:"19:00",group:"C"},
-    {home:"Chile",homeFlag:"🇨🇱",away:"Canada",awayFlag:"🇨🇦",time:"19:00",group:"C"},
-  ]},
-  {day:27,matches:[
-    {home:"Nigeria",homeFlag:"🇳🇬",away:"South Korea",awayFlag:"🇰🇷",time:"19:00",group:"D"},
-    {home:"Germany",homeFlag:"🇩🇪",away:"Brazil",awayFlag:"🇧🇷",time:"19:00",group:"D"},
-    {home:"Serbia",homeFlag:"🇷🇸",away:"Spain",awayFlag:"🇪🇸",time:"19:00",group:"E"},
-    {home:"Denmark",homeFlag:"🇩🇰",away:"Argentina",awayFlag:"🇦🇷",time:"19:00",group:"E"},
-  ]},
-  {day:28,matches:[
-    {home:"Ukraine",homeFlag:"🇺🇦",away:"England",awayFlag:"🏴󠁧󠁢󠁥󠁧󠁿",time:"19:00",group:"F"},
-    {home:"Poland",homeFlag:"🇵🇱",away:"France",awayFlag:"🇫🇷",time:"19:00",group:"F"},
-    {home:"Saudi Arabia",homeFlag:"🇸🇦",away:"Italy",awayFlag:"🇮🇹",time:"19:00",group:"G"},
-    {home:"Iran",homeFlag:"🇮🇷",away:"Portugal",awayFlag:"🇵🇹",time:"19:00",group:"G"},
-  ]},
-  // WEEK 4: June 29 - July 4 (R16)
-  {day:29,matches:[
-    {home:"1A",homeFlag:"🏆",away:"2B",awayFlag:"🏆",time:"19:00",group:"R16"},
-    {home:"1C",homeFlag:"🏆",away:"2D",awayFlag:"🏆",time:"22:00",group:"R16"},
-  ]},
-  {day:30,matches:[
-    {home:"1E",homeFlag:"🏆",away:"2F",awayFlag:"🏆",time:"19:00",group:"R16"},
-    {home:"1G",homeFlag:"🏆",away:"2H",awayFlag:"🏆",time:"22:00",group:"R16"},
-  ]},
-  {day:31,matches:[
-    {home:"1B",homeFlag:"🏆",away:"2A",awayFlag:"🏆",time:"19:00",group:"R16"},
-    {home:"1D",homeFlag:"🏆",away:"2C",awayFlag:"🏆",time:"22:00",group:"R16"},
-  ]},
-  {day:32,matches:[
-    {home:"1F",homeFlag:"🏆",away:"2E",awayFlag:"🏆",time:"19:00",group:"R16"},
-    {home:"1H",homeFlag:"🏆",away:"2G",awayFlag:"🏆",time:"22:00",group:"R16"},
-  ]},
-  {day:33,matches:[
-    {home:"1I",homeFlag:"🏆",away:"2J",awayFlag:"🏆",time:"19:00",group:"R16"},
-    {home:"1K",homeFlag:"🏆",away:"2L",awayFlag:"🏆",time:"22:00",group:"R16"},
-  ]},
-  {day:34,matches:[
-    {home:"1J",homeFlag:"🏆",away:"2I",awayFlag:"🏆",time:"19:00",group:"R16"},
-    {home:"1L",homeFlag:"🏆",away:"2K",awayFlag:"🏆",time:"22:00",group:"R16"},
-  ]},
-  // WEEK 5: July 5-11 (QF + SF)
-  {day:36,matches:[
-    {home:"W1",homeFlag:"🏆",away:"W2",awayFlag:"🏆",time:"19:00",group:"QF"},
-    {home:"W3",homeFlag:"🏆",away:"W4",awayFlag:"🏆",time:"22:00",group:"QF"},
-  ]},
-  {day:37,matches:[
-    {home:"W5",homeFlag:"🏆",away:"W6",awayFlag:"🏆",time:"19:00",group:"QF"},
-    {home:"W7",homeFlag:"🏆",away:"W8",awayFlag:"🏆",time:"22:00",group:"QF"},
-  ]},
-  {day:38,matches:[
-    {home:"W9",homeFlag:"🏆",away:"W10",awayFlag:"🏆",time:"19:00",group:"QF"},
-    {home:"W11",homeFlag:"🏆",away:"W12",awayFlag:"🏆",time:"22:00",group:"QF"},
-  ]},
-  {day:40,matches:[
-    {home:"QF1",homeFlag:"🏆",away:"QF2",awayFlag:"🏆",time:"19:00",group:"SF"},
-    {home:"QF3",homeFlag:"🏆",away:"QF4",awayFlag:"🏆",time:"22:00",group:"SF"},
-  ]},
-  {day:41,matches:[
-    {home:"QF5",homeFlag:"🏆",away:"QF6",awayFlag:"🏆",time:"19:00",group:"SF"},
-  ]},
-  // WEEK 6: July 12-14 (3rd place + Final)
-  {day:44,matches:[
-    {home:"SF L1",homeFlag:"🥉",away:"SF L2",awayFlag:"🥉",time:"19:00",group:"3rd"},
-  ]},
-  {day:45,matches:[
-    {home:"SF W1",homeFlag:"🏆",away:"SF W2",awayFlag:"🏆",time:"19:00",group:"Final"},
-  ]},
-];// Compute live scores dynamically based on sim time
+// Compute live scores dynamically based on sim time
 // In production replace with real API
 const computeLiveScores = (simDay=null, simHour=12, simMin=0) => {
   const scores = {};
@@ -631,7 +432,7 @@ function KnockoutTab({ knockoutPicks, setKnockoutPicks, best3picks, groupRank, o
             display:"flex",alignItems:"center",justifyContent:"center",
             fontSize:26,margin:"0 auto 12px",boxShadow:"0 6px 18px rgba(212,130,10,0.35)"}}>🏆</div>
           <p style={{fontSize:12,color:"#D4820A",fontWeight:800,textTransform:"uppercase",letterSpacing:1,margin:"0 0 3px"}}>Semi-Finals complet</p>
-          <h2 style={{fontSize:17,fontWeight:900,color:DARK,margin:"0 0 16px"}}>Finalele te asteaptă</h2>
+          <h2 style={{fontSize:17,fontWeight:900,color:DARK,margin:"0 0 16px"}}>The Finals Await</h2>
 
           {/* Finala mică */}
           <div style={{width:"100%",background:BG,borderRadius:14,boxShadow:SHADOW_OUT,overflow:"hidden",marginBottom:10}}>
@@ -656,7 +457,7 @@ function KnockoutTab({ knockoutPicks, setKnockoutPicks, best3picks, groupRank, o
           {/* Finala mare */}
           <div style={{width:"100%",background:BG,borderRadius:14,boxShadow:SHADOW_OUT,overflow:"hidden",marginBottom:24}}>
             <div style={{background:`linear-gradient(135deg,${NAVY},#001840)`,padding:"6px 14px"}}>
-              <span style={{fontSize:12,fontWeight:800,color:"rgba(255,255,255,0.7)",textTransform:"uppercase",letterSpacing:1}}>🏆 Finala Mare · Campion Mondial</span>
+              <span style={{fontSize:12,fontWeight:800,color:"rgba(255,255,255,0.7)",textTransform:"uppercase",letterSpacing:1}}>🏆 Grand Final · World Champion</span>
             </div>
             {[0,1].map(i=>{
               const sfWinner = knockoutPicks[rounds[2].pairs[i].id];
@@ -665,7 +466,7 @@ function KnockoutTab({ knockoutPicks, setKnockoutPicks, best3picks, groupRank, o
                   borderBottom:i===0?"1px solid rgba(0,0,0,0.05)":"none"}}>
                   <span style={{fontSize:20}}>{sfWinner?FLAGS[sfWinner]||"🏳":"❓"}</span>
                   <span style={{fontSize:13,fontWeight:600,color:DARK,flex:1}}>{sfWinner||"SF Winner"}</span>
-                  <span style={{fontSize:12,color:"#aaa"}}>castigator SF{i+1}</span>
+                  <span style={{fontSize:12,color:"#aaa"}}>SF{i+1} winner</span>
                 </div>
               );
             })}
@@ -675,7 +476,7 @@ function KnockoutTab({ knockoutPicks, setKnockoutPicks, best3picks, groupRank, o
             <button onClick={()=>setShowTransition(false)}
               style={{flex:1,padding:"12px 0",borderRadius:12,border:"none",
                 background:BG,boxShadow:SHADOW_OUT,fontSize:12,fontWeight:700,cursor:"pointer",color:"#888"}}>
-              ← Inapoi
+              ← Back
             </button>
             <button onClick={()=>changeRound(koRound+1)}
               style={{flex:1,padding:"12px 0",borderRadius:12,border:"none",
@@ -721,7 +522,7 @@ function KnockoutTab({ knockoutPicks, setKnockoutPicks, best3picks, groupRank, o
             fontSize:26,margin:"0 auto 10px",boxShadow:"0 6px 18px rgba(0,154,68,0.35)"}}>✅</div>
           <p style={{fontSize:12,color:GREEN,fontWeight:800,textTransform:"uppercase",
             letterSpacing:1,margin:"0 0 3px"}}>{cur.label} complet</p>
-          <h2 style={{fontSize:17,fontWeight:900,color:DARK,margin:"0 0 2px"}}>Drumul spre finală</h2>
+          <h2 style={{fontSize:17,fontWeight:900,color:DARK,margin:"0 0 2px"}}>Road to the Final</h2>
           <p style={{fontSize:11,color:"#aaa",margin:0}}>Your picks advance</p>
         </div>
 
@@ -787,7 +588,7 @@ function KnockoutTab({ knockoutPicks, setKnockoutPicks, best3picks, groupRank, o
           <button onClick={()=>setShowTransition(false)}
             style={{flex:1,padding:"12px 0",borderRadius:12,border:"none",
               background:BG,boxShadow:SHADOW_OUT,fontSize:12,fontWeight:700,cursor:"pointer",color:"#888"}}>
-            ← Inapoi
+            ← Back
           </button>
           <button onClick={()=>changeRound(koRound+1)}
             style={{flex:1,padding:"12px 0",borderRadius:12,border:"none",
@@ -873,7 +674,7 @@ function KnockoutTab({ knockoutPicks, setKnockoutPicks, best3picks, groupRank, o
             </div>
             {knockoutPicks["f_0"]&&(
               <div style={{background:"linear-gradient(135deg,#D4820A,#F0A020)",borderRadius:14,padding:"16px",textAlign:"center",boxShadow:"0 6px 20px rgba(212,130,10,0.4)",marginBottom:14}}>
-                <p style={{fontSize:11,color:"rgba(255,255,255,0.8)",margin:"0 0 4px",fontWeight:700,textTransform:"uppercase",letterSpacing:1}}>🏆 Campion Mondial</p>
+                <p style={{fontSize:11,color:"rgba(255,255,255,0.8)",margin:"0 0 4px",fontWeight:700,textTransform:"uppercase",letterSpacing:1}}>🏆 World Champion</p>
                 <span style={{fontSize:34}}>{FLAGS[knockoutPicks["f_0"]]||"🏆"}</span>
                 <p style={{fontSize:15,fontWeight:900,color:"#fff",margin:"4px 0 0"}}>{knockoutPicks["f_0"]}</p>
               </div>
@@ -925,7 +726,7 @@ function KnockoutTab({ knockoutPicks, setKnockoutPicks, best3picks, groupRank, o
             boxShadow:koRound===0&&gi===0?"none":SHADOW_OUT,
             fontSize:12,fontWeight:700,cursor:koRound===0&&gi===0?"default":"pointer",
             color:koRound===0&&gi===0?"#ccc":"#888"}}>
-          ← Inapoi
+          ← Back
         </button>
         {!isLastGroup ? (
           <button onClick={()=>setGroupIdx(gi+1)}
@@ -1159,26 +960,6 @@ function GrupeTab({ groupRank, setRank, onComplete }) {
 // ── PREDICTIONS SCREEN ────────────────────────────────────────────────────────
 
 // ── INSTANT PICK SCREEN ───────────────────────────────────────────────────────
-// CM 2026: 16 grupe, 4 echipe per grupă
-// Prototip: grupele A, B, C sunt interactive; restul auto-generate
-const ALL_GROUPS_DATA = {
-  A:["Brazil","France","Mexico","Morocco"],
-  B:["Argentina","England","USA","Poland"],
-  C:["Spain","Portugal","Japan","Canada"],
-  D:["Germany","Netherlands","Senegal","Australia"],
-  E:["Belgium","Croatia","Serbia","Iran"],
-  F:["Denmark","Tunisia","Ecuador","Cameroon"],
-  G:["Uruguay","Colombia","South Korea","Ghana"],
-  H:["Portugal","Switzerland","Nigeria","Costa Rica"],
-  I:["Netherlands","Peru","Qatar","Ecuador"],
-  J:["Brazil","Mexico","Saudi Arabia","Cameroon"],
-  K:["France","Australia","Japan","Tunisia"],
-  L:["Argentina","Poland","USA","Iran"],
-  M:["Spain","Senegal","Germany","Costa Rica"],
-  N:["England","Croatia","Denmark","Ghana"],
-  O:["Belgium","Uruguay","Colombia","Switzerland"],
-  P:["Italy","Serbia","South Korea","Nigeria"],
-};
 
 const INTERACTIVE_GROUPS = ["A","B","C","D","E","F","G","H","I","J","K","L"]; // all 12 groups user ranks manually
 const ALL_GROUP_IDS = Object.keys(ALL_GROUPS_DATA);
@@ -1920,13 +1701,13 @@ function MatchSwipeCard({ home, away, onPick, onFlash, groupLabel, matchNum, tot
           <button onClick={()=>{ setOverlayState(null); setPicked(null); setNextReady(false); pickRef.current=false; }}
             style={{flex:1,padding:"13px 0",borderRadius:14,border:"2px solid rgba(255,255,255,0.25)",
               background:"rgba(255,255,255,0.08)",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer"}}>
-            ← Schimbă
+            ← Change
           </button>
           <button onClick={()=>onPick(overlayState)}
             style={{flex:2,padding:"13px 0",borderRadius:14,border:"none",
               background:"rgba(255,255,255,0.92)",color:"#111",fontSize:14,fontWeight:900,
               cursor:"pointer",boxShadow:"0 4px 20px rgba(0,0,0,0.3)"}}>
-            Următorul →
+            Next →
           </button>
         </div>
       </div>
@@ -2009,11 +1790,11 @@ function MatchSwipeCard({ home, away, onPick, onFlash, groupLabel, matchNum, tot
             </div>
           </div>
 
-          {/* CÂȘTIGĂ */}
+          {/* WINS */}
           <div style={{animation:"slideUp 0.45s ease 0.25s both",marginBottom:18}}>
             <span style={{fontSize:13,fontWeight:800,color:"rgba(255,255,255,0.85)",letterSpacing:3,textTransform:"uppercase",
               textShadow:"0 1px 6px rgba(0,0,0,0.8)"}}>
-              CÂȘTIGĂ ✓
+              WINS ✓
             </span>
           </div>
 
@@ -2036,14 +1817,14 @@ function MatchSwipeCard({ home, away, onPick, onFlash, groupLabel, matchNum, tot
             onClick={()=>{ setOverlayState(null); setPicked(null); setWinnerExpanded(false); setConfettiActive(false); setNextReady(false); pickRef.current=false; }}
             style={{flex:1,padding:"13px 0",borderRadius:14,border:"2px solid rgba(255,255,255,0.3)",
               background:"rgba(255,255,255,0.1)",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer"}}>
-            ← Schimbă
+            ← Change
           </button>
           <button
             onClick={()=>{ setConfettiActive(false); onPick(overlayState); }}
             style={{flex:2,padding:"13px 0",borderRadius:14,border:"none",
               background:"rgba(255,255,255,0.95)",color:"#111",fontSize:14,fontWeight:900,
               cursor:"pointer",boxShadow:"0 4px 20px rgba(0,0,0,0.3)"}}>
-            Următorul →
+            Next →
           </button>
         </div>
       </div>
@@ -2304,7 +2085,7 @@ function MatchSwipeCard({ home, away, onPick, onFlash, groupLabel, matchNum, tot
             backdropFilter:"blur(6px)",
           }}>
             <span style={{fontSize:13}}>←</span>
-            <span style={{fontSize:9,fontWeight:700,textTransform:"uppercase",letterSpacing:1}}>Înapoi</span>
+            <span style={{fontSize:9,fontWeight:700,textTransform:"uppercase",letterSpacing:1}}>Back</span>
           </button>
         )}
       </div>
@@ -2398,7 +2179,7 @@ function Best3Screen({ groups, getGroupStanding, picks, best3, setBest3, onDone 
           <span style={{fontSize:12,fontWeight:800,color:isFull?GREEN:"rgba(255,255,255,0.6)"}}>{best3.length}/{needed}</span>
         </div>
         {best3.length===0 ? (
-          <p style={{fontSize:12,color:"rgba(255,255,255,0.35)",fontStyle:"italic",margin:0}}>Selecteaza {needed} echipe din locul 3...</p>
+          <p style={{fontSize:12,color:"rgba(255,255,255,0.35)",fontStyle:"italic",margin:0}}>Select {needed} 3rd place teams...</p>
         ) : (
           <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
             {best3.map(t=>(
@@ -2419,7 +2200,7 @@ function Best3Screen({ groups, getGroupStanding, picks, best3, setBest3, onDone 
       {/* Ranked list */}
       <div style={{flex:1,overflowY:"auto",padding:"12px 20px"}}>
         <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 8px"}}>
-          Ranking locul 3 · sortate după puncte
+          3rd Place Ranking · sorted by points
         </p>
         <div style={{background:BG,borderRadius:14,boxShadow:SHADOW_OUT,overflow:"hidden",marginBottom:16}}>
           {/* Header */}
@@ -2461,70 +2242,91 @@ function Best3Screen({ groups, getGroupStanding, picks, best3, setBest3, onDone 
 }
 
 
-function GroupIntroScreen({ group, teams: teamsProp, isKo, onStart, hideHeader=false }) {
+function GroupIntroScreen({ group, teams: teamsProp, isKo, onStart, hideHeader=false, picks={} }) {
   const teams = isKo ? null : (ALL_GROUPS_DATA[group]||[]);
   const matchCount = isKo ? (teamsProp||[]).length : (GROUP_MATCHUPS[group]||[]).length;
-  const nextRoundLabel = {R32:"Round of 16",R16:"Sferturi",QF:"Semifinale",SF:"Finală"}[group]||"Runda următoare";
+  const nextRoundLabel = {R32:"Round of 16",R16:"Quarter-Finals",QF:"Semi-Finals",SF:"Final"}[group]||"Next Round";
   const matches = teamsProp||[];
   const matchPairs = [];
   for(let i=0;i<matches.length;i+=2) matchPairs.push([matches[i],matches[i+1]]);
 
   return (
-    <div style={{flex:1,minHeight:0,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",userSelect:"none"}}>
+    <div style={{flex:1,minHeight:0,display:"flex",flexDirection:"column",background:isKo?"transparent":BG,overflow:"hidden",userSelect:"none",position:"relative"}}>
       {isKo ? (
         <>
-          <div style={{flex:1,minHeight:0,overflowY:"auto",padding:"14px 14px 8px"}}>
-            <div style={{display:"flex",flexDirection:"column",gap:12}}>
-              {matchPairs.map(([m1,m2],gi)=>(
-                <div key={gi} style={{
-                  background:"#fff",borderRadius:16,
-                  border:"2px solid rgba(0,32,91,0.13)",
-                  boxShadow:"0 2px 10px rgba(0,32,91,0.07)",
-                  overflow:"hidden",
-                }}>
-                  {[m1,m2].filter(Boolean).map(([h,a],mi)=>(
-                    <div key={mi}>
-                      <div style={{
-                        padding:"11px 14px",
-                        display:"flex",alignItems:"center",justifyContent:"space-between",
-                      }}>
-                        <div style={{display:"flex",alignItems:"center",gap:9,flex:1}}>
-                          <span style={{fontSize:26,lineHeight:1}}>{FLAGS[h]||"🏳"}</span>
-                          <span style={{fontSize:12,fontWeight:800,color:NAVY,lineHeight:1.2}}>{h||"TBD"}</span>
-                        </div>
-                        <div style={{background:"rgba(0,32,91,0.08)",borderRadius:7,padding:"3px 9px",flexShrink:0}}>
-                          <span style={{fontSize:10,fontWeight:800,color:NAVY,letterSpacing:1}}>VS</span>
-                        </div>
-                        <div style={{display:"flex",alignItems:"center",gap:9,flex:1,justifyContent:"flex-end"}}>
-                          <span style={{fontSize:12,fontWeight:800,color:NAVY,lineHeight:1.2,textAlign:"right"}}>{a||"TBD"}</span>
-                          <span style={{fontSize:26,lineHeight:1}}>{FLAGS[a]||"🏳"}</span>
-                        </div>
-                      </div>
-                      {mi===0&&m2&&(
-                        <div style={{display:"flex",alignItems:"center",gap:8,padding:"0 14px",background:"rgba(0,32,91,0.04)",borderTop:"1px dashed rgba(0,32,91,0.1)",borderBottom:"1px dashed rgba(0,32,91,0.1)"}}>
-                          <div style={{flex:1,height:1,background:"rgba(0,32,91,0.12)"}}/>
-                          <span style={{fontSize:9,fontWeight:700,color:"rgba(0,32,91,0.45)",letterSpacing:0.5,padding:"5px 0"}}>
-                            câștigătorii se întâlnesc în {nextRoundLabel}
-                          </span>
-                          <div style={{flex:1,height:1,background:"rgba(0,32,91,0.12)"}}/>
-                        </div>
-                      )}
+          <div style={{flex:1,minHeight:0,overflowY:"auto",padding:"14px 14px 8px",position:"relative",zIndex:1}}>
+            <div style={{display:"flex",flexDirection:"column",gap:10}}>
+              {matchPairs.map(([m1,m2],gi)=>{
+                const col={R32:NAVY,R16:"#7B2FBE",QF:RED,SF:"#D4820A",F:"#D4820A"}[group]||NAVY;
+                const resolvePick=(pick,pair)=>pick==="home"?pair[0]:pick==="away"?pair[1]:null;
+                const w1=m1?resolvePick(picks[`${group}-${gi*2}`],m1):null;
+                const w2=m2?resolvePick(picks[`${group}-${gi*2+1}`],m2):null;
+                const code=(t)=>t?TEAM_CODE[t]||t.slice(0,3).toUpperCase():"??";
+                return (
+                  <div key={gi} style={{display:"flex",alignItems:"center",gap:6}}>
+                    <div style={{display:"flex",flexDirection:"column",gap:5,flex:1}}>
+                      {[m1,m2].filter(Boolean).map(([h,a],mi)=>{
+                        const p=picks[`${group}-${gi*2+mi}`];
+                        const hWon=p==="home", aWon=p==="away";
+                        return (
+                          <div key={mi} style={{background:"#fff",borderRadius:10,border:`1px solid ${hWon||aWon?GREEN+"55":col+"22"}`,overflow:"hidden",boxShadow:"0 1px 4px rgba(0,0,0,0.06)"}}>
+                            <div style={{padding:"7px 10px",borderBottom:"1px solid rgba(0,0,0,0.05)",display:"flex",alignItems:"center",gap:8,background:hWon?GREEN+"15":"transparent"}}>
+                              <span style={{fontSize:20,lineHeight:1}}>{FLAGS[h]||"🏳"}</span>
+                              <span style={{fontSize:12,fontWeight:700,color:hWon?GREEN:DARK,flex:1}}>{h||"TBD"}</span>
+                              {hWon&&<span style={{fontSize:9,fontWeight:900,color:GREEN}}>✓</span>}
+                            </div>
+                            <div style={{padding:"7px 10px",display:"flex",alignItems:"center",gap:8,background:aWon?GREEN+"15":"transparent"}}>
+                              <span style={{fontSize:20,lineHeight:1}}>{FLAGS[a]||"🏳"}</span>
+                              <span style={{fontSize:12,fontWeight:700,color:aWon?GREEN:DARK,flex:1}}>{a||"TBD"}</span>
+                              {aWon&&<span style={{fontSize:9,fontWeight:900,color:GREEN}}>✓</span>}
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
-                  ))}
-                </div>
-              ))}
+                    {m2&&(<>
+                      <div style={{display:"flex",alignItems:"center",width:18,alignSelf:"stretch"}}>
+                        <svg width="18" height="100%" style={{flex:1}} viewBox="0 0 18 60" preserveAspectRatio="none">
+                          <path d="M0,15 H9 V45 H0" fill="none" stroke={col} strokeWidth="1.5" strokeOpacity="0.35"/>
+                          <line x1="9" y1="30" x2="18" y2="30" stroke={col} strokeWidth="1.5" strokeOpacity="0.35"/>
+                        </svg>
+                      </div>
+                      <div style={{background:`${col}12`,borderRadius:8,border:`1.5px dashed ${col}66`,padding:"6px 8px",minWidth:70,textAlign:"center",flexShrink:0}}>
+                        {(w1||w2)?(
+                          <>
+                            <span style={{fontSize:8,color:"#bbb",display:"block",marginBottom:5}}>→ {nextRoundLabel}</span>
+                            {[w1,w2].map((w,wi)=>w?(
+                              <div key={wi} style={{display:"flex",alignItems:"center",gap:5,justifyContent:"center",marginBottom:wi===0?4:0,background:`${col}18`,borderRadius:6,padding:"3px 6px"}}>
+                                <span style={{fontSize:18,lineHeight:1}}>{FLAGS[w]||"🏳"}</span>
+                                <span style={{fontSize:10,fontWeight:900,color:col,letterSpacing:0.5}}>{code(w)}</span>
+                              </div>
+                            ):(
+                              <div key={wi} style={{fontSize:9,color:"#ccc",marginBottom:wi===0?4:0,padding:"3px 0"}}>??</div>
+                            ))}
+                          </>
+                        ):(
+                          <>
+                            <span style={{fontSize:9,color:"#bbb",display:"block",marginBottom:2}}>Winner →</span>
+                            <span style={{fontSize:10,fontWeight:800,color:col,lineHeight:1.2}}>{nextRoundLabel}</span>
+                          </>
+                        )}
+                      </div>
+                    </>)}
+                  </div>
+                );
+              })}
             </div>
           </div>
-          <div style={{padding:"8px 14px",borderTop:"1px solid rgba(0,0,0,0.06)"}}>
+          <div style={{padding:"8px 14px",borderTop:"1px solid rgba(0,0,0,0.06)",position:"relative",zIndex:1}}>
             <div style={{fontSize:11,color:"rgba(0,0,0,0.35)",fontWeight:700,textAlign:"center",marginBottom:10,letterSpacing:0.5}}>
-              {matchCount} meciuri de prezis
+              {matchCount} matches to predict
             </div>
             <button onClick={onStart}
               style={{width:"100%",padding:"15px 0",borderRadius:14,border:"none",
                 background:`linear-gradient(135deg,${NAVY},#003580)`,
                 color:"#fff",fontSize:15,fontWeight:900,cursor:"pointer",
                 boxShadow:"0 4px 20px rgba(0,32,91,0.3)",letterSpacing:1}}>
-              Începe Meciurile →
+              Start Matches →
             </button>
           </div>
         </>
@@ -2543,14 +2345,14 @@ function GroupIntroScreen({ group, teams: teamsProp, isKo, onStart, hideHeader=f
             </div>
           </div>
           <div style={{width:"100%",background:BG,borderRadius:14,boxShadow:SHADOW_OUT,padding:"14px 16px",marginBottom:20}}>
-            <p style={{fontSize:12,color:"#aaa",margin:0,textAlign:"center"}}>{matchCount} meciuri de prezis</p>
+            <p style={{fontSize:12,color:"#aaa",margin:0,textAlign:"center"}}>{matchCount} matches to predict</p>
           </div>
           <button onClick={onStart}
             style={{width:"100%",padding:"16px 0",borderRadius:16,border:"none",
               background:`linear-gradient(135deg,${RED},#EF3340 40%,${GREEN})`,
               color:"#fff",fontSize:16,fontWeight:900,cursor:"pointer",
               boxShadow:"0 6px 20px rgba(200,16,46,0.3)",letterSpacing:1}}>
-            Începe Meciurile →
+            Start Matches →
           </button>
         </div>
       )}
@@ -2572,12 +2374,19 @@ function InstantPickScreen({ onBack, onComplete, savedState, onStateChange, tour
   const [koRound, setKoRound] = useState(savedState?.koRound||"R32");
   const [showFinalSummary, setShowFinalSummary] = useState(savedState?.showFinalSummary||false);
   const [showGroupsSlider, setShowGroupsSlider] = useState(true);
+  const sliderScrollRef = useRef(null);
 
   useEffect(()=>{ setShowGroupsSlider(stage==="groups"); },[stage]);
 
   useEffect(()=>{
     if(onStateChange) onStateChange({stage,groupIdx,showIntro,groupRankings,best3,koIdx,koPicks,koShowIntro,koRound,showFinalSummary});
   },[stage,groupIdx,showIntro,groupRankings,best3,koIdx,koPicks,koShowIntro,koRound,showFinalSummary]);
+
+  useEffect(()=>{
+    if(!sliderScrollRef.current) return;
+    const w = sliderScrollRef.current.offsetWidth;
+    sliderScrollRef.current.scrollLeft = Math.max(0, groupIdx * 43 - w / 2 + 19);
+  },[groupIdx]);
 
   const currentGroup = GROUPS[groupIdx];
 
@@ -2661,6 +2470,10 @@ function InstantPickScreen({ onBack, onComplete, savedState, onStateChange, tour
   const navigateGroup = (dir) => { const next=groupIdx+dir; if(next>=0&&next<GROUPS.length) setGroupIdx(next); };
   const allGroupsDone = GROUPS.every(g=>groupRankings[g]&&groupRankings[g].every(t=>t!==null));
   const best3Done = best3.length>=8;
+  const koRoundDone = (round) => {
+    const n = (koRoundMatchupsMap[round]||[]).length;
+    return n > 0 && Array.from({length:n},(_,i)=>koPicks[`${round}-${i}`]).every(Boolean);
+  };
   const KO_ORDER = ["R32","R16","QF","SF","F"];
   const activePhaseId = stage==="best3"?"best3":stage==="ko"?koRound:null;
   const phaseAccessible = (id) => {
@@ -2676,14 +2489,14 @@ function InstantPickScreen({ onBack, onComplete, savedState, onStateChange, tour
   const headerCounterVal = stage==="groups"?`${groupIdx+1}/${GROUPS.length}`:stage==="best3"?`${best3.length}/8`:`${koIdx+1}/${Math.max(koRoundMatchups.length,1)}`;
   const headerSub = stage==="groups"?"groups":stage==="best3"?"selected":"matches";
   const headerBack = () => {
-    if(stage==="groups"){ if(groupIdx>0) setGroupIdx(g=>g-1); else onBack&&onBack(); }
+    if(stage==="groups"){ onBack&&onBack(); }
     else if(stage==="best3"){ setGroupIdx(GROUPS.length-1); setStage("groups"); }
     else { setStage("best3"); }
   };
   const sharedNavIdx = stage==="groups" ? groupIdx : GROUPS.length-1;
 
   const sharedHeader = (
-    <div style={{background:NAVY, paddingBottom:0, flexShrink:0}}>
+    <div style={{background:"rgba(0,32,91,0.88)", paddingBottom:0, flexShrink:0, position:"relative", zIndex:1}}>
       {/* Top row */}
       <div style={{display:"flex", alignItems:"center", gap:10, padding:"10px 14px 6px"}}>
         <button onClick={headerBack} style={{background:"rgba(255,255,255,0.12)",border:"none",borderRadius:10,width:34,height:34,color:"#fff",fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>‹</button>
@@ -2713,7 +2526,7 @@ function InstantPickScreen({ onBack, onComplete, savedState, onStateChange, tour
               cursor:"pointer",position:"relative",
               opacity:1,
             }}>
-              <span style={{fontSize:6,color:"rgba(255,255,255,0.85)",fontWeight:800,letterSpacing:0.3,lineHeight:1,textAlign:"center"}}>Grupe</span>
+              <span style={{fontSize:6,color:"rgba(255,255,255,0.85)",fontWeight:800,letterSpacing:0.3,lineHeight:1,textAlign:"center"}}>Groups</span>
               <span style={{fontSize:10,lineHeight:1}}>
                 {grupeDone?"✓":grupeActive?"●":"○"}
               </span>
@@ -2728,7 +2541,7 @@ function InstantPickScreen({ onBack, onComplete, savedState, onStateChange, tour
           return (
             <div key={ph.id} onClick={()=>goToPhase(ph.id)} style={{flex:1,height:36,borderRadius:9,background:isActive?"rgba(255,255,255,0.22)":"rgba(255,255,255,0.06)",border:`1.5px solid ${isActive?"rgba(255,255,255,0.45)":"transparent"}`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"space-between",padding:"4px 2px 3px",opacity:accessible||isActive?1:0.4,cursor:accessible?"pointer":"default"}}>
               <span style={{fontSize:6,color:"rgba(255,255,255,0.85)",fontWeight:800,letterSpacing:0.3,lineHeight:1,textAlign:"center"}}>{ph.name}</span>
-              <span style={{fontSize:10,lineHeight:1}}>{isActive?"●":accessible?"○":"🔒"}</span>
+              <span style={{fontSize:10,lineHeight:1}}>{ph.id==="best3"&&best3Done?"✓":koRoundDone(ph.id)?"✓":isActive?"●":accessible?"○":"🔒"}</span>
             </div>
           );
         })}
@@ -2740,29 +2553,28 @@ function InstantPickScreen({ onBack, onComplete, savedState, onStateChange, tour
             <svg width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M6 1L1 6L6 11" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
           </div>
           <div style={{flex:1,overflow:"hidden",height:38}}>
-            <div style={{display:"flex",gap:5,alignItems:"center",transform:`translateX(calc(50% - ${groupIdx*43+19}px))`,transition:"transform 0.25s cubic-bezier(0.4,0,0.2,1)",height:"100%"}}>
+            <div ref={sliderScrollRef} style={{width:"100%",height:"calc(100% + 20px)",overflowX:"scroll",overflowY:"hidden",WebkitOverflowScrolling:"touch"}}>
+            <div style={{display:"flex",gap:5,alignItems:"center",height:38}}>
               {GROUPS.map((g,i)=>{
                 const isCurrent=stage==="groups"&&i===groupIdx;
                 const isDone=groupRankings[g]&&groupRankings[g].every(t=>t!==null);
-                const dist=Math.abs(i-groupIdx);
                 return (
                   <div key={g} onClick={()=>{setGroupIdx(i);setStage("groups");}} style={{
                     flexShrink:0,width:38,height:34,borderRadius:9,
                     background:isCurrent?"#fff":isDone?"rgba(255,255,255,0.28)":"rgba(255,255,255,0.1)",
-                    display:"flex",alignItems:"center",justifyContent:"center",
+                    display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:1,
                     fontSize:isCurrent?15:12,fontWeight:900,
                     color:isCurrent?NAVY:"rgba(255,255,255,0.75)",
                     cursor:"pointer",position:"relative",
-                    opacity:dist===0?1:dist===1?0.7:dist===2?0.45:0.2,
-                    transform:`scale(${isCurrent?1:dist===1?0.88:dist===2?0.78:0.7})`,
                     transition:"all 0.22s",
                     boxShadow:isCurrent?"0 2px 10px rgba(0,0,0,0.3)":"none",
                   }}>
                     {g}
-                    {isDone&&!isCurrent&&<span style={{position:"absolute",top:-2,right:-2,width:6,height:6,borderRadius:"50%",background:GREEN,border:"1.5px solid "+NAVY}}/>}
+                    {isDone&&<span style={{fontSize:8,lineHeight:1,color:isCurrent?GREEN:"#4ade80",fontWeight:900}}>✓</span>}
                   </div>
                 );
               })}
+            </div>
             </div>
           </div>
           <div onClick={()=>navigateGroup(1)} style={{flexShrink:0,width:16,height:34,display:"flex",alignItems:"center",justifyContent:"center",cursor:groupIdx<GROUPS.length-1?"pointer":"default",opacity:groupIdx<GROUPS.length-1?0.6:0.2,transition:"opacity 0.15s"}}>
@@ -2966,83 +2778,45 @@ function InstantPickScreen({ onBack, onComplete, savedState, onStateChange, tour
       );
 
       return (
-        <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,userSelect:"none"}}>
+        <div style={{flex:1,display:"flex",flexDirection:"column",userSelect:"none",position:"relative",overflow:"hidden",background:NAVY}}>
+          {/* Trophy background — colorful */}
+          <img src={trophy} alt="" style={{position:"absolute",width:"140%",height:"100%",left:"-20%",top:"0%",objectFit:"cover",objectPosition:"center 15%",opacity:0.55,pointerEvents:"none",zIndex:0}}/>
+          {/* Dark gradient overlay for readability */}
+          <div style={{position:"absolute",inset:0,background:"linear-gradient(to bottom, rgba(0,20,70,0.55) 0%, rgba(0,10,40,0.7) 100%)",zIndex:1,pointerEvents:"none"}}/>
+
           {/* Header */}
-          <div style={{background:NAVY}}>
-            <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px 12px"}}>
-              <button onClick={()=>setShowFinalSummary(false)}
-                style={{background:"rgba(255,255,255,0.12)",border:"none",borderRadius:10,
-                  width:34,height:34,color:"#fff",fontSize:16,cursor:"pointer",
-                  display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>‹</button>
-              <div style={{flex:1}}>
-                <div style={{fontSize:10,color:RED,fontWeight:800,letterSpacing:1.5}}>FIFA - WORLD CUP 2026</div>
-                <div style={{fontSize:18,fontWeight:900,color:"#fff"}}>Your Predictions</div>
-              </div>
-              <span style={{fontSize:22}}>🏆</span>
+          <div style={{position:"relative",zIndex:2,display:"flex",alignItems:"center",gap:10,padding:"14px 14px 12px"}}>
+            <button onClick={()=>setShowFinalSummary(false)}
+              style={{background:"rgba(255,255,255,0.15)",border:"none",borderRadius:10,
+                width:34,height:34,color:"#fff",fontSize:16,cursor:"pointer",
+                display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>‹</button>
+            <div style={{flex:1}}>
+              <div style={{fontSize:10,color:"#FFD700",fontWeight:800,letterSpacing:1.5}}>FIFA - WORLD CUP 2026</div>
+              <div style={{fontSize:18,fontWeight:900,color:"#fff"}}>Your Predictions</div>
             </div>
           </div>
 
-          <div style={{flex:1,display:"flex",flexDirection:"column",padding:"24px 16px",gap:24,overflowY:"auto"}}>
-
-            {/* Champion — big */}
-            <div style={{
-              background:"#fff",borderRadius:20,padding:"28px 20px 20px",
-              boxShadow:"0 4px 20px rgba(0,0,0,0.08)",
-              display:"flex",flexDirection:"column",alignItems:"center",gap:12,
-              border:`2px solid #FFD700`,
-            }}>
-              <div style={{fontSize:13,fontWeight:800,color:"rgba(0,0,0,0.4)",letterSpacing:2}}>🏆 WORLD CUP CHAMPION</div>
-              <div style={{fontSize:90,lineHeight:1}}>{FLAGS[champion]||"🏳"}</div>
-              <div style={{fontSize:22,fontWeight:900,color:"#111",textTransform:"uppercase",letterSpacing:1}}>{champion}</div>
-              <div style={{
-                background:"#FFD700",borderRadius:20,padding:"4px 16px",
-                fontSize:11,fontWeight:800,color:"#000",letterSpacing:1,
-              }}>PREDICTED CHAMPION</div>
+          {/* Center content */}
+          <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",position:"relative",zIndex:2,padding:"20px 30px"}}>
+            <div style={{fontSize:13,color:"rgba(255,255,255,0.7)",fontWeight:600,letterSpacing:4,textTransform:"uppercase",marginBottom:24,textAlign:"center"}}>
+              Your winner is
             </div>
-
-            {/* Runner-up */}
-            <div style={{
-              background:"#fff",borderRadius:16,padding:"16px 20px",
-              boxShadow:"0 2px 10px rgba(0,0,0,0.06)",
-              display:"flex",alignItems:"center",gap:14,
-              border:"1.5px solid #C0C0C0",
-            }}>
-              <div style={{fontSize:28}}>🥈</div>
-              <div style={{fontSize:52,lineHeight:1}}>{FLAGS[runnerUp]||"🏳"}</div>
-              <div>
-                <div style={{fontSize:10,color:"rgba(0,0,0,0.4)",fontWeight:700,letterSpacing:1}}>RUNNER-UP</div>
-                <div style={{fontSize:17,fontWeight:900,color:"#111",textTransform:"uppercase"}}>{runnerUp}</div>
-              </div>
+            <div style={{fontSize:96,lineHeight:1,marginBottom:20,filter:"drop-shadow(0 8px 32px rgba(0,0,0,0.5))"}}>
+              {FLAGS[champion]||"🏳"}
             </div>
-
-            {/* 3rd & 4th */}
-            <div style={{display:"flex",gap:10}}>
-              {[{pos:3,team:third,icon:"🥉",label:"3rd Place",border:"#CD7F32"},
-                {pos:4,team:fourth,icon:"4️⃣",label:"4th Place",border:"rgba(0,0,0,0.1)"}
-              ].map(({pos,team,icon,label,border})=>(
-                <div key={pos} style={{
-                  flex:1,background:"#fff",borderRadius:16,padding:"14px",
-                  boxShadow:"0 2px 8px rgba(0,0,0,0.05)",
-                  display:"flex",flexDirection:"column",alignItems:"center",gap:8,
-                  border:`1.5px solid ${border}`,
-                }}>
-                  <div style={{fontSize:20}}>{icon}</div>
-                  <div style={{fontSize:42,lineHeight:1}}>{FLAGS[team]||"🏳"}</div>
-                  <div style={{fontSize:10,color:"rgba(0,0,0,0.4)",fontWeight:700,letterSpacing:1}}>{label}</div>
-                  <div style={{fontSize:13,fontWeight:900,color:"#111",textTransform:"uppercase",textAlign:"center"}}>{team}</div>
-                </div>
-              ))}
+            <div style={{fontSize:30,fontWeight:900,color:"#fff",textTransform:"uppercase",letterSpacing:3,textAlign:"center",textShadow:"0 4px 20px rgba(0,0,0,0.5)"}}>
+              {champion}
             </div>
           </div>
 
-          {/* Confirm */}
-          <div style={{background:"#fff",padding:"10px 14px 22px",borderTop:"1px solid rgba(0,0,0,0.07)"}}>
+          {/* Save button */}
+          <div style={{position:"relative",zIndex:2,padding:"10px 16px 28px"}}>
             <button onClick={()=>onComplete&&onComplete()}
               style={{
-                width:"100%",padding:"14px 0",borderRadius:14,border:"none",
-                background:`linear-gradient(135deg,${NAVY},#003580)`,
-                color:"#fff",fontSize:15,fontWeight:900,letterSpacing:1,cursor:"pointer",
-                boxShadow:"0 4px 20px rgba(0,32,91,0.3)",
+                width:"100%",padding:"15px 0",borderRadius:14,border:"none",
+                background:"rgba(255,255,255,0.95)",
+                color:NAVY,fontSize:15,fontWeight:900,letterSpacing:1,cursor:"pointer",
+                boxShadow:"0 4px 24px rgba(0,0,0,0.4)",
               }}>
               SAVE PREDICTIONS ✓
             </button>
@@ -3051,10 +2825,11 @@ function InstantPickScreen({ onBack, onComplete, savedState, onStateChange, tour
       );
     }
     if(koShowIntro) return (
-      <div style={{flex:1,minHeight:0,display:"flex",flexDirection:"column",background:BG,userSelect:"none"}}>
+      <div style={{flex:1,minHeight:0,display:"flex",flexDirection:"column",background:BG,userSelect:"none",position:"relative",overflow:"hidden"}}>
+        <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:0,objectFit:"cover",objectPosition:"center 20%",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
         {sharedHeader}
         <GroupIntroScreen group={koRound} teams={koRoundMatchups.map(m=>[m.home,m.away])}
-          isKo={true} hideHeader={true} onStart={()=>setKoShowIntro(false)}/>
+          isKo={true} hideHeader={true} onStart={()=>setKoShowIntro(false)} picks={koPicks}/>
       </div>
     );
     return (
@@ -3110,30 +2885,30 @@ function InstantPickSummaryScreen({ picks, koPicks, best3, getGroupStanding, onC
   const champion = koPicks["final"] || null;
 
   const SCORING = [
-    { label:"⚽ Grupe · Rezultat corect",  pts:30,  color:NAVY,   icon:"✓" },
+    { label:"⚽ Groups · Correct Result",  pts:30,  color:NAVY,   icon:"✓" },
     { label:"🥉 Best Third · per echipă",  pts:20,  color:"#7B2FBE",icon:"✓" },
     { label:"🏆 Round of 16",              pts:40,  color:RED,    icon:"✓" },
     { label:"🏆 Sferturi",                 pts:60,  color:RED,    icon:"✓" },
     { label:"🏆 Semifinale",               pts:90,  color:RED,    icon:"✓" },
-    { label:"🏆 Finală",                   pts:120, color:"#D4820A",icon:"✓" },
+    { label:"🏆 Final",                    pts:120, color:"#D4820A",icon:"✓" },
   ];
 
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden"}}>
       {/* Champion header */}
       <div style={{background:`linear-gradient(160deg,#D4820A,#F0A020)`,padding:"28px 20px 24px",textAlign:"center",flexShrink:0}}>
-        <p style={{fontSize:10,fontWeight:900,color:"rgba(255,255,255,0.7)",margin:"0 0 8px",letterSpacing:3,textTransform:"uppercase"}}>Campioana ta prezisă</p>
+        <p style={{fontSize:10,fontWeight:900,color:"rgba(255,255,255,0.7)",margin:"0 0 8px",letterSpacing:3,textTransform:"uppercase"}}>Your Predicted Champion</p>
         {champion ? (<>
           <span style={{fontSize:90,lineHeight:1,filter:"drop-shadow(0 8px 24px rgba(0,0,0,0.4))"}}>{FLAGS[champion]||"🏳"}</span>
           <p style={{fontSize:28,fontWeight:900,color:"#fff",margin:"12px 0 4px",textShadow:"0 2px 8px rgba(0,0,0,0.3)"}}>{champion}</p>
-          <p style={{fontSize:13,color:"rgba(255,255,255,0.7)",margin:0,fontWeight:600}}>🏆 Câștigătoarea Mondialului 2026</p>
+          <p style={{fontSize:13,color:"rgba(255,255,255,0.7)",margin:0,fontWeight:600}}>🏆 2026 World Cup Winner</p>
         </>) : (
-          <p style={{fontSize:18,color:"rgba(255,255,255,0.6)",margin:"16px 0"}}>Nicio campioană selectată</p>
+          <p style={{fontSize:18,color:"rgba(255,255,255,0.6)",margin:"16px 0"}}>No champion selected</p>
         )}
       </div>
 
       <div style={{flex:1,overflowY:"auto",padding:"20px 20px 0"}}>
-        <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 10px"}}>Puncte per predicție corectă</p>
+        <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 10px"}}>Points per correct prediction</p>
         <div style={{background:BG,borderRadius:14,boxShadow:SHADOW_OUT,overflow:"hidden",marginBottom:18}}>
           {SCORING.map((s,i)=>(
             <div key={i} style={{display:"flex",alignItems:"center",padding:"11px 16px",borderBottom:i<SCORING.length-1?"1px solid rgba(0,0,0,0.05)":"none",background:"#fff"}}>
@@ -3153,12 +2928,12 @@ function InstantPickSummaryScreen({ picks, koPicks, best3, getGroupStanding, onC
               background:`linear-gradient(135deg,${GREEN},#007A36)`,
               color:"#fff",fontSize:16,fontWeight:900,cursor:"pointer",
               boxShadow:"0 6px 20px rgba(0,154,68,0.35)",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-            ✅ Confirmă Predicțiile
+            ✅ Confirm Predictions
           </button>
         )}
         {readOnly && (
           <div style={{width:"100%",padding:"16px 0",borderRadius:16,background:"#ccc",textAlign:"center",marginBottom:24}}>
-            <span style={{fontSize:14,fontWeight:700,color:"#888"}}>🔒 Campionatul a început — predicții blocate</span>
+            <span style={{fontSize:14,fontWeight:700,color:"#888"}}>🔒 Tournament started — predictions locked</span>
           </div>
         )}
       </div>
@@ -4027,7 +3802,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
         )}
 
         {/* Password */}
-        <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 6px"}}>Parolă grup</p>
+        <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 6px"}}>Group Password</p>
         <div style={{background:BG,borderRadius:12,boxShadow:SHADOW_IN,padding:"11px 14px",display:"flex",alignItems:"center",gap:8,marginBottom:16}}>
           <span style={{fontSize:14}}>🔒</span>
           <input value={cPassword} onChange={e=>setCPassword(e.target.value)} placeholder="Parola pentru join..."
@@ -4035,7 +3810,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
         </div>
 
         {/* Max players */}
-        <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 8px"}}>Număr maxim jucători</p>
+        <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 8px"}}>Max Players</p>
         <div style={{display:"flex",gap:8,marginBottom:16}}>
           {[5,10,15,20,50].map(n=>(
             <button key={n} onClick={()=>setCMaxPlayers(n)}
@@ -4086,7 +3861,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
 
         {/* Members management — only when editing */}
         {editBoard&&(editBoard.membersList?.length>0)&&(<>
-          <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"16px 0 8px"}}>Membri înscriși</p>
+          <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"16px 0 8px"}}>Members</p>
           <div style={{background:BG,borderRadius:12,boxShadow:SHADOW_OUT,overflow:"hidden",marginBottom:4}}>
             {(editBoard.membersList||[]).map((m,mi)=>(
               <div key={mi} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",
@@ -4104,7 +3879,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
                     setCreatedBoards(p=>p.map(b=>b.id===updated.id?updated:b));
                   }} style={{background:"rgba(200,16,46,0.08)",border:"none",borderRadius:8,
                     padding:"5px 12px",fontSize:11,fontWeight:700,color:RED,cursor:"pointer"}}>
-                    Elimină
+                    Remove
                   </button>
                 ):(
                   <span style={{fontSize:11,color:"#bbb"}}>Admin</span>
@@ -4174,7 +3949,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
                 }
               }}
                 style={{flex:2,padding:"13px 0",borderRadius:12,border:"none",background:`linear-gradient(135deg,${NAVY},#001840)`,color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer"}}>
-                Alătură-te 🏆
+                Join 🏆
               </button>
             </div>
           </div>
@@ -4239,7 +4014,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
               {viewMembersBoard===b.id&&(
                 <div style={{marginTop:10,borderTop:"1px solid rgba(0,0,0,0.06)",paddingTop:10}}>
                   {(!b.membersList||b.membersList.length===0)?(
-                    <p style={{fontSize:12,color:"#bbb",textAlign:"center",margin:"8px 0"}}>Niciun membru înscris încă</p>
+                    <p style={{fontSize:12,color:"#bbb",textAlign:"center",margin:"8px 0"}}>No members yet</p>
                   ):(b.membersList||[]).map((m,mi)=>(
                     <div key={mi} style={{display:"flex",alignItems:"center",gap:10,padding:"6px 0",
                       borderBottom:mi<(b.membersList.length-1)?"1px solid rgba(0,0,0,0.04)":"none"}}>
@@ -4253,7 +4028,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
                         <button onClick={()=>removeMember(b.id,m.id)}
                           style={{background:"rgba(200,16,46,0.08)",border:"none",borderRadius:8,
                             padding:"4px 10px",fontSize:11,fontWeight:700,color:RED,cursor:"pointer"}}>
-                          Elimină
+                          Remove
                         </button>
                       )}
                     </div>
@@ -4528,7 +4303,7 @@ function DevPanel({ onStart }) {
             background:"linear-gradient(135deg,#C8102E,#EF3340 40%,#009A44)",
             color:"#fff",fontSize:16,fontWeight:900,cursor:"pointer",
             boxShadow:"0 6px 20px rgba(200,16,46,0.4)"}}>
-          Intră în App →
+          Enter App →
         </button>
       </div>
     </div>
@@ -4568,9 +4343,9 @@ function SplashScreen({ onNext, lang, setLang, simDay, simHour=12, simMin=0, tou
         style={{
           position: "absolute",
           width: "130%",
-          height: "85%",
+          height: "100%",
           left: "-30%",
-          top: "20%",
+          top: "0",
           objectFit: "cover",
           objectPosition: "center 20%",
           zIndex: 0,
@@ -4587,7 +4362,7 @@ function SplashScreen({ onNext, lang, setLang, simDay, simHour=12, simMin=0, tou
               <span style={{fontSize:24,fontWeight:900,color:"#fff",letterSpacing:3}}>LIVE NOW</span>
               <span style={{width:8,height:8,borderRadius:"50%",background:RED,display:"inline-block"}}/>
             </div>
-            <span style={{fontSize:11,color:"rgba(255,255,255,0.5)",textTransform:"uppercase",letterSpacing:1.5}}>Campionatul Mondial 2026</span>
+            <span style={{fontSize:11,color:"rgba(255,255,255,0.5)",textTransform:"uppercase",letterSpacing:1.5}}>World Cup 2026</span>
           </div>
         ) : (
           [{ v:sd,l:"days"},{ v:sh,l:"hours"},{ v:sm2,l:"minutes"},{ v:ss,l:"seconds"}].map(({v,l},i)=>(
@@ -4800,7 +4575,7 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
       {!tournamentStarted && !leaders.some(u=>u.isMe||u.empty) ? (
         <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"0 32px",textAlign:"center"}}>
           <span style={{fontSize:48,marginBottom:16}}>⏳</span>
-          <p style={{fontSize:18,fontWeight:800,color:DARK,margin:"0 0 8px"}}>Tournament not început</p>
+          <p style={{fontSize:18,fontWeight:800,color:DARK,margin:"0 0 8px"}}>Tournament not started</p>
           <p style={{fontSize:13,color:"#aaa",lineHeight:1.5,margin:0}}>The leaderboard will be available after the tournament starts on Jun 11, 2026.</p>
         </div>
       ) : (
@@ -4973,7 +4748,7 @@ function ScorePicker({ match, day, savedScore, onSave, onBack }) {
         <div style={{display:"flex",gap:8}}>
           <button onClick={onBack}
             style={{flex:1,padding:"12px 0",borderRadius:12,border:"none",background:BG,boxShadow:SHADOW_OUT,fontSize:12,fontWeight:700,cursor:"pointer",color:"#888"}}>
-            ← Inapoi
+            ← Back
           </button>
           <button onClick={()=>confirmed&&onSave(home,away)}
             style={{flex:1,padding:"12px 0",borderRadius:12,border:"none",
@@ -5364,7 +5139,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
                       <div onClick={()=>setScorePick({match:m,day:m.day,idx:m.idx,key:m.key})}
                         style={{padding:"6px 12px",borderTop:"1px solid rgba(0,0,0,0.05)",
                           display:"flex",alignItems:"center",justifyContent:"center",gap:4,cursor:"pointer"}}>
-                        <span style={{fontSize:12,color:"#bbb",fontWeight:600}}>✏️ Editeaza predictia</span>
+                        <span style={{fontSize:12,color:"#bbb",fontWeight:600}}>✏️ Edit Prediction</span>
                       </div>
                     )}
                   </div>
@@ -5753,7 +5528,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                             ))}
                             {/* Matches from calendar */}
                             {koMatches.length>0&&(<>
-                              <p style={{fontSize:12,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"4px 0 6px"}}>Meciuri programate</p>
+                              <p style={{fontSize:12,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"4px 0 6px"}}>Scheduled Matches</p>
                               <div style={{borderRadius:10,overflow:"hidden",boxShadow:SHADOW_OUT}}>
                                 {koMatches.map((m,idx2)=>{
                                   const sc2=scores&&scores[m.key];
@@ -6077,7 +5852,7 @@ function StatsScreen({ lang }) {
           ))}
         </div>
         {/* Calendar for this group */}
-        <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 8px"}}>Program Meciuri</p>
+        <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 8px"}}>Match Schedule</p>
         <CalendarSlider/>
       </div>
     </div>
@@ -6114,19 +5889,19 @@ function RulesScreen({ onBack }) {
   const [tab, setTab] = useState("predictions");
   const predRules = [
     { phase:"⚽ Groups", pts:30, desc:"Correct result (winner or draw)" },
-    { phase:"🥉 Best Third", pts:20, desc:"Team de pe locul 3 care avansează" },
-    { phase:"🏆 Round of 16", pts:40, desc:"Câștigătoarea meciului corectă" },
-    { phase:"🏆 Sferturi", pts:60, desc:"Câștigătoarea meciului corectă" },
-    { phase:"🏆 Semifinale", pts:90, desc:"Câștigătoarea meciului corectă" },
-    { phase:"🏆 Finală", pts:120, desc:"Final winner" },
+    { phase:"🥉 Best Third", pts:20, desc:"3rd place team that advances" },
+    { phase:"🏆 Round of 16", pts:40, desc:"Correct match winner" },
+    { phase:"🏆 Quarter-Finals", pts:60, desc:"Correct match winner" },
+    { phase:"🏆 Semi-Finals", pts:90, desc:"Correct match winner" },
+    { phase:"🏆 Final", pts:120, desc:"Final winner" },
   ];
   const exactRules = [
-    { phase:"⚽ Groups · Rezultat", pts:30, desc:"Correct winner or draw" },
-    { phase:"⚽ Groups · Scor exact", pts:90, desc:"Scorul exact al meciului" },
-    { phase:"🏆 R16 · Câștigătoare", pts:40, desc:"Echipa câștigătoare corectă" },
-    { phase:"🏆 QF · Câștigătoare", pts:60, desc:"Echipa câștigătoare corectă" },
-    { phase:"🏆 SF · Câștigătoare", pts:90, desc:"Echipa câștigătoare corectă" },
-    { phase:"🏆 Final · Câștigătoare", pts:120, desc:"Câștigătoarea turneului" },
+    { phase:"⚽ Groups · Result", pts:30, desc:"Correct winner or draw" },
+    { phase:"⚽ Groups · Exact Score", pts:90, desc:"Exact match score" },
+    { phase:"🏆 R16 · Winner", pts:40, desc:"Correct match winner" },
+    { phase:"🏆 QF · Winner", pts:60, desc:"Correct match winner" },
+    { phase:"🏆 SF · Winner", pts:90, desc:"Correct match winner" },
+    { phase:"🏆 Final · Winner", pts:120, desc:"Tournament winner" },
   ];
   const rules = tab==="predictions" ? predRules : exactRules;
   const totalMax = rules.reduce((s,r)=>s+r.pts, 0);
@@ -6159,13 +5934,13 @@ function RulesScreen({ onBack }) {
           </p>
           <p style={{fontSize:12,color:"#888",margin:0,lineHeight:1.5}}>
             {tab==="predictions"
-              ? "Prezici câștigătoarea fiecărui meci — de la grupe până la finală. O singură șansă per turneu."
-              : "Prezici scorul exact al fiecărui meci săptămânal. Se deblochează duminica după ora 20:00."}
+              ? "Predict the winner of every match — from group stage to the final. One shot per tournament."
+              : "Predict the exact score of each match every week. Unlocks on Sundays after 8:00 PM."}
           </p>
         </div>
 
         {/* Rules table */}
-        <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 8px"}}>Punctaj per predicție corectă</p>
+        <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 8px"}}>Points per correct prediction</p>
         <div style={{background:BG,borderRadius:14,boxShadow:SHADOW_OUT,overflow:"hidden",marginBottom:16}}>
           {rules.map((r,i)=>(
             <div key={i} style={{display:"flex",alignItems:"center",padding:"12px 16px",background:"#fff",borderBottom:i<rules.length-1?"1px solid rgba(0,0,0,0.05)":"none",gap:12}}>
@@ -6187,8 +5962,8 @@ function RulesScreen({ onBack }) {
           <p style={{fontSize:12,fontWeight:700,color:NAVY,margin:"0 0 4px"}}>💡 Exemplu</p>
           <p style={{fontSize:12,color:"#555",margin:0,lineHeight:1.5}}>
             {tab==="predictions"
-              ? "Dacă nimerești câștigătoarea la 10 matches din grupe → 10 × 30 = 300 pts. Fiecare predicție corectă contează!"
-              : "Dacă nimerești scorul exact la 3 matches → 3 × 90 = 270 pts. Dacă nimerești doar rezultatul → 30 pts per meci."}
+              ? "If you get the winner right in 10 group matches → 10 × 30 = 300 pts. Every correct prediction counts!"
+              : "If you get the exact score in 3 matches → 3 × 90 = 270 pts. Correct result only → 30 pts per match."}
           </p>
         </div>
       </div>
