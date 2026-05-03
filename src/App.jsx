@@ -229,7 +229,7 @@ function CalendarSlider() {
           const isSun = i%7===6;
 
           let bg="transparent", tc=isSun?"#e88":"#555", fw=400, border="none";
-          if(isSel){bg=`linear-gradient(135deg,${NAVY},#001840)`;tc="#fff";fw=800;}
+          if(isSel){bg=`linear-gradient(135deg,${NAVY}cc,#001840cc)`;tc="#fff";fw=800;}
           else if(isStart){bg:"#E8F0FF";tc=NAVY;fw=700;border=`1px solid ${NAVY}`;}
           else if(has&&!locked){tc=NAVY;fw=700;}
 
@@ -239,7 +239,7 @@ function CalendarSlider() {
                 alignItems:"center",justifyContent:"center",
                 borderRadius:8,padding:"6px 2px",
                 cursor:has?"pointer":"default",
-                background:isSel?`linear-gradient(135deg,${NAVY},#001840)`:isStart?"#E8F0FF":"transparent",
+                background:isSel?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:isStart?"#E8F0FF":"transparent",
                 border:isStart&&!isSel?`1px solid ${NAVY}`:"none",
                 opacity:locked?0.45:1,
                 transition:"all 0.15s"}}>
@@ -286,7 +286,7 @@ function CalendarSlider() {
               <div style={{width:36,height:4,borderRadius:2,background:"#ddd"}}/>
             </div>
             {/* Header */}
-            <div style={{background:`linear-gradient(135deg,${NAVY},#001840)`,padding:"10px 16px",margin:"10px 0 0",flexShrink:0}}>
+            <div style={{background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"10px 16px",margin:"10px 0 0",flexShrink:0}}>
               <span style={{fontSize:13,fontWeight:800,color:"#fff"}}>
                 {selDay<=30?selDay:selDay-30} {selDay<=30?"June":"July"} · {sm.length} matches
               </span>
@@ -297,7 +297,7 @@ function CalendarSlider() {
                 <div key={i} style={{display:"flex",alignItems:"center",padding:"10px 16px",
                   borderBottom:i<sm.length-1?"1px solid rgba(0,0,0,0.06)":"none",gap:8,background:"#fff"}}>
                   <span style={{fontSize:11,color:"#aaa",fontWeight:600,width:36}}>{m.time}</span>
-                  <span style={{fontSize:12,background:`linear-gradient(135deg,${NAVY},#001840)`,
+                  <span style={{fontSize:12,background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,
                     color:"#fff",borderRadius:5,padding:"2px 5px",fontWeight:700,flexShrink:0}}>{m.group}</span>
                   <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:4}}>
                     <span style={{fontSize:16}}>{m.homeFlag}</span>
@@ -329,7 +329,7 @@ function KOTeamRow({ team, pick, pairId, setKnockoutPicks }) {
       onClick={handleSelect}
       style={{display:"flex",alignItems:"center",gap:10,padding:"13px 14px",
         cursor:ph?"default":"pointer",
-        background:selected?`linear-gradient(135deg,${NAVY},#001840)`:"transparent",
+        background:selected?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:"transparent",
         transition:"background 0.15s",opacity:pick&&!selected?0.35:1,
         touchAction:"pan-y",userSelect:"none"}}>
       <span style={{fontSize:22,width:26,textAlign:"center",flexShrink:0}}>{ph?"❓":flag}</span>
@@ -456,7 +456,7 @@ function KnockoutTab({ knockoutPicks, setKnockoutPicks, best3picks, groupRank, o
 
           {/* Finala mare */}
           <div style={{width:"100%",background:BG,borderRadius:14,boxShadow:SHADOW_OUT,overflow:"hidden",marginBottom:24}}>
-            <div style={{background:`linear-gradient(135deg,${NAVY},#001840)`,padding:"6px 14px"}}>
+            <div style={{background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"6px 14px"}}>
               <span style={{fontSize:12,fontWeight:800,color:"rgba(255,255,255,0.7)",textTransform:"uppercase",letterSpacing:1}}>🏆 Grand Final · World Champion</span>
             </div>
             {[0,1].map(i=>{
@@ -480,7 +480,7 @@ function KnockoutTab({ knockoutPicks, setKnockoutPicks, best3picks, groupRank, o
             </button>
             <button onClick={()=>changeRound(koRound+1)}
               style={{flex:1,padding:"12px 0",borderRadius:12,border:"none",
-                background:`linear-gradient(135deg,${NAVY},#001840)`,color:"#fff",
+                background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,color:"#fff",
                 fontSize:12,fontWeight:700,cursor:"pointer",
                 boxShadow:"0 4px 12px rgba(0,32,91,0.3)"}}>
               Finale →
@@ -592,7 +592,7 @@ function KnockoutTab({ knockoutPicks, setKnockoutPicks, best3picks, groupRank, o
           </button>
           <button onClick={()=>changeRound(koRound+1)}
             style={{flex:1,padding:"12px 0",borderRadius:12,border:"none",
-              background:`linear-gradient(135deg,${NAVY},#001840)`,color:"#fff",
+              background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,color:"#fff",
               fontSize:12,fontWeight:700,cursor:"pointer",
               boxShadow:"0 4px 12px rgba(0,32,91,0.3)"}}>
             {nextRound.label} →
@@ -613,7 +613,7 @@ function KnockoutTab({ knockoutPicks, setKnockoutPicks, best3picks, groupRank, o
             <button key={r.id} onClick={()=>!locked&&changeRound(i)}
               style={{flexShrink:0,padding:"6px 12px",borderRadius:20,border:"none",fontSize:11,fontWeight:700,
                 cursor:locked?"default":"pointer",
-                background:koRound===i?`linear-gradient(135deg,${NAVY},#001840)`:BG,
+                background:koRound===i?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:BG,
                 color:koRound===i?"#fff":locked?"#ccc":"#888",
                 boxShadow:koRound===i?"0 3px 10px rgba(0,32,91,0.25)":SHADOW_OUT,
                 display:"flex",alignItems:"center",gap:4,opacity:locked?0.5:1}}>
@@ -705,7 +705,7 @@ function KnockoutTab({ knockoutPicks, setKnockoutPicks, best3picks, groupRank, o
             {/* Next matchup card */}
             <div style={{width:46,flexShrink:0,display:"flex",alignItems:"center"}}>
               <div style={{width:"100%",borderRadius:10,padding:"10px 0",
-                background:pickA&&pickB?`linear-gradient(135deg,${NAVY},#001840)`:BG,
+                background:pickA&&pickB?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:BG,
                 boxShadow:SHADOW_OUT,display:"flex",flexDirection:"column",alignItems:"center",gap:5,transition:"all 0.25s"}}>
                 <span style={{fontSize:18,opacity:pickA?1:0.2}}>{pickA?FLAGS[pickA]||"🏳":"❓"}</span>
                 <span style={{fontSize:8,fontWeight:700,color:pickA&&pickB?"rgba(255,255,255,0.45)":"#ddd"}}>vs</span>
@@ -731,7 +731,7 @@ function KnockoutTab({ knockoutPicks, setKnockoutPicks, best3picks, groupRank, o
         {!isLastGroup ? (
           <button onClick={()=>setGroupIdx(gi+1)}
             style={{flex:1,padding:"12px 0",borderRadius:12,border:"none",
-              background:groupDone?`linear-gradient(135deg,${NAVY},#001840)`:"#e8e8e8",
+              background:groupDone?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:"#e8e8e8",
               color:groupDone?"#fff":"#bbb",fontSize:12,fontWeight:700,
               cursor:groupDone?"pointer":"default",
               boxShadow:groupDone?"0 4px 12px rgba(0,32,91,0.3)":"none",transition:"all 0.2s"}}>
@@ -740,7 +740,7 @@ function KnockoutTab({ knockoutPicks, setKnockoutPicks, best3picks, groupRank, o
         ) : !isLastRound ? (
           <button onClick={()=>roundComplete&&setShowTransition(true)}
             style={{flex:1,padding:"12px 0",borderRadius:12,border:"none",
-              background:roundComplete?`linear-gradient(135deg,${NAVY},#001840)`:"#e8e8e8",
+              background:roundComplete?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:"#e8e8e8",
               color:roundComplete?"#fff":"#bbb",fontSize:12,fontWeight:700,
               cursor:roundComplete?"pointer":"default",
               boxShadow:roundComplete?"0 4px 12px rgba(0,32,91,0.3)":"none",transition:"all 0.2s"}}>
@@ -845,7 +845,7 @@ function GrupeTab({ groupRank, setRank, onComplete }) {
         <button onClick={()=>setDone(false)}
           style={{flex:1,padding:"12px 0",borderRadius:12,border:"none",background:BG,boxShadow:SHADOW_OUT,fontSize:12,fontWeight:700,cursor:"pointer",color:"#888"}}>← Modifica</button>
         <button onClick={onComplete}
-          style={{flex:1,padding:"12px 0",borderRadius:12,border:"none",background:`linear-gradient(135deg,${NAVY},#001840)`,color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",boxShadow:"0 4px 12px rgba(0,32,91,0.3)"}}>Best Third →</button>
+          style={{flex:1,padding:"12px 0",borderRadius:12,border:"none",background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",boxShadow:"0 4px 12px rgba(0,32,91,0.3)"}}>Best Third →</button>
       </div>
     </div>
   );
@@ -862,11 +862,11 @@ function GrupeTab({ groupRank, setRank, onComplete }) {
       </div>
 
       <div style={{borderRadius:20,overflow:"hidden",marginBottom:12,boxShadow:SHADOW_OUT}}>
-        <div style={{background:`linear-gradient(135deg,${NAVY},#001840)`,padding:"11px 16px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+        <div style={{background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"11px 16px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
           <span style={{fontSize:16,fontWeight:900,color:"#fff",letterSpacing:1}}>GROUP {activeGrupa}</span>
           <span style={{fontSize:11,color:"rgba(255,255,255,0.45)"}}>Tap → clasament</span>
         </div>
-        <div style={{background:`linear-gradient(135deg,${NAVY},#001840)`,padding:"10px 10px",display:"flex",justifyContent:"space-around",alignItems:"center",borderBottom:"1px solid rgba(255,255,255,0.08)"}}>
+        <div style={{background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"10px 10px",display:"flex",justifyContent:"space-around",alignItems:"center",borderBottom:"1px solid rgba(255,255,255,0.08)"}}>
           {teams.map(t=>{
             const pos=Object.entries(rank).find(([,v])=>v===t)?.[0];
             const isRanked=!!pos;
@@ -946,7 +946,7 @@ function GrupeTab({ groupRank, setRank, onComplete }) {
         </button>
         <button onClick={goNext} disabled={!isCurrentComplete}
           style={{flex:1,padding:"12px 0",borderRadius:12,border:"none",
-            background:isCurrentComplete?`linear-gradient(135deg,${NAVY},#001840)`:"#e8e8e8",
+            background:isCurrentComplete?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:"#e8e8e8",
             color:isCurrentComplete?"#fff":"#bbb",fontSize:12,fontWeight:700,
             cursor:isCurrentComplete?"pointer":"default",
             boxShadow:isCurrentComplete?"0 4px 12px rgba(0,32,91,0.3)":"none",transition:"all 0.2s"}}>
@@ -963,6 +963,23 @@ function GrupeTab({ groupRank, setRank, onComplete }) {
 
 const INTERACTIVE_GROUPS = ["A","B","C","D","E","F","G","H","I","J","K","L"]; // all 12 groups user ranks manually
 const ALL_GROUP_IDS = Object.keys(ALL_GROUPS_DATA);
+
+// ── PREDICTION SCORING ────────────────────────────────────────────────────────
+const PRED_SCORING = {
+  group1st: 20, group2nd: 15, group3rd: 10,
+  best3: 5,
+  r32: 10, r16: 20, qf: 40, sf: 60, final: 100,
+};
+const PRED_MAX = {
+  groups:  INTERACTIVE_GROUPS.length * (PRED_SCORING.group1st + PRED_SCORING.group2nd + PRED_SCORING.group3rd), // 12×45 = 540
+  best3:   8 * PRED_SCORING.best3,        // 120
+  r32:     16 * PRED_SCORING.r32,         // 160
+  r16:     8  * PRED_SCORING.r16,         // 160
+  qf:      4  * PRED_SCORING.qf,          // 160
+  sf:      2  * PRED_SCORING.sf,          // 120
+  final:   1  * PRED_SCORING.final,       // 100
+};
+PRED_MAX.total = Object.values(PRED_MAX).reduce((a,b)=>a+b, 0); // 1360
 
 const makeMatchups = (teams) => {
   const m = [];
@@ -1703,7 +1720,7 @@ function MatchSwipeCard({ home, away, onPick, onFlash, groupLabel, matchNum, tot
               background:"rgba(255,255,255,0.08)",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer"}}>
             ← Change
           </button>
-          <button onClick={()=>onPick(overlayState)}
+          <button onClick={()=>onPick&&onPick(overlayState)}
             style={{flex:2,padding:"13px 0",borderRadius:14,border:"none",
               background:"rgba(255,255,255,0.92)",color:"#111",fontSize:14,fontWeight:900,
               cursor:"pointer",boxShadow:"0 4px 20px rgba(0,0,0,0.3)"}}>
@@ -2118,7 +2135,7 @@ function GroupSummaryCard({ group, picks, onNext, onReset, isLastGroup }) {
             <span style={{fontSize:12,fontWeight:800,color:i===0?GREEN:i===1?NAVY:"#aaa",width:20,textAlign:"center"}}>{i+1}</span>
             <span style={{fontSize:24}}>{FLAGS[t]||"🏳"}</span>
             <span style={{flex:1,fontSize:13,fontWeight:600,color:DARK}}>{t}</span>
-            <div style={{background:i<2?`linear-gradient(135deg,${NAVY},#001840)`:"rgba(0,0,0,0.06)",borderRadius:8,padding:"4px 10px"}}>
+            <div style={{background:i<2?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:"rgba(0,0,0,0.06)",borderRadius:8,padding:"4px 10px"}}>
               <span style={{fontSize:12,fontWeight:800,color:i<2?"#fff":"#888"}}>{pts[t]||0} pts</span>
             </div>
             {i<2&&<span style={{fontSize:12,color:GREEN,fontWeight:700}}>→ R16</span>}
@@ -2134,7 +2151,7 @@ function GroupSummaryCard({ group, picks, onNext, onReset, isLastGroup }) {
         </button>
         <button onClick={onNext}
           style={{flex:2,padding:"14px 0",borderRadius:14,border:"none",
-            background:`linear-gradient(135deg,${NAVY},#001840)`,
+            background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,
             color:"#fff",fontSize:14,fontWeight:800,cursor:"pointer",
             boxShadow:"0 4px 14px rgba(0,32,91,0.3)"}}>
           {isLastGroup ? "Knockout →" : "Group urmatoare →"}
@@ -2171,9 +2188,10 @@ function Best3Screen({ groups, getGroupStanding, picks, best3, setBest3, onDone 
   const isFull = best3.length >= needed;
 
   return (
-    <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden"}}>
+    <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",position:"relative"}}>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:0,objectFit:"cover",objectPosition:"center 20%",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
       {/* Header with selected chips */}
-      <div style={{background:`linear-gradient(135deg,${NAVY},#001840)`,padding:"12px 16px 14px",flexShrink:0}}>
+      <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"12px 16px 14px",flexShrink:0}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
           <span style={{fontSize:13,fontWeight:800,color:"#fff"}}>🥉 Best Third</span>
           <span style={{fontSize:12,fontWeight:800,color:isFull?GREEN:"rgba(255,255,255,0.6)"}}>{best3.length}/{needed}</span>
@@ -2198,11 +2216,11 @@ function Best3Screen({ groups, getGroupStanding, picks, best3, setBest3, onDone 
       </div>
 
       {/* Ranked list */}
-      <div style={{flex:1,overflowY:"auto",padding:"12px 20px"}}>
+      <div style={{flex:1,overflowY:"auto",padding:"12px 20px",position:"relative",zIndex:1}}>
         <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 8px"}}>
           3rd Place Ranking · sorted by points
         </p>
-        <div style={{background:BG,borderRadius:14,boxShadow:SHADOW_OUT,overflow:"hidden",marginBottom:16}}>
+        <div style={{background:"transparent",borderRadius:14,boxShadow:SHADOW_OUT,overflow:"hidden",marginBottom:16}}>
           {/* Header */}
           <div style={{display:"flex",alignItems:"center",padding:"6px 16px",background:"rgba(0,0,0,0.03)",borderBottom:"1px solid rgba(0,0,0,0.05)"}}>
             <span style={{fontSize:11,fontWeight:700,color:"#bbb",width:24}}>#</span>
@@ -2214,7 +2232,7 @@ function Best3Screen({ groups, getGroupStanding, picks, best3, setBest3, onDone 
           {sorted.filter(({team})=>!best3.includes(team)).map(({group,team,flag,pts},i,arr)=>(
             <div key={team} onClick={()=>{ if(!isFull && !best3.includes(team)) setBest3(p=>[...p,team]); }}
               style={{display:"flex",alignItems:"center",gap:8,padding:"11px 16px",
-                background:"#fff",
+                background:"rgba(255,255,255,0.82)",
                 borderBottom:i<arr.length-1?"1px solid rgba(0,0,0,0.05)":"none",
                 cursor:isFull?"default":"pointer",
                 opacity:isFull?0.5:1,transition:"all 0.15s"}}>
@@ -2222,7 +2240,7 @@ function Best3Screen({ groups, getGroupStanding, picks, best3, setBest3, onDone 
               <span style={{fontSize:22,flexShrink:0}}>{flag}</span>
               <span style={{flex:1,fontSize:13,fontWeight:600,color:DARK}}>{team.length>10?team.split(" ")[0]:team}</span>
               <span style={{fontSize:12,fontWeight:700,color:"#bbb",background:"rgba(0,0,0,0.06)",borderRadius:5,padding:"2px 6px",width:28,textAlign:"center"}}>{group}</span>
-              <div style={{background:`linear-gradient(135deg,${NAVY},#001840)`,borderRadius:8,padding:"3px 8px",width:40,textAlign:"center"}}>
+              <div style={{background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,borderRadius:8,padding:"3px 8px",width:40,textAlign:"center"}}>
                 <span style={{fontSize:11,fontWeight:800,color:"#fff"}}>{pts}</span>
               </div>
               <div style={{width:22,height:22,borderRadius:"50%",flexShrink:0,border:"2px solid #ddd"}}/>
@@ -2231,7 +2249,7 @@ function Best3Screen({ groups, getGroupStanding, picks, best3, setBest3, onDone 
         </div>
         <button onClick={()=>isFull&&onDone(best3)}
           style={{width:"100%",padding:"15px 0",borderRadius:14,border:"none",marginBottom:24,
-            background:isFull?`linear-gradient(135deg,${NAVY},#001840)`:"#e0e0e0",
+            background:isFull?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:"#e0e0e0",
             color:isFull?"#fff":"#bbb",fontSize:14,fontWeight:800,cursor:isFull?"pointer":"default",
             boxShadow:isFull?"0 4px 14px rgba(0,32,91,0.3)":"none"}}>
           {isFull ? "Knockout →" : `Select more ${needed-best3.length}`}
@@ -2242,7 +2260,7 @@ function Best3Screen({ groups, getGroupStanding, picks, best3, setBest3, onDone 
 }
 
 
-function GroupIntroScreen({ group, teams: teamsProp, isKo, onStart, hideHeader=false, picks={} }) {
+function GroupIntroScreen({ group, teams: teamsProp, isKo, onStart, hideHeader=false, picks={}, viewMode=false }) {
   const teams = isKo ? null : (ALL_GROUPS_DATA[group]||[]);
   const matchCount = isKo ? (teamsProp||[]).length : (GROUP_MATCHUPS[group]||[]).length;
   const nextRoundLabel = {R32:"Round of 16",R16:"Quarter-Finals",QF:"Semi-Finals",SF:"Final"}[group]||"Next Round";
@@ -2321,18 +2339,19 @@ function GroupIntroScreen({ group, teams: teamsProp, isKo, onStart, hideHeader=f
             <div style={{fontSize:11,color:"rgba(0,0,0,0.35)",fontWeight:700,textAlign:"center",marginBottom:10,letterSpacing:0.5}}>
               {matchCount} matches to predict
             </div>
-            <button onClick={onStart}
+            <button onClick={!viewMode ? onStart : undefined}
               style={{width:"100%",padding:"15px 0",borderRadius:14,border:"none",
-                background:`linear-gradient(135deg,${NAVY},#003580)`,
-                color:"#fff",fontSize:15,fontWeight:900,cursor:"pointer",
-                boxShadow:"0 4px 20px rgba(0,32,91,0.3)",letterSpacing:1}}>
-              Start Matches →
+                background:viewMode?"rgba(0,0,0,0.07)":`linear-gradient(135deg,${NAVY},#003580)`,
+                color:viewMode?"rgba(0,0,0,0.25)":"#fff",fontSize:15,fontWeight:900,
+                cursor:viewMode?"default":"pointer",
+                boxShadow:viewMode?"none":"0 4px 20px rgba(0,32,91,0.3)",letterSpacing:1}}>
+              {viewMode ? "View Only" : "Start Matches →"}
             </button>
           </div>
         </>
       ) : (
         <div style={{padding:"20px 24px"}}>
-          <div style={{background:`linear-gradient(135deg,${NAVY},#001840)`,borderRadius:20,padding:"20px",width:"100%",marginBottom:16,boxShadow:SHADOW_OUT}}>
+          <div style={{background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,borderRadius:20,padding:"20px",width:"100%",marginBottom:16,boxShadow:SHADOW_OUT}}>
             {!hideHeader && <><p style={{fontSize:10,color:RED,margin:"0 0 4px",letterSpacing:2,textTransform:"uppercase",fontWeight:800,textAlign:"center"}}>FIFA WORLD CUP 2026</p>
             <h2 style={{fontSize:26,fontWeight:900,color:"#fff",margin:"0 0 20px",textAlign:"center",letterSpacing:1}}>{group}</h2></>}
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
@@ -2347,12 +2366,13 @@ function GroupIntroScreen({ group, teams: teamsProp, isKo, onStart, hideHeader=f
           <div style={{width:"100%",background:BG,borderRadius:14,boxShadow:SHADOW_OUT,padding:"14px 16px",marginBottom:20}}>
             <p style={{fontSize:12,color:"#aaa",margin:0,textAlign:"center"}}>{matchCount} matches to predict</p>
           </div>
-          <button onClick={onStart}
+          <button onClick={!viewMode ? onStart : undefined}
             style={{width:"100%",padding:"16px 0",borderRadius:16,border:"none",
-              background:`linear-gradient(135deg,${RED},#EF3340 40%,${GREEN})`,
-              color:"#fff",fontSize:16,fontWeight:900,cursor:"pointer",
-              boxShadow:"0 6px 20px rgba(200,16,46,0.3)",letterSpacing:1}}>
-            Start Matches →
+              background:viewMode?"rgba(0,0,0,0.07)":`linear-gradient(135deg,${RED},#EF3340 40%,${GREEN})`,
+              color:viewMode?"rgba(0,0,0,0.25)":"#fff",fontSize:16,fontWeight:900,
+              cursor:viewMode?"default":"pointer",
+              boxShadow:viewMode?"none":"0 6px 20px rgba(200,16,46,0.3)",letterSpacing:1}}>
+            {viewMode ? "View Only" : "Start Matches →"}
           </button>
         </div>
       )}
@@ -2361,7 +2381,7 @@ function GroupIntroScreen({ group, teams: teamsProp, isKo, onStart, hideHeader=f
 }
 
 
-function InstantPickScreen({ onBack, onComplete, savedState, onStateChange, tournamentStarted }) {
+function InstantPickScreen({ onBack, onComplete, onModify, savedState, onStateChange, tournamentStarted, viewMode=false }) {
   const GROUPS = INTERACTIVE_GROUPS;
   const [stage, setStage] = useState(savedState?.stage||"groups");
   const [groupIdx, setGroupIdx] = useState(savedState?.groupIdx||0);
@@ -2406,8 +2426,9 @@ function InstantPickScreen({ onBack, onComplete, savedState, onStateChange, tour
       setKoIdx(0);
       setKoShowIntro(true);
       setShowFinalSummary(false);
+      if(viewMode && onModify) onModify();
     }
-    if(groupIdx < GROUPS.length-1) { setGroupIdx(g=>g+1); setShowIntro(true); }
+    if(groupIdx < GROUPS.length-1) { setGroupIdx(g=>g+1); setShowIntro(viewMode?false:true); }
     else setStage("best3");
   };
 
@@ -2619,7 +2640,7 @@ function InstantPickScreen({ onBack, onComplete, savedState, onStateChange, tour
         <div style={{background:"#f0f2f8",borderBottom:"1px solid rgba(0,0,0,0.08)",
           padding:"10px 14px",minHeight:70}}>
           <div style={{fontSize:9,color:"rgba(0,0,0,0.38)",fontWeight:800,
-            letterSpacing:1.5,marginBottom:8}}>ADVANCING · TAP TO REMOVE</div>
+            letterSpacing:1.5,marginBottom:8}}>{viewMode?"ADVANCING":"ADVANCING · TAP TO REMOVE"}</div>
           {best3.length===0 ? (
             <div style={{fontSize:12,color:"rgba(0,0,0,0.25)",fontStyle:"italic",paddingBottom:4}}>
               Tap a team below to add them here
@@ -2627,12 +2648,12 @@ function InstantPickScreen({ onBack, onComplete, savedState, onStateChange, tour
           ) : (
             <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
               {best3.map(team=>(
-                <div key={team} onClick={()=>setBest3(prev=>prev.filter(t=>t!==team))}
+                <div key={team} onClick={()=>!viewMode&&setBest3(prev=>prev.filter(t=>t!==team))}
                   style={{
                     display:"flex",alignItems:"center",gap:5,
                     padding:"4px 10px 4px 6px",borderRadius:20,
                     background:`${GREEN}18`,border:`1.5px solid ${GREEN}`,
-                    cursor:"pointer",transition:"all 0.15s",
+                    cursor:viewMode?"default":"pointer",transition:"all 0.15s",
                   }}>
                   <span style={{fontSize:18,lineHeight:1}}>{FLAGS[team]||"🏳"}</span>
                   <span style={{fontSize:11,fontWeight:800,color:NAVY,
@@ -2651,14 +2672,14 @@ function InstantPickScreen({ onBack, onComplete, savedState, onStateChange, tour
             const grp=GROUPS.find(g=>(allGroupStandings[g]||[])[2]===team)||"?";
             const disabled=best3.length>=needed;
             return (
-              <div key={team} onClick={()=>!disabled&&setBest3(prev=>[...prev,team])}
+              <div key={team} onClick={()=>!viewMode&&!disabled&&setBest3(prev=>[...prev,team])}
                 style={{
                   display:"flex",alignItems:"center",gap:12,
                   padding:"11px 14px",borderRadius:14,
                   background:"#fff",
                   border:"1.5px solid rgba(0,0,0,0.06)",
                   boxShadow:"0 1px 4px rgba(0,0,0,0.05)",
-                  cursor:disabled?"default":"pointer",
+                  cursor:(viewMode||disabled)?"default":"pointer",
                   opacity:disabled?0.4:1,
                   transition:"all 0.15s",
                   minHeight:56,
@@ -2706,22 +2727,24 @@ function InstantPickScreen({ onBack, onComplete, savedState, onStateChange, tour
         {/* ── CONFIRM BUTTON ── */}
         <div style={{background:"#fff",padding:"10px 14px 22px",
           borderTop:"1px solid rgba(0,0,0,0.07)"}}>
-          <button onClick={()=>best3.length>=needed&&setStage("ko")}
-            disabled={best3.length<needed}
+          <button onClick={()=>{ if(viewMode||best3.length>=needed){ setStage("ko"); if(viewMode) setShowFinalSummary(true); } }}
+            disabled={!viewMode&&best3.length<needed}
             style={{
               width:"100%",padding:"14px 0",borderRadius:14,border:"none",
-              background:best3.length>=needed
+              background:(viewMode||best3.length>=needed)
                 ?`linear-gradient(135deg,${NAVY},#003580)`
                 :"rgba(0,0,0,0.06)",
-              color:best3.length>=needed?"#fff":"rgba(0,0,0,0.2)",
+              color:(viewMode||best3.length>=needed)?"#fff":"rgba(0,0,0,0.2)",
               fontSize:15,fontWeight:900,letterSpacing:1,
-              cursor:best3.length>=needed?"pointer":"default",
+              cursor:(viewMode||best3.length>=needed)?"pointer":"default",
               transition:"all 0.2s",
-              boxShadow:best3.length>=needed?"0 4px 20px rgba(0,32,91,0.3)":"none",
+              boxShadow:(viewMode||best3.length>=needed)?"0 4px 20px rgba(0,32,91,0.3)":"none",
             }}>
             {best3.length>=needed
               ?"CONFIRM & GO TO KNOCKOUT →"
-              :`SELECT ${needed-best3.length} MORE TEAM${needed-best3.length!==1?"S":""}`}
+              :viewMode
+                ?"VIEW KNOCKOUT STAGE →"
+                :`SELECT ${needed-best3.length} MORE TEAM${needed-best3.length!==1?"S":""}`}
           </button>
         </div>
       </div>
@@ -2770,57 +2793,85 @@ function InstantPickScreen({ onBack, onComplete, savedState, onStateChange, tour
             {FLAGS[team]||"🏳"}
           </div>
           <div style={{textAlign:"center"}}>
-            <div style={{fontSize:pos===1?14:11,fontWeight:900,color:"#111",
-              textTransform:"uppercase",letterSpacing:0.5}}>{team}</div>
-            <div style={{fontSize:9,color:"rgba(0,0,0,0.4)",fontWeight:600,marginTop:2}}>{label}</div>
+            <div style={{fontSize:pos===1?13:10,fontWeight:900,color:"#fff",
+              textTransform:"uppercase",letterSpacing:0.3,lineHeight:1.2}}>{team==="TBD"?"?":team.split(" ")[0]}</div>
+            <div style={{fontSize:8,color:"rgba(255,255,255,0.5)",fontWeight:600,marginTop:2}}>{label}</div>
           </div>
         </div>
       );
 
-      return (
-        <div style={{flex:1,display:"flex",flexDirection:"column",userSelect:"none",position:"relative",overflow:"hidden",background:NAVY}}>
-          {/* Trophy background — colorful */}
-          <img src={trophy} alt="" style={{position:"absolute",width:"140%",height:"100%",left:"-20%",top:"0%",objectFit:"cover",objectPosition:"center 15%",opacity:0.55,pointerEvents:"none",zIndex:0}}/>
-          {/* Dark gradient overlay for readability */}
-          <div style={{position:"absolute",inset:0,background:"linear-gradient(to bottom, rgba(0,20,70,0.55) 0%, rgba(0,10,40,0.7) 100%)",zIndex:1,pointerEvents:"none"}}/>
+      const scoreRows = [
+        { icon:"⚽", label:"Grupe · 1st loc",  pts:PRED_SCORING.group1st, count:12, max:PRED_MAX.groups/3,  color:NAVY },
+        { icon:"⚽", label:"Grupe · 2nd loc",  pts:PRED_SCORING.group2nd, count:12, max:PRED_MAX.groups/3,  color:NAVY },
+        { icon:"⚽", label:"Grupe · 3rd loc",  pts:PRED_SCORING.group3rd, count:12, max:PRED_MAX.groups/3,  color:NAVY },
+        { icon:"🥉", label:"Best Third",        pts:PRED_SCORING.best3,    count:8,  max:PRED_MAX.best3,     color:"#7B2FBE" },
+        { icon:"🏆", label:"Round of 32",       pts:PRED_SCORING.r32,      count:16, max:PRED_MAX.r32,       color:RED },
+        { icon:"🏆", label:"Round of 16",       pts:PRED_SCORING.r16,      count:8,  max:PRED_MAX.r16,       color:RED },
+        { icon:"🏆", label:"Quarter-Finals",    pts:PRED_SCORING.qf,       count:4,  max:PRED_MAX.qf,        color:RED },
+        { icon:"🏆", label:"Semi-Finals",       pts:PRED_SCORING.sf,       count:2,  max:PRED_MAX.sf,        color:"#D4820A" },
+        { icon:"🏆", label:"Final",             pts:PRED_SCORING.final,    count:1,  max:PRED_MAX.final,     color:"#D4820A" },
+      ];
 
-          {/* Header */}
-          <div style={{position:"relative",zIndex:2,display:"flex",alignItems:"center",gap:10,padding:"14px 14px 12px"}}>
-            <button onClick={()=>setShowFinalSummary(false)}
-              style={{background:"rgba(255,255,255,0.15)",border:"none",borderRadius:10,
-                width:34,height:34,color:"#fff",fontSize:16,cursor:"pointer",
-                display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>‹</button>
-            <div style={{flex:1}}>
-              <div style={{fontSize:10,color:"#FFD700",fontWeight:800,letterSpacing:1.5}}>FIFA - WORLD CUP 2026</div>
-              <div style={{fontSize:18,fontWeight:900,color:"#fff"}}>Your Predictions</div>
+      return (
+        <div style={{flex:1,display:"flex",flexDirection:"column",userSelect:"none",background:"#f0f2f8",overflow:"hidden"}}>
+          {/* Header navy */}
+          <div style={{background:`linear-gradient(135deg,${NAVY},#001840)`,padding:"14px 14px 16px",flexShrink:0,position:"relative",overflow:"hidden"}}>
+            <img src={trophy} alt="" style={{position:"absolute",width:"120%",height:"100%",left:"-10%",top:0,objectFit:"cover",objectPosition:"center 20%",opacity:0.15,pointerEvents:"none",filter:"grayscale(1) contrast(1.5)"}}/>
+            <div style={{position:"relative",zIndex:1,display:"flex",alignItems:"center",gap:10,marginBottom:14}}>
+              <button onClick={()=>{ if(viewMode) onBack&&onBack(); else setShowFinalSummary(false); }}
+                style={{background:"rgba(255,255,255,0.15)",border:"none",borderRadius:10,
+                  width:34,height:34,color:"#fff",fontSize:16,cursor:"pointer",
+                  display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>‹</button>
+              <div style={{flex:1}}>
+                <div style={{fontSize:10,color:"#FFD700",fontWeight:800,letterSpacing:1.5}}>FIFA - WORLD CUP 2026</div>
+                <div style={{fontSize:18,fontWeight:900,color:"#fff"}}>Predicțiile tale</div>
+              </div>
+              <div style={{background:"rgba(255,215,0,0.2)",borderRadius:12,padding:"6px 12px",border:"1px solid rgba(255,215,0,0.4)"}}>
+                <div style={{fontSize:9,color:"rgba(255,215,0,0.7)",fontWeight:700,letterSpacing:1,textAlign:"center"}}>MAX</div>
+                <div style={{fontSize:18,fontWeight:900,color:"#FFD700",lineHeight:1}}>{PRED_MAX.total}</div>
+                <div style={{fontSize:8,color:"rgba(255,215,0,0.6)",fontWeight:600,textAlign:"center"}}>pts posibile</div>
+              </div>
+            </div>
+            {/* Podium */}
+            <div style={{position:"relative",zIndex:1,display:"flex",alignItems:"flex-end",justifyContent:"center",gap:8}}>
+              <PodiumCard pos={2} team={runnerUp} color="#C0C0C0" size={52} label="Runner-up"/>
+              <PodiumCard pos={1} team={champion} color="#FFD700" size={68} label="Champion 🏆"/>
+              <PodiumCard pos={3} team={third}    color="#CD7F32" size={44} label="3rd place"/>
             </div>
           </div>
 
-          {/* Center content */}
-          <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",position:"relative",zIndex:2,padding:"20px 30px"}}>
-            <div style={{fontSize:13,color:"rgba(255,255,255,0.7)",fontWeight:600,letterSpacing:4,textTransform:"uppercase",marginBottom:24,textAlign:"center"}}>
-              Your winner is
+          {/* Scoring breakdown */}
+          <div style={{flex:1,overflowY:"auto",padding:"12px 14px 8px"}}>
+            <div style={{fontSize:10,fontWeight:800,color:"#aaa",letterSpacing:1.5,textTransform:"uppercase",marginBottom:8}}>Punctaj per predicție corectă</div>
+            <div style={{background:"#fff",borderRadius:14,boxShadow:SHADOW_OUT,overflow:"hidden",marginBottom:12}}>
+              {scoreRows.map((r,i)=>(
+                <div key={i} style={{display:"flex",alignItems:"center",padding:"9px 14px",borderBottom:i<scoreRows.length-1?"1px solid rgba(0,0,0,0.05)":"none"}}>
+                  <span style={{fontSize:13,marginRight:8,flexShrink:0}}>{r.icon}</span>
+                  <span style={{flex:1,fontSize:11,fontWeight:700,color:"#333"}}>{r.label}</span>
+                  <span style={{fontSize:10,color:"#bbb",marginRight:8,fontWeight:600}}>×{r.count}</span>
+                  <div style={{background:`${r.color}18`,borderRadius:7,padding:"2px 8px",minWidth:52,textAlign:"center"}}>
+                    <span style={{fontSize:12,fontWeight:900,color:r.color}}>+{r.pts}</span>
+                  </div>
+                  <span style={{fontSize:10,color:"#bbb",marginLeft:8,fontWeight:700,minWidth:44,textAlign:"right"}}>{r.max} max</span>
+                </div>
+              ))}
             </div>
-            <div style={{fontSize:96,lineHeight:1,marginBottom:20,filter:"drop-shadow(0 8px 32px rgba(0,0,0,0.5))"}}>
-              {FLAGS[champion]||"🏳"}
-            </div>
-            <div style={{fontSize:30,fontWeight:900,color:"#fff",textTransform:"uppercase",letterSpacing:3,textAlign:"center",textShadow:"0 4px 20px rgba(0,0,0,0.5)"}}>
-              {champion}
+            <div style={{background:`linear-gradient(135deg,${NAVY},#003580)`,borderRadius:14,padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
+              <span style={{fontSize:13,fontWeight:800,color:"rgba(255,255,255,0.8)"}}>Total maxim posibil</span>
+              <span style={{fontSize:22,fontWeight:900,color:"#FFD700"}}>{PRED_MAX.total} pts</span>
             </div>
           </div>
 
           {/* Save button */}
-          <div style={{position:"relative",zIndex:2,padding:"10px 16px 28px"}}>
+          {!viewMode && <div style={{padding:"8px 14px 24px",flexShrink:0}}>
             <button onClick={()=>onComplete&&onComplete()}
-              style={{
-                width:"100%",padding:"15px 0",borderRadius:14,border:"none",
-                background:"rgba(255,255,255,0.95)",
-                color:NAVY,fontSize:15,fontWeight:900,letterSpacing:1,cursor:"pointer",
-                boxShadow:"0 4px 24px rgba(0,0,0,0.4)",
-              }}>
-              SAVE PREDICTIONS ✓
+              style={{width:"100%",padding:"15px 0",borderRadius:14,border:"none",
+                background:`linear-gradient(135deg,${GREEN},#007A36)`,
+                color:"#fff",fontSize:15,fontWeight:900,letterSpacing:1,cursor:"pointer",
+                boxShadow:"0 4px 24px rgba(0,154,68,0.4)"}}>
+              SALVEAZĂ PREDICȚIILE ✓
             </button>
-          </div>
+          </div>}
         </div>
       );
     }
@@ -2829,7 +2880,7 @@ function InstantPickScreen({ onBack, onComplete, savedState, onStateChange, tour
         <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:0,objectFit:"cover",objectPosition:"center 20%",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
         {sharedHeader}
         <GroupIntroScreen group={koRound} teams={koRoundMatchups.map(m=>[m.home,m.away])}
-          isKo={true} hideHeader={true} onStart={()=>setKoShowIntro(false)} picks={koPicks}/>
+          isKo={true} hideHeader={true} onStart={()=>setKoShowIntro(false)} picks={koPicks} viewMode={viewMode}/>
       </div>
     );
     return (
@@ -2837,7 +2888,7 @@ function InstantPickScreen({ onBack, onComplete, savedState, onStateChange, tour
         {sharedHeader}
         <MatchSwipeCard key={`ko-${koRound}-${koIdx}`}
           home={currentKo?.home||"TBD"} away={currentKo?.away||"TBD"}
-          onPick={(result)=>{
+          onPick={viewMode ? undefined : (result)=>{
             const key=`${koRound}-${koIdx}`;
             setKoPicks(p=>({...p,[key]:result}));
             if(koIdx<koRoundMatchups.length-1){ setKoIdx(i=>i+1); }
@@ -2858,7 +2909,8 @@ function InstantPickScreen({ onBack, onComplete, savedState, onStateChange, tour
   // GROUP STAGE — direct la GroupRankingScreen, fără intro
 
   return (
-    <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,userSelect:"none"}}>
+    <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,userSelect:"none",position:"relative",overflow:"hidden"}}>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:0,objectFit:"cover",objectPosition:"center 20%",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
       {sharedHeader}
       <GroupRankingScreen
         hideHeader={true}
@@ -2872,6 +2924,7 @@ function InstantPickScreen({ onBack, onComplete, savedState, onStateChange, tour
         totalGroups={GROUPS.length}
         groupRankings={groupRankings}
         onNavigate={navigateGroup}
+        viewMode={viewMode}
       />
     </div>
   );
@@ -2941,7 +2994,7 @@ function InstantPickSummaryScreen({ picks, koPicks, best3, getGroupStanding, onC
   );
 }
 
-function GroupRankingScreen({ group, teams, existingRanking, onConfirm, onBack, groupIdx, totalGroups, onNavigate, groupRankings, hideHeader=false }) {
+function GroupRankingScreen({ group, teams, existingRanking, onConfirm, onBack, groupIdx, totalGroups, onNavigate, groupRankings, hideHeader=false, viewMode=false }) {
   const [ranking, setRanking] = useState(existingRanking || [null, null, null, null]);
   const [dragIdx, setDragIdx] = useState(null);
   const [dragOverIdx, setDragOverIdx] = useState(null);
@@ -3037,10 +3090,11 @@ function GroupRankingScreen({ group, teams, existingRanking, onConfirm, onBack, 
   const placeTextColor = ["#000","#000","#000","#fff"];
 
   return (
-    <div style={{flex:1, display:"flex", flexDirection:"column", background:BG, userSelect:"none"}}>
+    <div style={{flex:1, display:"flex", flexDirection:"column", background:"transparent", userSelect:"none", position:"relative", overflow:"hidden"}}>
+      {!hideHeader && <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:0,objectFit:"cover",objectPosition:"center 20%",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>}
 
       {/* ── NAVY HEADER ── */}
-      {!hideHeader && <div style={{background:NAVY, paddingBottom:0}}>
+      {!hideHeader && <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`, paddingBottom:0}}>
 
         {/* Top row */}
         <div style={{display:"flex", alignItems:"center", gap:10, padding:"10px 14px 6px"}}>
@@ -3163,20 +3217,20 @@ function GroupRankingScreen({ group, teams, existingRanking, onConfirm, onBack, 
       </div>}
 
       {/* ── TEAM TILES ── */}
-      <div style={{background:"#f0f2f8", padding:"14px 14px 10px",
-        borderBottom:"1px solid rgba(0,0,0,0.08)"}}>
-        <div style={{fontSize:10, color:"rgba(0,0,0,0.4)", letterSpacing:2,
-          fontWeight:700, marginBottom:8, textAlign:"center"}}>TAP TO ASSIGN · TAP AGAIN TO REMOVE</div>
+      <div style={{background:"transparent", padding:"14px 14px 10px",
+        borderBottom:"1px solid rgba(0,0,0,0.08)", position:"relative", zIndex:1}}>
+        {!viewMode && <div style={{fontSize:10, color:"rgba(0,0,0,0.4)", letterSpacing:2,
+          fontWeight:700, marginBottom:8, textAlign:"center"}}>TAP TO ASSIGN · TAP AGAIN TO REMOVE</div>}
         <div style={{display:"flex", gap:8, justifyContent:"space-between"}}>
           {teams.map(team => {
             const pos = ranking.indexOf(team);
             const isPlaced = pos !== -1;
             return (
-              <div key={team} onClick={() => handleTileClick(team)} style={{
+              <div key={team} onClick={() => !viewMode && handleTileClick(team)} style={{
                 flex:1, background: isPlaced ? "rgba(0,32,91,0.07)" : "#fff",
                 borderRadius:12, padding:"10px 4px",
                 display:"flex", flexDirection:"column", alignItems:"center", gap:5,
-                cursor:"pointer", position:"relative",
+                cursor:viewMode?"default":"pointer", position:"relative",
                 border:`2px solid ${isPlaced ? "rgba(0,32,91,0.25)" : "rgba(0,0,0,0.08)"}`,
                 transition:"all 0.15s",
                 opacity: isPlaced ? 0.6 : 1,
@@ -3208,7 +3262,7 @@ function GroupRankingScreen({ group, teams, existingRanking, onConfirm, onBack, 
       </div>
 
       {/* ── RANKING ROWS ── */}
-      <div ref={rankingContainerRef} style={{flex:1, overflowY:"auto", background:BG, padding:"8px 14px", display:"flex", flexDirection:"column", gap:6}}>
+      <div ref={rankingContainerRef} style={{flex:1, overflowY:"auto", background:"transparent", padding:"8px 14px", display:"flex", flexDirection:"column", gap:6, position:"relative", zIndex:1}}>
         {[0,1,2,3].map(idx => {
           const team = ranking[idx];
           const teamColor = team ? (TEAM_COLORS[team]||["#555"])[0] : null;
@@ -3216,9 +3270,9 @@ function GroupRankingScreen({ group, teams, existingRanking, onConfirm, onBack, 
           const isOver = dragOverIdx === idx;
           return (
             <div key={idx} ref={el => rowRefs.current[idx] = el}
-              onTouchStart={team ? e=>handleTouchStart(e,idx) : undefined}
-              onTouchMove={team ? handleTouchMove : undefined}
-              onTouchEnd={team ? handleTouchEnd : undefined}
+              onTouchStart={team && !viewMode ? e=>handleTouchStart(e,idx) : undefined}
+              onTouchMove={team && !viewMode ? handleTouchMove : undefined}
+              onTouchEnd={team && !viewMode ? handleTouchEnd : undefined}
               style={{
                 display:"flex", alignItems:"center", gap:12,
                 padding:"11px 14px", borderRadius:14,
@@ -3255,7 +3309,7 @@ function GroupRankingScreen({ group, teams, existingRanking, onConfirm, onBack, 
                     <FlagBg team={team} style={{}}/>
                   </div>
                   {/* Name */}
-                  <div style={{flex:1, cursor:"pointer"}} onClick={()=>handleSlotClick(idx)}>
+                  <div style={{flex:1, cursor:viewMode?"default":"pointer"}} onClick={()=>!viewMode&&handleSlotClick(idx)}>
                     <div style={{fontSize:14, fontWeight:800, color:"#111",
                       letterSpacing:0.3, textTransform:"uppercase"}}>{team}</div>
                     <div style={{fontSize:10, color:idx===0?GREEN:idx===1?"#4a90e2":idx===2?"#CD7F32":"rgba(0,0,0,0.35)",
@@ -3264,7 +3318,7 @@ function GroupRankingScreen({ group, teams, existingRanking, onConfirm, onBack, 
                     </div>
                   </div>
                   {/* Drag handle = — touch to reorder */}
-                  <div
+                  {!viewMode && <div
                     onTouchStart={e=>{ e.stopPropagation(); handleTouchStart(e, idx); }}
                     onTouchMove={e=>{ e.stopPropagation(); handleTouchMove(e); }}
                     onTouchEnd={e=>{ e.stopPropagation(); handleTouchEnd(); }}
@@ -3275,7 +3329,7 @@ function GroupRankingScreen({ group, teams, existingRanking, onConfirm, onBack, 
                     }}>
                     <div style={{width:22, height:2.5, background:"#999", borderRadius:2}}/>
                     <div style={{width:22, height:2.5, background:"#999", borderRadius:2}}/>
-                  </div>
+                  </div>}
                 </>
               ) : (
                 <div style={{flex:1, display:"flex", alignItems:"center"}}>
@@ -3292,10 +3346,11 @@ function GroupRankingScreen({ group, teams, existingRanking, onConfirm, onBack, 
       {/* ── BOTTOM ACTIONS ── */}
       <div style={{background:"#fff", padding:"10px 14px 22px",
         borderTop:"1px solid rgba(0,0,0,0.07)",
-        display:"flex", flexDirection:"column", gap:8}}>
+        display:"flex", flexDirection:"column", gap:8,
+        position:"relative", zIndex:1}}>
 
         {/* Reset / Auto-pick row */}
-        <div style={{display:"flex", justifyContent:"space-between"}}>
+        {!viewMode && <div style={{display:"flex", justifyContent:"space-between"}}>
           <button onClick={autoPickRanking} style={{
             background:"rgba(0,0,0,0.04)", border:"1px solid rgba(0,0,0,0.08)",
             borderRadius:10, padding:"7px 14px",
@@ -3306,24 +3361,27 @@ function GroupRankingScreen({ group, teams, existingRanking, onConfirm, onBack, 
             borderRadius:10, padding:"7px 14px",
             color:"rgba(0,0,0,0.45)", fontSize:12, cursor:"pointer", fontWeight:700,
           }}>↺ Reset</button>
-        </div>
+        </div>}
 
-        {/* Confirm */}
-        <button onClick={() => isComplete && onConfirm(ranking)} disabled={!isComplete}
+        {/* Confirm / Next */}
+        <button onClick={() => (viewMode || isComplete) && onConfirm(ranking)}
+          disabled={!viewMode && !isComplete}
           style={{
             width:"100%", padding:"14px 0", borderRadius:14, border:"none",
-            background: isComplete
+            background: (viewMode || isComplete)
               ? `linear-gradient(135deg, ${NAVY}, #003580)`
               : "rgba(0,0,0,0.06)",
-            color: isComplete ? "#fff" : "rgba(0,0,0,0.2)",
+            color: (viewMode || isComplete) ? "#fff" : "rgba(0,0,0,0.2)",
             fontSize:15, fontWeight:900, letterSpacing:1,
-            cursor: isComplete ? "pointer" : "default",
+            cursor: (viewMode || isComplete) ? "pointer" : "default",
             transition:"all 0.2s",
-            boxShadow: isComplete ? `0 4px 20px rgba(0,32,91,0.35)` : "none",
+            boxShadow: (viewMode || isComplete) ? `0 4px 20px rgba(0,32,91,0.35)` : "none",
           }}>
-          {isComplete
-            ? groupIdx < totalGroups-1 ? `CONFIRM & NEXT GROUP →` : `CONFIRM ALL GROUPS ✓`
-            : `SELECT ALL 4 TEAMS`}
+          {viewMode
+            ? groupIdx < totalGroups-1 ? `NEXT GROUP →` : `NEXT: BEST THIRD →`
+            : isComplete
+              ? groupIdx < totalGroups-1 ? `CONFIRM & NEXT GROUP →` : `CONFIRM ALL GROUPS ✓`
+              : `SELECT ALL 4 TEAMS`}
         </button>
       </div>
     </div>
@@ -3393,8 +3451,8 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
   const meInTop3 = top3.some(u=>u.isMe);
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",position:"relative"}}>
-      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"85%",left:"-30%",top:"20%",objectFit:"cover",objectPosition:"center 20%",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
-      <div style={{background:`linear-gradient(135deg,${NAVY},#001840)`,padding:"10px 20px 12px",flexShrink:0,position:"relative",zIndex:1}}>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:0,objectFit:"cover",objectPosition:"center 20%",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
+      <div style={{background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"10px 20px 12px",flexShrink:0,position:"relative",zIndex:1}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16}}>
           <div>
             <p style={{fontSize:11,color:RED,margin:"0 0 2px",letterSpacing:2,textTransform:"uppercase",fontWeight:800}}>FIFA - WORLD CUP 2026</p>
@@ -3416,7 +3474,7 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
         {/* User stats card */}
         <div style={{background:"#fff",borderRadius:16,boxShadow:SHADOW_OUT,padding:"10px 14px",marginBottom:10}}>
           <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:10}}>
-            <div style={{width:48,height:48,borderRadius:"50%",background:`linear-gradient(135deg,${NAVY},#001840)`,
+            <div style={{width:48,height:48,borderRadius:"50%",background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,
               display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:18,fontWeight:800}}>
               AI
             </div>
@@ -3474,9 +3532,9 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
             const deadlinePassed = simDay ? (simDay > 11 || (simDay === 11 && (simHour||0) >= 19)) : false;
             const isLocked = deadlinePassed && !boardDone;
             return (
-              <div onClick={()=>!deadlinePassed&&onPredict(activeId)}
+              <div onClick={()=>(!deadlinePassed||boardDone)&&onPredict(activeId)}
                 style={{flex:1,background:"#fff",borderRadius:14,boxShadow:SHADOW_OUT,
-                  padding:"10px 12px",cursor:deadlinePassed?"default":"pointer",position:"relative",
+                  padding:"10px 12px",cursor:(deadlinePassed&&!boardDone)?"default":"pointer",position:"relative",
                   opacity:isLocked?0.6:1,
                   ...(showFirstAction&&!boardDone&&!deadlinePassed?{animation:"pulse 1.5s ease-in-out 3"}:{})}}>
                 {!boardDone&&!deadlinePassed&&(
@@ -3746,8 +3804,8 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
 
   if(view==="create") return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,position:"relative",overflow:"hidden"}}>
-      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"85%",left:"-30%",top:"20%",objectFit:"cover",objectPosition:"center 20%",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
-      <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY},#001840)`,padding:"16px 20px 22px",flexShrink:0}}>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:0,objectFit:"cover",objectPosition:"center 20%",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
+      <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"16px 20px 22px",flexShrink:0}}>
         <div style={{display:"flex",alignItems:"center",gap:14}}>
           <div onClick={()=>setView("main")} style={{width:36,height:36,borderRadius:10,background:"rgba(255,255,255,0.12)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:"#fff"}}>&#8249;</div>
           <div>
@@ -3763,7 +3821,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
           {/* Avatar emoji picker */}
           <div onClick={()=>setShowEmojiPicker(p=>!p)}
             style={{width:52,height:52,borderRadius:14,flexShrink:0,cursor:"pointer",
-              background:cEmoji?BG:`linear-gradient(135deg,${NAVY},#001840)`,
+              background:cEmoji?BG:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,
               boxShadow:SHADOW_OUT,display:"flex",alignItems:"center",justifyContent:"center",
               border:showEmojiPicker?`2px solid ${NAVY}`:"2px solid transparent"}}>
             {cEmoji
@@ -3815,7 +3873,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
           {[5,10,15,20,50].map(n=>(
             <button key={n} onClick={()=>setCMaxPlayers(n)}
               style={{flex:1,padding:"8px 0",borderRadius:10,border:"none",cursor:"pointer",
-                background:cMaxPlayers===n?`linear-gradient(135deg,${NAVY},#001840)`:BG,
+                background:cMaxPlayers===n?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:BG,
                 color:cMaxPlayers===n?"#fff":DARK,fontWeight:700,fontSize:12,
                 boxShadow:cMaxPlayers===n?"0 3px 10px rgba(0,32,91,0.3)":SHADOW_OUT}}>
               {n}
@@ -3829,7 +3887,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
           {[1,2,3,4,5].map(n=>(
             <button key={n} onClick={()=>{ setCSlots(n); setCPrizes(p=>{const a=[...p];while(a.length<n)a.push("");return a;}); }}
               style={{flex:1,padding:"8px 0",borderRadius:10,border:"none",cursor:"pointer",
-                background:cSlots===n?`linear-gradient(135deg,${NAVY},#001840)`:BG,
+                background:cSlots===n?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:BG,
                 color:cSlots===n?"#fff":DARK,fontWeight:700,fontSize:13,
                 boxShadow:cSlots===n?"0 3px 10px rgba(0,32,91,0.3)":SHADOW_OUT}}>
               {n}
@@ -3891,7 +3949,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
 
         <button onClick={handleCreate}
           style={{width:"100%",marginTop:16,padding:"15px 0",borderRadius:14,border:"none",
-            background:cName.trim()?`linear-gradient(135deg,${NAVY},#001840)`:"#e0e0e0",
+            background:cName.trim()?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:"#e0e0e0",
             color:cName.trim()?"#fff":"#bbb",fontSize:15,fontWeight:800,cursor:cName.trim()?"pointer":"default",
             boxShadow:cName.trim()?"0 6px 20px rgba(0,32,91,0.3)":"none"}}>
           {editBoard ? "Save Changes ✓" : "Create Board 🏆"}
@@ -3902,8 +3960,8 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
 
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:"transparent",position:"relative",overflow:"hidden"}}>
-      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"85%",left:"-30%",top:"20%",objectFit:"cover",objectPosition:"center 20%",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
-      <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY},#001840)`,padding:"16px 20px 22px",flexShrink:0}}>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:0,objectFit:"cover",objectPosition:"center 20%",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
+      <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"16px 20px 22px",flexShrink:0}}>
         <div style={{display:"flex",alignItems:"center",gap:14}}>
           <div onClick={onBack} style={{width:36,height:36,borderRadius:10,background:"rgba(255,255,255,0.12)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:"#fff"}}>&#8249;</div>
           <div style={{flex:1}}>
@@ -3948,7 +4006,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
                   setJoinError("Incorrect password. Try again.");
                 }
               }}
-                style={{flex:2,padding:"13px 0",borderRadius:12,border:"none",background:`linear-gradient(135deg,${NAVY},#001840)`,color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer"}}>
+                style={{flex:2,padding:"13px 0",borderRadius:12,border:"none",background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer"}}>
                 Join 🏆
               </button>
             </div>
@@ -4050,7 +4108,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
               style={{background:"#fff",borderRadius:14,boxShadow:"0 2px 12px rgba(0,0,0,0.10)",padding:"12px 14px",marginBottom:9,cursor:"pointer"}}>
               <div style={{display:"flex",alignItems:"center",gap:12}}>
                 <div style={{width:44,height:44,borderRadius:"50%",
-                  background:b.isGlobal?`linear-gradient(135deg,${NAVY},#001840)`:`linear-gradient(135deg,#5856D6,#3634A3)`,
+                  background:b.isGlobal?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:`linear-gradient(135deg,#5856D6,#3634A3)`,
                   display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>{latest.label}</div>
                 <div style={{flex:1}}>
                   <p style={{fontSize:13,fontWeight:700,color:DARK,margin:0}}>{latest.name}</p>
@@ -4096,7 +4154,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
                   const found=[...availBoards,...createdBoards].find(b=>b.code===boardSearch.trim().toUpperCase()||b.id===boardSearch.trim());
                   if(found){joinBoard(found);setBoardSearch("");setCodeError("");}
                   else setCodeError("Code not found. Check with the admin.");
-                }} style={{background:`linear-gradient(135deg,${NAVY},#001840)`,color:"#fff",border:"none",
+                }} style={{background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,color:"#fff",border:"none",
                   borderRadius:8,padding:"6px 12px",fontSize:12,fontWeight:700,cursor:"pointer"}}>Join</button>
               ):(
                 <span onClick={()=>setBoardSearch("")} style={{fontSize:13,color:"#bbb",cursor:"pointer"}}>✕</span>
@@ -4116,13 +4174,13 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
             return (
             <div key={b.id} style={{padding:"12px 14px",borderTop:bi>0?"1px solid rgba(0,0,0,0.05)":"none"}}>
               <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:hasPrizes?10:0}}>
-                <div style={{width:44,height:44,borderRadius:"50%",background:`linear-gradient(135deg,${NAVY},#001840)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>{b.label}</div>
+                <div style={{width:44,height:44,borderRadius:"50%",background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>{b.label}</div>
                 <div style={{flex:1,minWidth:0}}>
                   <p style={{fontSize:13,fontWeight:700,color:DARK,margin:0}}>{b.name}</p>
                   <p style={{fontSize:11,color:"#aaa",margin:"2px 0 0"}}>👥 {b.members}{b.max?"/"+b.max:""} members{b.password?" · 🔒":""}</p>
                 </div>
                 <button onClick={()=>joinBoard(b)}
-                  style={{background:`linear-gradient(135deg,${NAVY},#001840)`,color:"#fff",border:"none",
+                  style={{background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,color:"#fff",border:"none",
                     borderRadius:9,padding:"7px 14px",fontSize:12,fontWeight:700,cursor:"pointer",flexShrink:0}}>
                   Join
                 </button>
@@ -4176,7 +4234,7 @@ function Footer({ active, onNavigate, lang }) {
               display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4,padding:0}}>
             <div style={{
               width:36,height:36,borderRadius:12,
-              background:isActive?`linear-gradient(135deg,${NAVY},#001840)`:BG,
+              background:isActive?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:BG,
               boxShadow:isActive?"0 4px 12px rgba(0,32,91,0.3)":SHADOW_OUT,
               display:"flex",alignItems:"center",justifyContent:"center",
               fontSize:18,transition:"all 0.2s"}}>
@@ -4213,7 +4271,7 @@ function LangSelector({ lang, setLang }) {
   );
 }
 
-function DevPanel({ onStart }) {
+function DevPanel({ onStart, onAutoPick }) {
   const [simDay, setSimDay] = useState(11);
   const [simHour, setSimHour] = useState(12);
   const [simMin, setSimMin] = useState(0);
@@ -4297,7 +4355,26 @@ function DevPanel({ onStart }) {
         </p>
       </div>
 
-      <div style={{padding:"0 24px 40px"}}>
+      <div style={{padding:"0 24px 40px",display:"flex",flexDirection:"column",gap:12}}>
+        <button onClick={()=>{
+          const rnd=()=>Math.random()<0.5?"home":"away";
+          const shuffle=arr=>{const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+          const GROUPS=INTERACTIVE_GROUPS;
+          const groupRankings={};
+          GROUPS.forEach(g=>{groupRankings[g]=shuffle(ALL_GROUPS_DATA[g]);});
+          const best3=GROUPS.map(g=>groupRankings[g][2]).slice(0,8);
+          const koPicks={};
+          for(let i=0;i<16;i++) koPicks[`R32-${i}`]=rnd();
+          for(let i=0;i<8;i++) koPicks[`R16-${i}`]=rnd();
+          for(let i=0;i<4;i++) koPicks[`QF-${i}`]=rnd();
+          for(let i=0;i<2;i++) koPicks[`SF-${i}`]=rnd();
+          koPicks["F-0"]=rnd();
+          onAutoPick&&onAutoPick({stage:"ko",groupIdx:GROUPS.length-1,showIntro:false,groupRankings,best3,koIdx:0,koPicks,koShowIntro:false,koRound:"F",showFinalSummary:true});
+        }} style={{width:"100%",padding:"14px 0",borderRadius:16,border:"1px solid rgba(255,255,255,0.15)",
+          background:"rgba(255,255,255,0.08)",
+          color:"rgba(255,255,255,0.85)",fontSize:14,fontWeight:800,cursor:"pointer"}}>
+          🎲 Auto-Pick Predictions
+        </button>
         <button onClick={()=>onStart(simDay, simHour, simMin, simStarted)}
           style={{width:"100%",padding:"16px 0",borderRadius:16,border:"none",
             background:"linear-gradient(135deg,#C8102E,#EF3340 40%,#009A44)",
@@ -4517,13 +4594,14 @@ function OnboardingSheet({ onDone }) {
 
 function LoginScreen({ onNext }) {
   return (
-    <div style={{flex:1,display:"flex",flexDirection:"column",background:BG}}>
-      <div style={{background:`linear-gradient(135deg,${NAVY},#001840)`,padding:"40px 28px 36px",display:"flex",flexDirection:"column",alignItems:"center"}}>
+    <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,position:"relative",overflow:"hidden"}}>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:0,objectFit:"cover",objectPosition:"center 20%",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
+      <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"40px 28px 36px",display:"flex",flexDirection:"column",alignItems:"center"}}>
         <div style={{width:72,height:72,borderRadius:22,background:"rgba(255,255,255,0.12)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:36,marginBottom:16}}>🏆</div>
         <p style={{fontSize:12,color:RED,margin:"0 0 4px",letterSpacing:3,textTransform:"uppercase",fontWeight:800}}>WORLD CUP 2026</p>
         <h2 style={{fontSize:24,fontWeight:800,color:"#fff",margin:"0 0 6px",textAlign:"center"}}>Join the Game</h2>
       </div>
-      <div style={{flex:1,padding:"28px 24px 36px",display:"flex",flexDirection:"column"}}>
+      <div style={{flex:1,padding:"28px 24px 36px",display:"flex",flexDirection:"column",position:"relative",zIndex:1}}>
         {[{icon:"G",label:"Continue with Google",bg:BG,color:DARK,shadow:SHADOW_OUT},{icon:"f",label:"Continue with Facebook",bg:"#1877F2",color:"#fff",shadow:"0 4px 14px rgba(24,119,242,0.4)"},{icon:"📷",label:"Continue with Instagram",bg:"#E1306C",color:"#fff",shadow:"0 4px 14px rgba(225,48,108,0.4)"}].map(({icon,label,bg,color,shadow})=>(
           <button key={label} onClick={onNext} style={{width:"100%",background:bg,color,border:"none",borderRadius:14,padding:"14px 20px",fontSize:15,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",gap:12,boxShadow:shadow,marginBottom:10}}>
             <span style={{fontSize:18,width:24,textAlign:"center"}}>{icon}</span>{label}
@@ -4543,8 +4621,9 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
   const me = leaders.find(u=>u.isMe);
 
   return (
-    <div style={{flex:1,display:"flex",flexDirection:"column",background:BG}}>
-      <div style={{background:`linear-gradient(135deg,${NAVY},#001840)`,padding:"10px 20px 14px",flexShrink:0}}>
+    <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,position:"relative",overflow:"hidden"}}>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:0,objectFit:"cover",objectPosition:"center 20%",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
+      <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"10px 20px 14px",flexShrink:0}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:myBoards.length>1?12:0}}>
           <div onClick={onBack} style={{width:36,height:36,borderRadius:10,background:"rgba(255,255,255,0.12)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:"#fff"}}>&#8249;</div>
           <div style={{textAlign:"center"}}>
@@ -4645,25 +4724,26 @@ function FastPredictionScreen({ onHome }) {
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,alignItems:"center",justifyContent:"center",padding:"0 28px"}}>
       <div style={{width:80,height:80,borderRadius:24,background:`linear-gradient(135deg,${GREEN},#007A36)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:38,marginBottom:22}}>⚡</div>
       <h2 style={{fontSize:26,fontWeight:800,color:DARK,margin:"0 0 20px"}}>All done!</h2>
-      <button onClick={onHome} style={{width:"100%",background:`linear-gradient(135deg,${NAVY},#001840)`,color:"#fff",border:"none",borderRadius:16,padding:"16px 0",fontSize:16,fontWeight:700,cursor:"pointer"}}>Back to Home</button>
+      <button onClick={onHome} style={{width:"100%",background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,color:"#fff",border:"none",borderRadius:16,padding:"16px 0",fontSize:16,fontWeight:700,cursor:"pointer"}}>Back to Home</button>
     </div>
   );
   const card=cards[idx];
   return (
-    <div style={{flex:1,display:"flex",flexDirection:"column",background:BG}}>
-      <div style={{background:`linear-gradient(135deg,${NAVY},#001840)`,padding:"16px 20px 20px",textAlign:"center"}}>
+    <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,position:"relative",overflow:"hidden"}}>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:0,objectFit:"cover",objectPosition:"center 20%",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
+      <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"16px 20px 20px",textAlign:"center"}}>
         <p style={{fontSize:12,color:RED,margin:0,letterSpacing:2,textTransform:"uppercase",fontWeight:800}}>FLASH PICK ⚡</p>
         <span style={{fontSize:16,fontWeight:800,color:"#fff"}}>⚡ Today's Matches</span>
       </div>
       <p style={{textAlign:"center",fontSize:13,color:"#aaa",margin:"16px 0 14px"}}>Tap to predict the winner</p>
       <div style={{margin:"0 20px 20px",background:BG,borderRadius:24,boxShadow:chosen?SHADOW_IN:SHADOW_OUT,padding:"36px 16px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
         <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:8}}><span style={{fontSize:62}}>{card.homeFlag}</span><span style={{fontSize:15,fontWeight:700,color:DARK}}>{card.home}</span></div>
-        <div style={{background:`linear-gradient(135deg,${NAVY},#001840)`,borderRadius:12,padding:"8px 12px"}}><span style={{fontSize:12,fontWeight:800,color:"#fff",letterSpacing:2}}>VS</span></div>
+        <div style={{background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,borderRadius:12,padding:"8px 12px"}}><span style={{fontSize:12,fontWeight:800,color:"#fff",letterSpacing:2}}>VS</span></div>
         <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:8}}><span style={{fontSize:62}}>{card.awayFlag}</span><span style={{fontSize:15,fontWeight:700,color:DARK}}>{card.away}</span></div>
       </div>
       <div style={{display:"flex",gap:10,margin:"0 20px"}}>
         {[card.home,"Draw",card.away].map((opt,i)=>(
-          <button key={opt} onClick={()=>pick(opt)} style={{flex:i===1?0.7:1,background:chosen===opt?`linear-gradient(135deg,${NAVY},#001840)`:BG,color:chosen===opt?"#fff":DARK,border:"none",borderRadius:14,padding:"14px 0",fontSize:13,fontWeight:700,cursor:"pointer",boxShadow:chosen===opt?"0 4px 12px rgba(0,32,91,0.3)":SHADOW_OUT}}>
+          <button key={opt} onClick={()=>pick(opt)} style={{flex:i===1?0.7:1,background:chosen===opt?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:BG,color:chosen===opt?"#fff":DARK,border:"none",borderRadius:14,padding:"14px 0",fontSize:13,fontWeight:700,cursor:"pointer",boxShadow:chosen===opt?"0 4px 12px rgba(0,32,91,0.3)":SHADOW_OUT}}>
             {i===0?"← "+opt:i===2?opt+" →":opt}
           </button>
         ))}
@@ -4686,8 +4766,9 @@ function ScorePicker({ match, day, savedScore, onSave, onBack }) {
   const confirmed = home!==null && away!==null;
 
   return (
-    <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden"}}>
-      <div style={{background:`linear-gradient(135deg,${NAVY},#001840)`,padding:"14px 20px 16px",flexShrink:0}}>
+    <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",position:"relative"}}>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:0,objectFit:"cover",objectPosition:"center 20%",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
+      <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"14px 20px 16px",flexShrink:0}}>
         <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:12}}>
           <div onClick={onBack} style={{width:36,height:36,borderRadius:10,background:"rgba(255,255,255,0.12)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:"#fff"}}>&#8249;</div>
           <div>
@@ -4721,7 +4802,7 @@ function ScorePicker({ match, day, savedScore, onSave, onBack }) {
             return (
               <button key={`${h}-${a}`} onClick={()=>select(h,a)}
                 style={{padding:"10px 4px",borderRadius:10,border:"none",cursor:"pointer",
-                  background:sel?`linear-gradient(135deg,${NAVY},#001840)`:BG,
+                  background:sel?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:BG,
                   color:sel?"#fff":DARK,
                   boxShadow:sel?"0 3px 10px rgba(0,32,91,0.3)":SHADOW_OUT,
                   fontSize:14,fontWeight:sel?800:500,transition:"all 0.15s"}}>
@@ -4752,7 +4833,7 @@ function ScorePicker({ match, day, savedScore, onSave, onBack }) {
           </button>
           <button onClick={()=>confirmed&&onSave(home,away)}
             style={{flex:1,padding:"12px 0",borderRadius:12,border:"none",
-              background:confirmed?`linear-gradient(135deg,${NAVY},#001840)`:"#e8e8e8",
+              background:confirmed?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:"#e8e8e8",
               color:confirmed?"#fff":"#bbb",fontSize:12,fontWeight:700,
               cursor:confirmed?"pointer":"default",
               boxShadow:confirmed?"0 4px 12px rgba(0,32,91,0.3)":"none"}}>
@@ -4923,8 +5004,8 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
 
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",position:"relative"}}>
-      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"85%",left:"-30%",top:"20%",objectFit:"cover",objectPosition:"center 20%",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
-      <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY},#001840)`,padding:"14px 20px 16px",flexShrink:0,overflow:"hidden"}}>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:0,objectFit:"cover",objectPosition:"center 20%",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
+      <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"14px 20px 16px",flexShrink:0,overflow:"hidden"}}>
         <img src={varBg} alt="" style={{
           position:"absolute",inset:0,width:"100%",height:"100%",
           objectFit:"cover",objectPosition:"center 30%",
@@ -4975,8 +5056,8 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
                     </p>
                     {hasReal&&(
                       <div style={{display:"flex",background:BG,borderRadius:20,boxShadow:SHADOW_OUT,padding:"2px"}}>
-                        <button onClick={()=>setShowReal(true)} style={{padding:"4px 10px",borderRadius:18,border:"none",cursor:"pointer",fontSize:12,fontWeight:700,background:showReal?`linear-gradient(135deg,${NAVY},#001840)`:"transparent",color:showReal?"#fff":"#aaa"}}>Real</button>
-                        <button onClick={()=>setShowReal(false)} style={{padding:"4px 10px",borderRadius:18,border:"none",cursor:"pointer",fontSize:12,fontWeight:700,background:!showReal?`linear-gradient(135deg,${NAVY},#001840)`:"transparent",color:!showReal?"#fff":"#aaa"}}>Prezis</button>
+                        <button onClick={()=>setShowReal(true)} style={{padding:"4px 10px",borderRadius:18,border:"none",cursor:"pointer",fontSize:12,fontWeight:700,background:showReal?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:"transparent",color:showReal?"#fff":"#aaa"}}>Real</button>
+                        <button onClick={()=>setShowReal(false)} style={{padding:"4px 10px",borderRadius:18,border:"none",cursor:"pointer",fontSize:12,fontWeight:700,background:!showReal?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:"transparent",color:!showReal?"#fff":"#aaa"}}>Prezis</button>
                       </div>
                     )}
                   </div>
@@ -5078,7 +5159,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
                           const canPredict = !isLive && !isFinished && !isPast && isWeekUnlocked(m.day, simDay, simHour, simMin);
                           const scoreDisplay = isLive ? (hasLive?`${live.home}-${live.away}`:"0-0") : hasLive ? `${live.home}-${live.away}` : "-";
                           const predBox = (isPast||isLive||isFinished) ? (sc ? (
-                            <div style={{background:exactMatch?`linear-gradient(135deg,${GREEN},#007A36)`:resultMatch?`linear-gradient(135deg,${NAVY},#001840)`:`linear-gradient(135deg,${RED},#EF3340)`,
+                            <div style={{background:exactMatch?`linear-gradient(135deg,${GREEN},#007A36)`:resultMatch?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:`linear-gradient(135deg,${RED},#EF3340)`,
                               borderRadius:6,padding:"3px 8px",display:"flex",alignItems:"center",gap:3}}>
                               <span style={{fontSize:11,fontWeight:900,color:"#fff"}}>{sc[0]}-{sc[1]}</span>
                               {isFinished&&(exactMatch?<span style={{fontSize:11}}>🎯</span>:resultMatch?<span style={{fontSize:11}}>✓</span>:<span style={{fontSize:11}}>✗</span>)}
@@ -5100,7 +5181,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
                           return (
                             <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,minWidth:70}}>
                               {/* Real score */}
-                              <div style={{background:isLive||isFinished?`linear-gradient(135deg,${NAVY},#001840)`:"rgba(0,0,0,0.06)",
+                              <div style={{background:isLive||isFinished?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:"rgba(0,0,0,0.06)",
                                 borderRadius:8,padding:"5px 12px",width:"100%",textAlign:"center"}}>
                                 <span style={{fontSize:14,fontWeight:900,color:isLive||hasLive?"#fff":"#bbb"}}>{scoreDisplay}</span>
                               </div>
@@ -5312,11 +5393,19 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
         <div style={{marginTop:10}}>
           {(()=>{
             const groups = [...new Set(sm.map(m=>m.group))].filter(Boolean);
-            const activeGrp = selGroup || groups[0];
+            const LETTER_GROUPS = ["A","B","C","D","E","F","G","H","I","J","K","L"];
+            const KO_STAGES = ["R16","QF","SF","3rd","Final"];
+            const hasGroupMatches = groups.some(g=>LETTER_GROUPS.includes(g));
+            const activeGrp = selGroup || (hasGroupMatches ? groups.find(g=>LETTER_GROUPS.includes(g)) : groups.find(g=>KO_STAGES.includes(g))) || groups[0] || "A";
+            const activeStage = LETTER_GROUPS.includes(activeGrp) ? "Groups" : (KO_STAGES.includes(activeGrp) ? activeGrp : (hasGroupMatches ? "Groups" : "R16"));
+            const handleStageClick = (stage) => {
+              if(stage==="Groups") setSelGroup(groups.find(g=>LETTER_GROUPS.includes(g))||"A");
+              else setSelGroup(stage);
+            };
             return (
               <div style={{background:BG,borderRadius:14,boxShadow:SHADOW_OUT,overflow:"hidden"}}>
                 {/* Header */}
-                <div style={{background:`linear-gradient(135deg,${NAVY},#001840)`,padding:"8px 14px 0"}}>
+                <div style={{background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"8px 14px 0"}}>
                   <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
                     <span style={{fontSize:12,fontWeight:800,color:"#fff"}}>{sel>30?sel-30:sel} {sel>30?"July":"June"} · {sm.length} matches</span>
                     <div style={{display:"flex",background:"rgba(255,255,255,0.12)",borderRadius:20,padding:"2px",gap:0}}>
@@ -5336,68 +5425,70 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                   </div>
                   <div style={{height:1,background:"rgba(255,255,255,0.2)",marginTop:4}}/>
                   {showStanding && <>
-                    {/* Groups + KO stages slider */}
-                    <div ref={el=>{
-                      if(el && ["R16","QF","SF","3rd","Final"].includes(activeGrp)){
-                        // Scroll to end where KO tabs are
-                        setTimeout(()=>{ el.scrollLeft = el.scrollWidth; }, 50);
-                      }
-                    }} style={{display:"flex",gap:6,overflowX:"auto",scrollbarWidth:"none",padding:"10px 0"}}>
-                      {/* Group stage tabs A-L */}
-                      {["A","B","C","D","E","F","G","H","I","J","K","L"].map(g=>{
-                        const hasMatchToday = groups.includes(g);
-                        const isActive = activeGrp===g;
+                    {/* Nivel 1: etape campionat */}
+                    <div style={{display:"flex",gap:5,padding:"10px 0 6px",alignItems:"center"}}>
+                      {/* Groups tab */}
+                      {(()=>{
+                        const isActive = activeStage==="Groups";
                         return (
-                          <div key={g} onClick={()=>setSelGroup(g)}
-                            style={{flexShrink:0,display:"flex",flexDirection:"column",alignItems:"center",gap:3,cursor:"pointer"}}>
-                            <div style={{
-                              width:isActive?42:36, height:isActive?42:36,
-                              borderRadius:"50%",
-                              background:isActive?"rgba(255,255,255,0.95)":hasMatchToday?"rgba(255,255,255,0.18)":"rgba(255,255,255,0.07)",
-                              border:isActive?"3px solid #fff":"none",
-                              display:"flex",alignItems:"center",justifyContent:"center",
-                              fontSize:isActive?14:12,fontWeight:800,
-                              color:isActive?NAVY:"#fff",
-                              boxShadow:isActive?"0 4px 14px rgba(0,0,0,0.25)":"none",
-                              transition:"all 0.2s",position:"relative"}}>
-                              {g}
-                              {hasMatchToday&&<div style={{position:"absolute",bottom:2,left:"50%",transform:"translateX(-50%)",width:5,height:5,borderRadius:"50%",background:`linear-gradient(135deg,${RED},${GREEN})`}}/>}
-                            </div>
+                          <div onClick={()=>handleStageClick("Groups")} style={{
+                            flexShrink:0, height:34, borderRadius:9, padding:"0 14px",
+                            background:isActive?"#fff":hasGroupMatches?"rgba(255,255,255,0.28)":"rgba(255,255,255,0.1)",
+                            display:"flex",alignItems:"center",justifyContent:"center",
+                            fontSize:13, fontWeight:900,
+                            color:isActive?NAVY:"rgba(255,255,255,0.75)",
+                            cursor:"pointer", position:"relative",
+                            boxShadow:isActive?"0 2px 10px rgba(0,0,0,0.3)":"none",
+                            transition:"all 0.22s",
+                          }}>
+                            Grupe
                           </div>
                         );
-                      })}
-                      {/* Divider */}
-                      <div style={{width:1,background:"rgba(255,255,255,0.2)",margin:"8px 2px",flexShrink:0}}/>
+                      })()}
                       {/* KO stage tabs */}
-                      {[
-                        {id:"R16", label:"R16", icon:"⚡"},
-                        {id:"QF",  label:"QF",  icon:"🏅"},
-                        {id:"SF",  label:"SF",  icon:"🥈"},
-                        {id:"3rd", label:"3rd", icon:"🥉"},
-                        {id:"Final",label:"🏆", icon:"🏆"},
-                      ].map(s=>{
-                        const isActive = activeGrp===s.id;
+                      {[{id:"R16",label:"R16"},{id:"QF",label:"QF"},{id:"SF",label:"SF"},{id:"3rd",label:"3rd"},{id:"Final",label:"🏆"}].map(s=>{
+                        const isActive = activeStage===s.id;
                         const hasMatchToday = groups.includes(s.id);
                         return (
-                          <div key={s.id} onClick={()=>setSelGroup(s.id)}
-                            style={{flexShrink:0,display:"flex",flexDirection:"column",alignItems:"center",gap:3,cursor:"pointer"}}>
-                            <div style={{
-                              width:isActive?42:36, height:isActive?42:36,
-                              borderRadius:"50%",
-                              background:isActive?"rgba(255,255,255,0.95)":hasMatchToday?"rgba(255,255,255,0.25)":"rgba(255,255,255,0.07)",
-                              border:isActive?"3px solid #fff":hasMatchToday?"1.5px solid rgba(255,255,255,0.4)":"none",
-                              display:"flex",alignItems:"center",justifyContent:"center",
-                              fontSize:isActive?12:10,fontWeight:800,
-                              color:isActive?NAVY:"#fff",
-                              boxShadow:isActive?"0 4px 14px rgba(0,0,0,0.25)":"none",
-                              transition:"all 0.2s",position:"relative"}}>
-                              {s.label}
-                              {hasMatchToday&&<div style={{position:"absolute",bottom:2,left:"50%",transform:"translateX(-50%)",width:5,height:5,borderRadius:"50%",background:`linear-gradient(135deg,${RED},${GREEN})`}}/>}
-                            </div>
+                          <div key={s.id} onClick={()=>handleStageClick(s.id)} style={{
+                            flexShrink:0, width:44, height:34, borderRadius:9,
+                            background:isActive?"#fff":hasMatchToday?"rgba(255,255,255,0.28)":"rgba(255,255,255,0.1)",
+                            display:"flex",alignItems:"center",justifyContent:"center",
+                            fontSize:isActive?13:11, fontWeight:900,
+                            color:isActive?NAVY:"rgba(255,255,255,0.75)",
+                            cursor:"pointer",
+                            boxShadow:isActive?"0 2px 10px rgba(0,0,0,0.3)":"none",
+                            transition:"all 0.22s",
+                          }}>
+                            {s.label}
                           </div>
                         );
                       })}
                     </div>
+                    {/* Nivel 2: slider grupe A-L (doar când e selectat Groups) */}
+                    {activeStage==="Groups" && (
+                      <div style={{display:"flex",gap:5,overflowX:"auto",scrollbarWidth:"none",padding:"0 0 10px",alignItems:"center"}}>
+                        {LETTER_GROUPS.map(g=>{
+                          const hasMatchToday = groups.includes(g);
+                          const isActive = activeGrp===g;
+                          return (
+                            <div key={g} onClick={()=>setSelGroup(g)} style={{
+                              flexShrink:0, width:38, height:34, borderRadius:9,
+                              background:isActive?"#fff":hasMatchToday?"rgba(255,255,255,0.28)":"rgba(255,255,255,0.1)",
+                              display:"flex",alignItems:"center",justifyContent:"center",
+                              fontSize:isActive?15:12, fontWeight:900,
+                              color:isActive?NAVY:"rgba(255,255,255,0.75)",
+                              cursor:"pointer", position:"relative",
+                              boxShadow:isActive?"0 2px 10px rgba(0,0,0,0.3)":"none",
+                              transition:"all 0.22s",
+                            }}>
+                              {g}
+                              {hasMatchToday&&<div style={{position:"absolute",bottom:2,left:"50%",transform:"translateX(-50%)",width:5,height:5,borderRadius:"50%",background:isActive?NAVY:"rgba(255,255,255,0.5)"}}/>}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                     <div style={{height:1,background:"rgba(255,255,255,0.15)"}}/>
                   </>}
                 </div>
@@ -5553,7 +5644,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                                       <span style={{fontSize:18}}>{m.homeFlag}</span>
                                       <span style={{flex:1,fontSize:12,fontWeight:600,color:isPastM?"#bbb":DARK}}>{m.home.length>7?m.home.split(" ")[0]:m.home}</span>
                                       <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,minWidth:54}}>
-                                        <div style={{background:liveScore2?`linear-gradient(135deg,${NAVY},#001840)`:"rgba(0,0,0,0.07)",borderRadius:6,padding:"3px 8px",textAlign:"center"}}>
+                                        <div style={{background:liveScore2?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:"rgba(0,0,0,0.07)",borderRadius:6,padding:"3px 8px",textAlign:"center"}}>
                                           <span style={{fontSize:12,fontWeight:900,color:liveScore2?"#fff":"#bbb"}}>{liveScore2?`${liveScore2.home}-${liveScore2.away}`:"-"}</span>
                                         </div>
                                         {sc2?(
@@ -5614,8 +5705,8 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                       return (<>
                         <div style={{display:"flex",justifyContent:"flex-end",marginBottom:8}}>
                           <div style={{display:"flex",background:BG,borderRadius:8,boxShadow:SHADOW_IN,padding:2,gap:2}}>
-                            <button onClick={()=>setShowReal(true)} style={{padding:"3px 10px",borderRadius:6,border:"none",fontSize:12,fontWeight:700,cursor:"pointer",background:showReal?`linear-gradient(135deg,${NAVY},#001840)`:BG,color:showReal?"#fff":"#888"}}>Real</button>
-                            <button onClick={()=>setShowReal(false)} style={{padding:"3px 10px",borderRadius:6,border:"none",fontSize:12,fontWeight:700,cursor:"pointer",background:!showReal?`linear-gradient(135deg,${NAVY},#001840)`:BG,color:!showReal?"#fff":"#888"}}>Prezis</button>
+                            <button onClick={()=>setShowReal(true)} style={{padding:"3px 10px",borderRadius:6,border:"none",fontSize:12,fontWeight:700,cursor:"pointer",background:showReal?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:BG,color:showReal?"#fff":"#888"}}>Real</button>
+                            <button onClick={()=>setShowReal(false)} style={{padding:"3px 10px",borderRadius:6,border:"none",fontSize:12,fontWeight:700,cursor:"pointer",background:!showReal?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:BG,color:!showReal?"#fff":"#888"}}>Prezis</button>
                           </div>
                         </div>
                         <div style={{borderRadius:10,overflow:"hidden",boxShadow:SHADOW_OUT,marginBottom:12}}>
@@ -5677,7 +5768,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                                     {isPastM?<span style={{fontSize:7,color:"#ccc",fontWeight:700}}>Terminat</span>
                                       :isLive2?<span style={{fontSize:7,fontWeight:800,color:RED,animation:"blink 1s infinite"}}>● LIVE</span>
                                       :<span style={{fontSize:7,color:"#bbb",fontWeight:700}}>{isFT2?"Final":"● Live"}</span>}
-                                    <div style={{background:hasScore2?`linear-gradient(135deg,${NAVY},#001840)`:"rgba(0,0,0,0.07)",borderRadius:6,padding:"3px 10px",minWidth:46,textAlign:"center"}}>
+                                    <div style={{background:hasScore2?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:"rgba(0,0,0,0.07)",borderRadius:6,padding:"3px 10px",minWidth:46,textAlign:"center"}}>
                                       <span style={{fontSize:12,fontWeight:900,color:hasScore2?"#fff":"#bbb"}}>{hasScore2?`${liveScore2.home}-${liveScore2.away}`:"-"}</span>
                                     </div>
                                     <span style={{fontSize:7,fontWeight:700,color:"#bbb",textTransform:"uppercase",letterSpacing:0.5}}>Prediction</span>
@@ -5743,7 +5834,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                           <div style={{flexShrink:0,display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
                             {isLive?<span style={{fontSize:7,fontWeight:800,color:RED,animation:"blink 1s infinite"}}>● LIVE</span>
                               :<span style={{fontSize:7,fontWeight:700,color:"#bbb",textTransform:"uppercase",letterSpacing:0.5}}>{isFT?"Final":"● Live"}</span>}
-                            <div style={{background:isLive||hasScore?`linear-gradient(135deg,${NAVY},#001840)`:"rgba(0,0,0,0.08)",borderRadius:6,padding:"4px 10px",minWidth:54,textAlign:"center"}}>
+                            <div style={{background:isLive||hasScore?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:"rgba(0,0,0,0.08)",borderRadius:6,padding:"4px 10px",minWidth:54,textAlign:"center"}}>
                               <span style={{fontSize:13,fontWeight:900,color:isLive||hasScore?"#fff":"#bbb"}}>{isLive?(hasScore?`${live.home}-${live.away}`:"0-0"):hasScore?`${live.home}-${live.away}`:"-"}</span>
                             </div>
                             <span style={{fontSize:7,fontWeight:700,color:"#bbb",textTransform:"uppercase",letterSpacing:0.5}}>Prediction</span>
@@ -5754,7 +5845,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                               if(sc) {
                                 return (
                                   <div onClick={canPredict?e=>{e.stopPropagation();onMatchClick&&onMatchClick(m,sel,m._i);}:undefined}
-                                    style={{background:exactMatch?`linear-gradient(135deg,${GREEN},#007A36)`:resultMatch?`linear-gradient(135deg,${NAVY},#001840)`:(isPast||isLive||isFT)?`linear-gradient(135deg,${RED},#EF3340)`:`linear-gradient(135deg,${NAVY},#001840)`,
+                                    style={{background:exactMatch?`linear-gradient(135deg,${GREEN},#007A36)`:resultMatch?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:(isPast||isLive||isFT)?`linear-gradient(135deg,${RED},#EF3340)`:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,
                                       borderRadius:6,padding:"3px 10px",minWidth:54,textAlign:"center",
                                       display:"flex",alignItems:"center",justifyContent:"center",gap:3,
                                       cursor:canPredict?"pointer":"default"}}>
@@ -5820,8 +5911,9 @@ function StatsScreen({ lang }) {
   const [selGroup, setSelGroup] = useState("A");
   const cur = GROUPS.find(g=>g.id===selGroup) || GROUPS[0];
   return (
-    <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden"}}>
-      <div style={{background:`linear-gradient(135deg,${NAVY},#001840)`,padding:"16px 20px 18px",flexShrink:0}}>
+    <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",position:"relative"}}>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:0,objectFit:"cover",objectPosition:"center 20%",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
+      <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"16px 20px 18px",flexShrink:0}}>
         <p style={{fontSize:11,color:RED,margin:"0 0 2px",letterSpacing:2,textTransform:"uppercase",fontWeight:800}}>FIFA - WORLD CUP 2026</p>
         <h2 style={{fontSize:18,fontWeight:800,color:"#fff",margin:"0 0 12px"}}>Groups & Schedule</h2>
         {/* Group tabs */}
@@ -5862,8 +5954,8 @@ function StatsScreen({ lang }) {
 function AccountScreen({ lang, onBoards, onSignOut, onShowGuide }) {
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflowY:"auto",position:"relative",overflow:"hidden"}}>
-      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"85%",left:"-30%",top:"20%",objectFit:"cover",objectPosition:"center 20%",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
-      <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY},#001840)`,padding:"28px 20px 32px",display:"flex",flexDirection:"column",alignItems:"center"}}>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:0,objectFit:"cover",objectPosition:"center 20%",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
+      <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"28px 20px 32px",display:"flex",flexDirection:"column",alignItems:"center"}}>
         <div style={{width:70,height:70,borderRadius:"50%",background:"rgba(255,255,255,0.18)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:34,marginBottom:12}}>👤</div>
         <p style={{fontSize:12,color:RED,margin:"0 0 4px",letterSpacing:2,textTransform:"uppercase",fontWeight:800}}>FIFA</p>
         <h2 style={{fontSize:18,fontWeight:800,color:"#fff",margin:"0 0 4px"}}>Alex Ionescu</h2>
@@ -5888,12 +5980,15 @@ function AccountScreen({ lang, onBoards, onSignOut, onShowGuide }) {
 function RulesScreen({ onBack }) {
   const [tab, setTab] = useState("predictions");
   const predRules = [
-    { phase:"⚽ Groups", pts:30, desc:"Correct result (winner or draw)" },
-    { phase:"🥉 Best Third", pts:20, desc:"3rd place team that advances" },
-    { phase:"🏆 Round of 16", pts:40, desc:"Correct match winner" },
-    { phase:"🏆 Quarter-Finals", pts:60, desc:"Correct match winner" },
-    { phase:"🏆 Semi-Finals", pts:90, desc:"Correct match winner" },
-    { phase:"🏆 Final", pts:120, desc:"Final winner" },
+    { phase:"⚽ Grupe · 1st loc",  pts:PRED_SCORING.group1st, desc:"Echipa care câștigă grupa" },
+    { phase:"⚽ Grupe · 2nd loc",  pts:PRED_SCORING.group2nd, desc:"Echipa care termină pe 2" },
+    { phase:"⚽ Grupe · 3rd loc",  pts:PRED_SCORING.group3rd, desc:"Echipa pe locul 3 în grupă" },
+    { phase:"🥉 Best Third",       pts:PRED_SCORING.best3,    desc:"Echipă best-3rd care avansează" },
+    { phase:"🏆 Round of 32",      pts:PRED_SCORING.r32,      desc:"Câștigătorul meciului" },
+    { phase:"🏆 Round of 16",      pts:PRED_SCORING.r16,      desc:"Câștigătorul meciului" },
+    { phase:"🏆 Quarter-Finals",   pts:PRED_SCORING.qf,       desc:"Câștigătorul meciului" },
+    { phase:"🏆 Semi-Finals",      pts:PRED_SCORING.sf,       desc:"Câștigătorul meciului" },
+    { phase:"🏆 Final",            pts:PRED_SCORING.final,    desc:"Câștigătorul turneului" },
   ];
   const exactRules = [
     { phase:"⚽ Groups · Result", pts:30, desc:"Correct winner or draw" },
@@ -5908,8 +6003,8 @@ function RulesScreen({ onBack }) {
 
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",position:"relative"}}>
-      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"85%",left:"-30%",top:"20%",objectFit:"cover",objectPosition:"center 20%",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
-      <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY},#001840)`,padding:"16px 20px 0",flexShrink:0}}>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:0,objectFit:"cover",objectPosition:"center 20%",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
+      <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"16px 20px 0",flexShrink:0}}>
         <p style={{fontSize:11,color:RED,margin:"0 0 4px",letterSpacing:2,textTransform:"uppercase",fontWeight:800}}>FIFA WORLD CUP 2026</p>
         <h2 style={{fontSize:20,fontWeight:900,color:"#fff",margin:"0 0 16px"}}>📖 Rules</h2>
         {/* Tabs */}
@@ -5950,7 +6045,7 @@ function RulesScreen({ onBack }) {
                 </p>
                 <p style={{fontSize:11,color:"#aaa",margin:0}}>{r.desc}</p>
               </div>
-              <div style={{background:`linear-gradient(135deg,${NAVY},#001840)`,borderRadius:10,padding:"5px 12px",flexShrink:0}}>
+              <div style={{background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,borderRadius:10,padding:"5px 12px",flexShrink:0}}>
                 <span style={{fontSize:13,fontWeight:900,color:"#fff"}}>+{r.pts}</span>
               </div>
             </div>
@@ -6066,7 +6161,12 @@ function App() {
           <span>9:41</span><span>5G 🔋</span>
         </div>
         <div style={{flex:1,overflow:"hidden",display:"flex",flexDirection:"column"}}>
-          {screen==="dev"&&<DevPanel onStart={(day,hour,min,started)=>{
+          {screen==="dev"&&<DevPanel
+            onAutoPick={(state)=>{
+              setAllInstantPickStates(p=>({...p,global:state}));
+              setAllInstantPickDone(p=>({...p,global:true}));
+            }}
+            onStart={(day,hour,min,started)=>{
             setSimDay(day);
             setSimHour(hour);
             setSimMin(min);
@@ -6132,10 +6232,14 @@ function App() {
               return BOARD_LEADERS.global;
             })()}/>}
           {screen===SCREENS.INSTANT_PICK&&<InstantPickScreen
-            savedState={instantPickState}
+            savedState={instantPickDone
+              ? {...instantPickState, stage:"groups", groupIdx:0, showIntro:false, showFinalSummary:false, koShowIntro:false}
+              : instantPickState}
+            viewMode={instantPickDone}
             onStateChange={setInstantPickState}
             tournamentStarted={tournamentStarted}
             onBack={()=>setScreen(SCREENS.HOME)}
+            onModify={()=>setInstantPickDone(false)}
             onComplete={()=>{ setInstantPickDone(true); setScreen(SCREENS.HOME); }}/>}
 
           {screen===SCREENS.FAST_PREDICTION&&<FastPredictionScreen onHome={()=>setScreen(SCREENS.HOME)}/>}
