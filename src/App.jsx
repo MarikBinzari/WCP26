@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from "react";
 import trophy from "./assets/hands-trophy.png";
 import varBg from "./assets/var-bg.jpg";
 import { ALL_GROUPS_DATA, FLAGS, TEAM_COLORS, CALENDAR_EVENTS } from "./data/worldcup2026.js";
+import { supabase } from "./supabase.js";
+import { loadPredictions, savePredictions, loadExactScores, saveExactScore, loadUserBoards, createBoard, joinBoardByCode, loadLeaderboard, fetchScoringRules, fetchMemberCounts } from "./db.js";
 
 const TEAM_CODE = {"Mexico":"MEX","South Africa":"RSA","South Korea":"KOR","Czechia":"CZE","Canada":"CAN","Switzerland":"SUI","Qatar":"QAT","Bosnia-Herzegovina":"BIH","Brazil":"BRA","Morocco":"MAR","Scotland":"SCO","Haiti":"HAI","USA":"USA","Paraguay":"PAR","Australia":"AUS","Turkiye":"TUR","Germany":"GER","Ecuador":"ECU","Ivory Coast":"CIV","Curacao":"CUW","Netherlands":"NED","Japan":"JPN","Tunisia":"TUN","Sweden":"SWE","Belgium":"BEL","Iran":"IRI","Egypt":"EGY","New Zealand":"NZL","Spain":"ESP","Uruguay":"URU","Saudi Arabia":"KSA","Cape Verde":"CPV","France":"FRA","Senegal":"SEN","Norway":"NOR","Iraq":"IRQ","Argentina":"ARG","Austria":"AUT","Algeria":"ALG","Jordan":"JOR","Portugal":"POR","Colombia":"COL","Uzbekistan":"UZB","DR Congo":"COD","England":"ENG","Croatia":"CRO","Panama":"PAN","Ghana":"GHA"};
 
@@ -67,9 +69,258 @@ const BOARD_LEADERS = {
 
 const LANGS = [{ code:"en", flag:"🇬🇧", name:"English" },{ code:"ro", flag:"🇷🇴", name:"Romana" },{ code:"fr", flag:"🇫🇷", name:"Francais" }];
 const T = {
-  en:{ location:"USA, Canada & Mexico", cta:"Make Your Prediction", days:"DAYS", hours:"HOURS", minutes:"MINUTES", seconds:"SECONDS", footerHome:"Home", footerStats:"Groups", footerFast:"Instant Pick ⚡", footerAccount:"Account" },
-  ro:{ location:"SUA, Canada & Mexic", cta:"Fa-ti Predictia", days:"ZILE", hours:"ORE", minutes:"MIN", seconds:"SEC", footerHome:"Acasa", footerStats:"Groups", footerFast:"Instant Pick ⚡", footerAccount:"Cont" },
-  fr:{ location:"USA, Canada & Mexique", cta:"Faites vos Pronostics", days:"JOURS", hours:"HEURES", minutes:"MIN", seconds:"SEC", footerHome:"Accueil", footerStats:"Groups", footerFast:"Instant Pick ⚡", footerAccount:"Compte" },
+  en:{
+    location:"USA, Canada & Mexico", cta:"Make Your Prediction",
+    days:"DAYS", hours:"HOURS", minutes:"MINUTES", seconds:"SECONDS",
+    footerHome:"Home", footerStats:"Groups", footerFast:"Instant Pick ⚡", footerAccount:"Account",
+    participants:"participants", add:"Add", yourTasks:"Your tasks",
+    predictions:"Predictions", completed:"✓ Completed", deadlinePassed:"Deadline passed", dueJun11:"Due Jun 11",
+    exactScores:"Exact Scores", weekComplete:"✓ Week complete", thisWeek:"this week",
+    pathToTrophy:"Path to the Trophy", unlocksEvery:"Unlocks every Sunday 8AM",
+    groupStage:"Group Stage", week:"Week", roundOf16QF:"Round of 16 · QF · SF",
+    final:"Final", locked:"Locked", past:"Past", viewAll:"🏆 View all ›",
+    tournamentStarts:"Tournament starts Jun 11", ptsTotal:"pts total",
+    leaderboard:"Leaderboard", searchPlayer:"Search player...",
+    tournamentNotStarted:"Tournament not started",
+    leaderboardMsg:"The leaderboard will be available after the tournament starts on Jun 11, 2026.",
+    openSlot:"Open slot", noPlayerFound:"No player found for",
+    joinTheGame:"Join the Game", continueGoogle:"Continue with Google",
+    continueFacebook:"Continue with Facebook", continueInstagram:"Continue with Instagram",
+    groupsSchedule:"Groups & Schedule", groupTeams:"Teams", matchSchedule:"Match Schedule",
+    myBoards:"My Boards", activeBoards:"3 active boards", appGuide:"App Guide",
+    howItWorks:"How it works", notifications:"Notifications", matchAlertsOn:"Match alerts on",
+    language:"Language", upgradePremium:"Upgrade to Premium", removeAds:"Remove ads",
+    signOut:"Sign Out", memberSince:"Member since March 2026",
+    todaysMatches:"Today's Matches", tapToPredict:"Tap to predict the winner",
+    allDone:"All done!", backToHome:"Back to Home", draw:"Draw",
+    yourPredictedChampion:"Your Predicted Champion", worldCupWinner:"2026 World Cup Winner",
+    pointsPerPrediction:"Points per correct prediction",
+    confirmPredictions:"✅ Confirm Predictions",
+    predictionsLocked:"🔒 Tournament started — predictions locked",
+    noChampionSelected:"No champion selected",
+    matchesToPredict:"matches to predict", startMatches:"Start Matches →",
+    viewOnly:"View Only", winnerArrow:"Winner →",
+    groups:"groups", group:"Group",
+    best3Title:"🥉 Best Third", selectTeams:"Select 8 3rd place teams...",
+    thirdPlaceRanking:"3rd Place Ranking · sorted by points", team:"Team",
+    knockout:"Knockout →", selectMore:"Select more",
+    boards:"Boards", createBoard:"Create Board", editBoard:"Edit Board",
+    boardName:"Group name", joinBoard:"Join Board", enterCode:"Enter code",
+    invalidCode:"Invalid code. Please check and try again.",
+    rules:"Rules", howPredictionsWork:"How does Predictions work?",
+    howExactScoreWork:"How does Exact Score work?",
+    predictionsDesc:"Predict the winner of every match — from group stage to the final. One shot per tournament.",
+    exactDesc:"Predict the exact score of each match every week. Unlocks on Sundays after 8:00 PM.",
+    exactScore:"EXACT SCORE", confirmScore:"Confirm Score",
+    save:"Save", cancel:"Cancel", del:"Delete", done:"Done",
+    semiFinalsDone:"Semi-Finals complete", theFinalsAwait:"The Finals Await",
+    roadToFinal:"Road to the Final", yourPicksAdvance:"Your picks advance",
+    groupStageDone:"Group Stage complete!", allGroupsPredicted:"You've predicted the order for all groups.",
+    tapToRank:"Tap → rank", predictedRank:"Predicted standings",
+    backLabel:"Back", groupComplete:"Complete", yourPredictedStandings:"Your predicted standings",
+    yourPredictions:"Your Predictions", maxPossiblePoints:"Maximum possible points",
+    possiblePts:"possible pts", selectScore:"Select predicted score",
+    customScore:"Other score", saveScore:"Save ✓", modifyBtn:"← Modify", bestThirdBtn:"Best Third →",
+    notStarted:"Not Started", winner:"Winner", scheduledMatches:"Scheduled Matches",
+    realLabel:"Real", predictedLabel:"Predicted", noMatchesScheduled:"No matches scheduled",
+    finished:"Finished", prediction:"Prediction",
+    noMembersYet:"No members yet", searchOrCode:"Search or enter invite code...",
+    joinBtn:"Join", noBoardsFor:"No boards found for",
+    dontShowAgain:"Don't show again",
+    onb0Title:"Predict the Tournament", onb0Sub:"Once · From Groups to the Final",
+    onb0Desc:"Pick the winner of every match before the tournament kicks off. One shot — make it count.",
+    onb0Next:"Show me scores →",
+    onb1Title:"Weekly Exact Score", onb1Sub:"Unlocks every Sunday at 8:00 AM",
+    onb1Desc:"Predict the exact score of each week's matches for bonus points. New matches every Sunday.",
+    onb1Next:"Invite friends →",
+    onb2Title:"Compete With Friends", onb2Sub:"Private boards · Custom prizes",
+    onb2Desc:"Create a private group, invite your friends and set your own prizes. May the best predictor win.",
+    onb2Next:null,
+    getStarted:"Get Started",
+    rulesDesc1:"Group winner", rulesDesc2:"2nd place", rulesDesc3:"3rd place",
+    rulesDescBest3:"Best-3rd advancing", rulesDescMatch:"Match winner", rulesDescFinal:"Tournament winner",
+    boardPassword:"Group Password", maxPlayers:"Max Players", prizedSlots:"Prize slots", prizesLabel:"Prizes",
+    membersLabel:"Members", adminLabel:"Admin", remove:"Remove", saveChanges:"Save Changes ✓",
+    createBoard2:"Create Board 🏆", boardAdmin:"Board Admin", incorrectPassword:"Incorrect password. Try again.",
+    joinBoardTitle:"Join a Board", joinedBoards:"My Boards", availableBoards:"Available Boards",
+    chooseEmoji:"Choose emoji", passwordProtected:"🔒 Password protected board",
+    enterPassword:"Enter password...", rank:"Rank",
+    globalBoard:"Global", noBoards:"No boards found.",
+    viewAll2:"View all", members2:"members", code:"code",
+    allMatchesGrp:"All Matches · Gr.",
+  },
+  ro:{
+    location:"SUA, Canada & Mexic", cta:"Fa-ti Predictia",
+    days:"ZILE", hours:"ORE", minutes:"MIN", seconds:"SEC",
+    footerHome:"Acasa", footerStats:"Grupe", footerFast:"Instant Pick ⚡", footerAccount:"Cont",
+    participants:"participanți", add:"Adaugă", yourTasks:"Sarcinile tale",
+    predictions:"Predicții", completed:"✓ Completat", deadlinePassed:"Termen expirat", dueJun11:"Termen 11 Iun",
+    exactScores:"Scoruri Exacte", weekComplete:"✓ Săptămâna completă", thisWeek:"această săptămână",
+    pathToTrophy:"Drumul spre Trofeu", unlocksEvery:"Se deschide duminică la 8:00",
+    groupStage:"Faza Grupelor", week:"Săptămâna", roundOf16QF:"Optimi · Sferturi · Semi",
+    final:"Finală", locked:"Blocat", past:"Trecut", viewAll:"🏆 Vezi tot ›",
+    tournamentStarts:"Turneul începe pe 11 Iun", ptsTotal:"pts total",
+    leaderboard:"Clasament", searchPlayer:"Caută jucător...",
+    tournamentNotStarted:"Turneul nu a început",
+    leaderboardMsg:"Clasamentul va fi disponibil după ce turneul începe pe 11 Iun 2026.",
+    openSlot:"Loc liber", noPlayerFound:"Niciun jucător găsit pentru",
+    joinTheGame:"Intră în Joc", continueGoogle:"Continuă cu Google",
+    continueFacebook:"Continuă cu Facebook", continueInstagram:"Continuă cu Instagram",
+    groupsSchedule:"Grupe & Program", groupTeams:"Echipe", matchSchedule:"Program Meciuri",
+    myBoards:"Board-urile mele", activeBoards:"3 board-uri active", appGuide:"Ghid Aplicație",
+    howItWorks:"Cum funcționează", notifications:"Notificări", matchAlertsOn:"Alerte meci active",
+    language:"Limbă", upgradePremium:"Upgrade la Premium", removeAds:"Elimină reclamele",
+    signOut:"Deconectare", memberSince:"Membru din Martie 2026",
+    todaysMatches:"Meciurile de Azi", tapToPredict:"Apasă pentru a prezice câștigătorul",
+    allDone:"Gata!", backToHome:"Înapoi Acasă", draw:"Egal",
+    yourPredictedChampion:"Campionul Tău Prezis", worldCupWinner:"Câștigător Mondial 2026",
+    pointsPerPrediction:"Puncte per predicție corectă",
+    confirmPredictions:"✅ Confirmă Predicțiile",
+    predictionsLocked:"🔒 Turneul a început — predicții blocate",
+    noChampionSelected:"Niciun campion selectat",
+    matchesToPredict:"meciuri de prezis", startMatches:"Începe Meciurile →",
+    viewOnly:"Doar Vizualizare", winnerArrow:"Câștigător →",
+    groups:"grupe", group:"Grupă",
+    best3Title:"🥉 Best Third", selectTeams:"Selectează 8 echipe de pe locul 3...",
+    thirdPlaceRanking:"Clasament Locul 3 · sortat după puncte", team:"Echipă",
+    knockout:"Knockout →", selectMore:"Mai selectează",
+    boards:"Board-uri", createBoard:"Creează Board", editBoard:"Editează Board",
+    boardName:"Nume grup", joinBoard:"Alătură-te", enterCode:"Introdu codul",
+    invalidCode:"Cod invalid. Verifică și încearcă din nou.",
+    rules:"Reguli", howPredictionsWork:"Cum funcționează Predicțiile?",
+    howExactScoreWork:"Cum funcționează Scorul Exact?",
+    predictionsDesc:"Prezice câștigătorul fiecărui meci — din faza grupelor până la finală. O singură șansă pe turneu.",
+    exactDesc:"Prezice scorul exact al fiecărui meci în fiecare săptămână. Se deschide duminicile după 20:00.",
+    exactScore:"SCOR EXACT", confirmScore:"Confirmă Scorul",
+    save:"Salvează", cancel:"Anulează", del:"Șterge", done:"Gata",
+    semiFinalsDone:"Semi-Finale Complete", theFinalsAwait:"Finala Te Așteaptă",
+    roadToFinal:"Drumul spre Finală", yourPicksAdvance:"Predicțiile tale avansează",
+    groupStageDone:"Faza Grupelor completă!", allGroupsPredicted:"Ai prezis ordinea pentru toate grupele.",
+    tapToRank:"Apasă → clasament", predictedRank:"Clasament prezis",
+    backLabel:"Înapoi", groupComplete:"Complet", yourPredictedStandings:"Clasamentul tău prezis",
+    yourPredictions:"Predicțiile tale", maxPossiblePoints:"Total maxim posibil",
+    possiblePts:"pts posibile", selectScore:"Selectează scorul prezis",
+    customScore:"Alt scor", saveScore:"Salvează ✓", modifyBtn:"← Modifică", bestThirdBtn:"Best Third →",
+    notStarted:"Neînceput", winner:"Câștigător", scheduledMatches:"Meciuri Programate",
+    realLabel:"Real", predictedLabel:"Prezis", noMatchesScheduled:"Nu sunt meciuri programate",
+    finished:"Terminat", prediction:"Predicție",
+    noMembersYet:"Niciun membru încă", searchOrCode:"Caută sau introdu codul...",
+    joinBtn:"Alătură-te", noBoardsFor:"Niciun board găsit pentru",
+    dontShowAgain:"Nu mai arăta",
+    onb0Title:"Prezice Turneul", onb0Sub:"O singură dată · De la Grupe la Finală",
+    onb0Desc:"Alege câștigătorul fiecărui meci înainte să înceapă turneul. O singură șansă — folosește-o bine.",
+    onb0Next:"Arată-mi scorurile →",
+    onb1Title:"Scor Exact Săptămânal", onb1Sub:"Se deschide duminică la 8:00",
+    onb1Desc:"Prezice scorul exact al meciurilor săptămânii pentru puncte bonus. Meciuri noi în fiecare duminică.",
+    onb1Next:"Invită prieteni →",
+    onb2Title:"Concurează cu Prietenii", onb2Sub:"Board-uri private · Premii personalizate",
+    onb2Desc:"Creează un grup privat, invită prietenii și setează propriile premii. Câștige cel mai bun prezicător.",
+    onb2Next:null,
+    getStarted:"Începe",
+    rulesDesc1:"Echipa care câștigă grupa", rulesDesc2:"Echipa pe locul 2", rulesDesc3:"Echipa pe locul 3",
+    rulesDescBest3:"Echipă best-3rd care avansează", rulesDescMatch:"Câștigătorul meciului", rulesDescFinal:"Câștigătorul turneului",
+    boardPassword:"Parolă Grup", maxPlayers:"Jucători max", prizedSlots:"Locuri premiate", prizesLabel:"Premii",
+    membersLabel:"Membri", adminLabel:"Admin", remove:"Elimină", saveChanges:"Salvează Modificările ✓",
+    createBoard2:"Creează Board 🏆", boardAdmin:"Board Admin", incorrectPassword:"Parolă incorectă. Încearcă din nou.",
+    joinBoardTitle:"Alătură-te unui Board", joinedBoards:"Board-urile mele", availableBoards:"Board-uri disponibile",
+    chooseEmoji:"Alege un emoji", passwordProtected:"🔒 Board protejat cu parolă",
+    enterPassword:"Introdu parola...", rank:"Rang",
+    globalBoard:"Global", noBoards:"Niciun board găsit.",
+    viewAll2:"Vezi tot", members2:"membri", code:"cod",
+    allMatchesGrp:"Toate Meciurile · Gr.",
+  },
+  fr:{
+    location:"USA, Canada & Mexique", cta:"Faites vos Pronostics",
+    days:"JOURS", hours:"HEURES", minutes:"MIN", seconds:"SEC",
+    footerHome:"Accueil", footerStats:"Groupes", footerFast:"Instant Pick ⚡", footerAccount:"Compte",
+    participants:"participants", add:"Ajouter", yourTasks:"Vos tâches",
+    predictions:"Pronostics", completed:"✓ Complété", deadlinePassed:"Délai expiré", dueJun11:"Délai 11 Juin",
+    exactScores:"Scores Exacts", weekComplete:"✓ Semaine complète", thisWeek:"cette semaine",
+    pathToTrophy:"Chemin vers le Trophée", unlocksEvery:"Ouvre chaque dimanche à 8h",
+    groupStage:"Phase de Groupes", week:"Semaine", roundOf16QF:"H.d.F. · Quarts · Demi",
+    final:"Finale", locked:"Bloqué", past:"Passé", viewAll:"🏆 Voir tout ›",
+    tournamentStarts:"Tournoi débute le 11 Juin", ptsTotal:"pts total",
+    leaderboard:"Classement", searchPlayer:"Chercher joueur...",
+    tournamentNotStarted:"Tournoi pas encore commencé",
+    leaderboardMsg:"Le classement sera disponible après le début du tournoi le 11 Juin 2026.",
+    openSlot:"Slot libre", noPlayerFound:"Aucun joueur trouvé pour",
+    joinTheGame:"Rejoignez le Jeu", continueGoogle:"Continuer avec Google",
+    continueFacebook:"Continuer avec Facebook", continueInstagram:"Continuer avec Instagram",
+    groupsSchedule:"Groupes & Programme", groupTeams:"Équipes", matchSchedule:"Programme des Matchs",
+    myBoards:"Mes Boards", activeBoards:"3 boards actifs", appGuide:"Guide App",
+    howItWorks:"Comment ça marche", notifications:"Notifications", matchAlertsOn:"Alertes match activées",
+    language:"Langue", upgradePremium:"Passer à Premium", removeAds:"Supprimer les pubs",
+    signOut:"Déconnexion", memberSince:"Membre depuis Mars 2026",
+    todaysMatches:"Matchs du Jour", tapToPredict:"Appuyez pour prédire le vainqueur",
+    allDone:"Terminé !", backToHome:"Retour à l'Accueil", draw:"Nul",
+    yourPredictedChampion:"Votre Champion Prédit", worldCupWinner:"Vainqueur Mondial 2026",
+    pointsPerPrediction:"Points par prédiction correcte",
+    confirmPredictions:"✅ Confirmer les Pronostics",
+    predictionsLocked:"🔒 Tournoi commencé — pronostics verrouillés",
+    noChampionSelected:"Aucun champion sélectionné",
+    matchesToPredict:"matchs à pronostiquer", startMatches:"Démarrer les Matchs →",
+    viewOnly:"Vue uniquement", winnerArrow:"Vainqueur →",
+    groups:"groupes", group:"Groupe",
+    best3Title:"🥉 Best Third", selectTeams:"Sélectionnez 8 équipes de 3e place...",
+    thirdPlaceRanking:"Classement 3e Place · trié par points", team:"Équipe",
+    knockout:"Knockout →", selectMore:"Sélectionner encore",
+    boards:"Boards", createBoard:"Créer un Board", editBoard:"Modifier le Board",
+    boardName:"Nom du groupe", joinBoard:"Rejoindre", enterCode:"Entrer le code",
+    invalidCode:"Code invalide. Veuillez vérifier et réessayer.",
+    rules:"Règles", howPredictionsWork:"Comment fonctionnent les Pronostics ?",
+    howExactScoreWork:"Comment fonctionne le Score Exact ?",
+    predictionsDesc:"Prédisez le vainqueur de chaque match — de la phase de groupes à la finale. Une seule chance par tournoi.",
+    exactDesc:"Prédisez le score exact de chaque match chaque semaine. Déverrouillé le dimanche après 20h.",
+    exactScore:"SCORE EXACT", confirmScore:"Confirmer le Score",
+    save:"Enregistrer", cancel:"Annuler", del:"Supprimer", done:"Terminé",
+    semiFinalsDone:"Demi-Finales terminées", theFinalsAwait:"La Finale Vous Attend",
+    roadToFinal:"Route vers la Finale", yourPicksAdvance:"Vos pronostics avancent",
+    groupStageDone:"Phase de Groupes terminée !", allGroupsPredicted:"Vous avez prédit l'ordre pour tous les groupes.",
+    tapToRank:"Appuyez → classement", predictedRank:"Classement prédit",
+    backLabel:"Retour", groupComplete:"Complet", yourPredictedStandings:"Votre classement prédit",
+    yourPredictions:"Vos Pronostics", maxPossiblePoints:"Points maximum possibles",
+    possiblePts:"pts possibles", selectScore:"Sélectionner le score prédit",
+    customScore:"Autre score", saveScore:"Enregistrer ✓", modifyBtn:"← Modifier", bestThirdBtn:"Best Third →",
+    notStarted:"Pas commencé", winner:"Vainqueur", scheduledMatches:"Matchs Programmés",
+    realLabel:"Réel", predictedLabel:"Prédit", noMatchesScheduled:"Aucun match programmé",
+    finished:"Terminé", prediction:"Pronostic",
+    noMembersYet:"Aucun membre encore", searchOrCode:"Chercher ou entrer le code...",
+    joinBtn:"Rejoindre", noBoardsFor:"Aucun board trouvé pour",
+    dontShowAgain:"Ne plus afficher",
+    onb0Title:"Prédire le Tournoi", onb0Sub:"Une fois · Des Groupes à la Finale",
+    onb0Desc:"Choisissez le vainqueur de chaque match avant le début du tournoi. Une seule chance — faites-la compter.",
+    onb0Next:"Montrez-moi les scores →",
+    onb1Title:"Score Exact Hebdomadaire", onb1Sub:"Déverrouillé chaque dimanche à 8h",
+    onb1Desc:"Prédisez le score exact des matchs de la semaine pour des points bonus. Nouveaux matchs chaque dimanche.",
+    onb1Next:"Inviter des amis →",
+    onb2Title:"Affrontez Vos Amis", onb2Sub:"Boards privés · Prix personnalisés",
+    onb2Desc:"Créez un groupe privé, invitez vos amis et fixez vos propres prix. Que le meilleur pronostiqueur gagne.",
+    onb2Next:null,
+    getStarted:"Commencer",
+    rulesDesc1:"L'équipe qui gagne le groupe", rulesDesc2:"L'équipe 2e", rulesDesc3:"L'équipe 3e",
+    rulesDescBest3:"Équipe best-3rd qui avance", rulesDescMatch:"Vainqueur du match", rulesDescFinal:"Vainqueur du tournoi",
+    boardPassword:"Mot de passe", maxPlayers:"Joueurs max", prizedSlots:"Places primées", prizesLabel:"Prix",
+    membersLabel:"Membres", adminLabel:"Admin", remove:"Retirer", saveChanges:"Sauvegarder ✓",
+    createBoard2:"Créer Board 🏆", boardAdmin:"Board Admin", incorrectPassword:"Mot de passe incorrect. Réessayez.",
+    joinBoardTitle:"Rejoindre un Board", joinedBoards:"Mes Boards", availableBoards:"Boards disponibles",
+    chooseEmoji:"Choisir un emoji", passwordProtected:"🔒 Board protégé par mot de passe",
+    enterPassword:"Entrer le mot de passe...", rank:"Rang",
+    globalBoard:"Global", noBoards:"Aucun board trouvé.",
+    viewAll2:"Voir tout", members2:"membres", code:"code",
+    allMatchesGrp:"Tous les Matchs · Gr.",
+  },
+};
+const LangCtx = React.createContext("en");
+const useLang = () => React.useContext(LangCtx);
+const UserCtx = React.createContext(null);
+const useUser = () => React.useContext(UserCtx);
+const useDisplayName = () => {
+  const u = React.useContext(UserCtx);
+  return u?.user_metadata?.full_name || u?.email?.split("@")[0] || "—";
+};
+const useInitials = () => {
+  const name = useDisplayName();
+  return name.split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2);
 };
 
 // ECHIPE_DATA, FLAGS, TEAM_COLORS — importate din ./data/worldcup2026.js
@@ -200,7 +451,7 @@ function CalendarSlider() {
             color:viewMonth>0?DARK:"#ddd",display:"flex",alignItems:"center",justifyContent:"center"}}>‹</button>
         <div style={{textAlign:"center"}}>
           <p style={{fontSize:14,fontWeight:700,color:DARK,margin:0}}>{cur.name}</p>
-          <span style={{fontSize:12,color:NAVY,fontWeight:700}}>FIFA World Cup 2026</span>
+          <span style={{fontSize:12,color:NAVY,fontWeight:700}}>Predicto</span>
         </div>
         <button onClick={()=>viewMonth<1&&setViewMonth(1)}
           style={{width:30,height:30,borderRadius:"50%",border:"none",
@@ -347,6 +598,7 @@ function KOTeamRow({ team, pick, pairId, setKnockoutPicks }) {
 }
 
 function KnockoutTab({ knockoutPicks, setKnockoutPicks, best3picks, groupRank, onComplete }) {
+  const lang = useLang();
   const [koRound, setKoRound] = useState(0);
   const [groupIdx, setGroupIdx] = useState(0);
   const [showTransition, setShowTransition] = useState(false);
@@ -431,8 +683,8 @@ function KnockoutTab({ knockoutPicks, setKnockoutPicks, best3picks, groupRank, o
             background:`linear-gradient(135deg,#D4820A,#F0A020)`,
             display:"flex",alignItems:"center",justifyContent:"center",
             fontSize:26,margin:"0 auto 12px",boxShadow:"0 6px 18px rgba(212,130,10,0.35)"}}>🏆</div>
-          <p style={{fontSize:12,color:"#D4820A",fontWeight:800,textTransform:"uppercase",letterSpacing:1,margin:"0 0 3px"}}>Semi-Finals complet</p>
-          <h2 style={{fontSize:17,fontWeight:900,color:DARK,margin:"0 0 16px"}}>The Finals Await</h2>
+          <p style={{fontSize:12,color:"#D4820A",fontWeight:800,textTransform:"uppercase",letterSpacing:1,margin:"0 0 3px"}}>{T[lang].semiFinalsDone}</p>
+          <h2 style={{fontSize:17,fontWeight:900,color:DARK,margin:"0 0 16px"}}>{T[lang].theFinalsAwait}</h2>
 
           {/* Finala mică */}
           <div style={{width:"100%",background:BG,borderRadius:14,boxShadow:SHADOW_OUT,overflow:"hidden",marginBottom:10}}>
@@ -522,8 +774,8 @@ function KnockoutTab({ knockoutPicks, setKnockoutPicks, best3picks, groupRank, o
             fontSize:26,margin:"0 auto 10px",boxShadow:"0 6px 18px rgba(0,154,68,0.35)"}}>✅</div>
           <p style={{fontSize:12,color:GREEN,fontWeight:800,textTransform:"uppercase",
             letterSpacing:1,margin:"0 0 3px"}}>{cur.label} complet</p>
-          <h2 style={{fontSize:17,fontWeight:900,color:DARK,margin:"0 0 2px"}}>Road to the Final</h2>
-          <p style={{fontSize:11,color:"#aaa",margin:0}}>Your picks advance</p>
+          <h2 style={{fontSize:17,fontWeight:900,color:DARK,margin:"0 0 2px"}}>{T[lang].roadToFinal}</h2>
+          <p style={{fontSize:11,color:"#aaa",margin:0}}>{T[lang].yourPicksAdvance}</p>
         </div>
 
         {/* Bracket */}
@@ -763,6 +1015,7 @@ function KnockoutTab({ knockoutPicks, setKnockoutPicks, best3picks, groupRank, o
 
 // ── GRUPE TAB ─────────────────────────────────────────────────────────────────
 function GrupeTab({ groupRank, setRank, onComplete }) {
+  const lang = useLang();
   const GRUPE_LIST = ["A","B"];
   const [gIdx, setGIdx] = useState(0);
   const [dragging, setDragging] = useState(null);
@@ -820,14 +1073,14 @@ function GrupeTab({ groupRank, setRank, onComplete }) {
     <div onTouchStart={onTS} onTouchEnd={onTE}
       style={{display:"flex",flexDirection:"column",alignItems:"center",padding:"30px 20px",textAlign:"center"}}>
       <div style={{width:90,height:90,borderRadius:"50%",background:`linear-gradient(135deg,${GREEN},#007A36)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:44,marginBottom:20,boxShadow:"0 8px 28px rgba(0,154,68,0.4)"}}>✅</div>
-      <h2 style={{fontSize:22,fontWeight:900,color:DARK,margin:"0 0 8px"}}>Group Stage complet!</h2>
-      <p style={{fontSize:14,color:"#888",margin:"0 0 24px",lineHeight:1.5}}>Ai prezis ordinea pentru toate grupele.</p>
+      <h2 style={{fontSize:22,fontWeight:900,color:DARK,margin:"0 0 8px"}}>{T[lang].groupStageDone}</h2>
+      <p style={{fontSize:14,color:"#888",margin:"0 0 24px",lineHeight:1.5}}>{T[lang].allGroupsPredicted}</p>
       <div style={{width:"100%",background:BG,borderRadius:16,boxShadow:SHADOW_OUT,overflow:"hidden",marginBottom:24}}>
         {GRUPE_LIST.map((g,i)=>{
           const r=groupRank[g]||{};
           return (
             <div key={g} style={{padding:"12px 16px",borderBottom:i<GRUPE_LIST.length-1?"1px solid rgba(0,0,0,0.06)":"none"}}>
-              <p style={{fontSize:11,fontWeight:800,color:"#aaa",margin:"0 0 8px",textTransform:"uppercase",letterSpacing:1}}>Group {g}</p>
+              <p style={{fontSize:11,fontWeight:800,color:"#aaa",margin:"0 0 8px",textTransform:"uppercase",letterSpacing:1}}>{T[lang].group} {g}</p>
               <div style={{display:"flex",gap:6}}>
                 {[1,2,3,4].map(pos=>(
                   <div key={pos} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:4,background:pos<=2?"rgba(0,32,91,0.05)":"transparent",borderRadius:8,padding:"6px 4px"}}>
@@ -843,9 +1096,9 @@ function GrupeTab({ groupRank, setRank, onComplete }) {
       </div>
       <div style={{display:"flex",gap:8,width:"100%"}}>
         <button onClick={()=>setDone(false)}
-          style={{flex:1,padding:"12px 0",borderRadius:12,border:"none",background:BG,boxShadow:SHADOW_OUT,fontSize:12,fontWeight:700,cursor:"pointer",color:"#888"}}>← Modifica</button>
+          style={{flex:1,padding:"12px 0",borderRadius:12,border:"none",background:BG,boxShadow:SHADOW_OUT,fontSize:12,fontWeight:700,cursor:"pointer",color:"#888"}}>{T[lang].modifyBtn}</button>
         <button onClick={onComplete}
-          style={{flex:1,padding:"12px 0",borderRadius:12,border:"none",background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",boxShadow:"0 4px 12px rgba(0,32,91,0.3)"}}>Best Third →</button>
+          style={{flex:1,padding:"12px 0",borderRadius:12,border:"none",background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",boxShadow:"0 4px 12px rgba(0,32,91,0.3)"}}>{T[lang].bestThirdBtn}</button>
       </div>
     </div>
   );
@@ -864,7 +1117,7 @@ function GrupeTab({ groupRank, setRank, onComplete }) {
       <div style={{borderRadius:20,overflow:"hidden",marginBottom:12,boxShadow:SHADOW_OUT}}>
         <div style={{background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"11px 16px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
           <span style={{fontSize:16,fontWeight:900,color:"#fff",letterSpacing:1}}>GROUP {activeGrupa}</span>
-          <span style={{fontSize:11,color:"rgba(255,255,255,0.45)"}}>Tap → clasament</span>
+          <span style={{fontSize:11,color:"rgba(255,255,255,0.45)"}}>{T[lang].tapToRank}</span>
         </div>
         <div style={{background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"10px 10px",display:"flex",justifyContent:"space-around",alignItems:"center",borderBottom:"1px solid rgba(255,255,255,0.08)"}}>
           {teams.map(t=>{
@@ -883,7 +1136,7 @@ function GrupeTab({ groupRank, setRank, onComplete }) {
         </div>
         <div style={{background:BG}}>
           <div style={{padding:"6px 14px 3px"}}>
-            <span style={{fontSize:12,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1}}>Clasament prezis</span>
+            <span style={{fontSize:12,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1}}>{T[lang].predictedRank}</span>
           </div>
           {[1,2,3,4].map(pos=>{
             const team=rank[pos];
@@ -1601,6 +1854,7 @@ function FlagBg({ team, style }) {
 }
 
 function MatchSwipeCard({ home, away, onPick, onFlash, groupLabel, matchNum, totalMatches, existingPick, onBack, canGoBack, isKo }) {
+  const lang = useLang();
   const startX = useRef(null);
   const startY = useRef(null);
   const [offset, setOffset] = useState({ x:0, y:0 });
@@ -1670,7 +1924,7 @@ function MatchSwipeCard({ home, away, onPick, onFlash, groupLabel, matchNum, tot
   const rotation = overlayState ? 0 : offset.x * 0.045;
   const isFlying = Math.abs(offset.x)>200 || offset.y < -200;
 
-  // ── DRAW OVERLAY — background FIFA WC 2026 ──────────────────────────────
+  // ── DRAW OVERLAY — background Predicto 2026 ──────────────────────────────
   if (overlayState === "draw") {
     return (
       <div style={{flex:1,display:"flex",flexDirection:"column",userSelect:"none",position:"relative",overflow:"hidden",background:"#0a1228"}}>
@@ -1679,7 +1933,7 @@ function MatchSwipeCard({ home, away, onPick, onFlash, groupLabel, matchNum, tot
           @keyframes shimmer{0%,100%{opacity:0.6}50%{opacity:1}}
         `}</style>
 
-        {/* FIFA WC 2026 gradient */}
+        {/* Predicto 2026 gradient */}
         <div style={{position:"absolute",inset:0,
           background:`
             radial-gradient(ellipse at 18% 20%, rgba(228,0,43,0.35) 0%, transparent 42%),
@@ -1746,7 +2000,7 @@ function MatchSwipeCard({ home, away, onPick, onFlash, groupLabel, matchNum, tot
           @keyframes flagWallpaperFloat{0%,100%{transform:translateY(0px) rotate(-2deg)}50%{transform:translateY(-8px) rotate(2deg)}}
         `}</style>
 
-        {/* FIFA WC 2026 gradient background */}
+        {/* Predicto 2026 gradient background */}
         <div style={{position:"absolute",inset:0,
           background:`
             radial-gradient(ellipse at 18% 20%, rgba(228,0,43,0.35) 0%, transparent 42%),
@@ -2102,7 +2356,7 @@ function MatchSwipeCard({ home, away, onPick, onFlash, groupLabel, matchNum, tot
             backdropFilter:"blur(6px)",
           }}>
             <span style={{fontSize:13}}>←</span>
-            <span style={{fontSize:9,fontWeight:700,textTransform:"uppercase",letterSpacing:1}}>Back</span>
+            <span style={{fontSize:9,fontWeight:700,textTransform:"uppercase",letterSpacing:1}}>{T[lang].backLabel}</span>
           </button>
         )}
       </div>
@@ -2112,6 +2366,7 @@ function MatchSwipeCard({ home, away, onPick, onFlash, groupLabel, matchNum, tot
 
 
 function GroupSummaryCard({ group, picks, onNext, onReset, isLastGroup }) {
+  const lang = useLang();
   const teams = ALL_GROUPS_DATA[group]||[];
   const pts = {};
   teams.forEach(t=>{ pts[t]=0; });
@@ -2126,8 +2381,8 @@ function GroupSummaryCard({ group, picks, onNext, onReset, isLastGroup }) {
     <div style={{flex:1,display:"flex",flexDirection:"column",padding:"20px 20px 0"}}>
       <div style={{textAlign:"center",marginBottom:20}}>
         <div style={{width:56,height:56,borderRadius:"50%",background:`linear-gradient(135deg,${GREEN},#007A36)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:26,margin:"0 auto 10px",boxShadow:"0 6px 18px rgba(0,154,68,0.35)"}}>✅</div>
-        <p style={{fontSize:14,fontWeight:800,color:DARK,margin:0}}>Group {group} · Complet</p>
-        <p style={{fontSize:12,color:"#aaa",margin:"4px 0 0"}}>Your predicted standings</p>
+        <p style={{fontSize:14,fontWeight:800,color:DARK,margin:0}}>{T[lang].group} {group} · {T[lang].groupComplete}</p>
+        <p style={{fontSize:12,color:"#aaa",margin:"4px 0 0"}}>{T[lang].yourPredictedStandings}</p>
       </div>
       <div style={{background:BG,borderRadius:16,boxShadow:SHADOW_OUT,overflow:"hidden",marginBottom:20}}>
         {sorted.map((t,i)=>(
@@ -2162,6 +2417,7 @@ function GroupSummaryCard({ group, picks, onNext, onReset, isLastGroup }) {
 }
 
 function Best3Screen({ groups, getGroupStanding, picks, best3, setBest3, onDone }) {
+  const lang = useLang();
   // Compute pts for each 3rd place team from group matches
   const thirds = groups.map(g => {
     const standing = getGroupStanding(g);
@@ -2193,11 +2449,11 @@ function Best3Screen({ groups, getGroupStanding, picks, best3, setBest3, onDone 
       {/* Header with selected chips */}
       <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"12px 16px 14px",flexShrink:0}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-          <span style={{fontSize:13,fontWeight:800,color:"#fff"}}>🥉 Best Third</span>
+          <span style={{fontSize:13,fontWeight:800,color:"#fff"}}>{T[lang].best3Title}</span>
           <span style={{fontSize:12,fontWeight:800,color:isFull?GREEN:"rgba(255,255,255,0.6)"}}>{best3.length}/{needed}</span>
         </div>
         {best3.length===0 ? (
-          <p style={{fontSize:12,color:"rgba(255,255,255,0.35)",fontStyle:"italic",margin:0}}>Select {needed} 3rd place teams...</p>
+          <p style={{fontSize:12,color:"rgba(255,255,255,0.35)",fontStyle:"italic",margin:0}}>{T[lang].selectTeams}</p>
         ) : (
           <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
             {best3.map(t=>(
@@ -2218,13 +2474,13 @@ function Best3Screen({ groups, getGroupStanding, picks, best3, setBest3, onDone 
       {/* Ranked list */}
       <div style={{flex:1,overflowY:"auto",padding:"12px 20px",position:"relative",zIndex:1}}>
         <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 8px"}}>
-          3rd Place Ranking · sorted by points
+          {T[lang].thirdPlaceRanking}
         </p>
         <div style={{background:"transparent",borderRadius:14,boxShadow:SHADOW_OUT,overflow:"hidden",marginBottom:16}}>
           {/* Header */}
           <div style={{display:"flex",alignItems:"center",padding:"6px 16px",background:"rgba(0,0,0,0.03)",borderBottom:"1px solid rgba(0,0,0,0.05)"}}>
             <span style={{fontSize:11,fontWeight:700,color:"#bbb",width:24}}>#</span>
-            <span style={{flex:1,fontSize:11,fontWeight:700,color:"#bbb",textTransform:"uppercase",letterSpacing:0.5}}>Team</span>
+            <span style={{flex:1,fontSize:11,fontWeight:700,color:"#bbb",textTransform:"uppercase",letterSpacing:0.5}}>{T[lang].team}</span>
             <span style={{fontSize:11,fontWeight:700,color:"#bbb",width:28,textAlign:"center"}}>Gr.</span>
             <span style={{fontSize:11,fontWeight:700,color:"#bbb",width:40,textAlign:"center"}}>Pts</span>
             <span style={{width:28}}/>
@@ -2252,7 +2508,7 @@ function Best3Screen({ groups, getGroupStanding, picks, best3, setBest3, onDone 
             background:isFull?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:"#e0e0e0",
             color:isFull?"#fff":"#bbb",fontSize:14,fontWeight:800,cursor:isFull?"pointer":"default",
             boxShadow:isFull?"0 4px 14px rgba(0,32,91,0.3)":"none"}}>
-          {isFull ? "Knockout →" : `Select more ${needed-best3.length}`}
+          {isFull ? T[lang].knockout : `${T[lang].selectMore} ${needed-best3.length}`}
         </button>
       </div>
     </div>
@@ -2261,6 +2517,7 @@ function Best3Screen({ groups, getGroupStanding, picks, best3, setBest3, onDone 
 
 
 function GroupIntroScreen({ group, teams: teamsProp, isKo, onStart, hideHeader=false, picks={}, viewMode=false }) {
+  const lang = useLang();
   const teams = isKo ? null : (ALL_GROUPS_DATA[group]||[]);
   const matchCount = isKo ? (teamsProp||[]).length : (GROUP_MATCHUPS[group]||[]).length;
   const nextRoundLabel = {R32:"Round of 16",R16:"Quarter-Finals",QF:"Semi-Finals",SF:"Final"}[group]||"Next Round";
@@ -2324,7 +2581,7 @@ function GroupIntroScreen({ group, teams: teamsProp, isKo, onStart, hideHeader=f
                           </>
                         ):(
                           <>
-                            <span style={{fontSize:9,color:"#bbb",display:"block",marginBottom:2}}>Winner →</span>
+                            <span style={{fontSize:9,color:"#bbb",display:"block",marginBottom:2}}>{T[lang].winnerArrow}</span>
                             <span style={{fontSize:10,fontWeight:800,color:col,lineHeight:1.2}}>{nextRoundLabel}</span>
                           </>
                         )}
@@ -2337,7 +2594,7 @@ function GroupIntroScreen({ group, teams: teamsProp, isKo, onStart, hideHeader=f
           </div>
           <div style={{padding:"8px 14px",borderTop:"1px solid rgba(0,0,0,0.06)",position:"relative",zIndex:1}}>
             <div style={{fontSize:11,color:"rgba(0,0,0,0.35)",fontWeight:700,textAlign:"center",marginBottom:10,letterSpacing:0.5}}>
-              {matchCount} matches to predict
+              {matchCount} {T[lang].matchesToPredict}
             </div>
             <button onClick={!viewMode ? onStart : undefined}
               style={{width:"100%",padding:"15px 0",borderRadius:14,border:"none",
@@ -2345,14 +2602,14 @@ function GroupIntroScreen({ group, teams: teamsProp, isKo, onStart, hideHeader=f
                 color:viewMode?"rgba(0,0,0,0.25)":"#fff",fontSize:15,fontWeight:900,
                 cursor:viewMode?"default":"pointer",
                 boxShadow:viewMode?"none":"0 4px 20px rgba(0,32,91,0.3)",letterSpacing:1}}>
-              {viewMode ? "View Only" : "Start Matches →"}
+              {viewMode ? T[lang].viewOnly : T[lang].startMatches}
             </button>
           </div>
         </>
       ) : (
         <div style={{padding:"20px 24px"}}>
           <div style={{background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,borderRadius:20,padding:"20px",width:"100%",marginBottom:16,boxShadow:SHADOW_OUT}}>
-            {!hideHeader && <><p style={{fontSize:10,color:RED,margin:"0 0 4px",letterSpacing:2,textTransform:"uppercase",fontWeight:800,textAlign:"center"}}>FIFA WORLD CUP 2026</p>
+            {!hideHeader && <><p style={{fontSize:10,color:RED,margin:"0 0 4px",letterSpacing:2,textTransform:"uppercase",fontWeight:800,textAlign:"center"}}>Predicto</p>
             <h2 style={{fontSize:26,fontWeight:900,color:"#fff",margin:"0 0 20px",textAlign:"center",letterSpacing:1}}>{group}</h2></>}
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
               {teams.map((t)=>(
@@ -2364,7 +2621,7 @@ function GroupIntroScreen({ group, teams: teamsProp, isKo, onStart, hideHeader=f
             </div>
           </div>
           <div style={{width:"100%",background:BG,borderRadius:14,boxShadow:SHADOW_OUT,padding:"14px 16px",marginBottom:20}}>
-            <p style={{fontSize:12,color:"#aaa",margin:0,textAlign:"center"}}>{matchCount} matches to predict</p>
+            <p style={{fontSize:12,color:"#aaa",margin:0,textAlign:"center"}}>{matchCount} {T[lang].matchesToPredict}</p>
           </div>
           <button onClick={!viewMode ? onStart : undefined}
             style={{width:"100%",padding:"16px 0",borderRadius:16,border:"none",
@@ -2372,7 +2629,7 @@ function GroupIntroScreen({ group, teams: teamsProp, isKo, onStart, hideHeader=f
               color:viewMode?"rgba(0,0,0,0.25)":"#fff",fontSize:16,fontWeight:900,
               cursor:viewMode?"default":"pointer",
               boxShadow:viewMode?"none":"0 6px 20px rgba(200,16,46,0.3)",letterSpacing:1}}>
-            {viewMode ? "View Only" : "Start Matches →"}
+            {viewMode ? T[lang].viewOnly : T[lang].startMatches}
           </button>
         </div>
       )}
@@ -2382,6 +2639,7 @@ function GroupIntroScreen({ group, teams: teamsProp, isKo, onStart, hideHeader=f
 
 
 function InstantPickScreen({ onBack, onComplete, onModify, savedState, onStateChange, tournamentStarted, viewMode=false }) {
+  const lang = useLang();
   const GROUPS = INTERACTIVE_GROUPS;
   const [stage, setStage] = useState(savedState?.stage||"groups");
   const [groupIdx, setGroupIdx] = useState(savedState?.groupIdx||0);
@@ -2522,7 +2780,7 @@ function InstantPickScreen({ onBack, onComplete, onModify, savedState, onStateCh
       <div style={{display:"flex", alignItems:"center", gap:10, padding:"10px 14px 6px"}}>
         <button onClick={headerBack} style={{background:"rgba(255,255,255,0.12)",border:"none",borderRadius:10,width:34,height:34,color:"#fff",fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>‹</button>
         <div style={{flex:1}}>
-          <div style={{fontSize:10,color:RED,fontWeight:800,letterSpacing:1.5}}>FIFA - WORLD CUP 2026</div>
+          <div style={{fontSize:10,color:RED,fontWeight:800,letterSpacing:1.5}}>Predicto</div>
           <div style={{fontSize:18,fontWeight:900,color:"#fff"}}>{headerTitle}</div>
         </div>
         <div style={{textAlign:"right",flexShrink:0}}>
@@ -2823,13 +3081,13 @@ function InstantPickScreen({ onBack, onComplete, onModify, savedState, onStateCh
                   width:34,height:34,color:"#fff",fontSize:16,cursor:"pointer",
                   display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>‹</button>
               <div style={{flex:1}}>
-                <div style={{fontSize:10,color:"#FFD700",fontWeight:800,letterSpacing:1.5}}>FIFA - WORLD CUP 2026</div>
-                <div style={{fontSize:18,fontWeight:900,color:"#fff"}}>Predicțiile tale</div>
+                <div style={{fontSize:10,color:"#FFD700",fontWeight:800,letterSpacing:1.5}}>Predicto</div>
+                <div style={{fontSize:18,fontWeight:900,color:"#fff"}}>{T[lang].yourPredictions}</div>
               </div>
               <div style={{background:"rgba(255,215,0,0.2)",borderRadius:12,padding:"6px 12px",border:"1px solid rgba(255,215,0,0.4)"}}>
                 <div style={{fontSize:9,color:"rgba(255,215,0,0.7)",fontWeight:700,letterSpacing:1,textAlign:"center"}}>MAX</div>
                 <div style={{fontSize:18,fontWeight:900,color:"#FFD700",lineHeight:1}}>{PRED_MAX.total}</div>
-                <div style={{fontSize:8,color:"rgba(255,215,0,0.6)",fontWeight:600,textAlign:"center"}}>pts posibile</div>
+                <div style={{fontSize:8,color:"rgba(255,215,0,0.6)",fontWeight:600,textAlign:"center"}}>{T[lang].possiblePts}</div>
               </div>
             </div>
             {/* Podium */}
@@ -2842,7 +3100,7 @@ function InstantPickScreen({ onBack, onComplete, onModify, savedState, onStateCh
 
           {/* Scoring breakdown */}
           <div style={{flex:1,overflowY:"auto",padding:"12px 14px 8px"}}>
-            <div style={{fontSize:10,fontWeight:800,color:"#aaa",letterSpacing:1.5,textTransform:"uppercase",marginBottom:8}}>Punctaj per predicție corectă</div>
+            <div style={{fontSize:10,fontWeight:800,color:"#aaa",letterSpacing:1.5,textTransform:"uppercase",marginBottom:8}}>{T[lang].pointsPerPrediction}</div>
             <div style={{background:"#fff",borderRadius:14,boxShadow:SHADOW_OUT,overflow:"hidden",marginBottom:12}}>
               {scoreRows.map((r,i)=>(
                 <div key={i} style={{display:"flex",alignItems:"center",padding:"9px 14px",borderBottom:i<scoreRows.length-1?"1px solid rgba(0,0,0,0.05)":"none"}}>
@@ -2857,7 +3115,7 @@ function InstantPickScreen({ onBack, onComplete, onModify, savedState, onStateCh
               ))}
             </div>
             <div style={{background:`linear-gradient(135deg,${NAVY},#003580)`,borderRadius:14,padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
-              <span style={{fontSize:13,fontWeight:800,color:"rgba(255,255,255,0.8)"}}>Total maxim posibil</span>
+              <span style={{fontSize:13,fontWeight:800,color:"rgba(255,255,255,0.8)"}}>{T[lang].maxPossiblePoints}</span>
               <span style={{fontSize:22,fontWeight:900,color:"#FFD700"}}>{PRED_MAX.total} pts</span>
             </div>
           </div>
@@ -2931,6 +3189,7 @@ function InstantPickScreen({ onBack, onComplete, onModify, savedState, onStateCh
 }
 
 function InstantPickSummaryScreen({ picks, koPicks, best3, getGroupStanding, onConfirm, readOnly }) {
+  const lang = useLang();
   const GROUPS = INTERACTIVE_GROUPS;
   const ALL_ROUNDS = ["R16","QF","SF","Final"];
 
@@ -2950,18 +3209,18 @@ function InstantPickSummaryScreen({ picks, koPicks, best3, getGroupStanding, onC
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden"}}>
       {/* Champion header */}
       <div style={{background:`linear-gradient(160deg,#D4820A,#F0A020)`,padding:"28px 20px 24px",textAlign:"center",flexShrink:0}}>
-        <p style={{fontSize:10,fontWeight:900,color:"rgba(255,255,255,0.7)",margin:"0 0 8px",letterSpacing:3,textTransform:"uppercase"}}>Your Predicted Champion</p>
+        <p style={{fontSize:10,fontWeight:900,color:"rgba(255,255,255,0.7)",margin:"0 0 8px",letterSpacing:3,textTransform:"uppercase"}}>{T[lang].yourPredictedChampion}</p>
         {champion ? (<>
           <span style={{fontSize:90,lineHeight:1,filter:"drop-shadow(0 8px 24px rgba(0,0,0,0.4))"}}>{FLAGS[champion]||"🏳"}</span>
           <p style={{fontSize:28,fontWeight:900,color:"#fff",margin:"12px 0 4px",textShadow:"0 2px 8px rgba(0,0,0,0.3)"}}>{champion}</p>
-          <p style={{fontSize:13,color:"rgba(255,255,255,0.7)",margin:0,fontWeight:600}}>🏆 2026 World Cup Winner</p>
+          <p style={{fontSize:13,color:"rgba(255,255,255,0.7)",margin:0,fontWeight:600}}>🏆 {T[lang].worldCupWinner}</p>
         </>) : (
-          <p style={{fontSize:18,color:"rgba(255,255,255,0.6)",margin:"16px 0"}}>No champion selected</p>
+          <p style={{fontSize:18,color:"rgba(255,255,255,0.6)",margin:"16px 0"}}>{T[lang].noChampionSelected}</p>
         )}
       </div>
 
       <div style={{flex:1,overflowY:"auto",padding:"20px 20px 0"}}>
-        <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 10px"}}>Points per correct prediction</p>
+        <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 10px"}}>{T[lang].pointsPerPrediction}</p>
         <div style={{background:BG,borderRadius:14,boxShadow:SHADOW_OUT,overflow:"hidden",marginBottom:18}}>
           {SCORING.map((s,i)=>(
             <div key={i} style={{display:"flex",alignItems:"center",padding:"11px 16px",borderBottom:i<SCORING.length-1?"1px solid rgba(0,0,0,0.05)":"none",background:"#fff"}}>
@@ -2981,12 +3240,12 @@ function InstantPickSummaryScreen({ picks, koPicks, best3, getGroupStanding, onC
               background:`linear-gradient(135deg,${GREEN},#007A36)`,
               color:"#fff",fontSize:16,fontWeight:900,cursor:"pointer",
               boxShadow:"0 6px 20px rgba(0,154,68,0.35)",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-            ✅ Confirm Predictions
+            {T[lang].confirmPredictions}
           </button>
         )}
         {readOnly && (
           <div style={{width:"100%",padding:"16px 0",borderRadius:16,background:"#ccc",textAlign:"center",marginBottom:24}}>
-            <span style={{fontSize:14,fontWeight:700,color:"#888"}}>🔒 Tournament started — predictions locked</span>
+            <span style={{fontSize:14,fontWeight:700,color:"#888"}}>{T[lang].predictionsLocked}</span>
           </div>
         )}
       </div>
@@ -2995,6 +3254,7 @@ function InstantPickSummaryScreen({ picks, koPicks, best3, getGroupStanding, onC
 }
 
 function GroupRankingScreen({ group, teams, existingRanking, onConfirm, onBack, groupIdx, totalGroups, onNavigate, groupRankings, hideHeader=false, viewMode=false }) {
+  const lang = useLang();
   const [ranking, setRanking] = useState(existingRanking || [null, null, null, null]);
   const [dragIdx, setDragIdx] = useState(null);
   const [dragOverIdx, setDragOverIdx] = useState(null);
@@ -3104,12 +3364,12 @@ function GroupRankingScreen({ group, teams, existingRanking, onConfirm, onBack, 
             display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0,
           }}>‹</button>
           <div style={{flex:1}}>
-            <div style={{fontSize:10, color:RED, fontWeight:800, letterSpacing:1.5}}>FIFA - WORLD CUP 2026</div>
-            <div style={{fontSize:18, fontWeight:900, color:"#fff"}}>Group {group}</div>
+            <div style={{fontSize:10, color:RED, fontWeight:800, letterSpacing:1.5}}>Predicto</div>
+            <div style={{fontSize:18, fontWeight:900, color:"#fff"}}>{T[lang].group} {group}</div>
           </div>
           <div style={{textAlign:"right", flexShrink:0}}>
             <div style={{fontSize:13, fontWeight:700, color:"#fff"}}>{groupIdx+1}/{totalGroups}</div>
-            <div style={{fontSize:10, color:"rgba(255,255,255,0.45)"}}>groups</div>
+            <div style={{fontSize:10, color:"rgba(255,255,255,0.45)"}}>{T[lang].groups}</div>
           </div>
         </div>
 
@@ -3417,30 +3677,26 @@ function CircleTab({ label, name, isActive, onClick }) {
 
 
 // ── HOME ────────────────────────────────────────────────────────────────────
-function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenGroups, myBoards, predictionsComplete, instantPickDone, exactScores, activeBoardId, setActiveBoardId, tournamentStarted, simDay, simHour, simMin, createdBoards=[], showFirstAction }) {
+function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenGroups, myBoards, predictionsComplete, instantPickDone, exactScores, activeBoardId, setActiveBoardId, tournamentStarted, simDay, simHour, simMin, createdBoards=[], showFirstAction, leaderboardData={} }) {
+  const lang = useLang();
+  const displayName = useDisplayName();
+  const initials = useInitials();
   const activeId = activeBoardId;
   const setActiveId = setActiveBoardId;
   const activeBoard = myBoards.find(b=>b.id===activeId)||myBoards[0];
   const membersLabel = activeBoard?.members>999?`${(activeBoard.members/1000).toFixed(0)}k`:activeBoard?.members;
-  // Get leaders for active board — use board-specific if available, else global
+  // Get leaders for active board — prefer real DB data, fall back to placeholder
   const boardLeaders = (() => {
-    if(!activeBoard) return BOARD_LEADERS.global;
-    if(BOARD_LEADERS[activeBoard.id]) return BOARD_LEADERS[activeBoard.id];
-    if(activeBoard.prizes) {
-      const prizes = activeBoard.prizes||[];
-      const medals = ["🥇","🥈","🥉","🏅","🎖️"];
-      const slots = Math.max(3, prizes.length);
-      const realMembers = createdBoards.find(c=>c.id===activeBoard.id)?.members || activeBoard.members||0;
-      // If I'm in the board and there's only me
-      if(realMembers<=1) {
-        return [
-          { rank:1, name:"Alex Ionescu", pts:0, isMe:true, emoji:"🥇", prize:prizes[0]||null, accent:"#E8F0FF" },
-          ...Array.from({length:slots-1},(_,i)=>({ rank:i+2, name:"—", pts:0, emoji:medals[i+1]||null, prize:prizes[i+1]||null, accent:"#fff", empty:true })),
-        ];
-      }
-      return genBoardLeaders(prizes);
-    }
-    return BOARD_LEADERS.global;
+    const real = leaderboardData[activeBoard?.id];
+    if (real?.length > 0) return real;
+    if (!activeBoard) return [];
+    const prizes = activeBoard.prizes || [];
+    const medals = ["🥇","🥈","🥉","🏅","🎖️"];
+    const slots = Math.max(3, prizes.length);
+    return [
+      { rank:1, name:displayName, pts:0, isMe:true, emoji:"🥇", prize:prizes[0]||null, accent:"#E8F0FF" },
+      ...Array.from({length:slots-1},(_,i)=>({ rank:i+2, name:"—", pts:0, emoji:medals[i+1]||null, prize:prizes[i+1]||null, accent:"#fff", empty:true })),
+    ];
   })();
   const leaders = boardLeaders;
   // Show all prize slots (or min 3) in top section
@@ -3455,9 +3711,9 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
       <div style={{background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"10px 20px 12px",flexShrink:0,position:"relative",zIndex:1}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16}}>
           <div>
-            <p style={{fontSize:11,color:RED,margin:"0 0 2px",letterSpacing:2,textTransform:"uppercase",fontWeight:800}}>FIFA - WORLD CUP 2026</p>
+            <p style={{fontSize:11,color:RED,margin:"0 0 2px",letterSpacing:2,textTransform:"uppercase",fontWeight:800}}>Predicto</p>
             <h2 style={{fontSize:18,fontWeight:800,color:"#fff",margin:"0 0 2px"}}>{activeBoard?.name||"Global Board"}</h2>
-            <p style={{fontSize:11,color:"rgba(255,255,255,0.4)",margin:0}}>👥 {membersLabel} participants</p>
+            <p style={{fontSize:11,color:"rgba(255,255,255,0.4)",margin:0}}>👥 {membersLabel} {T[lang].participants}</p>
           </div>
           <div style={{width:38,height:38,borderRadius:11,background:"rgba(255,255,255,0.1)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:15}}>🔔</div>
         </div>
@@ -3465,7 +3721,7 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
           {myBoards.map(b=><CircleTab key={b.id} label={b.label} name={b.isGlobal?"Global":b.name.split(" ")[0]} isActive={activeId===b.id} onClick={()=>setActiveId(b.id)}/>)}
           <div onClick={onBoards} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4,cursor:"pointer",flexShrink:0}}>
             <div style={{width:46,height:46,borderRadius:"50%",background:"transparent",border:"2px dashed rgba(255,255,255,0.3)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,color:"rgba(255,255,255,0.4)"}}>+</div>
-            <span style={{fontSize:11,color:"rgba(255,255,255,0.35)",fontWeight:500}}>Add</span>
+            <span style={{fontSize:11,color:"rgba(255,255,255,0.35)",fontWeight:500}}>{T[lang].add}</span>
           </div>
         </div>
       </div>
@@ -3476,21 +3732,21 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
           <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:10}}>
             <div style={{width:48,height:48,borderRadius:"50%",background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,
               display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:18,fontWeight:800}}>
-              AI
+              {initials}
             </div>
             <div style={{flex:1,minWidth:0}}>
-              <p style={{fontSize:15,fontWeight:800,color:DARK,margin:0}}>Alex Ionescu</p>
-              <p style={{fontSize:12,color:"#888",margin:"2px 0 0"}}>{tournamentStarted?`${me?.pts||0} pts total`:"Tournament starts Jun 11"}</p>
+              <p style={{fontSize:15,fontWeight:800,color:DARK,margin:0}}>{displayName}</p>
+              <p style={{fontSize:12,color:"#888",margin:"2px 0 0"}}>{tournamentStarted?`${me?.pts||0} ${T[lang].ptsTotal}`:T[lang].tournamentStarts}</p>
             </div>
-            <span onClick={onLeaderboard} style={{fontSize:12,color:NAVY,fontWeight:700,cursor:"pointer",flexShrink:0}}>🏆 View all ›</span>
+            <span onClick={onLeaderboard} style={{fontSize:12,color:NAVY,fontWeight:700,cursor:"pointer",flexShrink:0}}>{T[lang].viewAll}</span>
           </div>
           {/* Ranking across boards — horizontal scroll with fade indicator */}
           <div style={{position:"relative",margin:"0 -14px"}}>
             <div style={{display:"flex",gap:8,overflowX:"auto",scrollbarWidth:"none",
               WebkitOverflowScrolling:"touch",padding:"0 14px 2px"}}>
               {myBoards.map(b=>{
-                const bLeaders = BOARD_LEADERS[b.id] || [];
-                const myRank = bLeaders.find(u=>u.isMe)?.rank || (b.isGlobal?201:1);
+                const bLeaders = leaderboardData[b.id] || [];
+                const myRank = bLeaders.find(u=>u.isMe)?.rank || 1;
                 const isActive = activeId===b.id;
                 return (
                   <div key={b.id} onClick={()=>setActiveId(b.id)}
@@ -3523,7 +3779,7 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
         </div>
 
         {/* Tasks */}
-        <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 6px"}}>Your tasks</p>
+        <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 6px"}}>{T[lang].yourTasks}</p>
         <div style={{display:"flex",gap:8,marginBottom:10}}>
           {/* Predictions task */}
           {(()=>{
@@ -3546,10 +3802,10 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
                   </div>
                 )}
                 <div style={{fontSize:28,marginBottom:4}}>{isLocked?"🔒":"🎯"}</div>
-                <p style={{fontSize:13,fontWeight:800,color:isLocked?"#aaa":DARK,margin:0}}>Predictions</p>
+                <p style={{fontSize:13,fontWeight:800,color:isLocked?"#aaa":DARK,margin:0}}>{T[lang].predictions}</p>
                 <p style={{fontSize:11,margin:"2px 0 0",fontWeight:600,
                   color:boardDone?GREEN:isLocked?"#bbb":"#888"}}>
-                  {boardDone?"✓ Completed":isLocked?"Deadline passed":"Due Jun 11"}
+                  {boardDone?T[lang].completed:isLocked?T[lang].deadlinePassed:T[lang].dueJun11}
                 </p>
               </div>
             );
@@ -3579,9 +3835,9 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
                   </div>
                 )}
                 <div style={{fontSize:28,marginBottom:4,colorScheme:"light",filter:"saturate(0) contrast(3) brightness(1.1)"}}>⚽</div>
-                <p style={{fontSize:13,fontWeight:800,color:DARK,margin:0}}>Exact Scores</p>
+                <p style={{fontSize:13,fontWeight:800,color:DARK,margin:0}}>{T[lang].exactScores}</p>
                 <p style={{fontSize:11,color:missing===0?GREEN:"#888",margin:"2px 0 0",fontWeight:600}}>
-                  {missing===0?"✓ Week complete":`${missing} this week`}
+                  {missing===0?T[lang].weekComplete:`${missing} ${T[lang].thisWeek}`}
                 </p>
               </div>
             );
@@ -3598,32 +3854,42 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
           const w4Open = simNowDate >= june(28);
           const todaySim = simDay ? Number(simDay) : simNowDate.getDate();
           console.log("todaySim:", todaySim, "simDay:", simDay, "w1past:", todaySim>14);
+          const weekDays = (start) => Array.from({length:7},(_,i)=>start+i).filter(d=>d>=1&&d<=50);
+          const weekMatchMap = () => { const mm={}; CALENDAR_EVENTS.forEach(e=>{mm[e.day]=e.matches;}); return mm; };
+          const totalRawInWeek = (start) => {
+            const mm = weekMatchMap();
+            return weekDays(start).reduce((s,d)=>s+(mm[d]||[]).length,0);
+          };
           const matchesInWeek = (start) => {
-            const days = Array.from({length:7},(_,i)=>start+i).filter(d=>d>=1&&d<=50);
-            const mm = {};
-            CALENDAR_EVENTS.forEach(e=>{ mm[e.day]=e.matches; });
-            return days.reduce((s,d)=>s+(mm[d]||[]).length,0);
+            const mm = weekMatchMap();
+            return weekDays(start).reduce((s,d)=>s+(mm[d]||[]).filter((m,i)=>
+              (exactScores||{})[`${d}-${i}`] || !isMatchPast(d, m.time, simDay, simHour)
+            ).length,0);
           };
           const scoredInWeek = (start) => {
-            const days = Array.from({length:7},(_,i)=>start+i).filter(d=>d>=1&&d<=50);
-            const mm = {};
-            CALENDAR_EVENTS.forEach(e=>{ mm[e.day]=e.matches; });
-            return days.reduce((s,d)=>s+(mm[d]||[]).filter((_,i)=>(exactScores||{})[`${d}-${i}`]).length,0);
+            const mm = weekMatchMap();
+            return weekDays(start).reduce((s,d)=>s+(mm[d]||[]).filter((_,i)=>(exactScores||{})[`${d}-${i}`]).length,0);
+          };
+          const missedInWeek = (start) => {
+            const mm = weekMatchMap();
+            return weekDays(start).reduce((s,d)=>s+(mm[d]||[]).filter((m,i)=>
+              isMatchPast(d, m.time, simDay, simHour) && !(exactScores||{})[`${d}-${i}`]
+            ).length,0);
           };
           const steps = [
-            { label:"Jun 8-14",  stage:"Group Stage · Week 1", locked:!w1Open, total:matchesInWeek(8),  scored:scoredInWeek(8),  past:todaySim>14, weekStart:8  },
-            { label:"Jun 15-21", stage:"Group Stage · Week 2", locked:!w2Open, total:matchesInWeek(15), scored:scoredInWeek(15), past:todaySim>21, weekStart:15 },
-            { label:"Jun 22-28", stage:"Group Stage · Week 3", locked:!w3Open, total:matchesInWeek(22), scored:scoredInWeek(22), past:todaySim>28, weekStart:22 },
-            { label:"Jun 29+",   stage:"Round of 16 · QF · SF", locked:!w4Open, total:matchesInWeek(29), scored:scoredInWeek(29), past:false,       weekStart:29 },
-            { label:"Jul 19",    stage:"🏆 Final", locked:true, total:1, scored:0, isFinal:true },
+            { label:"Jun 8-14",  stage:`${T[lang].groupStage} · ${T[lang].week} 1`, locked:!w1Open, total:matchesInWeek(8),  scored:scoredInWeek(8),  missed:missedInWeek(8),  totalRaw:totalRawInWeek(8),  past:todaySim>14, weekStart:8  },
+            { label:"Jun 15-21", stage:`${T[lang].groupStage} · ${T[lang].week} 2`, locked:!w2Open, total:matchesInWeek(15), scored:scoredInWeek(15), missed:missedInWeek(15), totalRaw:totalRawInWeek(15), past:todaySim>21, weekStart:15 },
+            { label:"Jun 22-28", stage:`${T[lang].groupStage} · ${T[lang].week} 3`, locked:!w3Open, total:matchesInWeek(22), scored:scoredInWeek(22), missed:missedInWeek(22), totalRaw:totalRawInWeek(22), past:todaySim>28, weekStart:22 },
+            { label:"Jun 29+",   stage:T[lang].roundOf16QF, locked:!w4Open, total:matchesInWeek(29), scored:scoredInWeek(29), missed:missedInWeek(29), totalRaw:totalRawInWeek(29), past:false,       weekStart:29 },
+            { label:"Jul 19",    stage:`🏆 ${T[lang].final}`, locked:true, total:1, scored:0, missed:0, totalRaw:1, isFinal:true },
           ];
 
           return (
             <div style={{marginBottom:10}}>
               {/* Header */}
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
-                <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:0}}>Path to the Trophy</p>
-                <span style={{fontSize:10,color:"#bbb",fontWeight:600}}>Unlocks every Sunday 8AM</span>
+                <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:0}}>{T[lang].pathToTrophy}</p>
+                <span style={{fontSize:10,color:"#bbb",fontWeight:600}}>{T[lang].unlocksEvery}</span>
               </div>
               <div style={{background:"#fff",borderRadius:14,boxShadow:SHADOW_OUT,padding:"12px 14px"}}>
                 {steps.map((w,i)=>{
@@ -3635,7 +3901,7 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
                   const isLast = i===steps.length-1;
                   return (
                     <div key={i} style={{display:"flex",gap:12,cursor:(w.locked&&!isPast)?"default":"pointer",
-                      opacity:isPast?0.6:1}}
+                      opacity:(isPast&&!done)?0.6:1}}
                       onClick={()=>(!w.locked||isPast)&&!w.isFinal&&onOpenGroups&&onOpenGroups(w.weekStart)}>
                       {/* Timeline column */}
                       <div style={{display:"flex",flexDirection:"column",alignItems:"center",width:20,flexShrink:0}}>
@@ -3672,15 +3938,16 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
                           </div>
                           <span style={{fontSize:11,fontWeight:700,
                             color:w.locked&&!isPast?"#ccc":done?GREEN:isPast?"#999":active?NAVY:"#bbb"}}>
-                            {w.isFinal?"Final":w.locked&&!isPast?"Locked":isPast?`${w.scored}/${w.total} · Past`:`${w.scored}/${w.total}`}
+                            {w.isFinal?T[lang].final:w.locked&&!isPast?T[lang].locked:done?T[lang].weekComplete:isPast?`${w.scored}/${w.total} · ${T[lang].past}`:`${w.scored}/${w.total}`}
                           </span>
                         </div>
                         {/* Progress bar */}
                         {!w.locked&&!w.isFinal&&(
-                          <div style={{height:4,background:"rgba(0,0,0,0.06)",borderRadius:2,overflow:"hidden"}}>
-                            <div style={{height:"100%",width:`${pct}%`,
-                              background:pct===100?GREEN:`linear-gradient(90deg,${RED},${GREEN})`,
-                              transition:"width 0.3s",borderRadius:2}}/>
+                          <div style={{height:4,background:"rgba(0,0,0,0.06)",borderRadius:2,overflow:"hidden",display:"flex"}}>
+                            <div style={{height:"100%",width:`${w.totalRaw?Math.round((w.missed/w.totalRaw)*100):0}%`,
+                              background:"#b0a0a0",transition:"width 0.3s",flexShrink:0}}/>
+                            <div style={{height:"100%",width:`${w.totalRaw?Math.round((w.scored/w.totalRaw)*100):0}%`,
+                              background:GREEN,transition:"width 0.3s",flexShrink:0}}/>
                           </div>
                         )}
                       </div>
@@ -3705,7 +3972,9 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
 
 
 // ── BOARDS ────────────────────────────────────────────────────────────────────
-function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: createdBoardsProp, setCreatedBoards: setCreatedBoardsProp, availableBoards: availableBoardsProp, setAvailableBoards: setAvailableBoardsProp, showToast }) {
+function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: createdBoardsProp, setCreatedBoards: setCreatedBoardsProp, availableBoards: availableBoardsProp, setAvailableBoards: setAvailableBoardsProp, showToast, user, onCreateBoard, onJoinByCode }) {
+  const displayName = useDisplayName();
+  const lang = useLang();
   const [view, setView] = useState("main"); // main | join | create
   const [showCodeInfo, setShowCodeInfo] = useState(false);
   const [boardSearch, setBoardSearch] = useState("");
@@ -3738,7 +4007,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
       setCreatedBoards(p=>p.map(c=>c.id===b.id?{
         ...c,
         members:(c.members||0)+1,
-        membersList:[...(c.membersList||[]),{name:"Alex Ionescu", isMe:true, id:"me"}]
+        membersList:[...(c.membersList||[]),{name:displayName, isMe:true, id:"me"}]
       }:c));
       setAvailBoards(p=>p.map(c=>c.id===b.id?{...c,members:(c.members||0)+1}:c));
       if(showToast) showToast(`Joined "${b.name}"!`, "🏆");
@@ -3763,14 +4032,37 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
     }
   };
 
-  const handleJoinCode = () => {
-    const found = [...availBoards, ...createdBoards].find(b=>b.code===boardSearch.trim().toUpperCase()||b.id===boardSearch.trim());
+  const handleJoinCode = async () => {
+    const trimmed = boardSearch.trim();
+    if (onJoinByCode) {
+      const data = await onJoinByCode(trimmed);
+      if (data) { setBoardSearch(""); setCodeError(""); if(onJoin) onJoin(data.id); }
+      else setCodeError(T[lang].invalidCode);
+      return;
+    }
+    const found = [...availBoards, ...createdBoards].find(b=>b.code===trimmed.toUpperCase()||b.id===trimmed);
     if(found){ joinBoard(found); setBoardSearch(""); setCodeError(""); }
-    else setCodeError("Invalid code. Please check and try again.");
+    else setCodeError(T[lang].invalidCode);
   };
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if(!cName.trim()) return;
+    if(!editBoard && onCreateBoard) {
+      const data = await onCreateBoard({
+        name: cName,
+        emoji: cEmoji || cName[0].toUpperCase(),
+        type: 'private',
+        password: cPassword,
+        max_players: cMaxPlayers,
+        prizes: cPrizes.slice(0, cSlots).filter(p=>p.trim()),
+      });
+      if(data) {
+        if(showToast) showToast(`"${cName}" created!`, "🎉");
+        setCName(""); setCEmoji(""); setCPassword(""); setShowEmojiPicker(false);
+        setEditBoard(null); setView("main");
+      }
+      return;
+    }
     const newBoard = {
       id: editBoard ? editBoard.id : `custom_${Date.now()}`,
       name: cName,
@@ -3793,11 +4085,9 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
     } else {
       setCreatedBoards(p=>[...p, newBoard]);
       if(showToast) showToast(`"${cName}" created!`, "🎉");
+      if(onJoin) onJoin(newBoard.id);
     }
-    setEditBoard(null);
-    setCEmoji("");
-    setShowEmojiPicker(false);
-    setView("main");
+    setEditBoard(null); setCEmoji(""); setShowEmojiPicker(false); setView("main");
   };
 
   const isJoined = id => myBoards.some(b=>b.id===id);
@@ -3809,14 +4099,14 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
         <div style={{display:"flex",alignItems:"center",gap:14}}>
           <div onClick={()=>setView("main")} style={{width:36,height:36,borderRadius:10,background:"rgba(255,255,255,0.12)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:"#fff"}}>&#8249;</div>
           <div>
-            <p style={{fontSize:11,color:RED,margin:"0 0 2px",letterSpacing:2,textTransform:"uppercase",fontWeight:800}}>FIFA - WORLD CUP 2026</p>
-            <h2 style={{fontSize:17,fontWeight:800,color:"#fff",margin:0}}>{editBoard?"Edit Board":"Create Board"}</h2>
+            <p style={{fontSize:11,color:RED,margin:"0 0 2px",letterSpacing:2,textTransform:"uppercase",fontWeight:800}}>Predicto</p>
+            <h2 style={{fontSize:17,fontWeight:800,color:"#fff",margin:0}}>{editBoard?T[lang].editBoard:T[lang].createBoard}</h2>
           </div>
         </div>
       </div>
       <div style={{flex:1,overflowY:"auto",padding:"16px 20px 24px",position:"relative",zIndex:1}}>
         {/* Name */}
-        <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 6px"}}>Nume grup</p>
+        <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 6px"}}>{T[lang].boardName}</p>
         <div style={{display:"flex",gap:10,alignItems:"center",marginBottom:16}}>
           {/* Avatar emoji picker */}
           <div onClick={()=>setShowEmojiPicker(p=>!p)}
@@ -3836,7 +4126,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
         {/* Emoji grid */}
         {showEmojiPicker&&(
           <div style={{background:BG,borderRadius:12,boxShadow:SHADOW_OUT,padding:"12px",marginBottom:14,marginTop:-8}}>
-            <p style={{fontSize:12,fontWeight:700,color:"#aaa",margin:"0 0 8px",textTransform:"uppercase",letterSpacing:1}}>Alege un emoji</p>
+            <p style={{fontSize:12,fontWeight:700,color:"#aaa",margin:"0 0 8px",textTransform:"uppercase",letterSpacing:1}}>{T[lang].chooseEmoji}</p>
             <div style={{display:"grid",gridTemplateColumns:"repeat(8,1fr)",gap:6}}>
               {["⚽","🏆","🥇","🎯","🔥","⭐","💪","🦁","🐯","🦅","🌍","🎖️","🏅","🥊","🎮","🎪",
                 "🍕","🍺","🎉","🚀","💎","🌟","👑","🤝","🏋️","🎸","🏄","🎭"].map(e=>(
@@ -3853,14 +4143,14 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
               <button onClick={()=>{ setCEmoji(""); setShowEmojiPicker(false); }}
                 style={{marginTop:8,width:"100%",padding:"6px",borderRadius:8,border:"none",
                   background:"rgba(0,0,0,0.05)",fontSize:11,color:"#aaa",cursor:"pointer"}}>
-                Șterge
+                {T[lang].del}
               </button>
             )}
           </div>
         )}
 
         {/* Password */}
-        <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 6px"}}>Group Password</p>
+        <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 6px"}}>{T[lang].boardPassword}</p>
         <div style={{background:BG,borderRadius:12,boxShadow:SHADOW_IN,padding:"11px 14px",display:"flex",alignItems:"center",gap:8,marginBottom:16}}>
           <span style={{fontSize:14}}>🔒</span>
           <input value={cPassword} onChange={e=>setCPassword(e.target.value)} placeholder="Parola pentru join..."
@@ -3868,7 +4158,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
         </div>
 
         {/* Max players */}
-        <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 8px"}}>Max Players</p>
+        <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 8px"}}>{T[lang].maxPlayers}</p>
         <div style={{display:"flex",gap:8,marginBottom:16}}>
           {[5,10,15,20,50].map(n=>(
             <button key={n} onClick={()=>setCMaxPlayers(n)}
@@ -3882,7 +4172,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
         </div>
 
         {/* Prize slots */}
-        <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 8px"}}>Locuri premiate</p>
+        <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 8px"}}>{T[lang].prizedSlots}</p>
         <div style={{display:"flex",gap:8,marginBottom:14}}>
           {[1,2,3,4,5].map(n=>(
             <button key={n} onClick={()=>{ setCSlots(n); setCPrizes(p=>{const a=[...p];while(a.length<n)a.push("");return a;}); }}
@@ -3896,7 +4186,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
         </div>
 
         {/* Prizes per slot */}
-        <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 8px"}}>Premii</p>
+        <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 8px"}}>{T[lang].prizesLabel}</p>
         {Array.from({length:cSlots},(_,i)=>(
           <div key={i} style={{background:BG,borderRadius:12,boxShadow:SHADOW_IN,padding:"10px 14px",
             display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
@@ -3919,7 +4209,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
 
         {/* Members management — only when editing */}
         {editBoard&&(editBoard.membersList?.length>0)&&(<>
-          <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"16px 0 8px"}}>Members</p>
+          <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"16px 0 8px"}}>{T[lang].membersLabel}</p>
           <div style={{background:BG,borderRadius:12,boxShadow:SHADOW_OUT,overflow:"hidden",marginBottom:4}}>
             {(editBoard.membersList||[]).map((m,mi)=>(
               <div key={mi} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",
@@ -3952,7 +4242,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
             background:cName.trim()?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:"#e0e0e0",
             color:cName.trim()?"#fff":"#bbb",fontSize:15,fontWeight:800,cursor:cName.trim()?"pointer":"default",
             boxShadow:cName.trim()?"0 6px 20px rgba(0,32,91,0.3)":"none"}}>
-          {editBoard ? "Save Changes ✓" : "Create Board 🏆"}
+          {editBoard ? T[lang].saveChanges : T[lang].createBoard2}
         </button>
       </div>
     </div>
@@ -3965,8 +4255,8 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
         <div style={{display:"flex",alignItems:"center",gap:14}}>
           <div onClick={onBack} style={{width:36,height:36,borderRadius:10,background:"rgba(255,255,255,0.12)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:"#fff"}}>&#8249;</div>
           <div style={{flex:1}}>
-            <p style={{fontSize:11,color:RED,margin:"0 0 2px",letterSpacing:2,textTransform:"uppercase",fontWeight:800}}>FIFA - WORLD CUP 2026</p>
-            <h2 style={{fontSize:17,fontWeight:800,color:"#fff",margin:0}}>Boards</h2>
+            <p style={{fontSize:11,color:RED,margin:"0 0 2px",letterSpacing:2,textTransform:"uppercase",fontWeight:800}}>Predicto</p>
+            <h2 style={{fontSize:17,fontWeight:800,color:"#fff",margin:0}}>{T[lang].boards}</h2>
           </div>
           <button onClick={()=>{
             setEditBoard(null);
@@ -3975,7 +4265,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
           }}
             style={{background:"rgba(255,255,255,0.15)",border:"none",borderRadius:10,padding:"8px 14px",
               color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer"}}>
-            + Create
+            + {T[lang].createBoard}
           </button>
         </div>
       </div>
@@ -3985,25 +4275,25 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
           <div style={{background:"#fff",borderRadius:"20px 20px 0 0",padding:"24px 20px 40px",width:"100%"}}>
             <div style={{width:36,height:4,borderRadius:2,background:"#e0e0e0",margin:"0 auto 20px"}}/>
             <h3 style={{fontSize:17,fontWeight:800,color:DARK,margin:"0 0 4px",textAlign:"center"}}>{joinPrompt.name}</h3>
-            <p style={{fontSize:12,color:"#aaa",textAlign:"center",margin:"0 0 20px"}}>🔒 Board protejat cu parolă</p>
+            <p style={{fontSize:12,color:"#aaa",textAlign:"center",margin:"0 0 20px"}}>{T[lang].passwordProtected}</p>
             <div style={{background:"#f5f5f5",borderRadius:12,padding:"11px 14px",marginBottom:8,display:"flex",alignItems:"center",gap:8}}>
               <span style={{fontSize:16}}>🔑</span>
               <input value={joinPass} onChange={e=>{setJoinPass(e.target.value);setJoinError("");}}
-                placeholder="Introdu parola..." type="password"
+                placeholder={T[lang].enterPassword} type="password"
                 style={{flex:1,background:"transparent",border:"none",outline:"none",fontSize:14,color:DARK}}/>
             </div>
             {joinError&&<p style={{fontSize:11,color:RED,margin:"0 0 12px 4px"}}>{joinError}</p>}
             <div style={{display:"flex",gap:10,marginTop:16}}>
               <button onClick={()=>setJoinPrompt(null)}
                 style={{flex:1,padding:"13px 0",borderRadius:12,border:"none",background:"#f0f0f0",color:"#888",fontSize:14,fontWeight:700,cursor:"pointer"}}>
-                Cancel
+                {T[lang].cancel}
               </button>
               <button onClick={()=>{
                 if(joinPass===joinPrompt.password){
                   doJoin(joinPrompt);
                   setJoinPrompt(null);
                 } else {
-                  setJoinError("Incorrect password. Try again.");
+                  setJoinError(T[lang].incorrectPassword);
                 }
               }}
                 style={{flex:2,padding:"13px 0",borderRadius:12,border:"none",background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer"}}>
@@ -4020,7 +4310,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
         {/* Admin boards */}
         {createdBoards.length>0&&(<>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
-            <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:0}}>Board Admin</p>
+            <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:0}}>{T[lang].boardAdmin}</p>
           </div>
           {createdBoards.map(b=>(
             <div key={b.id} style={{background:"#fff",borderRadius:14,boxShadow:"0 2px 12px rgba(0,0,0,0.10)",padding:"12px 14px",marginBottom:9}}>
@@ -4086,7 +4376,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
                         <button onClick={()=>removeMember(b.id,m.id)}
                           style={{background:"rgba(200,16,46,0.08)",border:"none",borderRadius:8,
                             padding:"4px 10px",fontSize:11,fontWeight:700,color:RED,cursor:"pointer"}}>
-                          Remove
+                          {T[lang].remove}
                         </button>
                       )}
                     </div>
@@ -4099,7 +4389,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
 
         {/* Joined boards */}
         {myBoards.filter(b=>!b.prizes||b.isGlobal).length>0&&(<>
-          <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 10px"}}>My Boards</p>
+          <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 10px"}}>{T[lang].joinedBoards}</p>
           {myBoards.map(b=>{
             // Get latest data from createdBoards or availBoards
             const latest = createdBoards.find(c=>c.id===b.id)||availBoards.find(c=>c.id===b.id)||b;
@@ -4115,7 +4405,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
                   <p style={{fontSize:11,color:"#aaa",margin:"2px 0 0"}}>👥 {latest.members}{latest.max?"/"+latest.max:""} members</p>
                 </div>
                 <div style={{background:"#E8F0FF",borderRadius:9,padding:"7px 12px",fontSize:11,fontWeight:700,color:NAVY}}>
-                  {b.isGlobal?"Global":"Joined"}
+                  {b.isGlobal ? T[lang].globalBoard : "✓ Joined"}
                 </div>
               </div>
             </div>
@@ -4137,7 +4427,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
           <div style={{background:"#fff",borderRadius:14,boxShadow:"0 2px 12px rgba(0,0,0,0.10)",marginBottom:9,overflow:"hidden"}}>
             {/* Header */}
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 14px 8px"}}>
-              <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:0}}>Available Boards</p>
+              <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:0}}>{T[lang].availableBoards}</p>
               <span style={{fontSize:11,color:"#bbb"}}>{allAvail.length} boards</span>
             </div>
             {/* Search inside card */}
@@ -4407,7 +4697,7 @@ function SplashScreen({ onNext, lang, setLang, simDay, simHour=12, simMin=0, tou
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"20px 22px 0",position:"relative",zIndex:10}}>
         <div style={{width:44}}/>
         <div style={{textAlign:"center"}}>
-          <p style={{fontSize:12,color:"#C8102E",margin:"0 0 2px",letterSpacing:3,textTransform:"uppercase",fontWeight:800}}>FIFA</p>
+          <p style={{fontSize:12,color:"#C8102E",margin:"0 0 2px",letterSpacing:3,textTransform:"uppercase",fontWeight:800}}>Predicto</p>
           <h1 style={{fontSize:20,fontWeight:900,color:"#00205B",margin:0}}>WORLD CUP 2026</h1>
           <p style={{fontSize:11,color:"#888",margin:"3px 0 0"}}>{T[lang].location}</p>
         </div>
@@ -4459,6 +4749,7 @@ function SplashScreen({ onNext, lang, setLang, simDay, simHour=12, simMin=0, tou
 }
 
 function OnboardingSheet({ onDone }) {
+  const lang = useLang();
   const [slide, setSlide] = useState(0);
   const [skipNext, setSkipNext] = useState(false);
   const startX = useRef(null);
@@ -4466,24 +4757,24 @@ function OnboardingSheet({ onDone }) {
   const slides = [
     {
       emoji:"🎯",
-      title:"Predict the Tournament",
-      subtitle:"Once · From Groups to the Final",
-      desc:"Pick the winner of every match before the tournament kicks off. One shot — make it count.",
-      nextLabel:"Show me scores →",
+      title:T[lang].onb0Title,
+      subtitle:T[lang].onb0Sub,
+      desc:T[lang].onb0Desc,
+      nextLabel:T[lang].onb0Next,
     },
     {
       emoji:"⚽",
-      title:"Weekly Exact Score",
-      subtitle:"Unlocks every Sunday at 8:00 AM",
-      desc:"Predict the exact score of each week's matches for bonus points. New matches every Sunday.",
-      nextLabel:"Invite friends →",
+      title:T[lang].onb1Title,
+      subtitle:T[lang].onb1Sub,
+      desc:T[lang].onb1Desc,
+      nextLabel:T[lang].onb1Next,
     },
     {
       emoji:"🏆",
-      title:"Compete With Friends",
-      subtitle:"Private boards · Custom prizes",
-      desc:"Create a private group, invite your friends and set your own prizes. May the best predictor win.",
-      nextLabel:null,
+      title:T[lang].onb2Title,
+      subtitle:T[lang].onb2Sub,
+      desc:T[lang].onb2Desc,
+      nextLabel:T[lang].onb2Next,
     },
   ];
 
@@ -4593,26 +4884,123 @@ function OnboardingSheet({ onDone }) {
 }
 
 function LoginScreen({ onNext }) {
+  const lang = useLang();
+  const [tab, setTab] = useState("password");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [error, setError] = useState("");
+
+  const handlePassword = async (isRegister=false) => {
+    if (!email.trim() || !password.trim()) return;
+    setLoading(true); setError("");
+    const fn = isRegister
+      ? supabase.auth.signUp({ email: email.trim(), password })
+      : supabase.auth.signInWithPassword({ email: email.trim(), password });
+    const { error } = await fn;
+    setLoading(false);
+    if (error) setError(error.message);
+  };
+
+  const handleMagicLink = async () => {
+    if (!email.trim()) return;
+    setLoading(true); setError("");
+    const { error } = await supabase.auth.signInWithOtp({
+      email: email.trim(),
+      options: { emailRedirectTo: window.location.origin }
+    });
+    setLoading(false);
+    if (error) setError(error.message);
+    else setSent(true);
+  };
+
+  if (sent) return (
+    <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"0 32px",textAlign:"center",background:BG,position:"relative",overflow:"hidden"}}>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:0,objectFit:"cover",objectPosition:"center 20%",opacity:0.1,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
+      <div style={{position:"relative",zIndex:1}}>
+        <div style={{fontSize:56,marginBottom:16}}>📧</div>
+        <h2 style={{fontSize:20,fontWeight:800,color:DARK,margin:"0 0 10px"}}>Check your email!</h2>
+        <p style={{fontSize:14,color:"#aaa",lineHeight:1.6,margin:"0 0 24px"}}>
+          Am trimis un link la<br/><strong style={{color:DARK}}>{email}</strong>
+        </p>
+        <button onClick={()=>setSent(false)} style={{background:"transparent",border:`1px solid #ddd`,borderRadius:10,padding:"10px 20px",fontSize:13,color:"#aaa",cursor:"pointer"}}>
+          ← Înapoi
+        </button>
+      </div>
+    </div>
+  );
+
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,position:"relative",overflow:"hidden"}}>
       <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:0,objectFit:"cover",objectPosition:"center 20%",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
-      <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"40px 28px 36px",display:"flex",flexDirection:"column",alignItems:"center"}}>
-        <div style={{width:72,height:72,borderRadius:22,background:"rgba(255,255,255,0.12)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:36,marginBottom:16}}>🏆</div>
+      <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"32px 28px 28px",display:"flex",flexDirection:"column",alignItems:"center"}}>
+        <div style={{width:64,height:64,borderRadius:20,background:"rgba(255,255,255,0.12)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:32,marginBottom:12}}>🏆</div>
         <p style={{fontSize:12,color:RED,margin:"0 0 4px",letterSpacing:3,textTransform:"uppercase",fontWeight:800}}>WORLD CUP 2026</p>
-        <h2 style={{fontSize:24,fontWeight:800,color:"#fff",margin:"0 0 6px",textAlign:"center"}}>Join the Game</h2>
+        <h2 style={{fontSize:22,fontWeight:800,color:"#fff",margin:"0 0 16px",textAlign:"center"}}>{T[lang].joinTheGame}</h2>
+        {/* Tabs */}
+        <div style={{display:"flex",gap:0,background:"rgba(255,255,255,0.1)",borderRadius:10,padding:3,width:"100%"}}>
+          {[{id:"password",label:"Parolă"},{id:"magic",label:"Magic Link"}].map(t=>(
+            <button key={t.id} onClick={()=>{setTab(t.id);setError("");}}
+              style={{flex:1,background:tab===t.id?"#fff":"transparent",color:tab===t.id?NAVY:"rgba(255,255,255,0.7)",border:"none",borderRadius:8,padding:"8px 0",fontSize:13,fontWeight:700,cursor:"pointer",transition:"all 0.2s"}}>
+              {t.label}
+            </button>
+          ))}
+        </div>
       </div>
-      <div style={{flex:1,padding:"28px 24px 36px",display:"flex",flexDirection:"column",position:"relative",zIndex:1}}>
-        {[{icon:"G",label:"Continue with Google",bg:BG,color:DARK,shadow:SHADOW_OUT},{icon:"f",label:"Continue with Facebook",bg:"#1877F2",color:"#fff",shadow:"0 4px 14px rgba(24,119,242,0.4)"},{icon:"📷",label:"Continue with Instagram",bg:"#E1306C",color:"#fff",shadow:"0 4px 14px rgba(225,48,108,0.4)"}].map(({icon,label,bg,color,shadow})=>(
-          <button key={label} onClick={onNext} style={{width:"100%",background:bg,color,border:"none",borderRadius:14,padding:"14px 20px",fontSize:15,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",gap:12,boxShadow:shadow,marginBottom:10}}>
-            <span style={{fontSize:18,width:24,textAlign:"center"}}>{icon}</span>{label}
+
+      <div style={{flex:1,padding:"24px 24px 32px",display:"flex",flexDirection:"column",position:"relative",zIndex:1}}>
+        {/* Email */}
+        <div style={{background:"#fff",borderRadius:14,boxShadow:SHADOW_OUT,padding:"14px 16px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
+          <span style={{fontSize:15}}>✉️</span>
+          <input value={email} onChange={e=>setEmail(e.target.value)} placeholder="adresa@email.com"
+            type="email" autoCapitalize="none"
+            style={{flex:1,border:"none",outline:"none",fontSize:15,color:DARK,background:"transparent"}}/>
+        </div>
+
+        {/* Parolă — doar pe tab password */}
+        {tab==="password" && (
+          <div style={{background:"#fff",borderRadius:14,boxShadow:SHADOW_OUT,padding:"14px 16px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
+            <span style={{fontSize:15}}>🔒</span>
+            <input value={password} onChange={e=>setPassword(e.target.value)}
+              onKeyDown={e=>e.key==="Enter"&&handlePassword()}
+              placeholder="parolă" type="password"
+              style={{flex:1,border:"none",outline:"none",fontSize:15,color:DARK,background:"transparent"}}/>
+          </div>
+        )}
+
+        {error && <p style={{fontSize:12,color:RED,margin:"0 0 8px",textAlign:"center"}}>{error}</p>}
+
+        {tab==="password" ? (
+          <>
+            <button onClick={()=>handlePassword(false)} disabled={loading||!email.trim()||!password.trim()}
+              style={{width:"100%",background:email.trim()&&password.trim()?`linear-gradient(135deg,${NAVY},#001840)`:"#e0e0e0",color:"#fff",border:"none",borderRadius:14,padding:"15px 0",fontSize:15,fontWeight:700,cursor:"pointer",opacity:loading?0.7:1,marginBottom:10}}>
+              {loading ? "Se încarcă..." : "Intră în cont →"}
+            </button>
+            <button onClick={()=>handlePassword(true)} disabled={loading||!email.trim()||!password.trim()}
+              style={{width:"100%",background:"transparent",color:NAVY,border:`1.5px solid ${NAVY}33`,borderRadius:14,padding:"13px 0",fontSize:14,fontWeight:700,cursor:"pointer",opacity:loading?0.7:1}}>
+              Cont nou
+            </button>
+          </>
+        ) : (
+          <button onClick={handleMagicLink} disabled={loading||!email.trim()}
+            style={{width:"100%",background:email.trim()?`linear-gradient(135deg,${NAVY},#001840)`:"#e0e0e0",color:"#fff",border:"none",borderRadius:14,padding:"15px 0",fontSize:15,fontWeight:700,cursor:"pointer",opacity:loading?0.7:1}}>
+            {loading ? "Se trimite..." : "Trimite Magic Link →"}
           </button>
-        ))}
+        )}
+
+        {import.meta.env.DEV && (
+          <button onClick={onNext} style={{marginTop:16,width:"100%",background:"transparent",border:`1px dashed #ddd`,borderRadius:14,padding:"12px 0",fontSize:13,color:"#bbb",cursor:"pointer",fontWeight:600}}>
+            DEV — Skip Login →
+          </button>
+        )}
       </div>
     </div>
   );
 }
 
 function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, myBoards=[], activeBoardId, setActiveBoardId }) {
+  const lang = useLang();
   const leaders = leadersProp || BOARD_LEADERS.global;
   const [search, setSearch] = useState("");
   const filtered = search.trim()
@@ -4627,8 +5015,8 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:myBoards.length>1?12:0}}>
           <div onClick={onBack} style={{width:36,height:36,borderRadius:10,background:"rgba(255,255,255,0.12)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:"#fff"}}>&#8249;</div>
           <div style={{textAlign:"center"}}>
-            <p style={{fontSize:12,color:RED,margin:0,letterSpacing:2,textTransform:"uppercase",fontWeight:800}}>FIFA WORLD CUP 2026</p>
-            <span style={{fontSize:16,fontWeight:800,color:"#fff"}}>Leaderboard</span>
+            <p style={{fontSize:12,color:RED,margin:0,letterSpacing:2,textTransform:"uppercase",fontWeight:800}}>Predicto</p>
+            <span style={{fontSize:16,fontWeight:800,color:"#fff"}}>{T[lang].leaderboard}</span>
           </div>
           <div style={{width:36}}/>
         </div>
@@ -4644,7 +5032,7 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
           boxShadow:SHADOW_OUT,padding:"9px 14px"}}>
           <span style={{fontSize:14,opacity:0.4}}>🔍</span>
           <input value={search} onChange={e=>setSearch(e.target.value)}
-            placeholder="Search player..."
+            placeholder={T[lang].searchPlayer}
             style={{flex:1,background:"transparent",border:"none",outline:"none",
               fontSize:13,color:DARK,fontWeight:500}}/>
           {search&&<span onClick={()=>setSearch("")} style={{fontSize:14,color:"#bbb",cursor:"pointer"}}>✕</span>}
@@ -4654,14 +5042,14 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
       {!tournamentStarted && !leaders.some(u=>u.isMe||u.empty) ? (
         <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"0 32px",textAlign:"center"}}>
           <span style={{fontSize:48,marginBottom:16}}>⏳</span>
-          <p style={{fontSize:18,fontWeight:800,color:DARK,margin:"0 0 8px"}}>Tournament not started</p>
-          <p style={{fontSize:13,color:"#aaa",lineHeight:1.5,margin:0}}>The leaderboard will be available after the tournament starts on Jun 11, 2026.</p>
+          <p style={{fontSize:18,fontWeight:800,color:DARK,margin:"0 0 8px"}}>{T[lang].tournamentNotStarted}</p>
+          <p style={{fontSize:13,color:"#aaa",lineHeight:1.5,margin:0}}>{T[lang].leaderboardMsg}</p>
         </div>
       ) : (
         <div style={{flex:1,overflowY:"auto",padding:"12px 20px"}}>
           {filtered.length===0?(
             <div style={{textAlign:"center",padding:"40px 0",color:"#aaa",fontSize:13}}>
-              No player found for "{search}"
+              {T[lang].noPlayerFound} "{search}"
             </div>
           ):filtered.map((u,i)=>{
             // Rank badge — only show medal if that rank has a prize
@@ -4692,7 +5080,7 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
               </div>
               <div style={{flex:1,minWidth:0}}>
                 {u.empty
-                  ? <span style={{fontSize:12,color:"#ccc",fontStyle:"italic"}}>Open slot</span>
+                  ? <span style={{fontSize:12,color:"#ccc",fontStyle:"italic"}}>{T[lang].openSlot}</span>
                   : <span style={{fontSize:13,fontWeight:700,color:u.isMe?NAVY:DARK}}>{u.name}</span>
                 }
               </div>
@@ -4716,6 +5104,7 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
 }
 
 function FastPredictionScreen({ onHome }) {
+  const lang = useLang();
   const cards=[{home:"Brazil",homeFlag:"🇧🇷",away:"Portugal",awayFlag:"🇵🇹"},{home:"Spain",homeFlag:"🇪🇸",away:"Germany",awayFlag:"🇩🇪"},{home:"France",homeFlag:"🇫🇷",away:"England",awayFlag:"🏴󠁧󠁢󠁥󠁧󠁿"}];
   const [idx,setIdx]=useState(0);
   const [chosen,setChosen]=useState(null);
@@ -4723,8 +5112,8 @@ function FastPredictionScreen({ onHome }) {
   if(idx>=cards.length) return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,alignItems:"center",justifyContent:"center",padding:"0 28px"}}>
       <div style={{width:80,height:80,borderRadius:24,background:`linear-gradient(135deg,${GREEN},#007A36)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:38,marginBottom:22}}>⚡</div>
-      <h2 style={{fontSize:26,fontWeight:800,color:DARK,margin:"0 0 20px"}}>All done!</h2>
-      <button onClick={onHome} style={{width:"100%",background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,color:"#fff",border:"none",borderRadius:16,padding:"16px 0",fontSize:16,fontWeight:700,cursor:"pointer"}}>Back to Home</button>
+      <h2 style={{fontSize:26,fontWeight:800,color:DARK,margin:"0 0 20px"}}>{T[lang].allDone}</h2>
+      <button onClick={onHome} style={{width:"100%",background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,color:"#fff",border:"none",borderRadius:16,padding:"16px 0",fontSize:16,fontWeight:700,cursor:"pointer"}}>{T[lang].backToHome}</button>
     </div>
   );
   const card=cards[idx];
@@ -4733,16 +5122,16 @@ function FastPredictionScreen({ onHome }) {
       <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:0,objectFit:"cover",objectPosition:"center 20%",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
       <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"16px 20px 20px",textAlign:"center"}}>
         <p style={{fontSize:12,color:RED,margin:0,letterSpacing:2,textTransform:"uppercase",fontWeight:800}}>FLASH PICK ⚡</p>
-        <span style={{fontSize:16,fontWeight:800,color:"#fff"}}>⚡ Today's Matches</span>
+        <span style={{fontSize:16,fontWeight:800,color:"#fff"}}>⚡ {T[lang].todaysMatches}</span>
       </div>
-      <p style={{textAlign:"center",fontSize:13,color:"#aaa",margin:"16px 0 14px"}}>Tap to predict the winner</p>
+      <p style={{textAlign:"center",fontSize:13,color:"#aaa",margin:"16px 0 14px"}}>{T[lang].tapToPredict}</p>
       <div style={{margin:"0 20px 20px",background:BG,borderRadius:24,boxShadow:chosen?SHADOW_IN:SHADOW_OUT,padding:"36px 16px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
         <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:8}}><span style={{fontSize:62}}>{card.homeFlag}</span><span style={{fontSize:15,fontWeight:700,color:DARK}}>{card.home}</span></div>
         <div style={{background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,borderRadius:12,padding:"8px 12px"}}><span style={{fontSize:12,fontWeight:800,color:"#fff",letterSpacing:2}}>VS</span></div>
         <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:8}}><span style={{fontSize:62}}>{card.awayFlag}</span><span style={{fontSize:15,fontWeight:700,color:DARK}}>{card.away}</span></div>
       </div>
       <div style={{display:"flex",gap:10,margin:"0 20px"}}>
-        {[card.home,"Draw",card.away].map((opt,i)=>(
+        {[card.home,T[lang].draw,card.away].map((opt,i)=>(
           <button key={opt} onClick={()=>pick(opt)} style={{flex:i===1?0.7:1,background:chosen===opt?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:BG,color:chosen===opt?"#fff":DARK,border:"none",borderRadius:14,padding:"14px 0",fontSize:13,fontWeight:700,cursor:"pointer",boxShadow:chosen===opt?"0 4px 12px rgba(0,32,91,0.3)":SHADOW_OUT}}>
             {i===0?"← "+opt:i===2?opt+" →":opt}
           </button>
@@ -4753,6 +5142,7 @@ function FastPredictionScreen({ onHome }) {
 }
 
 function ScorePicker({ match, day, savedScore, onSave, onBack }) {
+  const lang = useLang();
   const SCORES = [[0,1,2,3],[0,1,2,3]];
   const presets = [];
   for(let h=0;h<=3;h++) for(let a=0;a<=3;a++) presets.push([h,a]);
@@ -4795,7 +5185,7 @@ function ScorePicker({ match, day, savedScore, onSave, onBack }) {
       </div>
 
       <div style={{flex:1,overflowY:"auto",padding:"16px 20px"}}>
-        <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 10px"}}>Selecteaza scorul prezis</p>
+        <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 10px"}}>{T[lang].selectScore}</p>
         <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,marginBottom:14}}>
           {presets.map(([h,a])=>{
             const sel = home===h&&away===a&&!custom;
@@ -4814,7 +5204,7 @@ function ScorePicker({ match, day, savedScore, onSave, onBack }) {
 
         {/* Custom score */}
         <div style={{background:BG,borderRadius:14,boxShadow:SHADOW_OUT,padding:"12px 14px",marginBottom:16}}>
-          <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 10px"}}>Alt scor</p>
+          <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 10px"}}>{T[lang].customScore}</p>
           <div style={{display:"flex",alignItems:"center",gap:10}}>
             <input type="number" min="0" max="20" value={cHome}
               onChange={e=>{setCHome(e.target.value);setCustom(true);setHome(parseInt(e.target.value)||0);setAway(parseInt(cAway)||0);}}
@@ -4837,7 +5227,7 @@ function ScorePicker({ match, day, savedScore, onSave, onBack }) {
               color:confirmed?"#fff":"#bbb",fontSize:12,fontWeight:700,
               cursor:confirmed?"pointer":"default",
               boxShadow:confirmed?"0 4px 12px rgba(0,32,91,0.3)":"none"}}>
-            Salveaza ✓
+            {T[lang].saveScore}
           </button>
         </div>
       </div>
@@ -4846,6 +5236,7 @@ function ScorePicker({ match, day, savedScore, onSave, onBack }) {
 }
 
 function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScoresProp, simDay, simHour=12, simMin=0, initialWeek }) {
+  const lang = useLang();
   const LIVE_SCORES = computeLiveScores(simDay, simHour, simMin);
   // Build GROUPS_DATA dynamically from CALENDAR_EVENTS
   const GROUPS_DATA = (() => {
@@ -5015,8 +5406,8 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
           <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:14}}>
             <div onClick={onBack} style={{width:36,height:36,borderRadius:10,background:"rgba(255,255,255,0.12)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:"#fff"}}>&#8249;</div>
             <div>
-              <p style={{fontSize:11,color:RED,margin:"0 0 2px",letterSpacing:2,textTransform:"uppercase",fontWeight:800}}>FIFA - WORLD CUP 2026</p>
-              <h2 style={{fontSize:17,fontWeight:800,color:"#fff",margin:0}}>Groups & Schedule</h2>
+              <p style={{fontSize:11,color:RED,margin:"0 0 2px",letterSpacing:2,textTransform:"uppercase",fontWeight:800}}>Predicto</p>
+              <h2 style={{fontSize:17,fontWeight:800,color:"#fff",margin:0}}>{T[lang].groupsSchedule}</h2>
             </div>
           </div>
         </div>
@@ -5056,15 +5447,15 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
                     </p>
                     {hasReal&&(
                       <div style={{display:"flex",background:BG,borderRadius:20,boxShadow:SHADOW_OUT,padding:"2px"}}>
-                        <button onClick={()=>setShowReal(true)} style={{padding:"4px 10px",borderRadius:18,border:"none",cursor:"pointer",fontSize:12,fontWeight:700,background:showReal?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:"transparent",color:showReal?"#fff":"#aaa"}}>Real</button>
-                        <button onClick={()=>setShowReal(false)} style={{padding:"4px 10px",borderRadius:18,border:"none",cursor:"pointer",fontSize:12,fontWeight:700,background:!showReal?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:"transparent",color:!showReal?"#fff":"#aaa"}}>Prezis</button>
+                        <button onClick={()=>setShowReal(true)} style={{padding:"4px 10px",borderRadius:18,border:"none",cursor:"pointer",fontSize:12,fontWeight:700,background:showReal?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:"transparent",color:showReal?"#fff":"#aaa"}}>{T[lang].realLabel}</button>
+                        <button onClick={()=>setShowReal(false)} style={{padding:"4px 10px",borderRadius:18,border:"none",cursor:"pointer",fontSize:12,fontWeight:700,background:!showReal?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:"transparent",color:!showReal?"#fff":"#aaa"}}>{T[lang].predictedLabel}</button>
                       </div>
                     )}
                   </div>
                   <div style={{background:BG,borderRadius:14,boxShadow:SHADOW_OUT,overflow:"hidden",marginBottom:14}}>
                     <div style={{display:"flex",alignItems:"center",padding:"6px 14px",background:"rgba(0,0,0,0.03)",borderBottom:"1px solid rgba(0,0,0,0.05)"}}>
                       <span style={{fontSize:11,fontWeight:700,color:"#bbb",width:18}}>#</span>
-                      <span style={{flex:1,fontSize:11,fontWeight:700,color:"#bbb",textTransform:"uppercase",letterSpacing:0.5}}>Echipa</span>
+                      <span style={{flex:1,fontSize:11,fontWeight:700,color:"#bbb",textTransform:"uppercase",letterSpacing:0.5}}>{T[lang].groupTeams}</span>
                       <span style={{fontSize:11,fontWeight:700,color:"#bbb",width:22,textAlign:"center"}}>J</span>
                       <span style={{fontSize:11,fontWeight:700,color:"#bbb",width:22,textAlign:"center"}}>G</span>
                       <span style={{fontSize:11,fontWeight:700,color:"#bbb",width:28,textAlign:"center"}}>GD</span>
@@ -5101,7 +5492,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
             </p>
             <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:14}}>
               {groupMatches.length===0 ? (
-                <div style={{background:BG,borderRadius:14,boxShadow:SHADOW_OUT,padding:"16px",textAlign:"center",color:"#aaa",fontSize:12}}>Nu sunt matches programate</div>
+                <div style={{background:BG,borderRadius:14,boxShadow:SHADOW_OUT,padding:"16px",textAlign:"center",color:"#aaa",fontSize:12}}>{T[lang].noMatchesScheduled}</div>
               ) : groupMatches.map((m,i)=>{
                 const sc = scores[m.key];
                 const live = LIVE_SCORES[m.key];
@@ -5141,7 +5532,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
                         LIVE {liveMin}'
                       </span>}
                       {isFinished&&<span style={{fontSize:11,fontWeight:700,color:GREEN}}>FT</span>}
-                      {isNS&&<span style={{fontSize:11,fontWeight:600,color:"#bbb"}}>Not Started</span>}
+                      {isNS&&<span style={{fontSize:11,fontWeight:600,color:"#bbb"}}>{T[lang].notStarted}</span>}
                     </div>
 
                     {/* Main match row */}
@@ -5159,11 +5550,16 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
                           const canPredict = !isLive && !isFinished && !isPast && isWeekUnlocked(m.day, simDay, simHour, simMin);
                           const scoreDisplay = isLive ? (hasLive?`${live.home}-${live.away}`:"0-0") : hasLive ? `${live.home}-${live.away}` : "-";
                           const predBox = (isPast||isLive||isFinished) ? (sc ? (
+                            isLive ? (
+                              <div style={{background:"rgba(0,0,0,0.06)",borderRadius:6,padding:"3px 8px"}}>
+                                <span style={{fontSize:11,fontWeight:900,color:RED,}}>{sc[0]}-{sc[1]}</span>
+                              </div>
+                            ) : (
                             <div style={{background:exactMatch?`linear-gradient(135deg,${GREEN},#007A36)`:resultMatch?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:`linear-gradient(135deg,${RED},#EF3340)`,
                               borderRadius:6,padding:"3px 8px",display:"flex",alignItems:"center",gap:3}}>
                               <span style={{fontSize:11,fontWeight:900,color:"#fff"}}>{sc[0]}-{sc[1]}</span>
                               {isFinished&&(exactMatch?<span style={{fontSize:11}}>🎯</span>:resultMatch?<span style={{fontSize:11}}>✓</span>:<span style={{fontSize:11}}>✗</span>)}
-                            </div>
+                            </div>)
                           ) : (
                             <div style={{background:"rgba(0,0,0,0.06)",borderRadius:6,padding:"3px 8px"}}>
                               <span style={{fontSize:11,fontWeight:700,color:"#ccc"}}>?-?</span>
@@ -5181,9 +5577,10 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
                           return (
                             <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,minWidth:70}}>
                               {/* Real score */}
-                              <div style={{background:isLive||isFinished?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:"rgba(0,0,0,0.06)",
+                              {isLive&&<span style={{fontSize:7,fontWeight:900,color:RED}}>●</span>}
+                              <div style={{background:isFinished?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:"rgba(0,0,0,0.06)",
                                 borderRadius:8,padding:"5px 12px",width:"100%",textAlign:"center"}}>
-                                <span style={{fontSize:14,fontWeight:900,color:isLive||hasLive?"#fff":"#bbb"}}>{scoreDisplay}</span>
+                                <span style={{fontSize:14,fontWeight:900,color:isLive?RED:hasLive?"#fff":"#bbb"}}>{scoreDisplay}</span>
                               </div>
                               {/* Prediction */}
                               <div style={{display:"flex",alignItems:"center",gap:4}}>
@@ -5314,6 +5711,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
 }
 
 function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDaySelect, scores, onMatchClick, showStanding, setShowStanding, selGroup, setSelGroup, GROUPS_DATA, showReal, setShowReal, standing, isGroupLocked, simDay, simHour=12, simMin=0, liveScores, scoresVersion }) {
+  const lang = useLang();
   const LIVE_SCORES = liveScores || LIVE_SCORES_DEFAULT;
   const [collapsedGroups, setCollapsedGroups] = useState({});
   const mm = {};
@@ -5333,9 +5731,9 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
             fontSize:16,color:weekIdx>0?DARK:"#ddd",display:"flex",alignItems:"center",justifyContent:"center"}}>‹</button>
         <div style={{textAlign:"center"}}>
           <p style={{fontSize:13,fontWeight:700,color:DARK,margin:0}}>{weekLabel}</p>
-          <span style={{fontSize:12,color:NAVY,fontWeight:700}}>{weekLabel.includes("July")?"July 2026":"June 2026"} · FIFA WC</span>
+          <span style={{fontSize:12,color:NAVY,fontWeight:700}}>{weekLabel.includes("July")?"July 2026":"June 2026"} · Predicto</span>
         </div>
-        <button onClick={()=>weekIdx+2<weeks.length?setWeekStart(weeks[weekIdx+2]):weekIdx<weeks.length-1&&setWeekStart(weeks[weekIdx+1])}
+        <button onClick={()=>weekIdx<weeks.length-1&&setWeekStart(weeks[weekIdx+1])}
           style={{width:30,height:30,borderRadius:"50%",border:"none",background:weekIdx<weeks.length-1?BG:"transparent",
             boxShadow:weekIdx<weeks.length-1?SHADOW_OUT:"none",cursor:weekIdx<weeks.length-1?"pointer":"default",
             fontSize:16,color:weekIdx<weeks.length-1?DARK:"#ddd",display:"flex",alignItems:"center",justifyContent:"center"}}>›</button>
@@ -5559,7 +5957,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                           const NextBox = ({label,col}) => (
                             <div style={{background:`${col}15`,borderRadius:8,border:`1.5px dashed ${col}`,
                               padding:"8px 10px",minWidth:80,textAlign:"center"}}>
-                              <span style={{fontSize:11,color:"#bbb",display:"block"}}>Winner</span>
+                              <span style={{fontSize:11,color:"#bbb",display:"block"}}>{T[lang].winner}</span>
                               <span style={{fontSize:12,fontWeight:800,color:col}}>{label}</span>
                               <div style={{marginTop:4,display:"flex",alignItems:"center",justifyContent:"center",gap:4}}>
                                 <div style={{width:20,height:20,borderRadius:5,background:"rgba(0,0,0,0.06)",display:"flex",alignItems:"center",justifyContent:"center"}}>
@@ -5619,7 +6017,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                             ))}
                             {/* Matches from calendar */}
                             {koMatches.length>0&&(<>
-                              <p style={{fontSize:12,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"4px 0 6px"}}>Scheduled Matches</p>
+                              <p style={{fontSize:12,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"4px 0 6px"}}>{T[lang].scheduledMatches}</p>
                               <div style={{borderRadius:10,overflow:"hidden",boxShadow:SHADOW_OUT}}>
                                 {koMatches.map((m,idx2)=>{
                                   const sc2=scores&&scores[m.key];
@@ -5705,14 +6103,14 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                       return (<>
                         <div style={{display:"flex",justifyContent:"flex-end",marginBottom:8}}>
                           <div style={{display:"flex",background:BG,borderRadius:8,boxShadow:SHADOW_IN,padding:2,gap:2}}>
-                            <button onClick={()=>setShowReal(true)} style={{padding:"3px 10px",borderRadius:6,border:"none",fontSize:12,fontWeight:700,cursor:"pointer",background:showReal?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:BG,color:showReal?"#fff":"#888"}}>Real</button>
-                            <button onClick={()=>setShowReal(false)} style={{padding:"3px 10px",borderRadius:6,border:"none",fontSize:12,fontWeight:700,cursor:"pointer",background:!showReal?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:BG,color:!showReal?"#fff":"#888"}}>Prezis</button>
+                            <button onClick={()=>setShowReal(true)} style={{padding:"3px 10px",borderRadius:6,border:"none",fontSize:12,fontWeight:700,cursor:"pointer",background:showReal?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:BG,color:showReal?"#fff":"#888"}}>{T[lang].realLabel}</button>
+                            <button onClick={()=>setShowReal(false)} style={{padding:"3px 10px",borderRadius:6,border:"none",fontSize:12,fontWeight:700,cursor:"pointer",background:!showReal?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:BG,color:!showReal?"#fff":"#888"}}>{T[lang].predictedLabel}</button>
                           </div>
                         </div>
                         <div style={{borderRadius:10,overflow:"hidden",boxShadow:SHADOW_OUT,marginBottom:12}}>
                           <div style={{display:"flex",padding:"5px 10px",background:"rgba(0,0,0,0.04)"}}>
                             <span style={{fontSize:11,fontWeight:700,color:"#bbb",width:20}}>#</span>
-                            <span style={{flex:1,fontSize:11,fontWeight:700,color:"#bbb"}}>Team</span>
+                            <span style={{flex:1,fontSize:11,fontWeight:700,color:"#bbb"}}>{T[lang].team}</span>
                             {["J","GF","GA","GD","Pts"].map(h=><span key={h} style={{fontSize:11,fontWeight:700,color:"#bbb",width:26,textAlign:"center"}}>{h}</span>)}
                           </div>
                           {rows2.map((t,i)=>(
@@ -5729,7 +6127,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                           ))}
                         </div>
                         {/* Matches for this group */}
-                        <p style={{fontSize:12,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 8px"}}>Toate matchesle · Gr.{activeGrp}</p>
+                        <p style={{fontSize:12,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 8px"}}>{T[lang].allMatchesGrp}{activeGrp}</p>
                         <div style={{borderRadius:10,overflow:"hidden",boxShadow:SHADOW_OUT}}>
                           {(()=>{
                             const allGM = [];
@@ -5765,13 +6163,13 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                                   <span style={{flex:1,fontSize:12,fontWeight:600,color:isPastM?"#bbb":DARK}}>{m.home.length>7?m.home.split(" ")[0]:m.home}</span>
                                   <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
                                     <span style={{fontSize:11,fontWeight:600,color:"#bbb"}}>{m.day} Iun · {m.time}</span>
-                                    {isPastM?<span style={{fontSize:7,color:"#ccc",fontWeight:700}}>Terminat</span>
+                                    {isPastM?<span style={{fontSize:7,color:"#ccc",fontWeight:700}}>{T[lang].finished}</span>
                                       :isLive2?<span style={{fontSize:7,fontWeight:800,color:RED,animation:"blink 1s infinite"}}>● LIVE</span>
                                       :<span style={{fontSize:7,color:"#bbb",fontWeight:700}}>{isFT2?"Final":"● Live"}</span>}
                                     <div style={{background:hasScore2?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:"rgba(0,0,0,0.07)",borderRadius:6,padding:"3px 10px",minWidth:46,textAlign:"center"}}>
                                       <span style={{fontSize:12,fontWeight:900,color:hasScore2?"#fff":"#bbb"}}>{hasScore2?`${liveScore2.home}-${liveScore2.away}`:"-"}</span>
                                     </div>
-                                    <span style={{fontSize:7,fontWeight:700,color:"#bbb",textTransform:"uppercase",letterSpacing:0.5}}>Prediction</span>
+                                    <span style={{fontSize:7,fontWeight:700,color:"#bbb",textTransform:"uppercase",letterSpacing:0.5}}>{T[lang].prediction}</span>
                                     {!isWeekUnlocked(m.day,simDay,simHour,simMin)?<span style={{fontSize:12,color:"#ccc"}}>🔒</span>
                                       :sc2?<div style={{background:canEdit?`rgba(0,32,91,0.1)`:"rgba(0,0,0,0.06)",border:canEdit?`1.5px solid ${NAVY}`:"none",borderRadius:6,padding:"2px 8px",minWidth:46,textAlign:"center",opacity:isPastM?0.5:1}}>
                                           <span style={{fontSize:11,fontWeight:900,color:canEdit?NAVY:"#888"}}>{sc2[0]}-{sc2[1]}</span>
@@ -5824,7 +6222,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                             LIVE {liveMin2}'
                           </span>}
                           {isFT&&<span style={{fontSize:11,fontWeight:700,color:GREEN}}>FT</span>}
-                          {isNS2&&<span style={{fontSize:11,color:"#ccc"}}>Not Started</span>}
+                          {isNS2&&<span style={{fontSize:11,color:"#ccc"}}>{T[lang].notStarted}</span>}
                         </div>
                         {(()=>{ return (
                         <div onClick={()=>!isMatchPast(m.day||sel,m.time,simDay,simHour)&&!isPastDay2&&onMatchClick&&onMatchClick(m,sel,m._i)}
@@ -5834,10 +6232,10 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                           <div style={{flexShrink:0,display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
                             {isLive?<span style={{fontSize:7,fontWeight:800,color:RED,animation:"blink 1s infinite"}}>● LIVE</span>
                               :<span style={{fontSize:7,fontWeight:700,color:"#bbb",textTransform:"uppercase",letterSpacing:0.5}}>{isFT?"Final":"● Live"}</span>}
-                            <div style={{background:isLive||hasScore?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:"rgba(0,0,0,0.08)",borderRadius:6,padding:"4px 10px",minWidth:54,textAlign:"center"}}>
-                              <span style={{fontSize:13,fontWeight:900,color:isLive||hasScore?"#fff":"#bbb"}}>{isLive?(hasScore?`${live.home}-${live.away}`:"0-0"):hasScore?`${live.home}-${live.away}`:"-"}</span>
+                            <div style={{background:isLive?"rgba(0,0,0,0.06)":hasScore?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:"rgba(0,0,0,0.08)",borderRadius:6,padding:"4px 10px",minWidth:54,textAlign:"center"}}>
+                              <span style={{fontSize:13,fontWeight:900,color:isLive?RED:hasScore?"#fff":"#bbb"}}>{isLive?(hasScore?`${live.home}-${live.away}`:"0-0"):hasScore?`${live.home}-${live.away}`:"-"}</span>
                             </div>
-                            <span style={{fontSize:7,fontWeight:700,color:"#bbb",textTransform:"uppercase",letterSpacing:0.5}}>Prediction</span>
+                            <span style={{fontSize:7,fontWeight:700,color:"#bbb",textTransform:"uppercase",letterSpacing:0.5}}>{T[lang].prediction}</span>
                             {(()=>{
                               const isPast = isMatchPast(sel, m.time, simDay, simHour);
                               const canPredict = !isLive && !isFT && !isPast && isWeekUnlocked(sel||0, simDay, simHour, simMin);
@@ -5845,11 +6243,11 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                               if(sc) {
                                 return (
                                   <div onClick={canPredict?e=>{e.stopPropagation();onMatchClick&&onMatchClick(m,sel,m._i);}:undefined}
-                                    style={{background:exactMatch?`linear-gradient(135deg,${GREEN},#007A36)`:resultMatch?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:(isPast||isLive||isFT)?`linear-gradient(135deg,${RED},#EF3340)`:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,
+                                    style={{background:isLive?"rgba(0,0,0,0.06)":exactMatch?`linear-gradient(135deg,${GREEN},#007A36)`:resultMatch?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:(isPast||isFT)?`linear-gradient(135deg,${RED},#EF3340)`:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,
                                       borderRadius:6,padding:"3px 10px",minWidth:54,textAlign:"center",
                                       display:"flex",alignItems:"center",justifyContent:"center",gap:3,
                                       cursor:canPredict?"pointer":"default"}}>
-                                    <span style={{fontSize:12,fontWeight:900,color:"#fff"}}>{sc[0]}-{sc[1]}</span>
+                                    <span style={{fontSize:12,fontWeight:900,color:isLive?RED:"#fff",...(isLive?{}:{})}}>{sc[0]}-{sc[1]}</span>
                                     {(isFT||isPast)&&(exactMatch?<span style={{fontSize:12}}>🎯</span>:resultMatch?<span style={{fontSize:12}}>✓</span>:<span style={{fontSize:12}}>✗</span>)}
                                   </div>
                                 );
@@ -5899,7 +6297,8 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
   );
 }
 
-function StatsScreen({ lang }) {
+function StatsScreen() {
+  const lang = useLang();
   const GROUPS = [
     { id:"A", teams:[{name:"Brazil",flag:"🇧🇷"},{name:"France",flag:"🇫🇷"},{name:"Mexico",flag:"🇲🇽"},{name:"Morocco",flag:"🇲🇦"}] },
     { id:"B", teams:[{name:"Argentina",flag:"🇦🇷"},{name:"England",flag:"🏴󠁧󠁢󠁥󠁧󠁿"},{name:"USA",flag:"🇺🇸"},{name:"Poland",flag:"🇵🇱"}] },
@@ -5914,8 +6313,8 @@ function StatsScreen({ lang }) {
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",position:"relative"}}>
       <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:0,objectFit:"cover",objectPosition:"center 20%",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
       <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"16px 20px 18px",flexShrink:0}}>
-        <p style={{fontSize:11,color:RED,margin:"0 0 2px",letterSpacing:2,textTransform:"uppercase",fontWeight:800}}>FIFA - WORLD CUP 2026</p>
-        <h2 style={{fontSize:18,fontWeight:800,color:"#fff",margin:"0 0 12px"}}>Groups & Schedule</h2>
+        <p style={{fontSize:11,color:RED,margin:"0 0 2px",letterSpacing:2,textTransform:"uppercase",fontWeight:800}}>Predicto</p>
+        <h2 style={{fontSize:18,fontWeight:800,color:"#fff",margin:"0 0 12px"}}>{T[lang].groupsSchedule}</h2>
         {/* Group tabs */}
         <div style={{display:"flex",gap:6,overflowX:"auto",scrollbarWidth:"none"}}>
           {GROUPS.map(g=>(
@@ -5932,7 +6331,7 @@ function StatsScreen({ lang }) {
       </div>
       <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",padding:"14px 20px"}}>
         {/* Teams in group */}
-        <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 8px"}}>Group {selGroup} · Echipe</p>
+        <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 8px"}}>{T[lang].group} {selGroup} · {T[lang].groupTeams}</p>
         <div style={{background:BG,borderRadius:14,boxShadow:SHADOW_OUT,overflow:"hidden",marginBottom:16}}>
           {cur.teams.map((t,i)=>(
             <div key={t.name} style={{display:"flex",alignItems:"center",gap:12,padding:"11px 14px",
@@ -5944,32 +6343,44 @@ function StatsScreen({ lang }) {
           ))}
         </div>
         {/* Calendar for this group */}
-        <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 8px"}}>Match Schedule</p>
+        <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 8px"}}>{T[lang].matchSchedule}</p>
         <CalendarSlider/>
       </div>
     </div>
   );
 }
 
-function AccountScreen({ lang, onBoards, onSignOut, onShowGuide }) {
+function AccountScreen({ setLang, onBoards, onSignOut, onShowGuide, user }) {
+  const lang = useLang();
+  const displayName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "—";
+  const memberSince = user?.created_at
+    ? new Date(user.created_at).toLocaleDateString("ro-RO", { month: "long", year: "numeric" })
+    : "";
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    onSignOut();
+  };
+
   return (
-    <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflowY:"auto",position:"relative",overflow:"hidden"}}>
+    <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflowY:"auto",position:"relative"}}>
       <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:0,objectFit:"cover",objectPosition:"center 20%",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
       <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"28px 20px 32px",display:"flex",flexDirection:"column",alignItems:"center"}}>
         <div style={{width:70,height:70,borderRadius:"50%",background:"rgba(255,255,255,0.18)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:34,marginBottom:12}}>👤</div>
-        <p style={{fontSize:12,color:RED,margin:"0 0 4px",letterSpacing:2,textTransform:"uppercase",fontWeight:800}}>FIFA</p>
-        <h2 style={{fontSize:18,fontWeight:800,color:"#fff",margin:"0 0 4px"}}>Alex Ionescu</h2>
-        <p style={{fontSize:13,color:"rgba(255,255,255,0.5)",margin:0}}>Member since March 2026</p>
+        <p style={{fontSize:12,color:RED,margin:"0 0 4px",letterSpacing:2,textTransform:"uppercase",fontWeight:800}}>Predicto</p>
+        <h2 style={{fontSize:18,fontWeight:800,color:"#fff",margin:"0 0 4px"}}>{displayName}</h2>
+        <p style={{fontSize:13,color:"rgba(255,255,255,0.5)",margin:0}}>{user?.email}</p>
+        {memberSince && <p style={{fontSize:11,color:"rgba(255,255,255,0.35)",margin:"4px 0 0"}}>Membru din {memberSince}</p>}
       </div>
       <div style={{padding:"16px 20px",position:"relative",zIndex:1}}>
-        {[{icon:"🏆",label:"My Boards",sub:"3 active boards",action:onBoards},{icon:"📖",label:"App Guide",sub:"How it works",action:onShowGuide},{icon:"🔔",label:"Notifications",sub:"Match alerts on"},{icon:"🌍",label:"Language",sub:LANGS.find(l=>l.code===lang)?.name||"English"},{icon:"⭐",label:"Upgrade to Premium",sub:"Remove ads",highlight:true},{icon:"🚪",label:"Sign Out",sub:"",action:onSignOut}].map(item=>(
-          <div key={item.label} onClick={item.action||undefined} style={{display:"flex",alignItems:"center",gap:14,background:item.highlight?"#E8F0FF":BG,borderRadius:14,boxShadow:item.highlight?`0 0 0 2px ${NAVY},${SHADOW_OUT}`:SHADOW_OUT,padding:"13px 16px",marginBottom:10,cursor:"pointer"}}>
+        {[{icon:"🏆",label:T[lang].myBoards,sub:T[lang].activeBoards,action:onBoards},{icon:"📖",label:T[lang].appGuide,sub:T[lang].howItWorks,action:onShowGuide},{icon:"🔔",label:T[lang].notifications,sub:T[lang].matchAlertsOn},{icon:"🌍",label:T[lang].language,sub:LANGS.find(l=>l.code===lang)?.name||"English",isLang:true},{icon:"⭐",label:T[lang].upgradePremium,sub:T[lang].removeAds,highlight:true},{icon:"🚪",label:T[lang].signOut,sub:"",action:handleSignOut}].map(item=>(
+          <div key={item.label} onClick={item.isLang?undefined:item.action||undefined} style={{display:"flex",alignItems:"center",gap:14,background:item.highlight?"#E8F0FF":BG,borderRadius:14,boxShadow:item.highlight?`0 0 0 2px ${NAVY},${SHADOW_OUT}`:SHADOW_OUT,padding:"13px 16px",marginBottom:10,cursor:item.isLang?"default":"pointer"}}>
             <span style={{fontSize:20}}>{item.icon}</span>
             <div style={{flex:1}}>
               <p style={{fontSize:14,fontWeight:700,color:item.highlight?NAVY:DARK,margin:0}}>{item.label}</p>
               {item.sub&&<p style={{fontSize:12,color:item.highlight?NAVY:"#aaa",margin:"2px 0 0"}}>{item.sub}</p>}
             </div>
-            <span style={{color:item.highlight?NAVY:"#bbb",fontSize:18}}>›</span>
+            {item.isLang ? <LangSelector lang={lang} setLang={setLang}/> : <span style={{color:item.highlight?NAVY:"#bbb",fontSize:18}}>›</span>}
           </div>
         ))}
       </div>
@@ -5978,17 +6389,18 @@ function AccountScreen({ lang, onBoards, onSignOut, onShowGuide }) {
 }
 
 function RulesScreen({ onBack }) {
+  const lang = useLang();
   const [tab, setTab] = useState("predictions");
   const predRules = [
-    { phase:"⚽ Grupe · 1st loc",  pts:PRED_SCORING.group1st, desc:"Echipa care câștigă grupa" },
-    { phase:"⚽ Grupe · 2nd loc",  pts:PRED_SCORING.group2nd, desc:"Echipa care termină pe 2" },
-    { phase:"⚽ Grupe · 3rd loc",  pts:PRED_SCORING.group3rd, desc:"Echipa pe locul 3 în grupă" },
-    { phase:"🥉 Best Third",       pts:PRED_SCORING.best3,    desc:"Echipă best-3rd care avansează" },
-    { phase:"🏆 Round of 32",      pts:PRED_SCORING.r32,      desc:"Câștigătorul meciului" },
-    { phase:"🏆 Round of 16",      pts:PRED_SCORING.r16,      desc:"Câștigătorul meciului" },
-    { phase:"🏆 Quarter-Finals",   pts:PRED_SCORING.qf,       desc:"Câștigătorul meciului" },
-    { phase:"🏆 Semi-Finals",      pts:PRED_SCORING.sf,       desc:"Câștigătorul meciului" },
-    { phase:"🏆 Final",            pts:PRED_SCORING.final,    desc:"Câștigătorul turneului" },
+    { phase:"⚽ Grupe · 1st loc",  pts:PRED_SCORING.group1st, desc:T[lang].rulesDesc1 },
+    { phase:"⚽ Grupe · 2nd loc",  pts:PRED_SCORING.group2nd, desc:T[lang].rulesDesc2 },
+    { phase:"⚽ Grupe · 3rd loc",  pts:PRED_SCORING.group3rd, desc:T[lang].rulesDesc3 },
+    { phase:"🥉 Best Third",       pts:PRED_SCORING.best3,    desc:T[lang].rulesDescBest3 },
+    { phase:"🏆 Round of 32",      pts:PRED_SCORING.r32,      desc:T[lang].rulesDescMatch },
+    { phase:"🏆 Round of 16",      pts:PRED_SCORING.r16,      desc:T[lang].rulesDescMatch },
+    { phase:"🏆 Quarter-Finals",   pts:PRED_SCORING.qf,       desc:T[lang].rulesDescMatch },
+    { phase:"🏆 Semi-Finals",      pts:PRED_SCORING.sf,       desc:T[lang].rulesDescMatch },
+    { phase:"🏆 Final",            pts:PRED_SCORING.final,    desc:T[lang].rulesDescFinal },
   ];
   const exactRules = [
     { phase:"⚽ Groups · Result", pts:30, desc:"Correct winner or draw" },
@@ -6005,8 +6417,8 @@ function RulesScreen({ onBack }) {
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",position:"relative"}}>
       <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:0,objectFit:"cover",objectPosition:"center 20%",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
       <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"16px 20px 0",flexShrink:0}}>
-        <p style={{fontSize:11,color:RED,margin:"0 0 4px",letterSpacing:2,textTransform:"uppercase",fontWeight:800}}>FIFA WORLD CUP 2026</p>
-        <h2 style={{fontSize:20,fontWeight:900,color:"#fff",margin:"0 0 16px"}}>📖 Rules</h2>
+        <p style={{fontSize:11,color:RED,margin:"0 0 4px",letterSpacing:2,textTransform:"uppercase",fontWeight:800}}>Predicto</p>
+        <h2 style={{fontSize:20,fontWeight:900,color:"#fff",margin:"0 0 16px"}}>📖 {T[lang].rules}</h2>
         {/* Tabs */}
         <div style={{display:"flex",gap:0,borderBottom:"2px solid rgba(255,255,255,0.1)"}}>
           {[{id:"predictions",label:"🎯 Predictions"},{id:"exact",label:<><span style={{colorScheme:"light",filter:"saturate(0) contrast(3) brightness(1.1)"}}>⚽</span>{" Exact Score"}</>}].map(t=>(
@@ -6025,17 +6437,15 @@ function RulesScreen({ onBack }) {
         {/* Description */}
         <div style={{background:BG,borderRadius:14,boxShadow:SHADOW_OUT,padding:"14px 16px",marginBottom:16}}>
           <p style={{fontSize:13,fontWeight:700,color:DARK,margin:"0 0 4px"}}>
-            {tab==="predictions" ? "How does Predictions work?" : "How does Exact Score work?"}
+            {tab==="predictions" ? T[lang].howPredictionsWork : T[lang].howExactScoreWork}
           </p>
           <p style={{fontSize:12,color:"#888",margin:0,lineHeight:1.5}}>
-            {tab==="predictions"
-              ? "Predict the winner of every match — from group stage to the final. One shot per tournament."
-              : "Predict the exact score of each match every week. Unlocks on Sundays after 8:00 PM."}
+            {tab==="predictions" ? T[lang].predictionsDesc : T[lang].exactDesc}
           </p>
         </div>
 
         {/* Rules table */}
-        <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 8px"}}>Points per correct prediction</p>
+        <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 8px"}}>{T[lang].pointsPerPrediction}</p>
         <div style={{background:BG,borderRadius:14,boxShadow:SHADOW_OUT,overflow:"hidden",marginBottom:16}}>
           {rules.map((r,i)=>(
             <div key={i} style={{display:"flex",alignItems:"center",padding:"12px 16px",background:"#fff",borderBottom:i<rules.length-1?"1px solid rgba(0,0,0,0.05)":"none",gap:12}}>
@@ -6103,6 +6513,67 @@ function App() {
     document.head.appendChild(style);
     return ()=>document.head.removeChild(style);
   },[]);
+  const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      const u = session?.user ?? null;
+      setUser(u);
+      if (u) setScreen(SCREENS.HOME);
+      setAuthLoading(false);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      const u = session?.user ?? null;
+      setUser(u);
+      if (u) setScreen(SCREENS.HOME);
+      else setScreen(SCREENS.SPLASH);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    const uid = user.id;
+
+    // Boards + member counts
+    loadUserBoards(uid).then(async boards => {
+      const allBoards = [...INITIAL_BOARDS, ...boards];
+      const ids = allBoards.map(b => b.id);
+      const counts = await fetchMemberCounts(ids);
+      const withCounts = allBoards.map(b => ({
+        ...b,
+        members: counts[b.id] ?? b.members,
+      }));
+      setMyBoards(withCounts);
+    });
+
+    // Predictions + exact scores pentru toate boardurile userului
+    const loadForBoard = async (boardId) => {
+      const [preds, scores] = await Promise.all([
+        loadPredictions(uid, boardId),
+        loadExactScores(uid, boardId),
+      ]);
+      if (preds) {
+        setAllInstantPickStates(p => ({
+          ...p,
+          [boardId]: {
+            ...(p[boardId] || {}),
+            groupRankings: preds.group_rankings || {},
+            best3:         preds.best3_picks    || [],
+            koPicks:       preds.ko_picks       || {},
+          }
+        }));
+        if (Object.keys(preds.ko_picks || {}).length > 0)
+          setAllInstantPickDone(p => ({ ...p, [boardId]: true }));
+      }
+      if (scores && Object.keys(scores).length > 0)
+        setExactScoresByBoard(p => ({ ...p, [boardId]: scores }));
+    };
+
+    loadForBoard('global');
+  }, [user]);
+
   const [screen, setScreen] = useState("dev");
   const [simDay, setSimDay] = useState(null);
   const [simHour, setSimHour] = useState(12);
@@ -6118,12 +6589,22 @@ function App() {
   const [showFirstAction, setShowFirstAction] = useState(false);
   const [groupsInitialWeek, setGroupsInitialWeek] = useState(null);
   const [createdBoards, setCreatedBoards] = useState([]);
+  const [leaderboardData, setLeaderboardData] = useState({});
 
   const [availableBoards, setAvailableBoards] = useState(AVAILABLE_BOARDS);
 
   // Predictions complete per board id
   const [predictionsComplete, setPredictionsComplete] = useState({});
   const [activeBoardId, setActiveBoardId] = useState("global");
+
+  useEffect(() => {
+    if (!user || (screen !== SCREENS.LEADERBOARD && screen !== SCREENS.HOME)) return;
+    loadLeaderboard(activeBoardId).then(rows => {
+      if (rows.length > 0)
+        setLeaderboardData(prev => ({ ...prev, [activeBoardId]: rows }));
+    });
+  }, [user, screen, activeBoardId]);
+
   const [allInstantPickStates, setAllInstantPickStates] = useState({});
   const [exactScoresByBoard, setExactScoresByBoard] = useState({});
   const exactScores = exactScoresByBoard[activeBoardId] || {};
@@ -6155,6 +6636,8 @@ function App() {
   const footerActive = screen===SCREENS.RULES?SCREENS.RULES:screen===SCREENS.ACCOUNT?SCREENS.ACCOUNT:SCREENS.HOME;
 
   return (
+    <UserCtx.Provider value={user}>
+    <LangCtx.Provider value={lang}>
     <div style={{display:"flex",justifyContent:"center",alignItems:"center",minHeight:"100vh",background:"#D4D4D4",fontFamily:"-apple-system,'SF Pro Display',sans-serif"}}>
       <div style={{width:390,height:844,background:BG,borderRadius:46,overflow:"hidden",boxShadow:"0 30px 80px rgba(0,0,0,0.22),inset 0 1px 0 rgba(255,255,255,0.8)",display:"flex",flexDirection:"column",position:"relative"}}>
         <div style={{display:"flex",justifyContent:"space-between",padding:"14px 24px 4px",fontSize:13,fontWeight:600,color:DARK,flexShrink:0}}>
@@ -6201,35 +6684,45 @@ function App() {
             setActiveBoardId={setActiveBoardId}
             tournamentStarted={tournamentStarted}
             createdBoards={createdBoards}
-            showFirstAction={showFirstAction}/>}
+            showFirstAction={showFirstAction}
+            leaderboardData={leaderboardData}/>}
           {screen===SCREENS.BOARDS&&<BoardsScreen
             onBack={()=>setScreen(SCREENS.HOME)}
             myBoards={myBoards} setMyBoards={setMyBoards}
             createdBoards={createdBoards} setCreatedBoards={setCreatedBoards}
             availableBoards={availableBoards} setAvailableBoards={setAvailableBoards}
             showToast={showToast}
+            user={user}
+            onCreateBoard={async (boardData) => {
+              if (!user) return;
+              const { data, error } = await createBoard(user.id, boardData);
+              if (error) { showToast("Eroare la creare", "❌"); return null; }
+              setCreatedBoards(prev => [...prev, data]);
+              return data;
+            }}
+            onJoinByCode={async (code) => {
+              if (!user) return null;
+              const { data, error } = await joinBoardByCode(user.id, code);
+              if (error) { showToast(error, "❌"); return null; }
+              setMyBoards(prev => [...prev, data]);
+              return data;
+            }}
             onJoin={(boardId)=>{ setActiveBoardId(boardId); setScreen(SCREENS.HOME); }}/>}
           {screen===SCREENS.LEADERBOARD&&<LeaderboardScreen onBack={()=>setScreen(SCREENS.HOME)} tournamentStarted={tournamentStarted}
             myBoards={myBoards} activeBoardId={activeBoardId} setActiveBoardId={setActiveBoardId}
             leaders={(()=>{
+              if (leaderboardData[activeBoardId]?.length > 0) return leaderboardData[activeBoardId];
               const ab = myBoards.find(b=>b.id===activeBoardId)||myBoards[0];
-              if(!ab) return BOARD_LEADERS.global;
-              if(BOARD_LEADERS[ab.id]) return BOARD_LEADERS[ab.id];
-              if(ab.prizes) {
-                const medals = ["🥇","🥈","🥉","🏅","🎖️"];
-                const prizes = ab.prizes||[];
-                const maxPlayers = ab.max || 10;
-                const slots = Math.max(maxPlayers, prizes.length);
-                const realMembers = createdBoards.find(c=>c.id===ab.id)?.members || ab.members||0;
-                if(realMembers<=1) {
-                  return [
-                    { rank:1, name:"Alex Ionescu", pts:0, isMe:true, emoji:"🥇", prize:prizes[0]||null, accent:"#E8F0FF" },
-                    ...Array.from({length:slots-1},(_,i)=>({ rank:i+2, name:"—", pts:0, emoji:medals[i+1]||null, prize:prizes[i+1]||null, accent:"#fff", empty:true })),
-                  ];
-                }
-                return genBoardLeaders(prizes);
-              }
-              return BOARD_LEADERS.global;
+              if(!ab) return [];
+              const medals = ["🥇","🥈","🥉","🏅","🎖️"];
+              const prizes = ab.prizes||[];
+              const maxPlayers = ab.max || 10;
+              const slots = Math.max(maxPlayers, prizes.length, 1);
+              const myName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "—";
+              return [
+                { rank:1, name:myName, pts:0, isMe:true, emoji:"🥇", prize:prizes[0]||null, accent:"#E8F0FF" },
+                ...Array.from({length:slots-1},(_,i)=>({ rank:i+2, name:"—", pts:0, emoji:medals[i+1]||null, prize:prizes[i+1]||null, accent:"#fff", empty:true })),
+              ];
             })()}/>}
           {screen===SCREENS.INSTANT_PICK&&<InstantPickScreen
             savedState={instantPickDone
@@ -6240,18 +6733,37 @@ function App() {
             tournamentStarted={tournamentStarted}
             onBack={()=>setScreen(SCREENS.HOME)}
             onModify={()=>setInstantPickDone(false)}
-            onComplete={()=>{ setInstantPickDone(true); setScreen(SCREENS.HOME); }}/>}
+            onComplete={async ()=>{
+              setInstantPickDone(true);
+              if (user && instantPickState) {
+                await savePredictions(user.id, activeBoardId, instantPickState);
+              }
+              setScreen(SCREENS.HOME);
+            }}/>}
 
           {screen===SCREENS.FAST_PREDICTION&&<FastPredictionScreen onHome={()=>setScreen(SCREENS.HOME)}/>}
-          {screen===SCREENS.STATS&&<StatsScreen lang={lang}/>}
+          {screen===SCREENS.STATS&&<StatsScreen/>}
           {screen===SCREENS.RULES&&<RulesScreen onBack={()=>setScreen(SCREENS.HOME)}/>}
-          {screen===SCREENS.GROUPS_SCHEDULE&&<GroupsScheduleScreen scores={exactScores} setScores={(s)=>{ setExactScores(s); showToast("Score saved!", "⚽"); }} simDay={simDay} simHour={simHour} simMin={simMin} initialWeek={groupsInitialWeek} onBack={()=>{ setGroupsInitialWeek(null); setScreen(SCREENS.HOME); }}/>}
-          {screen===SCREENS.ACCOUNT&&<AccountScreen lang={lang} onBoards={()=>setScreen(SCREENS.BOARDS)} onSignOut={()=>setScreen(SCREENS.SPLASH)} onShowGuide={()=>{ setShowOnboarding(true); setScreen(SCREENS.HOME); }}/>}
+          {screen===SCREENS.GROUPS_SCHEDULE&&<GroupsScheduleScreen scores={exactScores} setScores={(newScores)=>{
+              const oldScores = exactScores;
+              setExactScores(newScores);
+              showToast("Score saved!", "⚽");
+              if (user) {
+                Object.keys(newScores).forEach(matchKey => {
+                  const o = oldScores[matchKey], n = newScores[matchKey];
+                  if (!o || o.home !== n.home || o.away !== n.away)
+                    saveExactScore(user.id, activeBoardId, matchKey, n.home, n.away);
+                });
+              }
+            }} simDay={simDay} simHour={simHour} simMin={simMin} initialWeek={groupsInitialWeek} onBack={()=>{ setGroupsInitialWeek(null); setScreen(SCREENS.HOME); }}/>}
+          {screen===SCREENS.ACCOUNT&&<AccountScreen setLang={setLang} onBoards={()=>setScreen(SCREENS.BOARDS)} onSignOut={()=>setScreen(SCREENS.SPLASH)} onShowGuide={()=>{ setShowOnboarding(true); setScreen(SCREENS.HOME); }} user={user}/>}
         </div>
         <Toast message={toast.message} emoji={toast.emoji} visible={toast.visible}/>
         {showFooter&&<Footer active={footerActive} onNavigate={setScreen} lang={lang}/>}
       </div>
     </div>
+    </LangCtx.Provider>
+    </UserCtx.Provider>
   );
 }
 
