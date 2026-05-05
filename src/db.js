@@ -79,26 +79,35 @@ export async function saveExactScore(userId, boardId, matchKey, home, away) {
 
 // ─── BOARDS ───────────────────────────────────────────────────────────────────
 export async function loadUserBoards(userId) {
-  const { data } = await supabase
-    .from('board_members')
-    .select('role, boards(*)')
-    .eq('user_id', userId)
-  return (data || []).map(row => ({
-    ...row.boards,
-    label:    row.boards.emoji || '⚽',
-    isGlobal: false,
-    role:     row.role,
-  }))
+  const [memberships, created] = await Promise.all([
+    supabase.from('board_members').select('role, boards(*)').eq('user_id', userId),
+    supabase.from('boards').select('*').eq('created_by', userId),
+  ])
+  const seen = new Set()
+  const boards = []
+  ;(memberships.data || []).forEach(row => {
+    seen.add(row.boards.id)
+    boards.push({ ...row.boards, label: row.boards.emoji || '⚽', isGlobal: false, role: row.role })
+  })
+  ;(created.data || []).forEach(b => {
+    if (!seen.has(b.id))
+      boards.push({ ...b, label: b.emoji || '⚽', isGlobal: false, role: 'admin' })
+  })
+  return boards
 }
 
 export async function createBoard(userId, { name, emoji, type, password, max_players, prizes }) {
+  const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ'
+  const invite_code = letters[Math.floor(Math.random()*letters.length)] +
+    String(Math.floor(10000 + Math.random() * 90000))
   const { data, error } = await supabase
     .from('boards')
-    .insert({ name, emoji, type, password, max_players, prizes: prizes || [], created_by: userId })
+    .insert({ name, emoji, type, password, max_players, prizes: prizes || [], created_by: userId, invite_code })
     .select()
     .single()
   if (error) { console.error('createBoard:', error); return { error } }
-  return { data: { ...data, label: data.emoji || '⚽', isGlobal: false } }
+  await supabase.from('board_members').insert({ board_id: data.id, user_id: userId, role: 'admin' })
+  return { data: { ...data, label: data.emoji || '⚽', isGlobal: false, code: data.invite_code, role: 'admin' } }
 }
 
 export async function joinBoardByCode(userId, code) {
@@ -113,6 +122,49 @@ export async function joinBoardByCode(userId, code) {
     .upsert({ board_id: board.id, user_id: userId, role: 'member' }, { onConflict: 'board_id,user_id' })
   if (joinErr) return { error: joinErr.message }
   return { data: { ...board, label: board.emoji || '⚽', isGlobal: false } }
+}
+
+export async function loadBoardMembers(boardId) {
+  const { data: members, error: err1 } = await supabase
+    .from('board_members')
+    .select('user_id, role')
+    .eq('board_id', boardId)
+  console.log('loadBoardMembers', boardId, members, err1)
+  if (!members?.length) return []
+  const { data: profiles, error: err2 } = await supabase
+    .from('profiles')
+    .select('id, display_name')
+    .in('id', members.map(m => m.user_id))
+  console.log('profiles', profiles, err2)
+  const profileMap = {}
+  ;(profiles || []).forEach(p => { profileMap[p.id] = p.display_name })
+  return members.map(row => ({
+    id:   row.user_id,
+    name: profileMap[row.user_id] || '—',
+    role: row.role,
+  }))
+}
+
+export async function joinBoardById(userId, boardId) {
+  const { error } = await supabase
+    .from('board_members')
+    .upsert({ board_id: boardId, user_id: userId, role: 'member' }, { onConflict: 'board_id,user_id' })
+  if (error) { console.error('joinBoardById:', error); return { error: error.message } }
+  return { data: true }
+}
+
+export async function removeBoardMember(boardId, userId) {
+  const { error } = await supabase
+    .from('board_members')
+    .delete()
+    .eq('board_id', boardId)
+    .eq('user_id', userId)
+  if (error) console.error('removeBoardMember:', error)
+}
+
+export async function deleteBoard(boardId) {
+  const { error } = await supabase.from('boards').delete().eq('id', boardId)
+  if (error) console.error('deleteBoard:', error)
 }
 
 // ─── MEMBER COUNTS ───────────────────────────────────────────────────────────

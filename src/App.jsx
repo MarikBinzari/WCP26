@@ -3,7 +3,7 @@ import trophy from "./assets/hands-trophy.png";
 import varBg from "./assets/var-bg.jpg";
 import { ALL_GROUPS_DATA, FLAGS, TEAM_COLORS, CALENDAR_EVENTS } from "./data/worldcup2026.js";
 import { supabase } from "./supabase.js";
-import { loadPredictions, savePredictions, loadExactScores, saveExactScore, loadUserBoards, createBoard, joinBoardByCode, loadLeaderboard, fetchScoringRules, fetchMemberCounts } from "./db.js";
+import { loadPredictions, savePredictions, loadExactScores, saveExactScore, loadUserBoards, createBoard, joinBoardByCode, joinBoardById, loadLeaderboard, fetchScoringRules, fetchMemberCounts, removeBoardMember, deleteBoard, loadBoardMembers } from "./db.js";
 
 const TEAM_CODE = {"Mexico":"MEX","South Africa":"RSA","South Korea":"KOR","Czechia":"CZE","Canada":"CAN","Switzerland":"SUI","Qatar":"QAT","Bosnia-Herzegovina":"BIH","Brazil":"BRA","Morocco":"MAR","Scotland":"SCO","Haiti":"HAI","USA":"USA","Paraguay":"PAR","Australia":"AUS","Turkiye":"TUR","Germany":"GER","Ecuador":"ECU","Ivory Coast":"CIV","Curacao":"CUW","Netherlands":"NED","Japan":"JPN","Tunisia":"TUN","Sweden":"SWE","Belgium":"BEL","Iran":"IRI","Egypt":"EGY","New Zealand":"NZL","Spain":"ESP","Uruguay":"URU","Saudi Arabia":"KSA","Cape Verde":"CPV","France":"FRA","Senegal":"SEN","Norway":"NOR","Iraq":"IRQ","Argentina":"ARG","Austria":"AUT","Algeria":"ALG","Jordan":"JOR","Portugal":"POR","Colombia":"COL","Uzbekistan":"UZB","DR Congo":"COD","England":"ENG","Croatia":"CRO","Panama":"PAN","Ghana":"GHA"};
 
@@ -2445,7 +2445,7 @@ function Best3Screen({ groups, getGroupStanding, picks, best3, setBest3, onDone 
 
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",position:"relative"}}>
-      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:0,objectFit:"cover",objectPosition:"center 20%",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
       {/* Header with selected chips */}
       <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"12px 16px 14px",flexShrink:0}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
@@ -3074,7 +3074,7 @@ function InstantPickScreen({ onBack, onComplete, onModify, savedState, onStateCh
         <div style={{flex:1,display:"flex",flexDirection:"column",userSelect:"none",background:"#f0f2f8",overflow:"hidden"}}>
           {/* Header navy */}
           <div style={{background:`linear-gradient(135deg,${NAVY},#001840)`,padding:"14px 14px 16px",flexShrink:0,position:"relative",overflow:"hidden"}}>
-            <img src={trophy} alt="" style={{position:"absolute",width:"120%",height:"100%",left:"-10%",top:0,objectFit:"cover",objectPosition:"center 20%",opacity:0.15,pointerEvents:"none",filter:"grayscale(1) contrast(1.5)"}}/>
+            <img src={trophy} alt="" style={{position:"absolute",width:"120%",height:"100%",left:"-10%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.15,pointerEvents:"none",filter:"grayscale(1) contrast(1.5)"}}/>
             <div style={{position:"relative",zIndex:1,display:"flex",alignItems:"center",gap:10,marginBottom:14}}>
               <button onClick={()=>{ if(viewMode) onBack&&onBack(); else setShowFinalSummary(false); }}
                 style={{background:"rgba(255,255,255,0.15)",border:"none",borderRadius:10,
@@ -3135,7 +3135,7 @@ function InstantPickScreen({ onBack, onComplete, onModify, savedState, onStateCh
     }
     if(koShowIntro) return (
       <div style={{flex:1,minHeight:0,display:"flex",flexDirection:"column",background:BG,userSelect:"none",position:"relative",overflow:"hidden"}}>
-        <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:0,objectFit:"cover",objectPosition:"center 20%",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
+        <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
         {sharedHeader}
         <GroupIntroScreen group={koRound} teams={koRoundMatchups.map(m=>[m.home,m.away])}
           isKo={true} hideHeader={true} onStart={()=>setKoShowIntro(false)} picks={koPicks} viewMode={viewMode}/>
@@ -3168,7 +3168,7 @@ function InstantPickScreen({ onBack, onComplete, onModify, savedState, onStateCh
 
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,userSelect:"none",position:"relative",overflow:"hidden"}}>
-      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:0,objectFit:"cover",objectPosition:"center 20%",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
       {sharedHeader}
       <GroupRankingScreen
         hideHeader={true}
@@ -3351,7 +3351,7 @@ function GroupRankingScreen({ group, teams, existingRanking, onConfirm, onBack, 
 
   return (
     <div style={{flex:1, display:"flex", flexDirection:"column", background:"transparent", userSelect:"none", position:"relative", overflow:"hidden"}}>
-      {!hideHeader && <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:0,objectFit:"cover",objectPosition:"center 20%",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>}
+      {!hideHeader && <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>}
 
       {/* ── NAVY HEADER ── */}
       {!hideHeader && <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`, paddingBottom:0}}>
@@ -3707,7 +3707,7 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
   const meInTop3 = top3.some(u=>u.isMe);
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",position:"relative"}}>
-      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:0,objectFit:"cover",objectPosition:"center 20%",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
       <div style={{background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"10px 20px 12px",flexShrink:0,position:"relative",zIndex:1}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16}}>
           <div>
@@ -3972,7 +3972,7 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
 
 
 // ── BOARDS ────────────────────────────────────────────────────────────────────
-function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: createdBoardsProp, setCreatedBoards: setCreatedBoardsProp, availableBoards: availableBoardsProp, setAvailableBoards: setAvailableBoardsProp, showToast, user, onCreateBoard, onJoinByCode }) {
+function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: createdBoardsProp, setCreatedBoards: setCreatedBoardsProp, availableBoards: availableBoardsProp, setAvailableBoards: setAvailableBoardsProp, showToast, user, onCreateBoard, onJoinByCode, onJoinBoard, onDeleteBoard, onRemoveMember }) {
   const displayName = useDisplayName();
   const lang = useLang();
   const [view, setView] = useState("main"); // main | join | create
@@ -4000,16 +4000,20 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
   const [joinError, setJoinError] = useState("");
 
   const [viewMembersBoard, setViewMembersBoard] = useState(null);
+  const [boardMembersMap, setBoardMembersMap] = useState({});
+
+  const openMembers = async (boardId) => {
+    if (viewMembersBoard === boardId) { setViewMembersBoard(null); return; }
+    setViewMembersBoard(boardId);
+    const members = await loadBoardMembers(boardId);
+    setBoardMembersMap(prev => ({ ...prev, [boardId]: members }));
+  };
 
   const doJoin = (b) => {
     if(!myBoards.find(x=>x.id===b.id)){
       setMyBoards(p=>[...p,{...b}]);
-      setCreatedBoards(p=>p.map(c=>c.id===b.id?{
-        ...c,
-        members:(c.members||0)+1,
-        membersList:[...(c.membersList||[]),{name:displayName, isMe:true, id:"me"}]
-      }:c));
       setAvailBoards(p=>p.map(c=>c.id===b.id?{...c,members:(c.members||0)+1}:c));
+      if(onJoinBoard) onJoinBoard(b.id);
       if(showToast) showToast(`Joined "${b.name}"!`, "🏆");
     }
   };
@@ -4094,7 +4098,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
 
   if(view==="create") return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,position:"relative",overflow:"hidden"}}>
-      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:0,objectFit:"cover",objectPosition:"center 20%",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
       <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"16px 20px 22px",flexShrink:0}}>
         <div style={{display:"flex",alignItems:"center",gap:14}}>
           <div onClick={()=>setView("main")} style={{width:36,height:36,borderRadius:10,background:"rgba(255,255,255,0.12)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:"#fff"}}>&#8249;</div>
@@ -4250,7 +4254,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
 
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:"transparent",position:"relative",overflow:"hidden"}}>
-      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:0,objectFit:"cover",objectPosition:"center 20%",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
       <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"16px 20px 22px",flexShrink:0}}>
         <div style={{display:"flex",alignItems:"center",gap:14}}>
           <div onClick={onBack} style={{width:36,height:36,borderRadius:10,background:"rgba(255,255,255,0.12)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:"#fff"}}>&#8249;</div>
@@ -4339,7 +4343,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
                   <p style={{fontSize:11,color:"#aaa",margin:"2px 0 0"}}>👥 {b.members}{b.max?"/"+b.max:""} members · 🔑 {b.code}</p>
                 </div>
                 <div style={{display:"flex",gap:6}}>
-                  <button onClick={()=>setViewMembersBoard(viewMembersBoard===b.id?null:b.id)}
+                  <button onClick={()=>openMembers(b.id)}
                     style={{background:"rgba(0,32,91,0.08)",border:"none",borderRadius:9,
                       padding:"7px 10px",fontSize:11,fontWeight:700,color:NAVY,cursor:"pointer"}}>
                     👥
@@ -4356,41 +4360,55 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
                     padding:"7px 10px",fontSize:11,fontWeight:700,color:NAVY,cursor:"pointer"}}>
                     ✏️
                   </button>
+                  <button onClick={()=>{
+                    if(!window.confirm(`Ștergi "${b.name}"?`)) return;
+                    setCreatedBoards(p=>p.filter(x=>x.id!==b.id));
+                    if(onDeleteBoard) onDeleteBoard(b.id);
+                  }} style={{background:"rgba(200,16,46,0.08)",border:"none",borderRadius:9,
+                    padding:"7px 10px",fontSize:11,fontWeight:700,color:RED,cursor:"pointer"}}>
+                    🗑️
+                  </button>
                 </div>
               </div>
               {/* Members list */}
               {viewMembersBoard===b.id&&(
                 <div style={{marginTop:10,borderTop:"1px solid rgba(0,0,0,0.06)",paddingTop:10}}>
-                  {(!b.membersList||b.membersList.length===0)?(
+                  {!(boardMembersMap[b.id]?.length > 0)?(
                     <p style={{fontSize:12,color:"#bbb",textAlign:"center",margin:"8px 0"}}>No members yet</p>
-                  ):(b.membersList||[]).map((m,mi)=>(
-                    <div key={mi} style={{display:"flex",alignItems:"center",gap:10,padding:"6px 0",
-                      borderBottom:mi<(b.membersList.length-1)?"1px solid rgba(0,0,0,0.04)":"none"}}>
+                  ):(boardMembersMap[b.id]||[]).map((m,mi)=>{
+                    const isMe = m.id === user?.id;
+                    const list = boardMembersMap[b.id];
+                    return (
+                    <div key={m.id} style={{display:"flex",alignItems:"center",gap:10,padding:"6px 0",
+                      borderBottom:mi<(list.length-1)?"1px solid rgba(0,0,0,0.04)":"none"}}>
                       <div style={{width:30,height:30,borderRadius:"50%",
-                        background:m.isMe?`${NAVY}22`:"rgba(0,0,0,0.08)",
+                        background:isMe?`${NAVY}22`:"rgba(0,0,0,0.08)",
                         display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                         <span style={{fontSize:12}}>{m.name[0]}</span>
                       </div>
-                      <span style={{flex:1,fontSize:12,fontWeight:600,color:m.isMe?NAVY:DARK}}>{m.name}{m.isMe?" (Tu)":""}</span>
-                      {!m.isMe&&(
-                        <button onClick={()=>removeMember(b.id,m.id)}
-                          style={{background:"rgba(200,16,46,0.08)",border:"none",borderRadius:8,
-                            padding:"4px 10px",fontSize:11,fontWeight:700,color:RED,cursor:"pointer"}}>
-                          {T[lang].remove}
-                        </button>
-                      )}
+                      <span style={{flex:1,fontSize:12,fontWeight:600,color:isMe?NAVY:DARK}}>
+                        {m.name}{isMe?" (Tu)":""}{m.role==="admin"?" · admin":""}
+                      </span>
+                      <button onClick={async ()=>{
+                        if(onRemoveMember) await onRemoveMember(b.id, m.id);
+                        setBoardMembersMap(prev=>({...prev,[b.id]:prev[b.id].filter(x=>x.id!==m.id)}));
+                      }} style={{background:"rgba(200,16,46,0.08)",border:"none",borderRadius:8,
+                          padding:"4px 10px",fontSize:11,fontWeight:700,color:RED,cursor:"pointer"}}>
+                        {T[lang].remove}
+                      </button>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
           ))}
         </>)}
 
-        {/* Joined boards */}
-        {myBoards.filter(b=>!b.prizes||b.isGlobal).length>0&&(<>
+        {/* Joined boards (exclude admin boards shown above) */}
+        {myBoards.filter(b=>!createdBoards.some(c=>c.id===b.id)).length>0&&(<>
           <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 10px"}}>{T[lang].joinedBoards}</p>
-          {myBoards.map(b=>{
+          {myBoards.filter(b=>!createdBoards.some(c=>c.id===b.id)).map(b=>{
             // Get latest data from createdBoards or availBoards
             const latest = createdBoards.find(c=>c.id===b.id)||availBoards.find(c=>c.id===b.id)||b;
             return (
@@ -4405,7 +4423,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
                   <p style={{fontSize:11,color:"#aaa",margin:"2px 0 0"}}>👥 {latest.members}{latest.max?"/"+latest.max:""} members</p>
                 </div>
                 <div style={{background:"#E8F0FF",borderRadius:9,padding:"7px 12px",fontSize:11,fontWeight:700,color:NAVY}}>
-                  {b.isGlobal ? T[lang].globalBoard : "✓ Joined"}
+                  ✓ Joined
                 </div>
               </div>
             </div>
@@ -4692,7 +4710,7 @@ function SplashScreen({ onNext, lang, setLang, simDay, simHour=12, simMin=0, tou
   const sm2 = simDay ? minsLeft : m;
   const ss = simDay ? secsLeft : s;
   return (
-    <div style={{flex:1,display:"flex",flexDirection:"column",position:"relative",overflow:"hidden",background:"#fff"}}>
+    <div style={{flex:1,display:"flex",flexDirection:"column",position:"relative",overflow:"hidden",background:BG}}>
       <div style={{position:"absolute",width:"100%",height:"100%",background:"linear-gradient(180deg,rgba(0,32,91,0.04) 0%,rgba(200,16,46,0.07) 100%)",zIndex:0,pointerEvents:"none"}}/>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"20px 22px 0",position:"relative",zIndex:10}}>
         <div style={{width:44}}/>
@@ -4712,9 +4730,9 @@ function SplashScreen({ onNext, lang, setLang, simDay, simHour=12, simMin=0, tou
           width: "130%",
           height: "100%",
           left: "-30%",
-          top: "0",
+          top: "15%",
           objectFit: "cover",
-          objectPosition: "center 20%",
+          objectPosition: "center top",
           zIndex: 0,
           mixBlendMode: "multiply",
           opacity: 0.9,
@@ -4917,7 +4935,7 @@ function LoginScreen({ onNext }) {
 
   if (sent) return (
     <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"0 32px",textAlign:"center",background:BG,position:"relative",overflow:"hidden"}}>
-      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:0,objectFit:"cover",objectPosition:"center 20%",opacity:0.1,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.1,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
       <div style={{position:"relative",zIndex:1}}>
         <div style={{fontSize:56,marginBottom:16}}>📧</div>
         <h2 style={{fontSize:20,fontWeight:800,color:DARK,margin:"0 0 10px"}}>Check your email!</h2>
@@ -4933,7 +4951,7 @@ function LoginScreen({ onNext }) {
 
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,position:"relative",overflow:"hidden"}}>
-      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:0,objectFit:"cover",objectPosition:"center 20%",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
       <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"32px 28px 28px",display:"flex",flexDirection:"column",alignItems:"center"}}>
         <div style={{width:64,height:64,borderRadius:20,background:"rgba(255,255,255,0.12)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:32,marginBottom:12}}>🏆</div>
         <p style={{fontSize:12,color:RED,margin:"0 0 4px",letterSpacing:3,textTransform:"uppercase",fontWeight:800}}>WORLD CUP 2026</p>
@@ -5010,7 +5028,7 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
 
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,position:"relative",overflow:"hidden"}}>
-      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:0,objectFit:"cover",objectPosition:"center 20%",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
       <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"10px 20px 14px",flexShrink:0}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:myBoards.length>1?12:0}}>
           <div onClick={onBack} style={{width:36,height:36,borderRadius:10,background:"rgba(255,255,255,0.12)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:"#fff"}}>&#8249;</div>
@@ -5119,7 +5137,7 @@ function FastPredictionScreen({ onHome }) {
   const card=cards[idx];
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,position:"relative",overflow:"hidden"}}>
-      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:0,objectFit:"cover",objectPosition:"center 20%",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
       <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"16px 20px 20px",textAlign:"center"}}>
         <p style={{fontSize:12,color:RED,margin:0,letterSpacing:2,textTransform:"uppercase",fontWeight:800}}>FLASH PICK ⚡</p>
         <span style={{fontSize:16,fontWeight:800,color:"#fff"}}>⚡ {T[lang].todaysMatches}</span>
@@ -5157,7 +5175,7 @@ function ScorePicker({ match, day, savedScore, onSave, onBack }) {
 
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",position:"relative"}}>
-      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:0,objectFit:"cover",objectPosition:"center 20%",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
       <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"14px 20px 16px",flexShrink:0}}>
         <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:12}}>
           <div onClick={onBack} style={{width:36,height:36,borderRadius:10,background:"rgba(255,255,255,0.12)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:"#fff"}}>&#8249;</div>
@@ -5395,7 +5413,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
 
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",position:"relative"}}>
-      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:0,objectFit:"cover",objectPosition:"center 20%",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
       <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"14px 20px 16px",flexShrink:0,overflow:"hidden"}}>
         <img src={varBg} alt="" style={{
           position:"absolute",inset:0,width:"100%",height:"100%",
@@ -6311,7 +6329,7 @@ function StatsScreen() {
   const cur = GROUPS.find(g=>g.id===selGroup) || GROUPS[0];
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",position:"relative"}}>
-      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:0,objectFit:"cover",objectPosition:"center 20%",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
       <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"16px 20px 18px",flexShrink:0}}>
         <p style={{fontSize:11,color:RED,margin:"0 0 2px",letterSpacing:2,textTransform:"uppercase",fontWeight:800}}>Predicto</p>
         <h2 style={{fontSize:18,fontWeight:800,color:"#fff",margin:"0 0 12px"}}>{T[lang].groupsSchedule}</h2>
@@ -6363,26 +6381,28 @@ function AccountScreen({ setLang, onBoards, onSignOut, onShowGuide, user }) {
   };
 
   return (
-    <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflowY:"auto",position:"relative"}}>
-      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:0,objectFit:"cover",objectPosition:"center 20%",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
-      <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"28px 20px 32px",display:"flex",flexDirection:"column",alignItems:"center"}}>
-        <div style={{width:70,height:70,borderRadius:"50%",background:"rgba(255,255,255,0.18)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:34,marginBottom:12}}>👤</div>
-        <p style={{fontSize:12,color:RED,margin:"0 0 4px",letterSpacing:2,textTransform:"uppercase",fontWeight:800}}>Predicto</p>
-        <h2 style={{fontSize:18,fontWeight:800,color:"#fff",margin:"0 0 4px"}}>{displayName}</h2>
-        <p style={{fontSize:13,color:"rgba(255,255,255,0.5)",margin:0}}>{user?.email}</p>
-        {memberSince && <p style={{fontSize:11,color:"rgba(255,255,255,0.35)",margin:"4px 0 0"}}>Membru din {memberSince}</p>}
-      </div>
-      <div style={{padding:"16px 20px",position:"relative",zIndex:1}}>
-        {[{icon:"🏆",label:T[lang].myBoards,sub:T[lang].activeBoards,action:onBoards},{icon:"📖",label:T[lang].appGuide,sub:T[lang].howItWorks,action:onShowGuide},{icon:"🔔",label:T[lang].notifications,sub:T[lang].matchAlertsOn},{icon:"🌍",label:T[lang].language,sub:LANGS.find(l=>l.code===lang)?.name||"English",isLang:true},{icon:"⭐",label:T[lang].upgradePremium,sub:T[lang].removeAds,highlight:true},{icon:"🚪",label:T[lang].signOut,sub:"",action:handleSignOut}].map(item=>(
-          <div key={item.label} onClick={item.isLang?undefined:item.action||undefined} style={{display:"flex",alignItems:"center",gap:14,background:item.highlight?"#E8F0FF":BG,borderRadius:14,boxShadow:item.highlight?`0 0 0 2px ${NAVY},${SHADOW_OUT}`:SHADOW_OUT,padding:"13px 16px",marginBottom:10,cursor:item.isLang?"default":"pointer"}}>
-            <span style={{fontSize:20}}>{item.icon}</span>
-            <div style={{flex:1}}>
-              <p style={{fontSize:14,fontWeight:700,color:item.highlight?NAVY:DARK,margin:0}}>{item.label}</p>
-              {item.sub&&<p style={{fontSize:12,color:item.highlight?NAVY:"#aaa",margin:"2px 0 0"}}>{item.sub}</p>}
+    <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,position:"relative",overflow:"hidden"}}>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
+      <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",position:"relative",zIndex:1}}>
+        <div style={{background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"28px 20px 32px",display:"flex",flexDirection:"column",alignItems:"center"}}>
+          <div style={{width:70,height:70,borderRadius:"50%",background:"rgba(255,255,255,0.18)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:34,marginBottom:12}}>👤</div>
+          <p style={{fontSize:12,color:RED,margin:"0 0 4px",letterSpacing:2,textTransform:"uppercase",fontWeight:800}}>Predicto</p>
+          <h2 style={{fontSize:18,fontWeight:800,color:"#fff",margin:"0 0 4px"}}>{displayName}</h2>
+          <p style={{fontSize:13,color:"rgba(255,255,255,0.5)",margin:0}}>{user?.email}</p>
+          {memberSince && <p style={{fontSize:11,color:"rgba(255,255,255,0.35)",margin:"4px 0 0"}}>Membru din {memberSince}</p>}
+        </div>
+        <div style={{padding:"16px 20px"}}>
+          {[{icon:"🏆",label:T[lang].myBoards,sub:T[lang].activeBoards,action:onBoards},{icon:"📖",label:T[lang].appGuide,sub:T[lang].howItWorks,action:onShowGuide},{icon:"🔔",label:T[lang].notifications,sub:T[lang].matchAlertsOn},{icon:"🌍",label:T[lang].language,sub:LANGS.find(l=>l.code===lang)?.name||"English",isLang:true},{icon:"⭐",label:T[lang].upgradePremium,sub:T[lang].removeAds,highlight:true},{icon:"🚪",label:T[lang].signOut,sub:"",action:handleSignOut}].map(item=>(
+            <div key={item.label} onClick={item.isLang?undefined:item.action||undefined} style={{display:"flex",alignItems:"center",gap:14,background:item.highlight?"#E8F0FF":BG,borderRadius:14,boxShadow:item.highlight?`0 0 0 2px ${NAVY},${SHADOW_OUT}`:SHADOW_OUT,padding:"13px 16px",marginBottom:10,cursor:item.isLang?"default":"pointer"}}>
+              <span style={{fontSize:20}}>{item.icon}</span>
+              <div style={{flex:1}}>
+                <p style={{fontSize:14,fontWeight:700,color:item.highlight?NAVY:DARK,margin:0}}>{item.label}</p>
+                {item.sub&&<p style={{fontSize:12,color:item.highlight?NAVY:"#aaa",margin:"2px 0 0"}}>{item.sub}</p>}
+              </div>
+              {item.isLang ? <LangSelector lang={lang} setLang={setLang}/> : <span style={{color:item.highlight?NAVY:"#bbb",fontSize:18}}>›</span>}
             </div>
-            {item.isLang ? <LangSelector lang={lang} setLang={setLang}/> : <span style={{color:item.highlight?NAVY:"#bbb",fontSize:18}}>›</span>}
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -6415,7 +6435,7 @@ function RulesScreen({ onBack }) {
 
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",position:"relative"}}>
-      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:0,objectFit:"cover",objectPosition:"center 20%",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
       <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"16px 20px 0",flexShrink:0}}>
         <p style={{fontSize:11,color:RED,margin:"0 0 4px",letterSpacing:2,textTransform:"uppercase",fontWeight:800}}>Predicto</p>
         <h2 style={{fontSize:20,fontWeight:900,color:"#fff",margin:"0 0 16px"}}>📖 {T[lang].rules}</h2>
@@ -6538,6 +6558,7 @@ function App() {
 
     // Boards + member counts
     loadUserBoards(uid).then(async boards => {
+      const adminBoards = boards.filter(b => b.role === 'admin');
       const allBoards = [...INITIAL_BOARDS, ...boards];
       const ids = allBoards.map(b => b.id);
       const counts = await fetchMemberCounts(ids);
@@ -6546,6 +6567,7 @@ function App() {
         members: counts[b.id] ?? b.members,
       }));
       setMyBoards(withCounts);
+      setCreatedBoards(adminBoards);
     });
 
     // Predictions + exact scores pentru toate boardurile userului
@@ -6698,6 +6720,7 @@ function App() {
               const { data, error } = await createBoard(user.id, boardData);
               if (error) { showToast("Eroare la creare", "❌"); return null; }
               setCreatedBoards(prev => [...prev, data]);
+              setMyBoards(prev => [...prev, data]);
               return data;
             }}
             onJoinByCode={async (code) => {
@@ -6707,7 +6730,26 @@ function App() {
               setMyBoards(prev => [...prev, data]);
               return data;
             }}
-            onJoin={(boardId)=>{ setActiveBoardId(boardId); setScreen(SCREENS.HOME); }}/>}
+            onJoin={(boardId)=>{ setActiveBoardId(boardId); setScreen(SCREENS.HOME); }}
+            onJoinBoard={async (boardId) => {
+              if (!user) return;
+              const { error } = await joinBoardById(user.id, boardId);
+              if (error) showToast(error, "❌");
+            }}
+            onDeleteBoard={async (boardId) => {
+              await deleteBoard(boardId);
+              setCreatedBoards(prev => prev.filter(b => b.id !== boardId));
+              setMyBoards(prev => prev.filter(b => b.id !== boardId));
+              if (activeBoardId === boardId) setActiveBoardId('global');
+              showToast("Board șters", "🗑️");
+            }}
+            onRemoveMember={async (boardId, memberId) => {
+              await removeBoardMember(boardId, memberId);
+              if (memberId === user?.id) {
+                setMyBoards(prev => prev.filter(b => b.id !== boardId));
+                if (activeBoardId === boardId) setActiveBoardId('global');
+              }
+            }}/>}
           {screen===SCREENS.LEADERBOARD&&<LeaderboardScreen onBack={()=>setScreen(SCREENS.HOME)} tournamentStarted={tournamentStarted}
             myBoards={myBoards} activeBoardId={activeBoardId} setActiveBoardId={setActiveBoardId}
             leaders={(()=>{
