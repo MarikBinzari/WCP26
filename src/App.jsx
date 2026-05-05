@@ -2777,11 +2777,11 @@ function InstantPickScreen({ onBack, onComplete, onModify, savedState, onStateCh
   const sharedHeader = (
     <div style={{background:"rgba(0,32,91,0.88)", paddingBottom:0, flexShrink:0, position:"relative", zIndex:1}}>
       {/* Top row */}
-      <div style={{display:"flex", alignItems:"center", gap:10, padding:"10px 14px 6px"}}>
+      <div style={{display:"flex", alignItems:"center", gap:10, padding:"10px 20px 6px"}}>
         <button onClick={headerBack} style={{background:"rgba(255,255,255,0.12)",border:"none",borderRadius:10,width:34,height:34,color:"#fff",fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>‹</button>
         <div style={{flex:1}}>
-          <div style={{fontSize:10,color:RED,fontWeight:800,letterSpacing:1.5}}>Predicto</div>
-          <div style={{fontSize:18,fontWeight:900,color:"#fff"}}>{headerTitle}</div>
+          <div style={{fontSize:11,color:RED,fontWeight:800,letterSpacing:2,textTransform:"uppercase"}}>Predicto</div>
+          <div style={{fontSize:18,fontWeight:800,color:"#fff"}}>{headerTitle}</div>
         </div>
         <div style={{textAlign:"right",flexShrink:0}}>
           <div style={{fontSize:13,fontWeight:700,color:"#fff"}}>{headerCounterVal}</div>
@@ -3825,7 +3825,7 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
             return (
               <div onClick={()=>onOpenGroups&&onOpenGroups()}
                 style={{flex:1,background:"#fff",borderRadius:14,boxShadow:SHADOW_OUT,
-                  padding:"14px 12px",cursor:"pointer",position:"relative"}}>
+                  padding:"10px 12px",cursor:"pointer",position:"relative"}}>
                 {missing>0&&(
                   <div style={{position:"absolute",top:-5,right:-5,
                     background:RED,borderRadius:"50%",minWidth:18,height:18,
@@ -5414,7 +5414,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",position:"relative"}}>
       <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
-      <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"14px 20px 16px",flexShrink:0,overflow:"hidden"}}>
+      <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"10px 20px 12px",flexShrink:0,overflow:"hidden"}}>
         <img src={varBg} alt="" style={{
           position:"absolute",inset:0,width:"100%",height:"100%",
           objectFit:"cover",objectPosition:"center 30%",
@@ -5425,7 +5425,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
             <div onClick={onBack} style={{width:36,height:36,borderRadius:10,background:"rgba(255,255,255,0.12)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:"#fff"}}>&#8249;</div>
             <div>
               <p style={{fontSize:11,color:RED,margin:"0 0 2px",letterSpacing:2,textTransform:"uppercase",fontWeight:800}}>Predicto</p>
-              <h2 style={{fontSize:17,fontWeight:800,color:"#fff",margin:0}}>{T[lang].groupsSchedule}</h2>
+              <h2 style={{fontSize:18,fontWeight:800,color:"#fff",margin:0}}>{T[lang].groupsSchedule}</h2>
             </div>
           </div>
         </div>
@@ -6556,21 +6556,7 @@ function App() {
     if (!user) return;
     const uid = user.id;
 
-    // Boards + member counts
-    loadUserBoards(uid).then(async boards => {
-      const adminBoards = boards.filter(b => b.role === 'admin');
-      const allBoards = [...INITIAL_BOARDS, ...boards];
-      const ids = allBoards.map(b => b.id);
-      const counts = await fetchMemberCounts(ids);
-      const withCounts = allBoards.map(b => ({
-        ...b,
-        members: counts[b.id] ?? b.members,
-      }));
-      setMyBoards(withCounts);
-      setCreatedBoards(adminBoards);
-    });
-
-    // Predictions + exact scores pentru toate boardurile userului
+    // Predictions + exact scores pentru un board
     const loadForBoard = async (boardId) => {
       const [preds, scores] = await Promise.all([
         loadPredictions(uid, boardId),
@@ -6593,7 +6579,21 @@ function App() {
         setExactScoresByBoard(p => ({ ...p, [boardId]: scores }));
     };
 
+    // Boards + member counts + predicții pentru toate boardurile
     loadForBoard('global');
+    loadUserBoards(uid).then(async boards => {
+      const adminBoards = boards.filter(b => b.role === 'admin');
+      const allBoards = [...INITIAL_BOARDS, ...boards];
+      const ids = allBoards.map(b => b.id);
+      const counts = await fetchMemberCounts(ids);
+      const withCounts = allBoards.map(b => ({
+        ...b,
+        members: counts[b.id] ?? b.members,
+      }));
+      setMyBoards(withCounts);
+      setCreatedBoards(adminBoards);
+      boards.forEach(b => loadForBoard(b.id));
+    });
   }, [user]);
 
   const [screen, setScreen] = useState("dev");
@@ -6660,11 +6660,7 @@ function App() {
   return (
     <UserCtx.Provider value={user}>
     <LangCtx.Provider value={lang}>
-    <div style={{display:"flex",justifyContent:"center",alignItems:"center",minHeight:"100vh",background:"#D4D4D4",fontFamily:"-apple-system,'SF Pro Display',sans-serif"}}>
-      <div style={{width:390,height:844,background:BG,borderRadius:46,overflow:"hidden",boxShadow:"0 30px 80px rgba(0,0,0,0.22),inset 0 1px 0 rgba(255,255,255,0.8)",display:"flex",flexDirection:"column",position:"relative"}}>
-        <div style={{display:"flex",justifyContent:"space-between",padding:"14px 24px 4px",fontSize:13,fontWeight:600,color:DARK,flexShrink:0}}>
-          <span>9:41</span><span>5G 🔋</span>
-        </div>
+    <div style={{width:"100%",height:"100vh",background:BG,display:"flex",flexDirection:"column",position:"relative",fontFamily:"-apple-system,'SF Pro Display',sans-serif"}}>
         <div style={{flex:1,overflow:"hidden",display:"flex",flexDirection:"column"}}>
           {screen==="dev"&&<DevPanel
             onAutoPick={(state)=>{
@@ -6802,7 +6798,6 @@ function App() {
         </div>
         <Toast message={toast.message} emoji={toast.emoji} visible={toast.visible}/>
         {showFooter&&<Footer active={footerActive} onNavigate={setScreen} lang={lang}/>}
-      </div>
     </div>
     </LangCtx.Provider>
     </UserCtx.Provider>
