@@ -2754,7 +2754,7 @@ function InstantPickScreen({ onBack, onComplete, onModify, savedState, onStateCh
   const sharedNavIdx = stage==="groups" ? groupIdx : GROUPS.length-1;
 
   const sharedHeader = (
-    <div style={{background:"linear-gradient(145deg,rgba(26,80,216,0.92) 0%,rgba(10,46,138,0.95) 55%,rgba(0,18,37,0.97) 100%)", paddingBottom:0, flexShrink:0, position:"relative", zIndex:1, overflow:"hidden", boxShadow:"0 4px 20px rgba(0,0,0,0.35),inset 0 1px 0 rgba(255,255,255,0.15)"}}>
+    <div style={{background:"rgba(0,32,91,0.88)", paddingBottom:0, flexShrink:0, position:"relative", zIndex:1, overflow:"hidden"}}>
       <img src={varBg} alt="" style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover",objectPosition:"center 30%",opacity:0.28,pointerEvents:"none"}}/>
       {/* Top row */}
       <div style={{display:"flex", alignItems:"center", gap:10, padding:"10px 20px 6px"}}>
@@ -3688,7 +3688,7 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",position:"relative"}}>
       <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
-      <div style={{background:"linear-gradient(145deg,#1A50D8 0%,#0A2E8A 55%,#001225 100%)",padding:"10px 20px 12px",flexShrink:0,position:"relative",zIndex:1,boxShadow:"0 4px 20px rgba(0,0,0,0.35),inset 0 1px 0 rgba(255,255,255,0.18)"}}>
+      <div style={{background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"10px 20px 12px",flexShrink:0,position:"relative",zIndex:1}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16}}>
           <div>
             <p style={{fontSize:11,color:RED,margin:"0 0 2px",letterSpacing:2,textTransform:"uppercase",fontWeight:800}}>Predicto</p>
@@ -4084,7 +4084,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
   if(view==="create") return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,position:"relative",overflow:"hidden"}}>
       <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
-      <div style={{position:"relative",zIndex:1,background:"linear-gradient(145deg,#1A50D8 0%,#0A2E8A 55%,#001225 100%)",padding:"16px 20px 22px",flexShrink:0,boxShadow:"0 4px 20px rgba(0,0,0,0.35),inset 0 1px 0 rgba(255,255,255,0.18)"}}>
+      <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"16px 20px 22px",flexShrink:0}}>
         <div style={{display:"flex",alignItems:"center",gap:14}}>
           <div onClick={()=>setView("main")} style={{width:36,height:36,borderRadius:10,background:"rgba(255,255,255,0.12)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:"#fff"}}>&#8249;</div>
           <div>
@@ -4240,7 +4240,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:"transparent",position:"relative",overflow:"hidden"}}>
       <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
-      <div style={{position:"relative",zIndex:1,background:"linear-gradient(145deg,#1A50D8 0%,#0A2E8A 55%,#001225 100%)",padding:"16px 20px 22px",flexShrink:0,boxShadow:"0 4px 20px rgba(0,0,0,0.35),inset 0 1px 0 rgba(255,255,255,0.18)"}}>
+      <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"16px 20px 22px",flexShrink:0}}>
         <div style={{display:"flex",alignItems:"center",gap:14}}>
           <div onClick={onBack} style={{width:36,height:36,borderRadius:10,background:"rgba(255,255,255,0.12)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:"#fff"}}>&#8249;</div>
           <div style={{flex:1}}>
@@ -5222,7 +5222,7 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,position:"relative",overflow:"hidden"}}>
       <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
-      <div style={{position:"relative",zIndex:1,background:"linear-gradient(145deg,#1A50D8 0%,#0A2E8A 55%,#001225 100%)",padding:"10px 20px 14px",flexShrink:0,boxShadow:"0 4px 20px rgba(0,0,0,0.35),inset 0 1px 0 rgba(255,255,255,0.18)"}}>
+      <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"10px 20px 14px",flexShrink:0}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:myBoards.length>1?12:0}}>
           <div onClick={onBack} style={{width:36,height:36,borderRadius:10,background:"rgba(255,255,255,0.12)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:"#fff"}}>&#8249;</div>
           <div style={{textAlign:"center"}}>
@@ -6556,7 +6556,7 @@ function AccountScreen({ setLang, onBoards, onSignOut, onShowGuide, user }) {
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,position:"relative",overflow:"hidden"}}>
       <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
       <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",position:"relative",zIndex:1}}>
-        <div style={{background:"linear-gradient(145deg,#1A50D8 0%,#0A2E8A 55%,#001225 100%)",padding:"28px 20px 32px",display:"flex",flexDirection:"column",alignItems:"center",boxShadow:"0 4px 20px rgba(0,0,0,0.35),inset 0 1px 0 rgba(255,255,255,0.18)"}}>
+        <div style={{background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"28px 20px 32px",display:"flex",flexDirection:"column",alignItems:"center"}}>
           <div style={{width:70,height:70,borderRadius:"50%",background:"rgba(255,255,255,0.18)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:34,marginBottom:12}}>👤</div>
           <p style={{fontSize:12,color:RED,margin:"0 0 4px",letterSpacing:2,textTransform:"uppercase",fontWeight:800}}>Predicto</p>
           <h2 style={{fontSize:18,fontWeight:800,color:"#fff",margin:"0 0 4px"}}>{displayName}</h2>
