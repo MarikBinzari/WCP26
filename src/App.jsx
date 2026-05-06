@@ -23,6 +23,7 @@ const SCREENS = {
   GROUPS_SCHEDULE:"groups_schedule",
   RULES:"rules",
   RESET_PASSWORD:"reset_password",
+  SET_PASSWORD:"set_password",
 };
 
 const INITIAL_BOARDS = [{ id:"global", label:"🌍", name:"Global Board", members:48291, isGlobal:true }];
@@ -5097,7 +5098,7 @@ function ResetPasswordScreen({ onDone }) {
     if (password.length < 6) { setError("Parola trebuie să aibă minim 6 caractere."); return; }
     if (password !== confirm) { setError("Parolele nu coincid."); return; }
     setLoading(true); setError("");
-    const { error } = await supabase.auth.updateUser({ password });
+    const { error } = await supabase.auth.updateUser({ password, data: { has_password: true } });
     setLoading(false);
     if (error) { setError(error.message); return; }
     setDone(true);
@@ -5131,6 +5132,62 @@ function ResetPasswordScreen({ onDone }) {
             </div>
             {error && <p style={{fontSize:12,color:RED,margin:"0 0 8px",textAlign:"center"}}>{error}</p>}
             <button onClick={handleReset} disabled={loading||!password||!confirm}
+              style={{width:"100%",background:password&&confirm?`linear-gradient(135deg,${NAVY},#001840)`:"#e0e0e0",color:"#fff",border:"none",borderRadius:14,padding:"15px 0",fontSize:15,fontWeight:700,cursor:"pointer",opacity:loading?0.7:1}}>
+              {loading ? "Se salvează..." : "Salvează parola →"}
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function SetPasswordScreen({ onDone }) {
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [done, setDone] = useState(false);
+
+  const handleSet = async () => {
+    if (password.length < 6) { setError("Parola trebuie să aibă minim 6 caractere."); return; }
+    if (password !== confirm) { setError("Parolele nu coincid."); return; }
+    setLoading(true); setError("");
+    const { error } = await supabase.auth.updateUser({ password, data: { has_password: true } });
+    setLoading(false);
+    if (error) { setError(error.message); return; }
+    setDone(true);
+    setTimeout(() => onDone(), 2000);
+  };
+
+  return (
+    <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"0 32px",textAlign:"center",background:BG}}>
+      {done ? (
+        <>
+          <div style={{fontSize:56,marginBottom:16}}>✅</div>
+          <h2 style={{fontSize:20,fontWeight:800,color:DARK,margin:"0 0 8px"}}>Parolă setată!</h2>
+          <p style={{fontSize:13,color:"#aaa"}}>Te redirecționăm...</p>
+        </>
+      ) : (
+        <>
+          <div style={{fontSize:48,marginBottom:16}}>🔐</div>
+          <h2 style={{fontSize:20,fontWeight:800,color:DARK,margin:"0 0 8px"}}>Setează o parolă</h2>
+          <p style={{fontSize:13,color:"#888",margin:"0 0 6px"}}>Contul tău a fost creat prin magic link.</p>
+          <p style={{fontSize:13,color:"#aaa",margin:"0 0 24px"}}>Setează o parolă pentru a te putea loga data viitoare fără link.</p>
+          <div style={{width:"100%",maxWidth:340}}>
+            <div style={{background:"#fff",borderRadius:14,boxShadow:SHADOW_OUT,padding:"14px 16px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
+              <span style={{fontSize:15}}>🔒</span>
+              <input value={password} onChange={e=>setPassword(e.target.value)} placeholder="Parolă nouă" type="password"
+                style={{flex:1,border:"none",outline:"none",fontSize:15,color:DARK,background:"transparent"}}/>
+            </div>
+            <div style={{background:"#fff",borderRadius:14,boxShadow:SHADOW_OUT,padding:"14px 16px",marginBottom:14,display:"flex",alignItems:"center",gap:10}}>
+              <span style={{fontSize:15}}>🔒</span>
+              <input value={confirm} onChange={e=>setConfirm(e.target.value)} placeholder="Confirmă parola"
+                onKeyDown={e=>e.key==="Enter"&&handleSet()} type="password"
+                style={{flex:1,border:"none",outline:"none",fontSize:15,color:DARK,background:"transparent"}}/>
+            </div>
+            {error && <p style={{fontSize:12,color:RED,margin:"0 0 8px",textAlign:"center"}}>{error}</p>}
+            <button onClick={handleSet} disabled={loading||!password||!confirm}
               style={{width:"100%",background:password&&confirm?`linear-gradient(135deg,${NAVY},#001840)`:"#e0e0e0",color:"#fff",border:"none",borderRadius:14,padding:"15px 0",fontSize:15,fontWeight:700,cursor:"pointer",opacity:loading?0.7:1}}>
               {loading ? "Se salvează..." : "Salvează parola →"}
             </button>
@@ -6689,12 +6746,22 @@ function App() {
       if (u) setScreen(SCREENS.HOME);
       setAuthLoading(false);
     });
+    const isOtpLogin = (session) => {
+      try {
+        const payload = JSON.parse(atob(session.access_token.split('.')[1]));
+        return payload.amr?.some(a => a.method === 'otp' || a.method === 'magiclink');
+      } catch { return false; }
+    };
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       const u = session?.user ?? null;
       setUser(u);
       if (event === 'PASSWORD_RECOVERY') { setScreen(SCREENS.RESET_PASSWORD); return; }
-      if (u) setScreen(SCREENS.HOME);
-      else setScreen(SCREENS.SPLASH);
+      if (u) {
+        if (isOtpLogin(session) && !u.user_metadata?.has_password) {
+          setScreen(SCREENS.SET_PASSWORD); return;
+        }
+        setScreen(SCREENS.HOME);
+      } else setScreen(SCREENS.SPLASH);
     });
     return () => subscription.unsubscribe();
   }, []);
@@ -6910,6 +6977,7 @@ function App() {
               }
             }}/>}
           {screen===SCREENS.RESET_PASSWORD&&<ResetPasswordScreen onDone={()=>setScreen(SCREENS.HOME)}/>}
+          {screen===SCREENS.SET_PASSWORD&&<SetPasswordScreen onDone={()=>setScreen(SCREENS.HOME)}/>}
           {screen===SCREENS.LEADERBOARD&&<LeaderboardScreen onBack={()=>setScreen(SCREENS.HOME)} tournamentStarted={tournamentStarted}
             myBoards={myBoards} activeBoardId={activeBoardId} setActiveBoardId={setActiveBoardId}
             leaders={(()=>{
