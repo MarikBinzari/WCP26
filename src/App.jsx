@@ -11,18 +11,18 @@ const BG = "#F8F8F8";
 const SHADOW_OUT = "4px 4px 12px rgba(0,0,0,0.08), -3px -3px 8px #ffffff";
 const SHADOW_IN = "inset 3px 3px 8px rgba(0,0,0,0.08), inset -2px -2px 6px #ffffff";
 const DARK = "#3D3D3D";
-const NAVY = "#00205B";
+const NAVY = "#0A2E8A";
 const RED = "#C8102E";
 const GREEN = "#009A44";
 
 const SCREENS = {
   SPLASH:"splash", LOGIN:"login", HOME:"home",
-  BOARDS:"boards", PREDICTIONS:"predictions",
+  BOARDS:"boards",
   INSTANT_PICK:"instant_pick",
-  FAST_PREDICTION:"fast_prediction",
   LEADERBOARD:"leaderboard", STATS:"stats", ACCOUNT:"account",
   GROUPS_SCHEDULE:"groups_schedule",
   RULES:"rules",
+  RESET_PASSWORD:"reset_password",
 };
 
 const INITIAL_BOARDS = [{ id:"global", label:"🌍", name:"Global Board", members:48291, isGlobal:true }];
@@ -31,23 +31,6 @@ const AVAILABLE_BOARDS = [
   { id:"birou", label:"💼", name:"Birou Fotbal", members:6, max:10, type:"private" },
   { id:"romania", label:"🇷🇴", name:"Romania Bate!", members:312, max:null, type:"public" },
 ];
-// Generate mock leaderboard for a board given its prizes
-const genBoardLeaders = (prizes=[]) => {
-  const names = ["Mihai B.","Andrei P.","Ioana M.","Cristian D.","Elena V.",
-                 "Radu T.","Larisa N.","Bogdan C.","Simona R.","Alexandru F."];
-  const pts = [347,312,289,265,241,228,210,195,178,162];
-  return [
-    ...names.map((name,i)=>({
-      rank:i+1, name, pts:pts[i],
-      prize: prizes[i]||null,
-      // Only set emoji if that rank has a prize
-      emoji: i===0?"🥇":i===1?"🥈":i===2?"🥉":i===3?"🏅":i===4?"🎖️":null,
-      accent:"#fff",
-    })),
-    { rank:11, name:"Alex Ionescu", pts:0, isMe:true, accent:"#E8F0FF" },
-  ];
-};
-
 const BOARD_LEADERS = {
   global: [
     { rank:1,    name:"Alex M.",      pts:342, prize:"250 lei", emoji:"🥇", accent:"#fff" },
@@ -62,9 +45,6 @@ const BOARD_LEADERS = {
     { rank:10,   name:"Ioana D.",     pts:184, accent:"#fff" },
     { rank:201,  name:"Alex Ionescu", pts:97,  accent:"#E8F0FF", isMe:true },
   ],
-  "fc-prieteni": genBoardLeaders(["🏆 Trofeul","🥈 50 lei","🥉 Bere"]),
-  "birou": genBoardLeaders(["💰 200 lei","🥈 100 lei","🥉 50 lei"]),
-  "romania": genBoardLeaders(["🎖️ Glorie","🥈","🥉"]),
 };
 
 const LANGS = [{ code:"en", flag:"🇬🇧", name:"English" },{ code:"ro", flag:"🇷🇴", name:"Romana" },{ code:"fr", flag:"🇫🇷", name:"Francais" }];
@@ -1209,8 +1189,6 @@ function GrupeTab({ groupRank, setRank, onComplete }) {
     </div>
   );
 }
-
-// ── PREDICTIONS SCREEN ────────────────────────────────────────────────────────
 
 // ── INSTANT PICK SCREEN ───────────────────────────────────────────────────────
 
@@ -2775,7 +2753,8 @@ function InstantPickScreen({ onBack, onComplete, onModify, savedState, onStateCh
   const sharedNavIdx = stage==="groups" ? groupIdx : GROUPS.length-1;
 
   const sharedHeader = (
-    <div style={{background:"rgba(0,32,91,0.88)", paddingBottom:0, flexShrink:0, position:"relative", zIndex:1}}>
+    <div style={{background:"rgba(0,32,91,0.88)", paddingBottom:0, flexShrink:0, position:"relative", zIndex:1, overflow:"hidden"}}>
+      <img src={varBg} alt="" style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover",objectPosition:"center 30%",opacity:0.28,pointerEvents:"none"}}/>
       {/* Top row */}
       <div style={{display:"flex", alignItems:"center", gap:10, padding:"10px 20px 6px"}}>
         <button onClick={headerBack} style={{background:"rgba(255,255,255,0.12)",border:"none",borderRadius:10,width:34,height:34,color:"#fff",fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>‹</button>
@@ -3853,7 +3832,6 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
           const w3Open = simNowDate >= june(21);
           const w4Open = simNowDate >= june(28);
           const todaySim = simDay ? Number(simDay) : simNowDate.getDate();
-          console.log("todaySim:", todaySim, "simDay:", simDay, "w1past:", todaySim>14);
           const weekDays = (start) => Array.from({length:7},(_,i)=>start+i).filter(d=>d>=1&&d<=50);
           const weekMatchMap = () => { const mm={}; CALENDAR_EVENTS.forEach(e=>{mm[e.day]=e.matches;}); return mm; };
           const totalRawInWeek = (start) => {
@@ -3972,7 +3950,7 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
 
 
 // ── BOARDS ────────────────────────────────────────────────────────────────────
-function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: createdBoardsProp, setCreatedBoards: setCreatedBoardsProp, availableBoards: availableBoardsProp, setAvailableBoards: setAvailableBoardsProp, showToast, user, onCreateBoard, onJoinByCode, onJoinBoard, onDeleteBoard, onRemoveMember }) {
+function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: createdBoardsProp, setCreatedBoards: setCreatedBoardsProp, availableBoards: availableBoardsProp, setAvailableBoards: setAvailableBoardsProp, showToast, user, onCreateBoard, onJoinByCode, onJoinBoard, onDeleteBoard, onRemoveMember, leaderboardData={} }) {
   const displayName = useDisplayName();
   const lang = useLang();
   const [view, setView] = useState("main"); // main | join | create
@@ -4001,12 +3979,18 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
 
   const [viewMembersBoard, setViewMembersBoard] = useState(null);
   const [boardMembersMap, setBoardMembersMap] = useState({});
+  const [boardLeadersMap, setBoardLeadersMap] = useState({});
+  const [leaveConfirmBoard, setLeaveConfirmBoard] = useState(null);
 
   const openMembers = async (boardId) => {
     if (viewMembersBoard === boardId) { setViewMembersBoard(null); return; }
     setViewMembersBoard(boardId);
-    const members = await loadBoardMembers(boardId);
+    const [members, leaders] = await Promise.all([
+      loadBoardMembers(boardId),
+      loadLeaderboard(boardId),
+    ]);
     setBoardMembersMap(prev => ({ ...prev, [boardId]: members }));
+    setBoardLeadersMap(prev => ({ ...prev, [boardId]: leaders }));
   };
 
   const doJoin = (b) => {
@@ -4378,6 +4362,10 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
                   ):(boardMembersMap[b.id]||[]).map((m,mi)=>{
                     const isMe = m.id === user?.id;
                     const list = boardMembersMap[b.id];
+                    const leaders = boardLeadersMap[b.id] || leaderboardData[b.id] || [];
+                    const lEntry = leaders.find(l => l.name === m.name);
+                    const rankMedals = ["🥇","🥈","🥉"];
+                    const rankLabel = lEntry ? (rankMedals[lEntry.rank-1] || `#${lEntry.rank}`) : null;
                     return (
                     <div key={m.id} style={{display:"flex",alignItems:"center",gap:10,padding:"6px 0",
                       borderBottom:mi<(list.length-1)?"1px solid rgba(0,0,0,0.04)":"none"}}>
@@ -4388,6 +4376,9 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
                       </div>
                       <span style={{flex:1,fontSize:12,fontWeight:600,color:isMe?NAVY:DARK}}>
                         {m.name}{isMe?" (Tu)":""}{m.role==="admin"?" · admin":""}
+                      </span>
+                      <span style={{fontSize:11,fontWeight:700,color:"#aaa",marginRight:6}}>
+                        {rankLabel && <>{rankLabel} </>}<span style={{color:NAVY}}>{lEntry?.pts ?? 0}pt</span>
                       </span>
                       <button onClick={async ()=>{
                         if(onRemoveMember) await onRemoveMember(b.id, m.id);
@@ -4425,11 +4416,41 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
                 <div style={{background:"#E8F0FF",borderRadius:9,padding:"7px 12px",fontSize:11,fontWeight:700,color:NAVY}}>
                   ✓ Joined
                 </div>
+                {!b.isGlobal&&(
+                  <button onClick={e=>{e.stopPropagation();setLeaveConfirmBoard(b);}}
+                    style={{background:"rgba(200,16,46,0.08)",border:"none",borderRadius:9,padding:"7px 10px",fontSize:13,color:RED,cursor:"pointer",flexShrink:0}}>
+                    🗑️
+                  </button>
+                )}
               </div>
             </div>
             );
           })}
         </>)}
+
+        {/* Leave board confirmation popup */}
+        {leaveConfirmBoard && (
+          <div style={{position:"fixed",inset:0,zIndex:9999,background:"rgba(0,0,0,0.55)",display:"flex",alignItems:"flex-end"}} onClick={()=>setLeaveConfirmBoard(null)}>
+            <div style={{width:"100%",background:"#fff",borderRadius:"20px 20px 0 0",padding:"28px 24px 40px"}} onClick={e=>e.stopPropagation()}>
+              <div style={{fontSize:40,textAlign:"center",marginBottom:12}}>⚠️</div>
+              <h3 style={{fontSize:17,fontWeight:800,color:DARK,textAlign:"center",margin:"0 0 10px"}}>Ești sigur?</h3>
+              <p style={{fontSize:13,color:"#888",textAlign:"center",lineHeight:1.6,margin:"0 0 24px"}}>
+                Toate punctele și înregistrările tale vor fi șterse din boardul <strong style={{color:DARK}}>{leaveConfirmBoard.name}</strong>.
+              </p>
+              <button onClick={async()=>{
+                if(onRemoveMember) await onRemoveMember(leaveConfirmBoard.id, user?.id);
+                setMyBoards(prev=>prev.filter(x=>x.id!==leaveConfirmBoard.id));
+                setLeaveConfirmBoard(null);
+              }} style={{width:"100%",background:RED,color:"#fff",border:"none",borderRadius:14,padding:"14px 0",fontSize:15,fontWeight:700,cursor:"pointer",marginBottom:10}}>
+                Da, ieși din board
+              </button>
+              <button onClick={()=>setLeaveConfirmBoard(null)}
+                style={{width:"100%",background:"transparent",color:"#aaa",border:"1px solid #ddd",borderRadius:14,padding:"12px 0",fontSize:14,fontWeight:600,cursor:"pointer"}}>
+                Anulează
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Available boards */}
         {(()=>{
@@ -4908,17 +4929,44 @@ function LoginScreen({ onNext }) {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+  const [sentType, setSentType] = useState("magic"); // "magic" | "signup" | "forgot"
+  const [forgotMode, setForgotMode] = useState(false);
   const [error, setError] = useState("");
 
   const handlePassword = async (isRegister=false) => {
-    if (!email.trim() || !password.trim()) return;
+    if (!email.trim()) { setError("Introdu adresa de email."); return; }
+    if (!password.trim()) { setError("Introdu parola."); return; }
+    if (isRegister && password.length < 6) { setError("Parola trebuie să aibă minim 6 caractere."); return; }
     setLoading(true); setError("");
-    const fn = isRegister
-      ? supabase.auth.signUp({ email: email.trim(), password })
-      : supabase.auth.signInWithPassword({ email: email.trim(), password });
-    const { error } = await fn;
+    try {
+      if (isRegister) {
+        const { data, error } = await supabase.auth.signUp({
+          email: email.trim(), password,
+          options: { emailRedirectTo: window.location.origin }
+        });
+        if (error) { setError(error.message); return; }
+        if (data?.session) return; // onAuthStateChange navighează spre HOME
+        setSentType("signup"); setSent(true);
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+        if (error) setError(error.message);
+      }
+    } catch(e) {
+      setError("Eroare neașteptată. Încearcă din nou.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!email.trim()) return;
+    setLoading(true); setError("");
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: window.location.origin,
+    });
     setLoading(false);
-    if (error) setError(error.message);
+    if (error) { setError(error.message); return; }
+    setSentType("forgot"); setSent(true);
   };
 
   const handleMagicLink = async () => {
@@ -4930,7 +4978,7 @@ function LoginScreen({ onNext }) {
     });
     setLoading(false);
     if (error) setError(error.message);
-    else setSent(true);
+    else { setSentType("magic"); setSent(true); }
   };
 
   if (sent) return (
@@ -4938,11 +4986,15 @@ function LoginScreen({ onNext }) {
       <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.1,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
       <div style={{position:"relative",zIndex:1}}>
         <div style={{fontSize:56,marginBottom:16}}>📧</div>
-        <h2 style={{fontSize:20,fontWeight:800,color:DARK,margin:"0 0 10px"}}>Check your email!</h2>
+        <h2 style={{fontSize:20,fontWeight:800,color:DARK,margin:"0 0 10px"}}>
+          {sentType==="signup" ? "Confirmă contul!" : sentType==="forgot" ? "Verifică emailul!" : "Check your email!"}
+        </h2>
         <p style={{fontSize:14,color:"#aaa",lineHeight:1.6,margin:"0 0 24px"}}>
-          Am trimis un link la<br/><strong style={{color:DARK}}>{email}</strong>
+          {sentType==="signup" && <>Am trimis un link de confirmare la<br/><strong style={{color:DARK}}>{email}</strong><br/><span style={{fontSize:12}}>Click pe link pentru a activa contul.</span></>}
+          {sentType==="forgot" && <>Am trimis un link de resetare la<br/><strong style={{color:DARK}}>{email}</strong><br/><span style={{fontSize:12}}>Click pe link pentru a seta o parolă nouă.</span></>}
+          {sentType==="magic" && <>Am trimis un link la<br/><strong style={{color:DARK}}>{email}</strong></>}
         </p>
-        <button onClick={()=>setSent(false)} style={{background:"transparent",border:`1px solid #ddd`,borderRadius:10,padding:"10px 20px",fontSize:13,color:"#aaa",cursor:"pointer"}}>
+        <button onClick={()=>{setSent(false);setForgotMode(false);}} style={{background:"transparent",border:`1px solid #ddd`,borderRadius:10,padding:"10px 20px",fontSize:13,color:"#aaa",cursor:"pointer"}}>
           ← Înapoi
         </button>
       </div>
@@ -4990,16 +5042,33 @@ function LoginScreen({ onNext }) {
         {error && <p style={{fontSize:12,color:RED,margin:"0 0 8px",textAlign:"center"}}>{error}</p>}
 
         {tab==="password" ? (
-          <>
-            <button onClick={()=>handlePassword(false)} disabled={loading||!email.trim()||!password.trim()}
-              style={{width:"100%",background:email.trim()&&password.trim()?`linear-gradient(135deg,${NAVY},#001840)`:"#e0e0e0",color:"#fff",border:"none",borderRadius:14,padding:"15px 0",fontSize:15,fontWeight:700,cursor:"pointer",opacity:loading?0.7:1,marginBottom:10}}>
-              {loading ? "Se încarcă..." : "Intră în cont →"}
-            </button>
-            <button onClick={()=>handlePassword(true)} disabled={loading||!email.trim()||!password.trim()}
-              style={{width:"100%",background:"transparent",color:NAVY,border:`1.5px solid ${NAVY}33`,borderRadius:14,padding:"13px 0",fontSize:14,fontWeight:700,cursor:"pointer",opacity:loading?0.7:1}}>
-              Cont nou
-            </button>
-          </>
+          forgotMode ? (
+            <>
+              <button onClick={handleForgotPassword} disabled={loading||!email.trim()}
+                style={{width:"100%",background:email.trim()?`linear-gradient(135deg,${NAVY},#001840)`:"#e0e0e0",color:"#fff",border:"none",borderRadius:14,padding:"15px 0",fontSize:15,fontWeight:700,cursor:"pointer",opacity:loading?0.7:1,marginBottom:10}}>
+                {loading ? "Se trimite..." : "Trimite link resetare →"}
+              </button>
+              <button onClick={()=>{setForgotMode(false);setError("");}}
+                style={{width:"100%",background:"transparent",color:"#aaa",border:"1px solid #ddd",borderRadius:14,padding:"13px 0",fontSize:14,fontWeight:600,cursor:"pointer"}}>
+                ← Înapoi
+              </button>
+            </>
+          ) : (
+            <>
+              <button onClick={()=>handlePassword(false)} disabled={loading}
+                style={{width:"100%",background:`linear-gradient(135deg,${NAVY},#001840)`,color:"#fff",border:"none",borderRadius:14,padding:"15px 0",fontSize:15,fontWeight:700,cursor:"pointer",opacity:loading?0.7:1,marginBottom:10}}>
+                {loading ? "Se încarcă..." : "Intră în cont →"}
+              </button>
+              <button onClick={()=>handlePassword(true)}
+                style={{width:"100%",background:"transparent",color:NAVY,border:`1.5px solid ${NAVY}`,borderRadius:14,padding:"13px 0",fontSize:14,fontWeight:700,cursor:"pointer",marginBottom:10}}>
+                Cont nou
+              </button>
+              <p onClick={()=>{setForgotMode(true);setError("");}}
+                style={{textAlign:"center",fontSize:12,color:"#aaa",margin:"4px 0 0",cursor:"pointer",textDecoration:"underline"}}>
+                Am uitat parola
+              </p>
+            </>
+          )
         ) : (
           <button onClick={handleMagicLink} disabled={loading||!email.trim()}
             style={{width:"100%",background:email.trim()?`linear-gradient(135deg,${NAVY},#001840)`:"#e0e0e0",color:"#fff",border:"none",borderRadius:14,padding:"15px 0",fontSize:15,fontWeight:700,cursor:"pointer",opacity:loading?0.7:1}}>
@@ -5007,7 +5076,7 @@ function LoginScreen({ onNext }) {
           </button>
         )}
 
-        {import.meta.env.DEV && (
+        {false && (
           <button onClick={onNext} style={{marginTop:16,width:"100%",background:"transparent",border:`1px dashed #ddd`,borderRadius:14,padding:"12px 0",fontSize:13,color:"#bbb",cursor:"pointer",fontWeight:600}}>
             DEV — Skip Login →
           </button>
@@ -5017,13 +5086,80 @@ function LoginScreen({ onNext }) {
   );
 }
 
+function ResetPasswordScreen({ onDone }) {
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [done, setDone] = useState(false);
+
+  const handleReset = async () => {
+    if (password.length < 6) { setError("Parola trebuie să aibă minim 6 caractere."); return; }
+    if (password !== confirm) { setError("Parolele nu coincid."); return; }
+    setLoading(true); setError("");
+    const { error } = await supabase.auth.updateUser({ password });
+    setLoading(false);
+    if (error) { setError(error.message); return; }
+    setDone(true);
+    setTimeout(() => onDone(), 2000);
+  };
+
+  return (
+    <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"0 32px",textAlign:"center",background:BG}}>
+      {done ? (
+        <>
+          <div style={{fontSize:56,marginBottom:16}}>✅</div>
+          <h2 style={{fontSize:20,fontWeight:800,color:DARK,margin:"0 0 8px"}}>Parolă schimbată!</h2>
+          <p style={{fontSize:13,color:"#aaa"}}>Te redirecționăm...</p>
+        </>
+      ) : (
+        <>
+          <div style={{fontSize:48,marginBottom:16}}>🔑</div>
+          <h2 style={{fontSize:20,fontWeight:800,color:DARK,margin:"0 0 8px"}}>Parolă nouă</h2>
+          <p style={{fontSize:13,color:"#aaa",margin:"0 0 24px"}}>Introdu noua ta parolă</p>
+          <div style={{width:"100%",maxWidth:340}}>
+            <div style={{background:"#fff",borderRadius:14,boxShadow:SHADOW_OUT,padding:"14px 16px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
+              <span style={{fontSize:15}}>🔒</span>
+              <input value={password} onChange={e=>setPassword(e.target.value)} placeholder="Parolă nouă" type="password"
+                style={{flex:1,border:"none",outline:"none",fontSize:15,color:DARK,background:"transparent"}}/>
+            </div>
+            <div style={{background:"#fff",borderRadius:14,boxShadow:SHADOW_OUT,padding:"14px 16px",marginBottom:14,display:"flex",alignItems:"center",gap:10}}>
+              <span style={{fontSize:15}}>🔒</span>
+              <input value={confirm} onChange={e=>setConfirm(e.target.value)} placeholder="Confirmă parola"
+                onKeyDown={e=>e.key==="Enter"&&handleReset()} type="password"
+                style={{flex:1,border:"none",outline:"none",fontSize:15,color:DARK,background:"transparent"}}/>
+            </div>
+            {error && <p style={{fontSize:12,color:RED,margin:"0 0 8px",textAlign:"center"}}>{error}</p>}
+            <button onClick={handleReset} disabled={loading||!password||!confirm}
+              style={{width:"100%",background:password&&confirm?`linear-gradient(135deg,${NAVY},#001840)`:"#e0e0e0",color:"#fff",border:"none",borderRadius:14,padding:"15px 0",fontSize:15,fontWeight:700,cursor:"pointer",opacity:loading?0.7:1}}>
+              {loading ? "Se salvează..." : "Salvează parola →"}
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, myBoards=[], activeBoardId, setActiveBoardId }) {
   const lang = useLang();
   const leaders = leadersProp || BOARD_LEADERS.global;
   const [search, setSearch] = useState("");
-  const filtered = search.trim()
-    ? leaders.filter(u=>u.name.toLowerCase().includes(search.toLowerCase()))
-    : leaders;
+  const [searchResults, setSearchResults] = useState(null);
+  const [searching, setSearching] = useState(false);
+
+  useEffect(() => {
+    if (!search.trim()) { setSearchResults(null); return; }
+    const timer = setTimeout(async () => {
+      setSearching(true);
+      const results = await loadLeaderboard(activeBoardId, search.trim());
+      setSearchResults(results);
+      setSearching(false);
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [search, activeBoardId]);
+
+  const filtered = search.trim() ? (searchResults || []) : leaders;
   const me = leaders.find(u=>u.isMe);
 
   return (
@@ -5053,11 +5189,12 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
             placeholder={T[lang].searchPlayer}
             style={{flex:1,background:"transparent",border:"none",outline:"none",
               fontSize:13,color:DARK,fontWeight:500}}/>
-          {search&&<span onClick={()=>setSearch("")} style={{fontSize:14,color:"#bbb",cursor:"pointer"}}>✕</span>}
+          {searching && <span style={{fontSize:12,color:"#bbb"}}>...</span>}
+          {search&&!searching&&<span onClick={()=>{setSearch("");setSearchResults(null);}} style={{fontSize:14,color:"#bbb",cursor:"pointer"}}>✕</span>}
         </div>
       </div>
 
-      {!tournamentStarted && !leaders.some(u=>u.isMe||u.empty) ? (
+      {leaders.length === 0 ? (
         <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"0 32px",textAlign:"center"}}>
           <span style={{fontSize:48,marginBottom:16}}>⏳</span>
           <p style={{fontSize:18,fontWeight:800,color:DARK,margin:"0 0 8px"}}>{T[lang].tournamentNotStarted}</p>
@@ -5117,44 +5254,6 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
           })}
         </div>
       )}
-    </div>
-  );
-}
-
-function FastPredictionScreen({ onHome }) {
-  const lang = useLang();
-  const cards=[{home:"Brazil",homeFlag:"🇧🇷",away:"Portugal",awayFlag:"🇵🇹"},{home:"Spain",homeFlag:"🇪🇸",away:"Germany",awayFlag:"🇩🇪"},{home:"France",homeFlag:"🇫🇷",away:"England",awayFlag:"🏴󠁧󠁢󠁥󠁧󠁿"}];
-  const [idx,setIdx]=useState(0);
-  const [chosen,setChosen]=useState(null);
-  const pick=w=>{setChosen(w);setTimeout(()=>{setChosen(null);setIdx(i=>i+1);},650);};
-  if(idx>=cards.length) return (
-    <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,alignItems:"center",justifyContent:"center",padding:"0 28px"}}>
-      <div style={{width:80,height:80,borderRadius:24,background:`linear-gradient(135deg,${GREEN},#007A36)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:38,marginBottom:22}}>⚡</div>
-      <h2 style={{fontSize:26,fontWeight:800,color:DARK,margin:"0 0 20px"}}>{T[lang].allDone}</h2>
-      <button onClick={onHome} style={{width:"100%",background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,color:"#fff",border:"none",borderRadius:16,padding:"16px 0",fontSize:16,fontWeight:700,cursor:"pointer"}}>{T[lang].backToHome}</button>
-    </div>
-  );
-  const card=cards[idx];
-  return (
-    <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,position:"relative",overflow:"hidden"}}>
-      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
-      <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"16px 20px 20px",textAlign:"center"}}>
-        <p style={{fontSize:12,color:RED,margin:0,letterSpacing:2,textTransform:"uppercase",fontWeight:800}}>FLASH PICK ⚡</p>
-        <span style={{fontSize:16,fontWeight:800,color:"#fff"}}>⚡ {T[lang].todaysMatches}</span>
-      </div>
-      <p style={{textAlign:"center",fontSize:13,color:"#aaa",margin:"16px 0 14px"}}>{T[lang].tapToPredict}</p>
-      <div style={{margin:"0 20px 20px",background:BG,borderRadius:24,boxShadow:chosen?SHADOW_IN:SHADOW_OUT,padding:"36px 16px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-        <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:8}}><span style={{fontSize:62}}>{card.homeFlag}</span><span style={{fontSize:15,fontWeight:700,color:DARK}}>{card.home}</span></div>
-        <div style={{background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,borderRadius:12,padding:"8px 12px"}}><span style={{fontSize:12,fontWeight:800,color:"#fff",letterSpacing:2}}>VS</span></div>
-        <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:8}}><span style={{fontSize:62}}>{card.awayFlag}</span><span style={{fontSize:15,fontWeight:700,color:DARK}}>{card.away}</span></div>
-      </div>
-      <div style={{display:"flex",gap:10,margin:"0 20px"}}>
-        {[card.home,T[lang].draw,card.away].map((opt,i)=>(
-          <button key={opt} onClick={()=>pick(opt)} style={{flex:i===1?0.7:1,background:chosen===opt?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:BG,color:chosen===opt?"#fff":DARK,border:"none",borderRadius:14,padding:"14px 0",fontSize:13,fontWeight:700,cursor:"pointer",boxShadow:chosen===opt?"0 4px 12px rgba(0,32,91,0.3)":SHADOW_OUT}}>
-            {i===0?"← "+opt:i===2?opt+" →":opt}
-          </button>
-        ))}
-      </div>
     </div>
   );
 }
@@ -6374,8 +6473,24 @@ function AccountScreen({ setLang, onBoards, onSignOut, onShowGuide, user }) {
   const memberSince = user?.created_at
     ? new Date(user.created_at).toLocaleDateString("ro-RO", { month: "long", year: "numeric" })
     : "";
+  const [deleteMode, setDeleteMode] = useState(false);
+  const [deleteEmail, setDeleteEmail] = useState("");
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
 
   const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    onSignOut();
+  };
+
+  const handleDeleteAccount = async () => {
+    if (deleteEmail.trim().toLowerCase() !== user?.email?.toLowerCase()) {
+      setDeleteError("Emailul introdus nu coincide cu contul tău.");
+      return;
+    }
+    setDeleteLoading(true); setDeleteError("");
+    const { error } = await supabase.rpc('delete_user_account');
+    if (error) { setDeleteError(error.message); setDeleteLoading(false); return; }
     await supabase.auth.signOut();
     onSignOut();
   };
@@ -6402,6 +6517,37 @@ function AccountScreen({ setLang, onBoards, onSignOut, onShowGuide, user }) {
               {item.isLang ? <LangSelector lang={lang} setLang={setLang}/> : <span style={{color:item.highlight?NAVY:"#bbb",fontSize:18}}>›</span>}
             </div>
           ))}
+          <p onClick={()=>setDeleteMode(true)}
+            style={{textAlign:"center",fontSize:12,color:RED,margin:"8px 0 4px",cursor:"pointer",textDecoration:"underline",opacity:0.7}}>
+            Șterge contul
+          </p>
+
+          {deleteMode && (
+            <div style={{position:"fixed",inset:0,zIndex:9999,background:"rgba(0,0,0,0.6)",display:"flex",alignItems:"flex-end"}}>
+              <div style={{width:"100%",background:"#fff",borderRadius:"20px 20px 0 0",padding:"28px 24px 40px"}}>
+                <div style={{fontSize:40,textAlign:"center",marginBottom:12}}>⚠️</div>
+                <h3 style={{fontSize:18,fontWeight:800,color:DARK,textAlign:"center",margin:"0 0 8px"}}>Șterge contul</h3>
+                <p style={{fontSize:13,color:"#888",textAlign:"center",margin:"0 0 20px",lineHeight:1.5}}>
+                  Aceasta va șterge <strong>tot</strong> — predicții, boarduri, scoruri.<br/>Acțiunea este <strong>ireversibilă</strong>.
+                </p>
+                <p style={{fontSize:12,fontWeight:700,color:DARK,margin:"0 0 6px"}}>Introdu emailul tău pentru confirmare:</p>
+                <div style={{background:BG,borderRadius:12,padding:"12px 14px",marginBottom:12,display:"flex",alignItems:"center",gap:8,border:"1px solid #eee"}}>
+                  <input value={deleteEmail} onChange={e=>{setDeleteEmail(e.target.value);setDeleteError("");}}
+                    placeholder={user?.email} type="email" autoCapitalize="none"
+                    style={{flex:1,border:"none",outline:"none",fontSize:14,color:DARK,background:"transparent"}}/>
+                </div>
+                {deleteError && <p style={{fontSize:12,color:RED,margin:"0 0 8px",textAlign:"center"}}>{deleteError}</p>}
+                <button onClick={handleDeleteAccount} disabled={deleteLoading||!deleteEmail.trim()}
+                  style={{width:"100%",background:deleteEmail.trim()?RED:"#e0e0e0",color:"#fff",border:"none",borderRadius:14,padding:"14px 0",fontSize:15,fontWeight:700,cursor:"pointer",marginBottom:10,opacity:deleteLoading?0.7:1}}>
+                  {deleteLoading ? "Se șterge..." : "Șterge definitiv"}
+                </button>
+                <button onClick={()=>{setDeleteMode(false);setDeleteEmail("");setDeleteError("");}}
+                  style={{width:"100%",background:"transparent",color:"#aaa",border:"1px solid #ddd",borderRadius:14,padding:"12px 0",fontSize:14,fontWeight:600,cursor:"pointer"}}>
+                  Anulează
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -6543,9 +6689,10 @@ function App() {
       if (u) setScreen(SCREENS.HOME);
       setAuthLoading(false);
     });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       const u = session?.user ?? null;
       setUser(u);
+      if (event === 'PASSWORD_RECOVERY') { setScreen(SCREENS.RESET_PASSWORD); return; }
       if (u) setScreen(SCREENS.HOME);
       else setScreen(SCREENS.SPLASH);
     });
@@ -6581,7 +6728,8 @@ function App() {
 
     // Boards + member counts + predicții pentru toate boardurile
     loadForBoard('global');
-    loadUserBoards(uid).then(async boards => {
+    const refreshBoards = async () => {
+      const boards = await loadUserBoards(uid);
       const adminBoards = boards.filter(b => b.role === 'admin');
       const allBoards = [...INITIAL_BOARDS, ...boards];
       const ids = allBoards.map(b => b.id);
@@ -6592,11 +6740,25 @@ function App() {
       }));
       setMyBoards(withCounts);
       setCreatedBoards(adminBoards);
-      boards.forEach(b => loadForBoard(b.id));
-    });
+      return boards;
+    };
+    refreshBoards().then(boards => boards.forEach(b => loadForBoard(b.id)));
+
+    // Realtime: actualizează membrii când cineva se înscrie sau pleacă
+    const boardChannel = supabase
+      .channel('board-members-rt')
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'board_members' },
+        () => { refreshBoards(); }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(boardChannel); };
   }, [user]);
 
-  const [screen, setScreen] = useState("dev");
+  const isLocalhost = import.meta.env.DEV;
+  const [screen, setScreen] = useState(SCREENS.SPLASH);
+  const [showDevOverlay, setShowDevOverlay] = useState(false);
   const [simDay, setSimDay] = useState(null);
   const [simHour, setSimHour] = useState(12);
   const [simMin, setSimMin] = useState(0);
@@ -6653,7 +6815,7 @@ function App() {
   // Tournament starts June 11 2026
   const tournamentStarted = simDate ? simDate >= new Date(2026,5,11,19,0,0) : new Date() >= new Date("2026-06-11T19:00:00");
 
-  const noFooter = [SCREENS.SPLASH, SCREENS.LOGIN, SCREENS.ONBOARDING, SCREENS.PREDICTIONS, SCREENS.INSTANT_PICK, SCREENS.GROUPS_SCHEDULE];
+  const noFooter = [SCREENS.SPLASH, SCREENS.LOGIN, SCREENS.INSTANT_PICK, SCREENS.GROUPS_SCHEDULE];
   const showFooter = !noFooter.includes(screen);
   const footerActive = screen===SCREENS.RULES?SCREENS.RULES:screen===SCREENS.ACCOUNT?SCREENS.ACCOUNT:SCREENS.HOME;
 
@@ -6739,6 +6901,7 @@ function App() {
               if (activeBoardId === boardId) setActiveBoardId('global');
               showToast("Board șters", "🗑️");
             }}
+            leaderboardData={leaderboardData}
             onRemoveMember={async (boardId, memberId) => {
               await removeBoardMember(boardId, memberId);
               if (memberId === user?.id) {
@@ -6746,6 +6909,7 @@ function App() {
                 if (activeBoardId === boardId) setActiveBoardId('global');
               }
             }}/>}
+          {screen===SCREENS.RESET_PASSWORD&&<ResetPasswordScreen onDone={()=>setScreen(SCREENS.HOME)}/>}
           {screen===SCREENS.LEADERBOARD&&<LeaderboardScreen onBack={()=>setScreen(SCREENS.HOME)} tournamentStarted={tournamentStarted}
             myBoards={myBoards} activeBoardId={activeBoardId} setActiveBoardId={setActiveBoardId}
             leaders={(()=>{
@@ -6779,7 +6943,6 @@ function App() {
               setScreen(SCREENS.HOME);
             }}/>}
 
-          {screen===SCREENS.FAST_PREDICTION&&<FastPredictionScreen onHome={()=>setScreen(SCREENS.HOME)}/>}
           {screen===SCREENS.STATS&&<StatsScreen/>}
           {screen===SCREENS.RULES&&<RulesScreen onBack={()=>setScreen(SCREENS.HOME)}/>}
           {screen===SCREENS.GROUPS_SCHEDULE&&<GroupsScheduleScreen scores={exactScores} setScores={(newScores)=>{
@@ -6798,6 +6961,47 @@ function App() {
         </div>
         <Toast message={toast.message} emoji={toast.emoji} visible={toast.visible}/>
         {showFooter&&<Footer active={footerActive} onNavigate={setScreen} lang={lang}/>}
+        {isLocalhost && user && screen !== "dev" && (
+          <button onClick={()=>setShowDevOverlay(true)} style={{
+            position:"fixed",bottom:80,right:16,zIndex:9999,
+            width:44,height:44,borderRadius:12,
+            background:"#1a1a2e",border:"1px solid rgba(255,255,255,0.25)",
+            color:"#fff",fontSize:11,fontWeight:900,cursor:"pointer",
+            boxShadow:"0 4px 14px rgba(0,0,0,0.5)"
+          }}>DEV</button>
+        )}
+        {showDevOverlay && (
+          <div style={{position:"fixed",inset:0,zIndex:9998,display:"flex",flexDirection:"column"}}>
+            <button onClick={()=>setShowDevOverlay(false)} style={{
+              position:"absolute",top:14,right:16,zIndex:1,
+              width:36,height:36,borderRadius:10,border:"none",
+              background:"rgba(255,255,255,0.12)",color:"#fff",fontSize:18,
+              cursor:"pointer",lineHeight:1
+            }}>✕</button>
+            <DevPanel
+              onAutoPick={(state)=>{
+                setAllInstantPickStates(p=>({...p,global:state}));
+                setAllInstantPickDone(p=>({...p,global:true}));
+              }}
+              onStart={(day,hour,min,started)=>{
+                setSimDay(day);
+                setSimHour(hour);
+                setSimMin(min);
+                setSimStarted(started);
+                if(started && day>=11) {
+                  LIVE_SCORES = {
+                    "11-0": { home:2, away:1, status:"FT" },
+                    "11-1": { home:1, away:1, status:"LIVE", min:45 },
+                    "11-2": { home:2, away:0, status:"FT" },
+                  };
+                } else {
+                  LIVE_SCORES = {};
+                }
+                setShowDevOverlay(false);
+              }}
+            />
+          </div>
+        )}
     </div>
     </LangCtx.Provider>
     </UserCtx.Provider>

@@ -129,13 +129,11 @@ export async function loadBoardMembers(boardId) {
     .from('board_members')
     .select('user_id, role')
     .eq('board_id', boardId)
-  console.log('loadBoardMembers', boardId, members, err1)
   if (!members?.length) return []
-  const { data: profiles, error: err2 } = await supabase
+  const { data: profiles } = await supabase
     .from('profiles')
     .select('id, display_name')
     .in('id', members.map(m => m.user_id))
-  console.log('profiles', profiles, err2)
   const profileMap = {}
   ;(profiles || []).forEach(p => { profileMap[p.id] = p.display_name })
   return members.map(row => ({
@@ -187,16 +185,15 @@ export async function fetchMemberCounts(boardIds) {
 }
 
 // ─── LEADERBOARD ──────────────────────────────────────────────────────────────
-export async function loadLeaderboard(boardId) {
-  const { data } = await supabase
-    .from('board_scores')
-    .select('total_pts, group_pts, best3_pts, knockout_pts, exact_score_pts, profiles(display_name)')
-    .eq('board_id', boardId)
-    .order('total_pts', { ascending: false })
-    .limit(50)
+export async function loadLeaderboard(boardId, search = null) {
+  const { data, error } = await supabase.rpc('get_leaderboard', {
+    p_board_id: boardId,
+    p_search: search?.trim() || null,
+  })
+  if (error) console.error('loadLeaderboard:', error)
   return (data || []).map((row, i) => ({
     rank:   i + 1,
-    name:   row.profiles?.display_name || '—',
+    name:   row.display_name || '—',
     pts:    row.total_pts || 0,
     accent: '#fff',
   }))
