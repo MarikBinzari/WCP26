@@ -3,7 +3,7 @@ import trophy from "./assets/hands-trophy.png";
 import varBg from "./assets/var-bg.jpg";
 import { ALL_GROUPS_DATA, FLAGS, TEAM_COLORS, CALENDAR_EVENTS } from "./data/worldcup2026.js";
 import { supabase } from "./supabase.js";
-import { loadPredictions, savePredictions, loadExactScores, saveExactScore, loadUserBoards, createBoard, joinBoardByCode, joinBoardById, loadLeaderboard, fetchScoringRules, fetchMemberCounts, removeBoardMember, deleteBoard, loadBoardMembers } from "./db.js";
+import { loadPredictions, savePredictions, loadExactScores, saveExactScore, loadUserBoards, createBoard, joinBoardByCode, joinBoardById, loadLeaderboard, fetchScoringRules, fetchMemberCounts, removeBoardMember, deleteBoard, loadBoardMembers, checkDbHealth } from "./db.js";
 
 const TEAM_CODE = {"Mexico":"MEX","South Africa":"RSA","South Korea":"KOR","Czechia":"CZE","Canada":"CAN","Switzerland":"SUI","Qatar":"QAT","Bosnia-Herzegovina":"BIH","Brazil":"BRA","Morocco":"MAR","Scotland":"SCO","Haiti":"HAI","USA":"USA","Paraguay":"PAR","Australia":"AUS","Turkiye":"TUR","Germany":"GER","Ecuador":"ECU","Ivory Coast":"CIV","Curacao":"CUW","Netherlands":"NED","Japan":"JPN","Tunisia":"TUN","Sweden":"SWE","Belgium":"BEL","Iran":"IRI","Egypt":"EGY","New Zealand":"NZL","Spain":"ESP","Uruguay":"URU","Saudi Arabia":"KSA","Cape Verde":"CPV","France":"FRA","Senegal":"SEN","Norway":"NOR","Iraq":"IRQ","Argentina":"ARG","Austria":"AUT","Algeria":"ALG","Jordan":"JOR","Portugal":"POR","Colombia":"COL","Uzbekistan":"UZB","DR Congo":"COD","England":"ENG","Croatia":"CRO","Panama":"PAN","Ghana":"GHA"};
 
@@ -4601,6 +4601,311 @@ function LangSelector({ lang, setLang }) {
   );
 }
 
+const ADMIN_EMAIL = "admin@wcp2026.com";
+
+function AdminBugPanel({ user, allInstantPickStates, allInstantPickDone, exactScoresByBoard, myBoards, bugLog, simDay, simHour, simMin }) {
+  const [open, setOpen] = useState(false);
+  const [tab, setTab] = useState("errors");
+  const [dbHealth, setDbHealth] = useState(null);
+  const [dbChecking, setDbChecking] = useState(false);
+
+  const runDbCheck = async () => {
+    setDbChecking(true);
+    const result = await checkDbHealth();
+    setDbHealth(result);
+    setDbChecking(false);
+  };
+
+  if (user?.email !== ADMIN_EMAIL) return null;
+
+  const GROUPS = INTERACTIVE_GROUPS;
+  const KO_ROUNDS = { R32:16, R16:8, QF:4, SF:2, F:1 };
+  const WEEKS = [
+    { label:"W1 Jun 8-14",  start:8 },
+    { label:"W2 Jun 15-21", start:15 },
+    { label:"W3 Jun 22-28", start:22 },
+    { label:"W4 Jun 29+",   start:29 },
+  ];
+
+  const analyzeBoard = (boardId) => {
+    const state = allInstantPickStates[boardId] || {};
+    const done = allInstantPickDone[boardId] || false;
+    const scores = exactScoresByBoard[boardId] || {};
+    const issues = [];
+    const info = [];
+
+    // ── Predictions analysis ──
+    const { groupRankings={}, best3=[], koPicks={} } = state;
+    const groupsDone = GROUPS.filter(g => {
+      const r = groupRankings[g];
+      return r && r.length === 4 && r.every(Boolean);
+    });
+    info.push(`Groups: ${groupsDone.length}/${GROUPS.length} ranked`);
+
+    GROUPS.forEach(g => {
+      const r = groupRankings[g] || [];
+      if (r.some(t => !t || t === "TBD")) issues.push(`[Predictions] Group ${g}: contains TBD/null team`);
+      const seen = new Set();
+      r.filter(Boolean).forEach(t => {
+        if (seen.has(t)) issues.push(`[Predictions] Group ${g}: duplicate team "${t}"`);
+        seen.add(t);
+      });
+    });
+
+    info.push(`Best 3rd: ${best3.length}/8 selected`);
+    const b3Set = new Set();
+    best3.forEach(t => {
+      if (b3Set.has(t)) issues.push(`[Predictions] Best 3rd: duplicate team "${t}"`);
+      b3Set.add(t);
+    });
+
+    const koTotal = Object.keys(koPicks).length;
+    const expectedTotal = Object.values(KO_ROUNDS).reduce((a,b)=>a+b,0);
+    info.push(`KO picks: ${koTotal}/${expectedTotal}`);
+    Object.entries(KO_ROUNDS).forEach(([round, count]) => {
+      const n = Object.keys(koPicks).filter(k=>k.startsWith(round+"-")).length;
+      if (done && n < count) issues.push(`[Predictions] ${round}: ${n}/${count} picks missing`);
+      const hasTBD = Array.from({length:n},(_,i)=>koPicks[`${round}-${i}`]).some(v=>!v);
+      if (hasTBD) issues.push(`[Predictions] ${round}: null/TBD picks found`);
+    });
+
+    // ── Exact Scores analysis ──
+    const matchMap = {};
+    CALENDAR_EVENTS.forEach(e => { matchMap[e.day] = e.matches; });
+
+    WEEKS.forEach(({ label, start }) => {
+      const days = Array.from({length:7},(_,i)=>start+i).filter(d=>d>=1&&d<=50);
+      let total = 0, scored = 0;
+      days.forEach(d => {
+        const ms = matchMap[d] || [];
+        ms.forEach((_, idx) => {
+          total++;
+          const key = `${d}-${idx}`;
+          const s = scores[key];
+          if (s && s.home !== null && s.away !== null) scored++;
+        });
+      });
+      info.push(`${label}: ${scored}/${total} scores entered`);
+      if (total > 0 && scored < total) {
+        issues.push(`[Exact Scores] ${label}: ${total-scored} score(s) missing`);
+      }
+    });
+
+    return { done, issues, info };
+  };
+
+  const boards = myBoards || [];
+  const allAnalysis = boards.map(b => ({ board:b, ...analyzeBoard(b.id) }));
+  const totalIssues = allAnalysis.reduce((s, a) => s+a.issues.length, 0) + bugLog.length;
+
+  const tabStyle = (t) => ({
+    flex:1, padding:"8px 0", border:"none", cursor:"pointer", fontSize:12, fontWeight:700,
+    background: tab===t ? NAVY : "transparent",
+    color: tab===t ? "#fff" : "rgba(0,0,0,0.5)",
+    borderBottom: tab===t ? "none" : "2px solid rgba(0,0,0,0.07)",
+    transition:"all 0.15s",
+  });
+
+  return (
+    <>
+      {/* Floating button */}
+      <button onClick={()=>setOpen(true)} style={{
+        position:"fixed", bottom:80, left:16, zIndex:9999,
+        width:44, height:44, borderRadius:12,
+        background: totalIssues>0 ? "#c0392b" : "#1a1a2e",
+        border:"1px solid rgba(255,255,255,0.25)",
+        color:"#fff", fontSize:10, fontWeight:900, cursor:"pointer",
+        boxShadow:"0 4px 14px rgba(0,0,0,0.5)",
+        display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:1,
+      }}>
+        <span style={{fontSize:14}}>🐛</span>
+        {totalIssues>0 && <span style={{fontSize:9}}>{totalIssues}</span>}
+      </button>
+
+      {/* Panel overlay */}
+      {open && (
+        <div style={{position:"fixed",inset:0,zIndex:10000,display:"flex",background:"rgba(0,0,0,0.5)"}}
+          onClick={()=>setOpen(false)}>
+          <div style={{marginLeft:"auto",width:"92%",maxWidth:420,background:"#f8f8f8",height:"100%",
+            display:"flex",flexDirection:"column",overflowY:"hidden"}}
+            onClick={e=>e.stopPropagation()}>
+
+            {/* Header */}
+            <div style={{background:NAVY,padding:"14px 16px 0",flexShrink:0}}>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
+                <div>
+                  <div style={{fontSize:10,color:RED,fontWeight:800,letterSpacing:1.5}}>ADMIN ONLY</div>
+                  <div style={{fontSize:17,fontWeight:900,color:"#fff"}}>Bug Analysis</div>
+                </div>
+                <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                  {simDay && <span style={{fontSize:10,color:"rgba(255,255,255,0.6)",fontWeight:700}}>SIM Jun {simDay} {String(simHour).padStart(2,"0")}:{String(simMin).padStart(2,"0")}</span>}
+                  <button onClick={()=>setOpen(false)} style={{background:"rgba(255,255,255,0.12)",border:"none",borderRadius:8,width:30,height:30,color:"#fff",fontSize:16,cursor:"pointer"}}>✕</button>
+                </div>
+              </div>
+              {/* Tabs */}
+              <div style={{display:"flex",gap:0}}>
+                {[["errors","Errors","🔴"],["predictions","Predictions","⚽"],["scores","Exact Scores","🎯"],["db","DB Health","🗄️"]].map(([id,label,icon])=>(
+                  <button key={id} onClick={()=>setTab(id)} style={tabStyle(id)}>
+                    {icon} {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Content */}
+            <div style={{flex:1,overflowY:"auto",padding:"12px 14px"}}>
+
+              {/* ── ERRORS TAB ── */}
+              {tab==="errors" && (
+                <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                  {bugLog.length===0 ? (
+                    <div style={{textAlign:"center",padding:"40px 20px",color:"rgba(0,0,0,0.3)",fontSize:13,fontWeight:600}}>
+                      ✓ No runtime errors caught
+                    </div>
+                  ) : [...bugLog].reverse().map((e,i)=>(
+                    <div key={i} style={{background:"#fff",borderRadius:12,padding:"10px 12px",border:"1.5px solid #fee2e2",boxShadow:"0 1px 4px rgba(0,0,0,0.05)"}}>
+                      <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+                        <span style={{fontSize:11,fontWeight:800,color:RED}}>Runtime Error</span>
+                        <span style={{fontSize:10,color:"rgba(0,0,0,0.35)"}}>{e.time}</span>
+                      </div>
+                      <div style={{fontSize:12,color:"#111",fontWeight:600,marginBottom:4,wordBreak:"break-word"}}>{e.message}</div>
+                      {e.source && <div style={{fontSize:10,color:"rgba(0,0,0,0.4)",wordBreak:"break-all"}}>{e.source}:{e.line}</div>}
+                      {e.stack && <pre style={{fontSize:9,color:"rgba(0,0,0,0.4)",margin:"4px 0 0",whiteSpace:"pre-wrap",wordBreak:"break-all",maxHeight:80,overflow:"auto"}}>{e.stack}</pre>}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* ── PREDICTIONS TAB ── */}
+              {tab==="predictions" && (
+                <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                  {allAnalysis.map(({board,done,issues,info})=>(
+                    <div key={board.id} style={{background:"#fff",borderRadius:12,padding:"12px",border:`1.5px solid ${issues.filter(s=>s.includes("[Predictions]")).length>0?"#fee2e2":"rgba(0,0,0,0.08)"}`,boxShadow:"0 1px 4px rgba(0,0,0,0.04)"}}>
+                      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
+                        <span style={{fontSize:13,fontWeight:800,color:NAVY}}>{board.label} {board.name}</span>
+                        <span style={{fontSize:11,fontWeight:700,padding:"2px 8px",borderRadius:20,background:done?"#dcfce7":"#fef9c3",color:done?"#166534":"#92400e"}}>{done?"Done":"In Progress"}</span>
+                      </div>
+                      <div style={{display:"flex",flexDirection:"column",gap:3}}>
+                        {info.filter(s=>!s.includes("Exact")).map((s,i)=>(
+                          <div key={i} style={{fontSize:11,color:"rgba(0,0,0,0.55)",display:"flex",gap:6}}>
+                            <span style={{color:GREEN,flexShrink:0}}>ℹ</span>{s}
+                          </div>
+                        ))}
+                        {issues.filter(s=>s.includes("[Predictions]")).map((s,i)=>(
+                          <div key={i} style={{fontSize:11,color:RED,display:"flex",gap:6,fontWeight:700}}>
+                            <span style={{flexShrink:0}}>⚠</span>{s.replace("[Predictions] ","")}
+                          </div>
+                        ))}
+                        {issues.filter(s=>s.includes("[Predictions]")).length===0&&<div style={{fontSize:11,color:GREEN,fontWeight:700}}>✓ No prediction issues</div>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* ── DB HEALTH TAB ── */}
+              {tab==="db" && (
+                <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                  {/* User identity */}
+                  <div style={{background:"#fff",borderRadius:12,padding:"12px",border:"1.5px solid rgba(0,0,0,0.08)"}}>
+                    <div style={{fontSize:11,fontWeight:800,color:NAVY,marginBottom:8}}>User Identity</div>
+                    <div style={{fontSize:11,color:"rgba(0,0,0,0.55)",wordBreak:"break-all",marginBottom:4}}>
+                      <span style={{fontWeight:700}}>Email:</span> {user?.email}
+                    </div>
+                    <div style={{fontSize:11,color:"rgba(0,0,0,0.55)",wordBreak:"break-all",marginBottom:4}}>
+                      <span style={{fontWeight:700}}>user_id:</span> {user?.id}
+                    </div>
+                    <div style={{fontSize:11,color:"rgba(0,0,0,0.55)",marginBottom:4}}>
+                      <span style={{fontWeight:700}}>Auth method:</span> {user?.app_metadata?.provider || "—"}
+                    </div>
+                    <div style={{fontSize:11,color:"rgba(0,0,0,0.55)"}}>
+                      <span style={{fontWeight:700}}>has_password:</span> {String(user?.user_metadata?.has_password ?? false)}
+                    </div>
+                  </div>
+
+                  {/* DB check */}
+                  <button onClick={runDbCheck} disabled={dbChecking} style={{
+                    width:"100%",padding:"12px",borderRadius:12,border:"none",
+                    background:dbChecking?"rgba(0,0,0,0.08)":NAVY,
+                    color:dbChecking?"rgba(0,0,0,0.3)":"#fff",
+                    fontSize:13,fontWeight:800,cursor:dbChecking?"default":"pointer",
+                  }}>
+                    {dbChecking?"Checking...":"Run DB Health Check"}
+                  </button>
+
+                  {dbHealth && (
+                    <>
+                      {/* Matches table */}
+                      <div style={{background:"#fff",borderRadius:12,padding:"12px",border:`1.5px solid ${dbHealth.matchesTable?.ok?"rgba(0,0,0,0.08)":"#fee2e2"}`}}>
+                        <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
+                          <span style={{fontSize:12,fontWeight:800,color:NAVY}}>matches table</span>
+                          <span style={{fontSize:11,fontWeight:700,color:dbHealth.matchesTable?.ok?GREEN:RED}}>{dbHealth.matchesTable?.ok?"✓ Accessible":"✗ Error"}</span>
+                        </div>
+                        {dbHealth.matchesTable?.ok ? (
+                          <>
+                            <div style={{fontSize:11,color:"rgba(0,0,0,0.55)",marginBottom:4}}>
+                              Total rows: <strong>{dbHealth.matchesTotal}</strong>
+                              {dbHealth.matchesTotal===0&&<span style={{color:RED,fontWeight:700}}> ← PROBLEM: table is empty, saves will fail</span>}
+                            </div>
+                            {dbHealth.matchesTable.sample?.length>0&&(
+                              <div style={{fontSize:10,color:"rgba(0,0,0,0.4)"}}>
+                                Sample keys: {dbHealth.matchesTable.sample.join(", ")}
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <div style={{fontSize:11,color:RED,fontWeight:700}}>{dbHealth.matchesTable?.error}</div>
+                        )}
+                      </div>
+
+                      {/* exact_scores table */}
+                      <div style={{background:"#fff",borderRadius:12,padding:"12px",border:`1.5px solid ${dbHealth.exactScoresTable?.ok?"rgba(0,0,0,0.08)":"#fee2e2"}`}}>
+                        <div style={{display:"flex",justifyContent:"space-between"}}>
+                          <span style={{fontSize:12,fontWeight:800,color:NAVY}}>exact_scores table</span>
+                          <span style={{fontSize:11,fontWeight:700,color:dbHealth.exactScoresTable?.ok?GREEN:RED}}>{dbHealth.exactScoresTable?.ok?"✓ Accessible":"✗ Error"}</span>
+                        </div>
+                        {!dbHealth.exactScoresTable?.ok&&<div style={{fontSize:11,color:RED,fontWeight:700,marginTop:4}}>{dbHealth.exactScoresTable?.error}</div>}
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* ── EXACT SCORES TAB ── */}
+              {tab==="scores" && (
+                <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                  {allAnalysis.map(({board,issues,info})=>(
+                    <div key={board.id} style={{background:"#fff",borderRadius:12,padding:"12px",border:`1.5px solid ${issues.filter(s=>s.includes("[Exact")).length>0?"#fee2e2":"rgba(0,0,0,0.08)"}`,boxShadow:"0 1px 4px rgba(0,0,0,0.04)"}}>
+                      <div style={{fontSize:13,fontWeight:800,color:NAVY,marginBottom:8}}>{board.label} {board.name}</div>
+                      <div style={{display:"flex",flexDirection:"column",gap:3}}>
+                        {info.filter(s=>s.startsWith("W")).map((s,i)=>{
+                          const isIssue = issues.some(iss=>iss.includes(s.split(":")[0]));
+                          return (
+                            <div key={i} style={{fontSize:11,color:isIssue?RED:"rgba(0,0,0,0.55)",display:"flex",gap:6,fontWeight:isIssue?700:400}}>
+                              <span style={{flexShrink:0}}>{isIssue?"⚠":"✓"}</span>{s}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div style={{padding:"10px 14px",borderTop:"1px solid rgba(0,0,0,0.07)",background:"#fff",flexShrink:0}}>
+              <div style={{fontSize:10,color:"rgba(0,0,0,0.35)",textAlign:"center"}}>
+                Logged in as {user?.email} · {totalIssues} issue{totalIssues!==1?"s":""} found
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 function DevPanel({ onStart, onAutoPick }) {
   const [simDay, setSimDay] = useState(11);
   const [simHour, setSimHour] = useState(12);
@@ -6867,6 +7172,20 @@ function App() {
     });
   };
   const [allInstantPickDone, setAllInstantPickDone] = useState({});
+  const [bugLog, setBugLog] = useState([]);
+  useEffect(()=>{
+    const fmt = ()=>new Date().toLocaleTimeString("ro-RO",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
+    const onErr = (msg,source,line,_col,err)=>{
+      setBugLog(p=>[...p,{message:String(msg),source,line,stack:err?.stack||null,time:fmt()}]);
+    };
+    const onUnhandled = (e)=>{
+      const err = e.reason;
+      setBugLog(p=>[...p,{message:err?.message||String(err),source:"Promise",line:null,stack:err?.stack||null,time:fmt()}]);
+    };
+    window.addEventListener("error",onErr);
+    window.addEventListener("unhandledrejection",onUnhandled);
+    return ()=>{ window.removeEventListener("error",onErr); window.removeEventListener("unhandledrejection",onUnhandled); };
+  },[]);
   const instantPickState = allInstantPickStates[activeBoardId]||null;
   const instantPickDone = allInstantPickDone[activeBoardId]||false;
   const setInstantPickState = (s) => setAllInstantPickStates(p=>({...p,[activeBoardId]:s}));
@@ -7013,22 +7332,36 @@ function App() {
 
           {screen===SCREENS.STATS&&<StatsScreen/>}
           {screen===SCREENS.RULES&&<RulesScreen onBack={()=>setScreen(SCREENS.HOME)}/>}
-          {screen===SCREENS.GROUPS_SCHEDULE&&<GroupsScheduleScreen scores={exactScores} setScores={(newScores)=>{
+          {screen===SCREENS.GROUPS_SCHEDULE&&<GroupsScheduleScreen scores={exactScores} setScores={async (newScores)=>{
               const oldScores = exactScores;
               setExactScores(newScores);
-              showToast("Score saved!", "⚽");
               if (user) {
-                Object.keys(newScores).forEach(matchKey => {
+                const fmt = ()=>new Date().toLocaleTimeString("ro-RO",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
+                for (const matchKey of Object.keys(newScores)) {
                   const o = oldScores[matchKey], n = newScores[matchKey];
-                  if (!o || o.home !== n.home || o.away !== n.away)
-                    saveExactScore(user.id, activeBoardId, matchKey, n.home, n.away);
-                });
+                  if (!o || o.home !== n.home || o.away !== n.away) {
+                    const result = await saveExactScore(user.id, activeBoardId, matchKey, n.home, n.away);
+                    if (result?.error) {
+                      setBugLog(p=>[...p,{message:`Save failed for match ${matchKey}: ${result.error}`,source:"saveExactScore",line:null,stack:null,time:fmt()}]);
+                    }
+                  }
+                }
+                showToast("Score saved!", "⚽");
               }
             }} simDay={simDay} simHour={simHour} simMin={simMin} initialWeek={groupsInitialWeek} onBack={()=>{ setGroupsInitialWeek(null); setScreen(SCREENS.HOME); }}/>}
           {screen===SCREENS.ACCOUNT&&<AccountScreen setLang={setLang} onBoards={()=>setScreen(SCREENS.BOARDS)} onSignOut={()=>setScreen(SCREENS.SPLASH)} onShowGuide={()=>{ setShowOnboarding(true); setScreen(SCREENS.HOME); }} user={user}/>}
         </div>
         <Toast message={toast.message} emoji={toast.emoji} visible={toast.visible}/>
         {showFooter&&<Footer active={footerActive} onNavigate={setScreen} lang={lang}/>}
+        <AdminBugPanel
+          user={user}
+          allInstantPickStates={allInstantPickStates}
+          allInstantPickDone={allInstantPickDone}
+          exactScoresByBoard={exactScoresByBoard}
+          myBoards={myBoards}
+          bugLog={bugLog}
+          simDay={simDay} simHour={simHour} simMin={simMin}
+        />
         {isLocalhost && user && screen !== "dev" && (
           <button onClick={()=>setShowDevOverlay(true)} style={{
             position:"fixed",bottom:80,right:16,zIndex:9999,

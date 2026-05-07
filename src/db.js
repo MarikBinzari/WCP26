@@ -63,7 +63,11 @@ export async function loadExactScores(userId, boardId) {
 export async function saveExactScore(userId, boardId, matchKey, home, away) {
   const map = await getMatchKeyMap()
   const matchId = map[matchKey]
-  if (!matchId) { console.error('match_key not found:', matchKey); return }
+  if (!matchId) {
+    const msg = `match_key not found in DB: "${matchKey}". Matches table may be empty or use a different key format.`
+    console.error('saveExactScore:', msg)
+    return { error: msg }
+  }
   const { error } = await supabase
     .from('exact_scores')
     .upsert({
@@ -74,7 +78,24 @@ export async function saveExactScore(userId, boardId, matchKey, home, away) {
       team2_score: away,
       updated_at:  new Date().toISOString(),
     }, { onConflict: 'user_id,board_id,match_id' })
-  if (error) console.error('saveExactScore:', error)
+  if (error) { console.error('saveExactScore:', error); return { error: error.message } }
+  return { error: null }
+}
+
+export async function checkDbHealth() {
+  const results = {}
+  // Check matches table
+  const { data: matches, error: matchErr } = await supabase.from('matches').select('id, match_key').limit(5)
+  results.matchesTable = matchErr
+    ? { ok: false, error: matchErr.message }
+    : { ok: true, count: matches?.length, sample: matches?.map(m => m.match_key) }
+  // Check total match count
+  const { count } = await supabase.from('matches').select('id', { count: 'exact', head: true })
+  results.matchesTotal = count ?? 0
+  // Check exact_scores table accessible
+  const { error: scErr } = await supabase.from('exact_scores').select('id').limit(1)
+  results.exactScoresTable = scErr ? { ok: false, error: scErr.message } : { ok: true }
+  return results
 }
 
 // ─── BOARDS ───────────────────────────────────────────────────────────────────
