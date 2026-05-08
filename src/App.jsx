@@ -7214,7 +7214,7 @@ function App() {
     <UserCtx.Provider value={user}>
     <LangCtx.Provider value={lang}>
     <div style={{width:"100%",height:"100dvh",background:BG,display:"flex",flexDirection:"column",position:"relative",fontFamily:"-apple-system,'SF Pro Display',sans-serif"}}>
-        <div style={{flex:1,overflow:"hidden",display:"flex",flexDirection:"column"}}>
+        <div style={{flex:1,overflow:"clip",display:"flex",flexDirection:"column"}}>
           {screen==="dev"&&<DevPanel
             onAutoPick={(state)=>{
               setAllInstantPickStates(p=>({...p,global:state}));

@@ -52,6 +52,11 @@
 
 body {
   margin: 0;
+  overscroll-behavior: none;
+}
+
+* {
+  -webkit-overflow-scrolling: touch;
 }
 
 #root {
