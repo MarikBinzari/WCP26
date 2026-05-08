@@ -4547,7 +4547,7 @@ function Footer({ active, onNavigate, lang }) {
     {key:SCREENS.ACCOUNT,icon:"👤", label:"Account"},
   ];
   return (
-    <div style={{flexShrink:0,background:"#fff",borderTop:"1px solid rgba(0,0,0,0.06)",display:"flex",alignItems:"stretch",height:64,paddingBottom:4}}>
+    <div style={{flexShrink:0,background:"#fff",borderTop:"1px solid rgba(0,0,0,0.06)",display:"flex",alignItems:"stretch",height:"calc(64px + env(safe-area-inset-bottom, 0px))",paddingBottom:"env(safe-area-inset-bottom, 4px)"}}>
       {tabs.map(tab=>{
         const isActive=active===tab.key;
         return (
@@ -7213,7 +7213,7 @@ function App() {
   return (
     <UserCtx.Provider value={user}>
     <LangCtx.Provider value={lang}>
-    <div style={{width:"100%",height:"100vh",background:BG,display:"flex",flexDirection:"column",position:"relative",fontFamily:"-apple-system,'SF Pro Display',sans-serif"}}>
+    <div style={{width:"100%",height:"100dvh",background:BG,display:"flex",flexDirection:"column",position:"relative",fontFamily:"-apple-system,'SF Pro Display',sans-serif"}}>
         <div style={{flex:1,overflow:"hidden",display:"flex",flexDirection:"column"}}>
           {screen==="dev"&&<DevPanel
             onAutoPick={(state)=>{
