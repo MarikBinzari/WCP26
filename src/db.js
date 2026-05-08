@@ -99,22 +99,42 @@ export async function checkDbHealth() {
 }
 
 // ─── BOARDS ───────────────────────────────────────────────────────────────────
+// Returns boards with isAdmin=true (created_by) and/or isMember=true (board_members)
 export async function loadUserBoards(userId) {
   const [memberships, created] = await Promise.all([
-    supabase.from('board_members').select('role, boards(*)').eq('user_id', userId),
+    supabase.from('board_members').select('boards(*)').eq('user_id', userId),
     supabase.from('boards').select('*').eq('created_by', userId),
   ])
-  const seen = new Set()
-  const boards = []
-  ;(memberships.data || []).forEach(row => {
-    seen.add(row.boards.id)
-    boards.push({ ...row.boards, label: row.boards.emoji || '⚽', isGlobal: false, role: row.role })
-  })
+  const map = new Map()
   ;(created.data || []).forEach(b => {
-    if (!seen.has(b.id))
-      boards.push({ ...b, label: b.emoji || '⚽', isGlobal: false, role: 'admin' })
+    map.set(b.id, { ...b, label: b.emoji || '⚽', isGlobal: false, code: b.invite_code, max: b.max_players, isAdmin: true, isMember: false })
   })
-  return boards
+  ;(memberships.data || []).forEach(row => {
+    const b = row.boards
+    const existing = map.get(b.id)
+    if (existing) {
+      map.set(b.id, { ...existing, isMember: true })
+    } else {
+      map.set(b.id, { ...b, label: b.emoji || '⚽', isGlobal: false, code: b.invite_code, max: b.max_players, isAdmin: false, isMember: true })
+    }
+  })
+  return Array.from(map.values())
+}
+
+export async function loadAvailableBoards(userId) {
+  const [allRes, memberRes, adminRes] = await Promise.all([
+    supabase.from('boards').select('*'),
+    supabase.from('board_members').select('board_id').eq('user_id', userId),
+    supabase.from('boards').select('id').eq('created_by', userId),
+  ])
+  if (allRes.error) { console.error('loadAvailableBoards:', allRes.error); return [] }
+  const excludeSet = new Set([
+    ...(memberRes.data || []).map(r => r.board_id),
+    ...(adminRes.data || []).map(r => r.id),
+  ])
+  return (allRes.data || [])
+    .filter(b => !excludeSet.has(b.id))
+    .map(b => ({ ...b, label: b.emoji || '⚽', isGlobal: false, code: b.invite_code, max: b.max_players }))
 }
 
 export async function createBoard(userId, { name, emoji, type, password, max_players, prizes }) {
@@ -127,8 +147,7 @@ export async function createBoard(userId, { name, emoji, type, password, max_pla
     .select()
     .single()
   if (error) { console.error('createBoard:', error); return { error } }
-  await supabase.from('board_members').insert({ board_id: data.id, user_id: userId, role: 'admin' })
-  return { data: { ...data, label: data.emoji || '⚽', isGlobal: false, code: data.invite_code, role: 'admin' } }
+  return { data: { ...data, label: data.emoji || '⚽', isGlobal: false, code: data.invite_code, isAdmin: true, isMember: false } }
 }
 
 export async function joinBoardByCode(userId, code) {
@@ -173,17 +192,29 @@ export async function joinBoardById(userId, boardId) {
 }
 
 export async function removeBoardMember(boardId, userId) {
-  const { error } = await supabase
-    .from('board_members')
-    .delete()
-    .eq('board_id', boardId)
-    .eq('user_id', userId)
-  if (error) console.error('removeBoardMember:', error)
+  await Promise.all([
+    supabase.from('board_members').delete().eq('board_id', boardId).eq('user_id', userId),
+    supabase.from('predictions').delete().eq('board_id', boardId).eq('user_id', userId),
+    supabase.from('exact_scores').delete().eq('board_id', boardId).eq('user_id', userId),
+  ])
+}
+
+export async function removeParticipation(boardId, userId) {
+  await Promise.all([
+    supabase.from('predictions').delete().eq('board_id', boardId).eq('user_id', userId),
+    supabase.from('exact_scores').delete().eq('board_id', boardId).eq('user_id', userId),
+  ])
 }
 
 export async function deleteBoard(boardId) {
+  await Promise.all([
+    supabase.from('exact_scores').delete().eq('board_id', boardId),
+    supabase.from('predictions').delete().eq('board_id', boardId),
+    supabase.from('board_members').delete().eq('board_id', boardId),
+  ])
   const { error } = await supabase.from('boards').delete().eq('id', boardId)
   if (error) console.error('deleteBoard:', error)
+  return { error }
 }
 
 // ─── MEMBER COUNTS ───────────────────────────────────────────────────────────
@@ -206,16 +237,26 @@ export async function fetchMemberCounts(boardIds) {
 }
 
 // ─── LEADERBOARD ──────────────────────────────────────────────────────────────
-export async function loadLeaderboard(boardId, search = null) {
-  const { data, error } = await supabase.rpc('get_leaderboard', {
-    p_board_id: boardId,
-    p_search: search?.trim() || null,
+export async function loadLeaderboard(boardId, search = null, userId = null) {
+  const [rpcRes, profileRes] = await Promise.all([
+    supabase.rpc('get_leaderboard', {
+      p_board_id: boardId,
+      p_search: search?.trim() || null,
+    }),
+    userId
+      ? supabase.from('profiles').select('display_name').eq('id', userId).single()
+      : Promise.resolve({ data: null }),
+  ])
+  if (rpcRes.error) console.error('loadLeaderboard:', rpcRes.error)
+  const myName = profileRes.data?.display_name || null
+  return (rpcRes.data || []).map((row, i) => {
+    const isMe = myName ? row.display_name === myName : false
+    return {
+      rank:   i + 1,
+      name:   row.display_name || '—',
+      pts:    row.total_pts || 0,
+      accent: isMe ? '#E8F0FF' : '#fff',
+      isMe,
+    }
   })
-  if (error) console.error('loadLeaderboard:', error)
-  return (data || []).map((row, i) => ({
-    rank:   i + 1,
-    name:   row.display_name || '—',
-    pts:    row.total_pts || 0,
-    accent: '#fff',
-  }))
 }

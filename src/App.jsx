@@ -3,7 +3,7 @@ import trophy from "./assets/hands-trophy.png";
 import varBg from "./assets/var-bg.jpg";
 import { ALL_GROUPS_DATA, FLAGS, TEAM_COLORS, CALENDAR_EVENTS } from "./data/worldcup2026.js";
 import { supabase } from "./supabase.js";
-import { loadPredictions, savePredictions, loadExactScores, saveExactScore, loadUserBoards, createBoard, joinBoardByCode, joinBoardById, loadLeaderboard, fetchScoringRules, fetchMemberCounts, removeBoardMember, deleteBoard, loadBoardMembers, checkDbHealth } from "./db.js";
+import { loadPredictions, savePredictions, loadExactScores, saveExactScore, loadUserBoards, loadAvailableBoards, createBoard, joinBoardByCode, joinBoardById, loadLeaderboard, fetchScoringRules, fetchMemberCounts, removeBoardMember, removeParticipation, deleteBoard, loadBoardMembers, checkDbHealth } from "./db.js";
 
 const TEAM_CODE = {"Mexico":"MEX","South Africa":"RSA","South Korea":"KOR","Czechia":"CZE","Canada":"CAN","Switzerland":"SUI","Qatar":"QAT","Bosnia-Herzegovina":"BIH","Brazil":"BRA","Morocco":"MAR","Scotland":"SCO","Haiti":"HAI","USA":"USA","Paraguay":"PAR","Australia":"AUS","Turkiye":"TUR","Germany":"GER","Ecuador":"ECU","Ivory Coast":"CIV","Curacao":"CUW","Netherlands":"NED","Japan":"JPN","Tunisia":"TUN","Sweden":"SWE","Belgium":"BEL","Iran":"IRI","Egypt":"EGY","New Zealand":"NZL","Spain":"ESP","Uruguay":"URU","Saudi Arabia":"KSA","Cape Verde":"CPV","France":"FRA","Senegal":"SEN","Norway":"NOR","Iraq":"IRQ","Argentina":"ARG","Austria":"AUT","Algeria":"ALG","Jordan":"JOR","Portugal":"POR","Colombia":"COL","Uzbekistan":"UZB","DR Congo":"COD","England":"ENG","Croatia":"CRO","Panama":"PAN","Ghana":"GHA"};
 
@@ -27,11 +27,6 @@ const SCREENS = {
 };
 
 const INITIAL_BOARDS = [{ id:"global", label:"🌍", name:"Global Board", members:48291, isGlobal:true }];
-const AVAILABLE_BOARDS = [
-  { id:"fc-prieteni", label:"⚽", name:"FC Prieteni 2026", members:8, max:10, type:"private" },
-  { id:"birou", label:"💼", name:"Birou Fotbal", members:6, max:10, type:"private" },
-  { id:"romania", label:"🇷🇴", name:"Romania Bate!", members:312, max:null, type:"public" },
-];
 const BOARD_LEADERS = {
   global: [
     { rank:1,    name:"Alex M.",      pts:342, prize:"250 lei", emoji:"🥇", accent:"#fff" },
@@ -2652,7 +2647,7 @@ function InstantPickScreen({ onBack, onComplete, onModify, savedState, onStateCh
     return getAutoStanding(group);
   };
 
-  const handleGroupConfirm = (ranking) => {
+  const handleGroupAutoSave = (ranking) => {
     const prevRanking = groupRankings[currentGroup];
     const changed = !prevRanking || prevRanking.some((t,i)=>t!==ranking[i]);
     setGroupRankings(prev=>({...prev,[currentGroup]:ranking}));
@@ -2665,6 +2660,10 @@ function InstantPickScreen({ onBack, onComplete, onModify, savedState, onStateCh
       setShowFinalSummary(false);
       if(viewMode && onModify) onModify();
     }
+  };
+
+  const handleGroupConfirm = (ranking) => {
+    handleGroupAutoSave(ranking);
     if(groupIdx < GROUPS.length-1) { setGroupIdx(g=>g+1); setShowIntro(viewMode?false:true); }
     else setStage("best3");
   };
@@ -3157,6 +3156,7 @@ function InstantPickScreen({ onBack, onComplete, onModify, savedState, onStateCh
         teams={ALL_GROUPS_DATA[currentGroup]||[]}
         existingRanking={groupRankings[currentGroup]||null}
         onConfirm={handleGroupConfirm}
+        onAutoSave={handleGroupAutoSave}
         onBack={handleGroupBack}
         groupIdx={groupIdx}
         totalGroups={GROUPS.length}
@@ -3233,7 +3233,7 @@ function InstantPickSummaryScreen({ picks, koPicks, best3, getGroupStanding, onC
   );
 }
 
-function GroupRankingScreen({ group, teams, existingRanking, onConfirm, onBack, groupIdx, totalGroups, onNavigate, groupRankings, hideHeader=false, viewMode=false }) {
+function GroupRankingScreen({ group, teams, existingRanking, onConfirm, onAutoSave, onBack, groupIdx, totalGroups, onNavigate, groupRankings, hideHeader=false, viewMode=false }) {
   const lang = useLang();
   const [ranking, setRanking] = useState(existingRanking || [null, null, null, null]);
   const [dragIdx, setDragIdx] = useState(null);
@@ -3259,6 +3259,10 @@ function GroupRankingScreen({ group, teams, existingRanking, onConfirm, onBack, 
 
   const ALL_GROUPS = ["A","B","C","D","E","F","G","H","I","J","K","L"];
   const isComplete = ranking.every(t => t !== null);
+
+  useEffect(() => {
+    if (isComplete && onAutoSave) onAutoSave(ranking);
+  }, [ranking, isComplete]);
 
   const handleTileClick = (team) => {
     if (ranking.includes(team)) {
@@ -3972,7 +3976,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
 
   const createdBoards = createdBoardsProp || [];
   const setCreatedBoards = setCreatedBoardsProp || (()=>{});
-  const availBoards = availableBoardsProp || AVAILABLE_BOARDS;
+  const availBoards = availableBoardsProp || [];
   const setAvailBoards = setAvailableBoardsProp || (()=>{});
   const [joinPrompt, setJoinPrompt] = useState(null);
   const [joinPass, setJoinPass] = useState("");
@@ -4345,10 +4349,9 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
                     padding:"7px 10px",fontSize:11,fontWeight:700,color:NAVY,cursor:"pointer"}}>
                     ✏️
                   </button>
-                  <button onClick={()=>{
+                  <button onClick={async ()=>{
                     if(!window.confirm(`Ștergi "${b.name}"?`)) return;
-                    setCreatedBoards(p=>p.filter(x=>x.id!==b.id));
-                    if(onDeleteBoard) onDeleteBoard(b.id);
+                    if(onDeleteBoard) await onDeleteBoard(b.id);
                   }} style={{background:"rgba(200,16,46,0.08)",border:"none",borderRadius:9,
                     padding:"7px 10px",fontSize:11,fontWeight:700,color:RED,cursor:"pointer"}}>
                     🗑️
@@ -4516,20 +4519,9 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
                 </button>
               </div>
               {hasPrizes&&(
-                <div style={{display:"flex",gap:6}}>
-                  {b.prizes.map((p,i)=>(
-                    <div key={i} style={{flex:1,display:"flex",alignItems:"center",gap:4,
-                      background:i===0?"rgba(255,215,0,0.12)":i===1?"rgba(192,192,192,0.15)":i===2?"rgba(205,127,50,0.12)":"rgba(0,0,0,0.04)",
-                      borderRadius:8,padding:"5px 8px",
-                      border:`1px solid ${i===0?"rgba(255,215,0,0.3)":i===1?"rgba(192,192,192,0.3)":i===2?"rgba(205,127,50,0.25)":"rgba(0,0,0,0.06)"}`}}>
-                      <span style={{fontSize:14,flexShrink:0}}>{medals[i]||"🎖️"}</span>
-                      <div style={{minWidth:0}}>
-                        <p style={{fontSize:8,color:"#aaa",margin:0,fontWeight:600}}>Rank {i+1}</p>
-                        <p style={{fontSize:12,fontWeight:700,color:DARK,margin:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <p style={{fontSize:11,color:"#888",margin:"4px 0 0",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+                  {b.prizes.map((p,i)=>`${medals[i]||"🎖️"} ${p}`).join(" · ")}
+                </p>
               )}
             </div>
             );
@@ -5503,7 +5495,7 @@ function SetPasswordScreen({ onDone }) {
   );
 }
 
-function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, myBoards=[], activeBoardId, setActiveBoardId }) {
+function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, myBoards=[], activeBoardId, setActiveBoardId, userId }) {
   const lang = useLang();
   const leaders = leadersProp || BOARD_LEADERS.global;
   const [search, setSearch] = useState("");
@@ -5514,7 +5506,7 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
     if (!search.trim()) { setSearchResults(null); return; }
     const timer = setTimeout(async () => {
       setSearching(true);
-      const results = await loadLeaderboard(activeBoardId, search.trim());
+      const results = await loadLeaderboard(activeBoardId, search.trim(), userId);
       setSearchResults(results);
       setSearching(false);
     }, 350);
@@ -6851,6 +6843,12 @@ function AccountScreen({ setLang, onBoards, onSignOut, onShowGuide, user }) {
       return;
     }
     setDeleteLoading(true); setDeleteError("");
+    const userId = user.id;
+    await Promise.all([
+      supabase.from('exact_scores').delete().eq('user_id', userId),
+      supabase.from('predictions').delete().eq('user_id', userId),
+      supabase.from('board_members').delete().eq('user_id', userId),
+    ]);
     const { error } = await supabase.rpc('delete_user_account');
     if (error) { setDeleteError(error.message); setDeleteLoading(false); return; }
     await supabase.auth.signOut();
@@ -7101,26 +7099,33 @@ function App() {
     // Boards + member counts + predicții pentru toate boardurile
     loadForBoard('global');
     const refreshBoards = async () => {
-      const boards = await loadUserBoards(uid);
-      const adminBoards = boards.filter(b => b.role === 'admin');
-      const allBoards = [...INITIAL_BOARDS, ...boards];
-      const ids = allBoards.map(b => b.id);
-      const counts = await fetchMemberCounts(ids);
-      const withCounts = allBoards.map(b => ({
-        ...b,
-        members: counts[b.id] ?? b.members,
-      }));
-      setMyBoards(withCounts);
-      setCreatedBoards(adminBoards);
+      const [boards, avail] = await Promise.all([
+        loadUserBoards(uid),
+        loadAvailableBoards(uid),
+      ]);
+      // adminBoards = boards where user is creator (isAdmin=true)
+      const adminBoards = boards.filter(b => b.isAdmin);
+      // participantBoards = boards where user is member (isMember=true), excludes global
+      const participantBoards = boards.filter(b => b.isMember);
+      const allMyBoards = [...INITIAL_BOARDS, ...participantBoards];
+      const allIds = [...allMyBoards.map(b => b.id), ...adminBoards.map(b => b.id), ...avail.map(b => b.id)];
+      const counts = await fetchMemberCounts(allIds);
+      setMyBoards(allMyBoards.map(b => ({ ...b, members: counts[b.id] ?? b.members })));
+      setCreatedBoards(adminBoards.map(b => ({ ...b, members: counts[b.id] ?? 0 })));
+      setAvailableBoards(avail.map(b => ({ ...b, members: counts[b.id] ?? 0 })));
       return boards;
     };
     refreshBoards().then(boards => boards.forEach(b => loadForBoard(b.id)));
 
-    // Realtime: actualizează membrii când cineva se înscrie sau pleacă
+    // Realtime: actualizează membrii și board-urile când se schimbă ceva
     const boardChannel = supabase
-      .channel('board-members-rt')
+      .channel('boards-rt')
       .on('postgres_changes',
         { event: '*', schema: 'public', table: 'board_members' },
+        () => { refreshBoards(); }
+      )
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'boards' },
         () => { refreshBoards(); }
       )
       .subscribe();
@@ -7147,7 +7152,7 @@ function App() {
   const [createdBoards, setCreatedBoards] = useState([]);
   const [leaderboardData, setLeaderboardData] = useState({});
 
-  const [availableBoards, setAvailableBoards] = useState(AVAILABLE_BOARDS);
+  const [availableBoards, setAvailableBoards] = useState([]);
 
   // Predictions complete per board id
   const [predictionsComplete, setPredictionsComplete] = useState({});
@@ -7155,7 +7160,7 @@ function App() {
 
   useEffect(() => {
     if (!user || (screen !== SCREENS.LEADERBOARD && screen !== SCREENS.HOME)) return;
-    loadLeaderboard(activeBoardId).then(rows => {
+    loadLeaderboard(activeBoardId, null, user.id).then(rows => {
       if (rows.length > 0)
         setLeaderboardData(prev => ({ ...prev, [activeBoardId]: rows }));
     });
@@ -7264,26 +7269,33 @@ function App() {
               const { data, error } = await createBoard(user.id, boardData);
               if (error) { showToast("Eroare la creare", "❌"); return null; }
               setCreatedBoards(prev => [...prev, data]);
-              setMyBoards(prev => [...prev, data]);
               return data;
             }}
             onJoinByCode={async (code) => {
               if (!user) return null;
               const { data, error } = await joinBoardByCode(user.id, code);
               if (error) { showToast(error, "❌"); return null; }
-              setMyBoards(prev => [...prev, data]);
+              setMyBoards(prev => [...prev, { ...data, isMember: true }]);
+              setAvailableBoards(prev => prev.filter(b => b.id !== data.id));
               return data;
             }}
             onJoin={(boardId)=>{ setActiveBoardId(boardId); setScreen(SCREENS.HOME); }}
             onJoinBoard={async (boardId) => {
               if (!user) return;
-              const { error } = await joinBoardById(user.id, boardId);
-              if (error) showToast(error, "❌");
+              const { data, error } = await joinBoardById(user.id, boardId);
+              if (error) { showToast(error, "❌"); return; }
+              const board = availableBoards.find(b => b.id === boardId) || createdBoards.find(b => b.id === boardId);
+              if (board) {
+                setMyBoards(prev => prev.some(b => b.id === boardId) ? prev : [...prev, { ...board, isMember: true }]);
+                setAvailableBoards(prev => prev.filter(b => b.id !== boardId));
+              }
             }}
             onDeleteBoard={async (boardId) => {
-              await deleteBoard(boardId);
+              const { error } = await deleteBoard(boardId);
+              if (error) { showToast("Eroare la ștergere", "❌"); return; }
               setCreatedBoards(prev => prev.filter(b => b.id !== boardId));
               setMyBoards(prev => prev.filter(b => b.id !== boardId));
+              setAvailableBoards(prev => prev.filter(b => b.id !== boardId));
               if (activeBoardId === boardId) setActiveBoardId('global');
               showToast("Board șters", "🗑️");
             }}
@@ -7292,6 +7304,9 @@ function App() {
               await removeBoardMember(boardId, memberId);
               if (memberId === user?.id) {
                 setMyBoards(prev => prev.filter(b => b.id !== boardId));
+                setAllInstantPickStates(prev => { const n = {...prev}; delete n[boardId]; return n; });
+                setAllInstantPickDone(prev => { const n = {...prev}; delete n[boardId]; return n; });
+                setExactScoresByBoard(prev => { const n = {...prev}; delete n[boardId]; return n; });
                 if (activeBoardId === boardId) setActiveBoardId('global');
               }
             }}/>}
@@ -7299,6 +7314,7 @@ function App() {
           {screen===SCREENS.SET_PASSWORD&&<SetPasswordScreen onDone={()=>setScreen(SCREENS.HOME)}/>}
           {screen===SCREENS.LEADERBOARD&&<LeaderboardScreen onBack={()=>setScreen(SCREENS.HOME)} tournamentStarted={tournamentStarted}
             myBoards={myBoards} activeBoardId={activeBoardId} setActiveBoardId={setActiveBoardId}
+            userId={user?.id}
             leaders={(()=>{
               if (leaderboardData[activeBoardId]?.length > 0) return leaderboardData[activeBoardId];
               const ab = myBoards.find(b=>b.id===activeBoardId)||myBoards[0];
