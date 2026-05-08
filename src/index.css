@@ -50,13 +50,16 @@
   }
 }
 
-body {
-  margin: 0;
-  overscroll-behavior: none;
+html {
+  height: 100%;
+  overflow: hidden;
 }
 
-* {
-  -webkit-overflow-scrolling: touch;
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
 }
 
 #root {
@@ -65,7 +68,8 @@ body {
   margin: 0 auto;
   text-align: center;
   border-inline: 1px solid var(--border);
-  height: 100dvh;
+  height: 100%;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;

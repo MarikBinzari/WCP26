@@ -3692,25 +3692,25 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",position:"relative"}}>
       <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
-      <div style={{background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"10px 20px 12px",flexShrink:0,position:"relative",zIndex:1}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16}}>
-          <div>
-            <p style={{fontSize:11,color:RED,margin:"0 0 2px",letterSpacing:2,textTransform:"uppercase",fontWeight:800}}>Predicto</p>
-            <h2 style={{fontSize:18,fontWeight:800,color:"#fff",margin:"0 0 2px"}}>{activeBoard?.name||"Global Board"}</h2>
-            <p style={{fontSize:11,color:"rgba(255,255,255,0.4)",margin:0}}>👥 {membersLabel} {T[lang].participants}</p>
-          </div>
-          <div style={{width:38,height:38,borderRadius:11,background:"rgba(255,255,255,0.1)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:15}}>🔔</div>
+      <div style={{background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"12px 20px 10px",flexShrink:0,position:"relative",zIndex:1}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <p style={{fontSize:18,color:RED,margin:0,fontStyle:"italic",fontWeight:900,letterSpacing:-0.5}}>Predicto</p>
+          <div style={{width:36,height:36,borderRadius:10,background:"rgba(255,255,255,0.1)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:15}}>🔔</div>
         </div>
-        <div style={{display:"flex",alignItems:"flex-start",gap:12,overflowX:"auto",scrollbarWidth:"none",paddingBottom:2}}>
+        <div style={{display:"flex",alignItems:"flex-start",gap:10,overflowX:"auto",scrollbarWidth:"none",padding:"10px 0 2px"}}>
           {myBoards.map(b=><CircleTab key={b.id} label={b.label} name={b.isGlobal?"Global":b.name.split(" ")[0]} isActive={activeId===b.id} onClick={()=>setActiveId(b.id)}/>)}
           <div onClick={onBoards} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4,cursor:"pointer",flexShrink:0}}>
-            <div style={{width:46,height:46,borderRadius:"50%",background:"transparent",border:"2px dashed rgba(255,255,255,0.3)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,color:"rgba(255,255,255,0.4)"}}>+</div>
-            <span style={{fontSize:11,color:"rgba(255,255,255,0.35)",fontWeight:500}}>{T[lang].add}</span>
+            <div style={{width:44,height:44,borderRadius:"50%",background:"transparent",border:"2px dashed rgba(255,255,255,0.3)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,color:"rgba(255,255,255,0.4)"}}>+</div>
+            <span style={{fontSize:10,color:"rgba(255,255,255,0.4)",fontWeight:500}}>{T[lang].add}</span>
           </div>
         </div>
       </div>
-      <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",padding:"10px 16px 0",position:"relative",zIndex:1}}>
+      <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",padding:"10px 16px 0",position:"relative",zIndex:1}}>
 
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+          <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:0}}>{activeBoard?.name||"Global Board"}</p>
+          <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:0}}>👥 {membersLabel}</p>
+        </div>
         {/* User stats card */}
         <div style={{background:"#fff",borderRadius:16,boxShadow:SHADOW_OUT,padding:"10px 14px",marginBottom:10}}>
           <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:10}}>
@@ -4296,7 +4296,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
           </div>
         </div>
       )}
-      <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",padding:"16px 20px 80px",position:"relative",zIndex:1}}>
+      <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",padding:"16px 20px 80px",position:"relative",zIndex:1}}>
 
 
         {/* My created boards */}
@@ -5884,7 +5884,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
         </div>
       </div>
 
-      <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",padding:"14px 20px",position:"relative",zIndex:1}}>
+      <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",padding:"14px 20px",position:"relative",zIndex:1}}>
         {/* Weekly Calendar with clickable matches */}
         <WeeklyCalendar weekStart={weekStart} setWeekStart={handleWeekChange} weeks={weeks} weekIdx={weekIdx}
           selDay={selDay} onDaySelect={handleDaySelect} scores={scores} scoresVersion={_v}
@@ -6800,7 +6800,7 @@ function StatsScreen() {
           ))}
         </div>
       </div>
-      <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",padding:"14px 20px"}}>
+      <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",padding:"14px 20px"}}>
         {/* Teams in group */}
         <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 8px"}}>{T[lang].group} {selGroup} · {T[lang].groupTeams}</p>
         <div style={{background:BG,borderRadius:14,boxShadow:SHADOW_OUT,overflow:"hidden",marginBottom:16}}>
@@ -6858,15 +6858,19 @@ function AccountScreen({ setLang, onBoards, onSignOut, onShowGuide, user }) {
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,position:"relative",overflow:"hidden"}}>
       <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
-      <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",position:"relative",zIndex:1}}>
-        <div style={{background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"28px 20px 32px",display:"flex",flexDirection:"column",alignItems:"center"}}>
-          <div style={{width:70,height:70,borderRadius:"50%",background:"rgba(255,255,255,0.18)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:34,marginBottom:12}}>👤</div>
-          <p style={{fontSize:12,color:RED,margin:"0 0 4px",letterSpacing:2,textTransform:"uppercase",fontWeight:800}}>Predicto</p>
-          <h2 style={{fontSize:18,fontWeight:800,color:"#fff",margin:"0 0 4px"}}>{displayName}</h2>
-          <p style={{fontSize:13,color:"rgba(255,255,255,0.5)",margin:0}}>{user?.email}</p>
-          {memberSince && <p style={{fontSize:11,color:"rgba(255,255,255,0.35)",margin:"4px 0 0"}}>Membru din {memberSince}</p>}
+      <div style={{background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"12px 20px 14px",flexShrink:0,position:"relative",zIndex:1,minHeight:100,boxSizing:"border-box"}}>
+        <p style={{fontSize:18,color:RED,margin:"0 0 4px",fontStyle:"italic",fontWeight:900,letterSpacing:-0.5,textAlign:"left"}}>Predicto</p>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <h2 style={{fontSize:18,fontWeight:800,color:"#fff",margin:0,textAlign:"left"}}>{displayName}</h2>
+          <div style={{width:36,height:36,borderRadius:"50%",background:"rgba(255,255,255,0.18)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>👤</div>
         </div>
-        <div style={{padding:"16px 20px"}}>
+      </div>
+      <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",position:"relative",zIndex:1}}>
+        <div style={{padding:"10px 20px 4px",borderBottom:"1px solid rgba(0,0,0,0.06)"}}>
+          <p style={{fontSize:13,color:"#888",margin:0,textAlign:"left"}}>{user?.email}</p>
+          {memberSince && <p style={{fontSize:11,color:"#aaa",margin:"2px 0 0",textAlign:"left"}}>Membru din {memberSince}</p>}
+        </div>
+        <div style={{padding:"12px 20px"}}>
           {[{icon:"🏆",label:T[lang].myBoards,sub:T[lang].activeBoards,action:onBoards},{icon:"📖",label:T[lang].appGuide,sub:T[lang].howItWorks,action:onShowGuide},{icon:"🔔",label:T[lang].notifications,sub:T[lang].matchAlertsOn},{icon:"🌍",label:T[lang].language,sub:LANGS.find(l=>l.code===lang)?.name||"English",isLang:true},{icon:"⭐",label:T[lang].upgradePremium,sub:T[lang].removeAds,highlight:true},{icon:"🚪",label:T[lang].signOut,sub:"",action:handleSignOut}].map(item=>(
             <div key={item.label} onClick={item.isLang?undefined:item.action||undefined} style={{display:"flex",alignItems:"center",gap:14,background:item.highlight?"#E8F0FF":BG,borderRadius:14,boxShadow:item.highlight?`0 0 0 2px ${NAVY},${SHADOW_OUT}`:SHADOW_OUT,padding:"13px 16px",marginBottom:10,cursor:item.isLang?"default":"pointer"}}>
               <span style={{fontSize:20}}>{item.icon}</span>
@@ -6942,24 +6946,23 @@ function RulesScreen({ onBack }) {
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",position:"relative"}}>
       <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
-      <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"16px 20px 0",flexShrink:0}}>
-        <p style={{fontSize:11,color:RED,margin:"0 0 4px",letterSpacing:2,textTransform:"uppercase",fontWeight:800}}>Predicto</p>
-        <h2 style={{fontSize:20,fontWeight:900,color:"#fff",margin:"0 0 16px"}}>📖 {T[lang].rules}</h2>
-        {/* Tabs */}
-        <div style={{display:"flex",gap:0,borderBottom:"2px solid rgba(255,255,255,0.1)"}}>
-          {[{id:"predictions",label:"🎯 Predictions"},{id:"exact",label:<><span style={{colorScheme:"light",filter:"saturate(0) contrast(3) brightness(1.1)"}}>⚽</span>{" Exact Score"}</>}].map(t=>(
+      <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"12px 20px 14px",flexShrink:0,minHeight:100,boxSizing:"border-box"}}>
+        <p style={{fontSize:18,color:RED,margin:"0 0 4px",fontStyle:"italic",fontWeight:900,letterSpacing:-0.5,textAlign:"left"}}>Predicto</p>
+        <h2 style={{fontSize:18,fontWeight:800,color:"#fff",margin:0,textAlign:"left"}}>📖 {T[lang].rules}</h2>
+      </div>
+
+      <div style={{flex:1,overflowY:"auto",overscrollBehavior:"contain",padding:"0 20px 16px",position:"relative",zIndex:1}}>
+        <div style={{display:"flex",gap:0,borderBottom:`2px solid rgba(0,0,0,0.06)`,marginBottom:16}}>
+          {[{id:"predictions",label:"🎯 Predictions"},{id:"exact",label:<><span>⚽</span>{" Exact Score"}</>}].map(t=>(
             <button key={t.id} onClick={()=>setTab(t.id)}
-              style={{flex:1,background:"transparent",border:"none",cursor:"pointer",padding:"10px 0",
-                fontSize:12,fontWeight:700,color:tab===t.id?"#fff":"rgba(255,255,255,0.4)",
+              style={{flex:1,background:"transparent",border:"none",cursor:"pointer",padding:"12px 0",
+                fontSize:12,fontWeight:700,color:tab===t.id?NAVY:"#aaa",
                 borderBottom:tab===t.id?`3px solid ${RED}`:"3px solid transparent",
                 transition:"all 0.2s"}}>
               {t.label}
             </button>
           ))}
         </div>
-      </div>
-
-      <div style={{flex:1,overflowY:"auto",padding:"16px 20px",position:"relative",zIndex:1}}>
         {/* Description */}
         <div style={{background:BG,borderRadius:14,boxShadow:SHADOW_OUT,padding:"14px 16px",marginBottom:16}}>
           <p style={{fontSize:13,fontWeight:700,color:DARK,margin:"0 0 4px"}}>
@@ -7213,8 +7216,8 @@ function App() {
   return (
     <UserCtx.Provider value={user}>
     <LangCtx.Provider value={lang}>
-    <div style={{width:"100%",height:"100dvh",background:BG,display:"flex",flexDirection:"column",position:"relative",fontFamily:"-apple-system,'SF Pro Display',sans-serif"}}>
-        <div style={{flex:1,overflow:"clip",display:"flex",flexDirection:"column"}}>
+    <div style={{width:"100%",height:"100%",background:BG,display:"flex",flexDirection:"column",position:"relative",fontFamily:"-apple-system,'SF Pro Display',sans-serif"}}>
+        <div style={{flex:1,overflow:"hidden",display:"flex",flexDirection:"column"}}>
           {screen==="dev"&&<DevPanel
             onAutoPick={(state)=>{
               setAllInstantPickStates(p=>({...p,global:state}));
