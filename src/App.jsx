@@ -3825,8 +3825,7 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
             const missing = total - scored;
             return (
               <div onClick={()=>onOpenGroups&&onOpenGroups()}
-                style={{flex:1,background:missing>0?"#EEF3FF":"#fff",borderRadius:14,
-                  boxShadow:"0 8px 22px rgba(0,0,0,0.07)",
+                style={{flex:1,background:"#fff",borderRadius:14,boxShadow:"0 8px 22px rgba(0,0,0,0.07)",
                   padding:"10px 12px",cursor:"pointer",position:"relative"}}>
                 {missing>0&&(
                   <div style={{position:"absolute",top:2,right:2,
