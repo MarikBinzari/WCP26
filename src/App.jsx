@@ -5026,7 +5026,7 @@ function SplashScreen({ onNext, lang, setLang, simDay, simHour=12, simMin=0, tou
           <img src={predictoLogo} alt="Predicto" style={{
             height:54, width:"auto",
             objectFit:"contain",
-            marginBottom:4,
+            marginBottom:0,
             display:"block",
             marginLeft:"auto",
             marginRight:"auto",
