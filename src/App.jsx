@@ -5298,7 +5298,7 @@ function LoginScreen({ onNext }) {
 
   const goToNewuser = () => {
     setPassword("");
-    setCaptchaNeeded(getAttempts() >= 2);
+    setCaptchaNeeded(true);
     setCaptchaSolved(false);
     setStep("newuser");
   };
@@ -5469,7 +5469,7 @@ function LoginScreen({ onNext }) {
             opacity: loading ? 0.7 : 1,
             marginBottom:10, transition:"all 0.2s"
           }}>
-          {loading ? "Se trimite..." : !captchaSolved ? "🔒 Rezolvă verificarea mai sus" : "Trimite magic link →"}
+          {loading ? "Se trimite..." : !captchaSolved ? "🔒 Rezolvă verificarea mai sus" : "Trimite link de resetare →"}
         </button>
 
         <button onClick={()=>{setStep("credentials");setError("");}}
@@ -7244,6 +7244,16 @@ function useToast() {
   return [toast, showToast];
 }
 
+// Citit SINCRON înainte ca Supabase să proceseze URL-ul și să-l șteargă.
+// Folsoit ca fallback dacă PASSWORD_RECOVERY nu se prinde.
+const _isRecoveryUrl = (() => {
+  try {
+    const s = new URLSearchParams(window.location.search);
+    const h = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+    return s.get('type') === 'recovery' || h.get('type') === 'recovery';
+  } catch { return false; }
+})();
+
 function App() {
   useEffect(()=>{
     const style = document.createElement("style");
@@ -7259,21 +7269,32 @@ function App() {
   const [authLoading, setAuthLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      const u = session?.user ?? null;
-      setUser(u);
-      const isRecovery = window.location.hash.includes('type=recovery');
-      if (u && !isRecovery) setScreen(SCREENS.HOME);
-      setAuthLoading(false);
-    });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       const u = session?.user ?? null;
       setUser(u);
-      if (event === 'PASSWORD_RECOVERY') { setScreen(SCREENS.RESET_PASSWORD); return; }
-      if (u) {
-        setScreen(SCREENS.HOME);
-      } else setScreen(SCREENS.SPLASH);
+      setAuthLoading(false);
+
+      // PASSWORD_RECOVERY: Supabase a procesat token-ul de reset — arată formularul.
+      if (event === 'PASSWORD_RECOVERY') {
+        inRecoveryRef.current = true;
+        setScreen(SCREENS.RESET_PASSWORD);
+        return;
+      }
+
+      // INITIAL_SESSION se declanșează DUPĂ PASSWORD_RECOVERY (sau ca fallback pentru URL recovery).
+      // În ambele cazuri, nu navigăm la HOME.
+      if (inRecoveryRef.current) return;
+      if (event === 'INITIAL_SESSION' && _isRecoveryUrl) {
+        inRecoveryRef.current = true;
+        setScreen(SCREENS.RESET_PASSWORD);
+        return;
+      }
+
+      if (u) setScreen(SCREENS.HOME);
+      else setScreen(SCREENS.SPLASH);
     });
+
+    supabase.auth.getSession().then(() => setAuthLoading(false));
     return () => subscription.unsubscribe();
   }, []);
 
@@ -7342,6 +7363,7 @@ function App() {
   }, [user]);
 
   const isLocalhost = import.meta.env.DEV;
+  const inRecoveryRef = useRef(false);
   const [screen, setScreen] = useState(SCREENS.SPLASH);
   const [showDevOverlay, setShowDevOverlay] = useState(false);
   const [simDay, setSimDay] = useState(null);
@@ -7403,6 +7425,22 @@ function App() {
   const instantPickDone = allInstantPickDone[activeBoardId]||false;
   const setInstantPickState = (s) => setAllInstantPickStates(p=>({...p,[activeBoardId]:s}));
   const setInstantPickDone = (v) => setAllInstantPickDone(p=>({...p,[activeBoardId]:v}));
+
+  // Auto-save: persistă selecțiile intermediare în DB (debounced 1s)
+  // Previne pierderea datelor la refresh de browser
+  const _autoSaveTimer = useRef(null);
+  useEffect(() => {
+    if (!user || !instantPickState) return;
+    const hasData = Object.keys(instantPickState.groupRankings || {}).length > 0 ||
+                    (instantPickState.best3 || []).length > 0 ||
+                    Object.keys(instantPickState.koPicks || {}).length > 0;
+    if (!hasData) return;
+    clearTimeout(_autoSaveTimer.current);
+    _autoSaveTimer.current = setTimeout(() => {
+      savePredictions(user.id, activeBoardId, instantPickState);
+    }, 1000);
+    return () => clearTimeout(_autoSaveTimer.current);
+  }, [instantPickState, activeBoardId, user]);
   // Predictions state per board
   const [allPredictions, setAllPredictions] = useState({});
   const getPreds = (boardId) => allPredictions[boardId] || { groupRank:{}, best3picks:[], knockoutPicks:{}, teamBooster:null, golgheter:null };
@@ -7518,7 +7556,7 @@ function App() {
                 if (activeBoardId === boardId) setActiveBoardId('global');
               }
             }}/>}
-          {screen===SCREENS.RESET_PASSWORD&&<ResetPasswordScreen onDone={()=>setScreen(SCREENS.HOME)}/>}
+          {screen===SCREENS.RESET_PASSWORD&&<ResetPasswordScreen onDone={()=>{ inRecoveryRef.current=false; setScreen(SCREENS.HOME); }}/>}
           {screen===SCREENS.LEADERBOARD&&<LeaderboardScreen onBack={()=>setScreen(SCREENS.HOME)} tournamentStarted={tournamentStarted}
             myBoards={myBoards} activeBoardId={activeBoardId} setActiveBoardId={setActiveBoardId}
             userId={user?.id}
