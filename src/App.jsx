@@ -3701,8 +3701,8 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
           <div style={{width:36}}/>
           <div style={{textAlign:"center"}}>
-            <p style={{fontSize:12,color:RED,margin:"0 0 2px",letterSpacing:3,textTransform:"uppercase",fontWeight:800}}>Predicto</p>
-            <h1 style={{fontSize:20,fontWeight:900,color:NAVY,margin:0}}>WORLD CUP 2026</h1>
+            <img src={predictoLogo} alt="Predicto" style={{height:44,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
+            <h1 style={{fontSize:18,fontWeight:900,margin:"-4px 0 0",letterSpacing:2,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
             <p style={{fontSize:11,color:"#888",margin:"3px 0 0"}}>{T[lang].location}</p>
           </div>
           <div style={{width:36,height:36,borderRadius:10,background:"rgba(0,0,0,0.05)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,alignSelf:"center"}}>🔔</div>
@@ -4279,8 +4279,8 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
           <div onClick={onBack} style={{width:36,height:36,borderRadius:10,background:"rgba(0,0,0,0.05)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:DARK,flexShrink:0}}>&#8249;</div>
           <div style={{textAlign:"center"}}>
-            <p style={{fontSize:12,color:RED,margin:"0 0 2px",letterSpacing:3,textTransform:"uppercase",fontWeight:800}}>Predicto</p>
-            <h1 style={{fontSize:20,fontWeight:900,color:NAVY,margin:0}}>WORLD CUP 2026</h1>
+            <img src={predictoLogo} alt="Predicto" style={{height:44,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
+            <h1 style={{fontSize:18,fontWeight:900,margin:"-4px 0 0",letterSpacing:2,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
             <p style={{fontSize:11,color:"#888",margin:"3px 0 0"}}>{T[lang].location}</p>
           </div>
           <div style={{width:36}}/>
@@ -5388,10 +5388,10 @@ function LoginScreen({ onNext }) {
 
   const bgImg = <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.03,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>;
   const header = (icon, title) => (
-    <div style={{position:"relative",zIndex:1,background:"transparent",padding:"32px 28px 24px",display:"flex",flexDirection:"column",alignItems:"center"}}>
-      <div style={{width:64,height:64,borderRadius:20,background:"rgba(0,0,0,0.05)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:32,marginBottom:12}}>{icon}</div>
-      <p style={{fontSize:12,color:RED,margin:"0 0 4px",letterSpacing:3,textTransform:"uppercase",fontWeight:800}}>WORLD CUP 2026</p>
-      <h2 style={{fontSize:22,fontWeight:800,color:DARK,margin:0,textAlign:"center"}}>{title}</h2>
+    <div style={{position:"relative",zIndex:1,background:"transparent",padding:"28px 28px 20px",display:"flex",flexDirection:"column",alignItems:"center"}}>
+      <img src={predictoLogo} alt="Predicto" style={{height:54,width:"auto",objectFit:"contain",display:"block",marginBottom:0}}/>
+      <h1 style={{fontSize:18,fontWeight:900,margin:"-4px 0 0",letterSpacing:2,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
+      <h2 style={{fontSize:20,fontWeight:800,color:DARK,margin:"12px 0 0",textAlign:"center"}}>{title}</h2>
     </div>
   );
 
@@ -5738,8 +5738,8 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:myBoards.length>1?0:8}}>
           <div onClick={onBack} style={{width:36,height:36,borderRadius:10,background:"rgba(0,0,0,0.05)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:DARK}}>&#8249;</div>
           <div style={{textAlign:"center"}}>
-            <p style={{fontSize:12,color:RED,margin:"0 0 2px",letterSpacing:3,textTransform:"uppercase",fontWeight:800}}>Predicto</p>
-            <h1 style={{fontSize:20,fontWeight:900,color:NAVY,margin:0}}>WORLD CUP 2026</h1>
+            <img src={predictoLogo} alt="Predicto" style={{height:44,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
+            <h1 style={{fontSize:18,fontWeight:900,margin:"-4px 0 0",letterSpacing:2,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
             <p style={{fontSize:11,color:"#888",margin:"3px 0 0"}}>{T[lang].location}</p>
           </div>
           <div style={{width:36}}/>
@@ -7077,8 +7077,8 @@ function AccountScreen({ setLang, onBoards, onSignOut, onShowGuide, user }) {
       <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.03,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
       <div style={{background:"transparent",padding:"12px 20px 14px",flexShrink:0,position:"relative",zIndex:1,minHeight:100,boxSizing:"border-box"}}>
         <div style={{textAlign:"center",marginBottom:8}}>
-          <p style={{fontSize:12,color:RED,margin:"0 0 2px",letterSpacing:3,textTransform:"uppercase",fontWeight:800}}>Predicto</p>
-          <h1 style={{fontSize:20,fontWeight:900,color:NAVY,margin:0}}>WORLD CUP 2026</h1>
+          <img src={predictoLogo} alt="Predicto" style={{height:44,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
+          <h1 style={{fontSize:18,fontWeight:900,margin:"-4px 0 0",letterSpacing:2,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
           <p style={{fontSize:11,color:"#888",margin:"3px 0 0"}}>{T[lang].location}</p>
         </div>
         <div style={{borderTop:"2px solid rgba(0,0,0,0.06)",marginTop:10}}/>
@@ -7172,8 +7172,8 @@ function RulesScreen({ onBack }) {
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",position:"relative"}}>
       <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.03,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
       <div style={{position:"relative",zIndex:1,background:"transparent",padding:"12px 20px 0",flexShrink:0,boxSizing:"border-box",textAlign:"center"}}>
-        <p style={{fontSize:12,color:RED,margin:"0 0 2px",letterSpacing:3,textTransform:"uppercase",fontWeight:800}}>Predicto</p>
-        <h1 style={{fontSize:20,fontWeight:900,color:NAVY,margin:0}}>WORLD CUP 2026</h1>
+        <img src={predictoLogo} alt="Predicto" style={{height:44,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
+        <h1 style={{fontSize:18,fontWeight:900,margin:"-4px 0 0",letterSpacing:2,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
         <p style={{fontSize:11,color:"#888",margin:"3px 0 0"}}>{T[lang].location}</p>
         <div style={{display:"flex",gap:0,borderBottom:`2px solid rgba(0,0,0,0.06)`,marginTop:10}}>
           {[{id:"predictions",label:"🎯 Predictions"},{id:"exact",label:<><span>⚽</span>{" Exact Score"}</>}].map(t=>(
