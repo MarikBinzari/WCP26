@@ -3633,24 +3633,28 @@ function GroupRankingScreen({ group, teams, existingRanking, onConfirm, onAutoSa
 }
 
 // ── CIRCLE TAB ────────────────────────────────────────────────────────────────
-function CircleTab({ label, name, isActive, onClick }) {
+function CircleTab({ label, name, isActive, onClick, lightBg=false }) {
   return (
     <div onClick={onClick} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:5,cursor:"pointer",flexShrink:0}}>
       <div style={{
         width:isActive?52:44, height:isActive?52:44,
         borderRadius:"50%",
-        background:isActive?"rgba(255,255,255,0.95)":"rgba(255,255,255,0.1)",
-        border:isActive?"3px solid #fff":"2px solid rgba(255,255,255,0.2)",
+        background:isActive
+          ? (lightBg?"#fff":"rgba(255,255,255,0.95)")
+          : (lightBg?"rgba(0,0,0,0.06)":"rgba(255,255,255,0.1)"),
+        border:isActive
+          ? (lightBg?"3px solid rgba(0,0,0,0.12)":"3px solid #fff")
+          : (lightBg?"2px solid rgba(0,0,0,0.12)":"2px solid rgba(255,255,255,0.2)"),
         display:"flex",alignItems:"center",justifyContent:"center",
         fontSize:isActive?24:19,
         transition:"all 0.2s",
-        boxShadow:isActive?"0 4px 16px rgba(0,0,0,0.25)":"none",
+        boxShadow:isActive?"0 4px 16px rgba(0,0,0,0.15)":"none",
       }}>
         {label}
       </div>
       <span style={{
         fontSize:isActive?10:9,
-        color:isActive?"#fff":"rgba(255,255,255,0.45)",
+        color:isActive?(lightBg?DARK:"#fff"):(lightBg?"rgba(0,0,0,0.45)":"rgba(255,255,255,0.45)"),
         fontWeight:isActive?800:500,
         maxWidth:56,textAlign:"center",lineHeight:1.2,
       }}>{name}</span>
@@ -3692,16 +3696,21 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",position:"relative"}}>
       <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
-      <div style={{background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"12px 20px 10px",flexShrink:0,position:"relative",zIndex:1}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-          <p style={{fontSize:18,color:RED,margin:0,fontStyle:"italic",fontWeight:900,letterSpacing:-0.5}}>Predicto</p>
-          <div style={{width:36,height:36,borderRadius:10,background:"rgba(255,255,255,0.1)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:15}}>🔔</div>
+      <div style={{background:"transparent",padding:"12px 20px 10px",flexShrink:0,position:"relative",zIndex:1}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+          <div style={{width:36}}/>
+          <div style={{textAlign:"center"}}>
+            <p style={{fontSize:12,color:RED,margin:"0 0 2px",letterSpacing:3,textTransform:"uppercase",fontWeight:800}}>Predicto</p>
+            <h1 style={{fontSize:20,fontWeight:900,color:NAVY,margin:0}}>WORLD CUP 2026</h1>
+            <p style={{fontSize:11,color:"#888",margin:"3px 0 0"}}>{T[lang].location}</p>
+          </div>
+          <div style={{width:36,height:36,borderRadius:10,background:"rgba(0,0,0,0.05)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:15}}>🔔</div>
         </div>
         <div style={{display:"flex",alignItems:"flex-start",gap:10,overflowX:"auto",scrollbarWidth:"none",padding:"10px 0 2px"}}>
-          {myBoards.map(b=><CircleTab key={b.id} label={b.label} name={b.isGlobal?"Global":b.name.split(" ")[0]} isActive={activeId===b.id} onClick={()=>setActiveId(b.id)}/>)}
+          {myBoards.map(b=><CircleTab key={b.id} label={b.label} name={b.isGlobal?"Global":b.name.split(" ")[0]} isActive={activeId===b.id} onClick={()=>setActiveId(b.id)} lightBg/>)}
           <div onClick={onBoards} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4,cursor:"pointer",flexShrink:0}}>
-            <div style={{width:44,height:44,borderRadius:"50%",background:"transparent",border:"2px dashed rgba(255,255,255,0.3)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,color:"rgba(255,255,255,0.4)"}}>+</div>
-            <span style={{fontSize:10,color:"rgba(255,255,255,0.4)",fontWeight:500}}>{T[lang].add}</span>
+            <div style={{width:44,height:44,borderRadius:"50%",background:"transparent",border:"2px dashed rgba(0,0,0,0.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,color:"rgba(0,0,0,0.3)"}}>+</div>
+            <span style={{fontSize:10,color:"rgba(0,0,0,0.35)",fontWeight:500}}>{T[lang].add}</span>
           </div>
         </div>
       </div>
@@ -5386,10 +5395,10 @@ function LoginScreen({ onNext }) {
 
   const bgImg = <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>;
   const header = (icon, title) => (
-    <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"32px 28px 24px",display:"flex",flexDirection:"column",alignItems:"center"}}>
-      <div style={{width:64,height:64,borderRadius:20,background:"rgba(255,255,255,0.12)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:32,marginBottom:12}}>{icon}</div>
+    <div style={{position:"relative",zIndex:1,background:"transparent",padding:"32px 28px 24px",display:"flex",flexDirection:"column",alignItems:"center"}}>
+      <div style={{width:64,height:64,borderRadius:20,background:"rgba(0,0,0,0.05)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:32,marginBottom:12}}>{icon}</div>
       <p style={{fontSize:12,color:RED,margin:"0 0 4px",letterSpacing:3,textTransform:"uppercase",fontWeight:800}}>WORLD CUP 2026</p>
-      <h2 style={{fontSize:22,fontWeight:800,color:"#fff",margin:0,textAlign:"center"}}>{title}</h2>
+      <h2 style={{fontSize:22,fontWeight:800,color:DARK,margin:0,textAlign:"center"}}>{title}</h2>
     </div>
   );
 
@@ -7071,18 +7080,21 @@ function AccountScreen({ setLang, onBoards, onSignOut, onShowGuide, user }) {
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,position:"relative",overflow:"hidden"}}>
       <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
-      <div style={{background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"12px 20px 14px",flexShrink:0,position:"relative",zIndex:1,minHeight:100,boxSizing:"border-box"}}>
-        <p style={{fontSize:18,color:RED,margin:"0 0 4px",fontStyle:"italic",fontWeight:900,letterSpacing:-0.5,textAlign:"left"}}>Predicto</p>
+      <div style={{background:"transparent",padding:"12px 20px 14px",flexShrink:0,position:"relative",zIndex:1,minHeight:100,boxSizing:"border-box"}}>
+        <div style={{textAlign:"center",marginBottom:8}}>
+          <p style={{fontSize:12,color:RED,margin:"0 0 2px",letterSpacing:3,textTransform:"uppercase",fontWeight:800}}>Predicto</p>
+          <h1 style={{fontSize:20,fontWeight:900,color:NAVY,margin:0}}>WORLD CUP 2026</h1>
+          <p style={{fontSize:11,color:"#888",margin:"3px 0 0"}}>{T[lang].location}</p>
+        </div>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-          <h2 style={{fontSize:18,fontWeight:800,color:"#fff",margin:0,textAlign:"left"}}>{displayName}</h2>
-          <div style={{width:36,height:36,borderRadius:"50%",background:"rgba(255,255,255,0.18)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>👤</div>
+          <div>
+            <p style={{fontSize:13,color:"#888",margin:0}}>{user?.email}</p>
+            {memberSince && <p style={{fontSize:11,color:"#aaa",margin:"2px 0 0"}}>Membru din {memberSince}</p>}
+          </div>
+          <div style={{width:36,height:36,borderRadius:"50%",background:"rgba(0,0,0,0.05)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>👤</div>
         </div>
       </div>
       <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",position:"relative",zIndex:1}}>
-        <div style={{padding:"10px 20px 4px",borderBottom:"1px solid rgba(0,0,0,0.06)"}}>
-          <p style={{fontSize:13,color:"#888",margin:0,textAlign:"left"}}>{user?.email}</p>
-          {memberSince && <p style={{fontSize:11,color:"#aaa",margin:"2px 0 0",textAlign:"left"}}>Membru din {memberSince}</p>}
-        </div>
         <div style={{padding:"12px 20px"}}>
           {[{icon:"🏆",label:T[lang].myBoards,sub:T[lang].activeBoards,action:onBoards},{icon:"📖",label:T[lang].appGuide,sub:T[lang].howItWorks,action:onShowGuide},{icon:"🔔",label:T[lang].notifications,sub:T[lang].matchAlertsOn},{icon:"🌍",label:T[lang].language,sub:LANGS.find(l=>l.code===lang)?.name||"English",isLang:true},{icon:"⭐",label:T[lang].upgradePremium,sub:T[lang].removeAds,highlight:true},{icon:"🚪",label:T[lang].signOut,sub:"",action:handleSignOut}].map(item=>(
             <div key={item.label} onClick={item.isLang?undefined:item.action||undefined} style={{display:"flex",alignItems:"center",gap:14,background:item.highlight?"#E8F0FF":BG,borderRadius:14,boxShadow:item.highlight?`0 0 0 2px ${NAVY},${SHADOW_OUT}`:SHADOW_OUT,padding:"13px 16px",marginBottom:10,cursor:item.isLang?"default":"pointer"}}>
@@ -7159,13 +7171,11 @@ function RulesScreen({ onBack }) {
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",position:"relative"}}>
       <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
-      <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"12px 20px 14px",flexShrink:0,minHeight:100,boxSizing:"border-box"}}>
-        <p style={{fontSize:18,color:RED,margin:"0 0 4px",fontStyle:"italic",fontWeight:900,letterSpacing:-0.5,textAlign:"left"}}>Predicto</p>
-        <h2 style={{fontSize:18,fontWeight:800,color:"#fff",margin:0,textAlign:"left"}}>📖 {T[lang].rules}</h2>
-      </div>
-
-      <div style={{flex:1,overflowY:"auto",overscrollBehavior:"contain",padding:"0 20px 16px",position:"relative",zIndex:1}}>
-        <div style={{display:"flex",gap:0,borderBottom:`2px solid rgba(0,0,0,0.06)`,marginBottom:16}}>
+      <div style={{position:"relative",zIndex:1,background:"transparent",padding:"12px 20px 0",flexShrink:0,boxSizing:"border-box",textAlign:"center"}}>
+        <p style={{fontSize:12,color:RED,margin:"0 0 2px",letterSpacing:3,textTransform:"uppercase",fontWeight:800}}>Predicto</p>
+        <h1 style={{fontSize:20,fontWeight:900,color:NAVY,margin:0}}>WORLD CUP 2026</h1>
+        <p style={{fontSize:11,color:"#888",margin:"3px 0 0"}}>{T[lang].location}</p>
+        <div style={{display:"flex",gap:0,borderBottom:`2px solid rgba(0,0,0,0.06)`,marginTop:10}}>
           {[{id:"predictions",label:"🎯 Predictions"},{id:"exact",label:<><span>⚽</span>{" Exact Score"}</>}].map(t=>(
             <button key={t.id} onClick={()=>setTab(t.id)}
               style={{flex:1,background:"transparent",border:"none",cursor:"pointer",padding:"12px 0",
@@ -7176,6 +7186,10 @@ function RulesScreen({ onBack }) {
             </button>
           ))}
         </div>
+      </div>
+
+      <div style={{flex:1,overflowY:"auto",overscrollBehavior:"contain",padding:"0 20px 16px",position:"relative",zIndex:1}}>
+
         {/* Description */}
         <div style={{background:BG,borderRadius:14,boxShadow:SHADOW_OUT,padding:"14px 16px",marginBottom:16}}>
           <p style={{fontSize:13,fontWeight:700,color:DARK,margin:"0 0 4px"}}>
