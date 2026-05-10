@@ -4105,13 +4105,15 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
   if(view==="create") return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,position:"relative",overflow:"hidden"}}>
       <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
-      <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"16px 20px 22px",flexShrink:0}}>
-        <div style={{display:"flex",alignItems:"center",gap:14}}>
-          <div onClick={()=>setView("main")} style={{width:36,height:36,borderRadius:10,background:"rgba(255,255,255,0.12)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:"#fff"}}>&#8249;</div>
-          <div>
-            <p style={{fontSize:11,color:RED,margin:"0 0 2px",letterSpacing:2,textTransform:"uppercase",fontWeight:800}}>Predicto</p>
-            <h2 style={{fontSize:17,fontWeight:800,color:"#fff",margin:0}}>{editBoard?T[lang].editBoard:T[lang].createBoard}</h2>
+      <div style={{position:"relative",zIndex:1,background:"transparent",padding:"12px 20px 14px",flexShrink:0}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+          <div onClick={()=>setView("main")} style={{width:36,height:36,borderRadius:10,background:"rgba(0,0,0,0.05)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:DARK}}>&#8249;</div>
+          <div style={{textAlign:"center"}}>
+            <p style={{fontSize:12,color:RED,margin:"0 0 2px",letterSpacing:3,textTransform:"uppercase",fontWeight:800}}>Predicto</p>
+            <h1 style={{fontSize:20,fontWeight:900,color:NAVY,margin:0}}>WORLD CUP 2026</h1>
+            <p style={{fontSize:11,color:"#888",margin:"3px 0 0"}}>{T[lang].location}</p>
           </div>
+          <div style={{width:36}}/>
         </div>
       </div>
       <div style={{flex:1,overflowY:"auto",padding:"16px 20px 24px",position:"relative",zIndex:1}}>
@@ -4261,20 +4263,20 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:"transparent",position:"relative",overflow:"hidden"}}>
       <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
-      <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"16px 20px 22px",flexShrink:0}}>
-        <div style={{display:"flex",alignItems:"center",gap:14}}>
-          <div onClick={onBack} style={{width:36,height:36,borderRadius:10,background:"rgba(255,255,255,0.12)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:"#fff"}}>&#8249;</div>
-          <div style={{flex:1}}>
-            <p style={{fontSize:11,color:RED,margin:"0 0 2px",letterSpacing:2,textTransform:"uppercase",fontWeight:800}}>Predicto</p>
-            <h2 style={{fontSize:17,fontWeight:800,color:"#fff",margin:0}}>{T[lang].boards}</h2>
+      <div style={{position:"relative",zIndex:1,background:"transparent",padding:"12px 20px 10px",flexShrink:0}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+          <div onClick={onBack} style={{width:36,height:36,borderRadius:10,background:"rgba(0,0,0,0.05)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:DARK,flexShrink:0}}>&#8249;</div>
+          <div style={{textAlign:"center"}}>
+            <p style={{fontSize:12,color:RED,margin:"0 0 2px",letterSpacing:3,textTransform:"uppercase",fontWeight:800}}>Predicto</p>
+            <h1 style={{fontSize:20,fontWeight:900,color:NAVY,margin:0}}>WORLD CUP 2026</h1>
+            <p style={{fontSize:11,color:"#888",margin:"3px 0 0"}}>{T[lang].location}</p>
           </div>
-          <button onClick={()=>{
-            setEditBoard(null);
-            setCName(""); setCPassword(""); setCEmoji(""); setCMaxPlayers(10); setCSlots(3); setCPrizes(["","",""]);
-            setView("create");
-          }}
-            style={{background:"rgba(255,255,255,0.15)",border:"none",borderRadius:10,padding:"8px 14px",
-              color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer"}}>
+          <div style={{width:36}}/>
+        </div>
+        <div style={{display:"flex",justifyContent:"flex-end",marginTop:10}}>
+          <button onClick={()=>{ setEditBoard(null); setCName(""); setCPassword(""); setCEmoji(""); setCMaxPlayers(10); setCSlots(3); setCPrizes(["","",""]); setView("create"); }}
+            style={{background:"rgba(0,0,0,0.06)",border:"none",borderRadius:10,padding:"8px 14px",
+              color:DARK,fontSize:12,fontWeight:700,cursor:"pointer"}}>
             + {T[lang].createBoard}
           </button>
         </div>
@@ -4315,139 +4317,80 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
       )}
       <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",padding:"16px 20px 80px",position:"relative",zIndex:1}}>
 
-
-        {/* My created boards */}
         {/* Admin boards */}
-        {createdBoards.length>0&&(<>
-          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
-            <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:0}}>{T[lang].boardAdmin}</p>
-          </div>
-          {createdBoards.map(b=>(
-            <div key={b.id} style={{background:"#fff",borderRadius:14,boxShadow:"0 2px 12px rgba(0,0,0,0.10)",padding:"12px 14px",marginBottom:9}}>
-              <div style={{display:"flex",alignItems:"center",gap:12}}>
-                <div style={{width:44,height:44,borderRadius:"50%",background:`linear-gradient(135deg,${GREEN},#007A36)`,
-                  display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0,cursor:"pointer"}}
-                  onClick={()=>{
-                    setEditBoard(b);
-                    setCName(b.name);
-                    setCPassword(b.password||"");
-                    setCMaxPlayers(b.max||10);
-                    setCSlots(b.prizes?.length||3);
-                    setCPrizes(b.prizes?.length?[...b.prizes,...Array(5).fill("")]:["",...Array(4).fill("")]);
-                    setView("create");
-                  }} style={{cursor:"pointer"}}>{b.label}</div>
-                <div style={{flex:1,cursor:"pointer"}} onClick={()=>{
-                    setEditBoard(b);
-                    setCName(b.name);
-                    setCPassword(b.password||"");
-                    setCMaxPlayers(b.max||10);
-                    setCSlots(b.prizes?.length||3);
-                    setCPrizes(b.prizes?.length?[...b.prizes,...Array(5).fill("")]:["",...Array(4).fill("")]);
-                    setView("create");
-                  }}>
-                  <p style={{fontSize:13,fontWeight:700,color:DARK,margin:0}}>{b.name}</p>
-                  <p style={{fontSize:11,color:"#aaa",margin:"2px 0 0"}}>👥 {b.members}{b.max?"/"+b.max:""} members · 🔑 {b.code}</p>
-                </div>
-                <div style={{display:"flex",gap:6}}>
-                  <button onClick={()=>openMembers(b.id)}
-                    style={{background:"rgba(0,32,91,0.08)",border:"none",borderRadius:9,
-                      padding:"7px 10px",fontSize:11,fontWeight:700,color:NAVY,cursor:"pointer"}}>
-                    👥
-                  </button>
-                  <button onClick={()=>{
-                    setEditBoard(b);
-                    setCName(b.name);
-                    setCPassword(b.password||"");
-                    setCMaxPlayers(b.max||10);
-                    setCSlots(b.prizes?.length||3);
-                    setCPrizes(b.prizes?.length?[...b.prizes,...Array(5).fill("")]:["",...Array(4).fill("")]);
-                    setView("create");
-                  }} style={{background:"rgba(0,32,91,0.08)",border:"none",borderRadius:9,
-                    padding:"7px 10px",fontSize:11,fontWeight:700,color:NAVY,cursor:"pointer"}}>
-                    ✏️
-                  </button>
-                  <button onClick={async ()=>{
-                    if(!window.confirm(`Ștergi "${b.name}"?`)) return;
-                    if(onDeleteBoard) await onDeleteBoard(b.id);
-                  }} style={{background:"rgba(200,16,46,0.08)",border:"none",borderRadius:9,
-                    padding:"7px 10px",fontSize:11,fontWeight:700,color:RED,cursor:"pointer"}}>
-                    🗑️
-                  </button>
-                </div>
-              </div>
-              {/* Members list */}
-              {viewMembersBoard===b.id&&(
-                <div style={{marginTop:10,borderTop:"1px solid rgba(0,0,0,0.06)",paddingTop:10}}>
-                  {!(boardMembersMap[b.id]?.length > 0)?(
-                    <p style={{fontSize:12,color:"#bbb",textAlign:"center",margin:"8px 0"}}>No members yet</p>
-                  ):(boardMembersMap[b.id]||[]).map((m,mi)=>{
-                    const isMe = m.id === user?.id;
-                    const list = boardMembersMap[b.id];
-                    const leaders = boardLeadersMap[b.id] || leaderboardData[b.id] || [];
-                    const lEntry = leaders.find(l => l.name === m.name);
-                    const rankMedals = ["🥇","🥈","🥉"];
-                    const rankLabel = lEntry ? (rankMedals[lEntry.rank-1] || `#${lEntry.rank}`) : null;
-                    return (
-                    <div key={m.id} style={{display:"flex",alignItems:"center",gap:10,padding:"6px 0",
-                      borderBottom:mi<(list.length-1)?"1px solid rgba(0,0,0,0.04)":"none"}}>
-                      <div style={{width:30,height:30,borderRadius:"50%",
-                        background:isMe?`${NAVY}22`:"rgba(0,0,0,0.08)",
-                        display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                        <span style={{fontSize:12}}>{m.name[0]}</span>
-                      </div>
-                      <span style={{flex:1,fontSize:12,fontWeight:600,color:isMe?NAVY:DARK}}>
-                        {m.name}{isMe?" (Tu)":""}{m.role==="admin"?" · admin":""}
-                      </span>
-                      <span style={{fontSize:11,fontWeight:700,color:"#aaa",marginRight:6}}>
-                        {rankLabel && <>{rankLabel} </>}<span style={{color:NAVY}}>{lEntry?.pts ?? 0}pt</span>
-                      </span>
-                      <button onClick={async ()=>{
-                        if(onRemoveMember) await onRemoveMember(b.id, m.id);
-                        setBoardMembersMap(prev=>({...prev,[b.id]:prev[b.id].filter(x=>x.id!==m.id)}));
-                      }} style={{background:"rgba(200,16,46,0.08)",border:"none",borderRadius:8,
-                          padding:"4px 10px",fontSize:11,fontWeight:700,color:RED,cursor:"pointer"}}>
-                        {T[lang].remove}
-                      </button>
-                    </div>
-                    );
-                  })}
-                </div>
-              )}
+        {createdBoards.length>0&&(
+          <div style={{background:"#fff",borderRadius:14,boxShadow:"0 2px 12px rgba(0,0,0,0.10)",marginBottom:12,overflow:"hidden"}}>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 14px 8px"}}>
+              <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:0}}>{T[lang].boardAdmin}</p>
+              <span style={{fontSize:11,color:"#bbb"}}>{createdBoards.length} boards</span>
             </div>
-          ))}
-        </>)}
-
-        {/* Joined boards (exclude admin boards shown above) */}
-        {myBoards.filter(b=>!createdBoards.some(c=>c.id===b.id)).length>0&&(<>
-          <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 10px"}}>{T[lang].joinedBoards}</p>
-          {myBoards.filter(b=>!createdBoards.some(c=>c.id===b.id)).map(b=>{
-            // Get latest data from createdBoards or availBoards
-            const latest = createdBoards.find(c=>c.id===b.id)||availBoards.find(c=>c.id===b.id)||b;
-            return (
-            <div key={b.id} onClick={()=>onJoin&&onJoin(b.id)}
-              style={{background:"#fff",borderRadius:14,boxShadow:"0 2px 12px rgba(0,0,0,0.10)",padding:"12px 14px",marginBottom:9,cursor:"pointer"}}>
-              <div style={{display:"flex",alignItems:"center",gap:12}}>
-                <div style={{width:44,height:44,borderRadius:"50%",
-                  background:b.isGlobal?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:`linear-gradient(135deg,#5856D6,#3634A3)`,
-                  display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>{latest.label}</div>
-                <div style={{flex:1}}>
-                  <p style={{fontSize:13,fontWeight:700,color:DARK,margin:0}}>{latest.name}</p>
-                  <p style={{fontSize:11,color:"#aaa",margin:"2px 0 0"}}>👥 {latest.members}{latest.max?"/"+latest.max:""} members</p>
+            <div style={{height:1,background:"rgba(0,0,0,0.06)"}}/>
+            {createdBoards.map((b,bi)=>(
+              <div key={b.id}>
+                <div style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px"}}>
+                  <div style={{width:44,height:44,borderRadius:"50%",background:`linear-gradient(135deg,${GREEN},#007A36)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>{b.label}</div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <p style={{fontSize:13,fontWeight:700,color:DARK,margin:0}}>{b.name}</p>
+                    <p style={{fontSize:11,color:"#aaa",margin:"2px 0 0"}}>👥 {b.members}{b.max?"/"+b.max:""} · 🔑 {b.code}</p>
+                  </div>
+                  <div style={{display:"flex",gap:6}}>
+                    <button onClick={()=>openMembers(b.id)} style={{background:"rgba(0,32,91,0.08)",border:"none",borderRadius:9,padding:"7px 10px",fontSize:11,fontWeight:700,color:NAVY,cursor:"pointer"}}>👥</button>
+                    <button onClick={()=>{ setEditBoard(b); setCName(b.name); setCPassword(b.password||""); setCMaxPlayers(b.max||10); setCSlots(b.prizes?.length||3); setCPrizes(b.prizes?.length?[...b.prizes,...Array(5).fill("")]:["",...Array(4).fill("")]); setView("create"); }} style={{background:"rgba(0,32,91,0.08)",border:"none",borderRadius:9,padding:"7px 10px",fontSize:11,fontWeight:700,color:NAVY,cursor:"pointer"}}>✏️</button>
+                    <button onClick={async()=>{ if(!window.confirm(`Ștergi "${b.name}"?`)) return; if(onDeleteBoard) await onDeleteBoard(b.id); }} style={{background:"rgba(200,16,46,0.08)",border:"none",borderRadius:9,padding:"7px 10px",fontSize:11,fontWeight:700,color:RED,cursor:"pointer"}}>🗑️</button>
+                  </div>
                 </div>
-                <div style={{background:"#E8F0FF",borderRadius:9,padding:"7px 12px",fontSize:11,fontWeight:700,color:NAVY}}>
-                  ✓ Joined
-                </div>
-                {!b.isGlobal&&(
-                  <button onClick={e=>{e.stopPropagation();setLeaveConfirmBoard(b);}}
-                    style={{background:"rgba(200,16,46,0.08)",border:"none",borderRadius:9,padding:"7px 10px",fontSize:13,color:RED,cursor:"pointer",flexShrink:0}}>
-                    🗑️
-                  </button>
+                {viewMembersBoard===b.id&&(
+                  <div style={{margin:"0 14px 10px",borderTop:"1px solid rgba(0,0,0,0.06)",paddingTop:8}}>
+                    {!(boardMembersMap[b.id]?.length>0)?(<p style={{fontSize:12,color:"#bbb",margin:"4px 0"}}>No members yet</p>)
+                    :(boardMembersMap[b.id]||[]).map((m,mi)=>{
+                      const isMe=m.id===user?.id;
+                      const leaders=boardLeadersMap[b.id]||leaderboardData[b.id]||[];
+                      const lEntry=leaders.find(l=>l.name===m.name);
+                      const rankMedals=["🥇","🥈","🥉"];
+                      const rankLabel=lEntry?(rankMedals[lEntry.rank-1]||`#${lEntry.rank}`):null;
+                      return (
+                        <div key={m.id} style={{display:"flex",alignItems:"center",gap:8,padding:"5px 0",borderBottom:mi<(boardMembersMap[b.id].length-1)?"1px solid rgba(0,0,0,0.04)":"none"}}>
+                          <span style={{flex:1,fontSize:12,fontWeight:600,color:isMe?NAVY:DARK}}>{m.name}{isMe?" (Tu)":""}</span>
+                          <span style={{fontSize:11,color:NAVY,fontWeight:700}}>{rankLabel&&<>{rankLabel} </>}{lEntry?.pts??0}pt</span>
+                          <button onClick={async()=>{ if(onRemoveMember) await onRemoveMember(b.id,m.id); setBoardMembersMap(prev=>({...prev,[b.id]:prev[b.id].filter(x=>x.id!==m.id)})); }} style={{background:"rgba(200,16,46,0.08)",border:"none",borderRadius:8,padding:"4px 10px",fontSize:11,fontWeight:700,color:RED,cursor:"pointer"}}>{T[lang].remove}</button>
+                        </div>
+                      );
+                    })}
+                  </div>
                 )}
+                {bi<createdBoards.length-1&&<div style={{height:1,background:"rgba(0,0,0,0.05)",margin:"0 14px"}}/>}
               </div>
+            ))}
+          </div>
+        )}
+
+        {/* My boards */}
+        {myBoards.filter(b=>!createdBoards.some(c=>c.id===b.id)).length>0&&(
+          <div style={{background:"#fff",borderRadius:14,boxShadow:"0 2px 12px rgba(0,0,0,0.10)",marginBottom:12,overflow:"hidden"}}>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 14px 8px"}}>
+              <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:0}}>{T[lang].joinedBoards}</p>
+              <span style={{fontSize:11,color:"#bbb"}}>{myBoards.filter(b=>!createdBoards.some(c=>c.id===b.id)).length} boards</span>
             </div>
-            );
-          })}
-        </>)}
+            <div style={{height:1,background:"rgba(0,0,0,0.06)"}}/>
+            {myBoards.filter(b=>!createdBoards.some(c=>c.id===b.id)).map((b,bi,arr)=>{
+              const latest=createdBoards.find(c=>c.id===b.id)||availBoards.find(c=>c.id===b.id)||b;
+              return (
+                <div key={b.id}>
+                  <div style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",cursor:"pointer"}} onClick={()=>onJoin&&onJoin(b.id)}>
+                    <div style={{width:44,height:44,borderRadius:"50%",background:b.isGlobal?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:`linear-gradient(135deg,#5856D6,#3634A3)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>{latest.label}</div>
+                    <div style={{flex:1,minWidth:0}}>
+                      <p style={{fontSize:13,fontWeight:700,color:DARK,margin:0}}>{latest.name}</p>
+                      <p style={{fontSize:11,color:"#aaa",margin:"2px 0 0"}}>👥 {latest.members}{latest.max?"/"+latest.max:""} members</p>
+                    </div>
+                    <div style={{background:"#E8F0FF",borderRadius:9,padding:"7px 12px",fontSize:11,fontWeight:700,color:NAVY,flexShrink:0}}>✓ Joined</div>
+                    {!b.isGlobal&&<button onClick={e=>{e.stopPropagation();setLeaveConfirmBoard(b);}} style={{background:"rgba(200,16,46,0.08)",border:"none",borderRadius:9,padding:"7px 10px",fontSize:13,color:RED,cursor:"pointer",flexShrink:0}}>🗑️</button>}
+                  </div>
+                  {bi<arr.length-1&&<div style={{height:1,background:"rgba(0,0,0,0.05)",margin:"0 14px"}}/>}
+                </div>
+              );
+            })}
+          </div>
+        )}
 
         {/* Leave board confirmation popup */}
         {leaveConfirmBoard && (
@@ -4475,80 +4418,49 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
 
         {/* Available boards */}
         {(()=>{
-          const allAvail = [...availBoards, ...createdBoards].filter(b=>!isJoined(b.id));
+          const allAvail=[...availBoards,...createdBoards].filter(b=>!isJoined(b.id));
           if(allAvail.length===0) return null;
-          const isCodeSearch = /^[A-Z][0-9]{5}$/.test(boardSearch.trim().toUpperCase());
-          const filtered = boardSearch.trim() && !isCodeSearch
+          const isCode=/^[A-Z][0-9]{5}$/.test(boardSearch.trim().toUpperCase());
+          const filtered=boardSearch.trim()&&!isCode
             ? allAvail.filter(b=>b.name.toLowerCase().includes(boardSearch.toLowerCase()))
-            : !boardSearch.trim() ? allAvail.slice(0,6) : [];
-          const hasMore = !boardSearch.trim() && allAvail.length > 6;
-          const isCode = /^[A-Z][0-9]{5}$/.test(boardSearch.trim().toUpperCase());
+            : !boardSearch.trim() ? allAvail.slice(0,8) : [];
+          const hasMore=!boardSearch.trim()&&allAvail.length>8;
           return (<>
-          <div style={{background:"#fff",borderRadius:14,boxShadow:"0 2px 12px rgba(0,0,0,0.10)",marginBottom:9,overflow:"hidden"}}>
-            {/* Header */}
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 14px 8px"}}>
-              <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:0}}>{T[lang].availableBoards}</p>
-              <span style={{fontSize:11,color:"#bbb"}}>{allAvail.length} boards</span>
-            </div>
-            {/* Search inside card */}
-            <div style={{margin:"0 14px 10px",background:"rgba(0,0,0,0.04)",borderRadius:10,
-                padding:"9px 12px",display:"flex",gap:8,alignItems:"center",
-                border:isCode?`1.5px solid ${NAVY}`:"1.5px solid transparent"}}>
+            <div style={{background:"rgba(0,0,0,0.04)",borderRadius:10,padding:"9px 12px",display:"flex",gap:8,alignItems:"center",marginBottom:10,border:isCode?`1.5px solid ${NAVY}`:"1.5px solid transparent"}}>
               <span style={{fontSize:14,opacity:0.4}}>{isCode?"🔑":"🔍"}</span>
-              <input value={boardSearch}
-                onChange={e=>{ setBoardSearch(e.target.value); setCodeError(""); }}
-                placeholder="Search or enter invite code..."
-                style={{flex:1,background:"transparent",border:"none",outline:"none",fontSize:16,color:DARK}}/>
+              <input value={boardSearch} onChange={e=>{setBoardSearch(e.target.value);setCodeError("");}} placeholder="Search or enter invite code..." style={{flex:1,background:"transparent",border:"none",outline:"none",fontSize:14,color:DARK}}/>
               {boardSearch&&(isCode?(
-                <button onClick={()=>{
-                  const found=[...availBoards,...createdBoards].find(b=>b.code===boardSearch.trim().toUpperCase()||b.id===boardSearch.trim());
-                  if(found){joinBoard(found);setBoardSearch("");setCodeError("");}
-                  else setCodeError("Code not found. Check with the admin.");
-                }} style={{background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,color:"#fff",border:"none",
-                  borderRadius:8,padding:"6px 12px",fontSize:12,fontWeight:700,cursor:"pointer"}}>Join</button>
-              ):(
-                <span onClick={()=>setBoardSearch("")} style={{fontSize:13,color:"#bbb",cursor:"pointer"}}>✕</span>
-              ))}
+                <button onClick={()=>{ const found=[...availBoards,...createdBoards].find(b=>b.code===boardSearch.trim().toUpperCase()||b.id===boardSearch.trim()); if(found){joinBoard(found);setBoardSearch("");setCodeError("");}else setCodeError("Code not found."); }} style={{background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,color:"#fff",border:"none",borderRadius:8,padding:"6px 12px",fontSize:12,fontWeight:700,cursor:"pointer"}}>Join</button>
+              ):(<span onClick={()=>setBoardSearch("")} style={{fontSize:13,color:"#bbb",cursor:"pointer"}}>✕</span>))}
             </div>
-            {isCode&&<p style={{fontSize:11,color:NAVY,margin:"-4px 14px 8px",fontWeight:600}}>🔑 Invite code detected — tap Join</p>}
-            {codeError&&<p style={{fontSize:11,color:RED,margin:"-4px 14px 8px"}}>{codeError}</p>}
-            {/* Divider */}
-            <div style={{height:1,background:"rgba(0,0,0,0.06)",margin:"0 0 2px"}}/>
-
-
-            {filtered.length===0?(
-              <p style={{fontSize:13,color:"#bbb",textAlign:"center",padding:"16px 0"}}>No boards found for "{boardSearch}"</p>
-            ):filtered.map((b,bi)=>{
-            const medals = ["🥇","🥈","🥉","🏅","🎖️"];
-            const hasPrizes = b.prizes&&b.prizes.length>0;
-            return (
-            <div key={b.id} style={{padding:"12px 14px",borderTop:bi>0?"1px solid rgba(0,0,0,0.05)":"none"}}>
-              <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:hasPrizes?10:0}}>
-                <div style={{width:44,height:44,borderRadius:"50%",background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>{b.label}</div>
-                <div style={{flex:1,minWidth:0}}>
-                  <p style={{fontSize:13,fontWeight:700,color:DARK,margin:0}}>{b.name}</p>
-                  <p style={{fontSize:11,color:"#aaa",margin:"2px 0 0"}}>👥 {b.members}{b.max?"/"+b.max:""} members{b.password?" · 🔒":""}</p>
-                </div>
-                <button onClick={()=>joinBoard(b)}
-                  style={{background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,color:"#fff",border:"none",
-                    borderRadius:9,padding:"7px 14px",fontSize:12,fontWeight:700,cursor:"pointer",flexShrink:0}}>
-                  Join
-                </button>
+            {isCode&&<p style={{fontSize:11,color:NAVY,margin:"-6px 0 8px",fontWeight:600}}>🔑 Invite code detected — tap Join</p>}
+            {codeError&&<p style={{fontSize:11,color:RED,margin:"-6px 0 8px"}}>{codeError}</p>}
+            <div style={{background:"#fff",borderRadius:14,boxShadow:"0 2px 12px rgba(0,0,0,0.10)",marginBottom:12,overflow:"hidden"}}>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 14px 8px"}}>
+                <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:0}}>{T[lang].availableBoards}</p>
+                <span style={{fontSize:11,color:"#bbb"}}>{allAvail.length} boards</span>
               </div>
-              {hasPrizes&&(
-                <p style={{fontSize:11,color:"#888",margin:"4px 0 0",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
-                  {b.prizes.map((p,i)=>`${medals[i]||"🎖️"} ${p}`).join(" · ")}
-                </p>
-              )}
+              <div style={{height:1,background:"rgba(0,0,0,0.06)"}}/>
+              {filtered.length===0
+                ? <p style={{fontSize:13,color:"#bbb",textAlign:"center",padding:"16px 14px"}}>No boards found for "{boardSearch}"</p>
+                : filtered.map((b,bi)=>{
+                  return (
+                    <div key={b.id}>
+                      <div style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px"}}>
+                        <div style={{width:44,height:44,borderRadius:"50%",background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>{b.label}</div>
+                        <div style={{flex:1,minWidth:0}}>
+                          <p style={{fontSize:13,fontWeight:700,color:DARK,margin:0}}>{b.name}</p>
+                          <p style={{fontSize:11,color:"#aaa",margin:"2px 0 0"}}>👥 {b.members}{b.max?"/"+b.max:""}{b.password?" · 🔒":""}</p>
+                        </div>
+                        <button onClick={()=>joinBoard(b)} style={{background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,color:"#fff",border:"none",borderRadius:9,padding:"7px 14px",fontSize:12,fontWeight:700,cursor:"pointer",flexShrink:0}}>Join</button>
+                      </div>
+                      {bi<filtered.length-1&&<div style={{height:1,background:"rgba(0,0,0,0.05)",margin:"0 14px"}}/>}
+                    </div>
+                  );
+                })
+              }
             </div>
-            );
-          })}
-          {hasMore&&(
-            <p style={{fontSize:12,color:"#bbb",textAlign:"center",padding:"8px 0",fontStyle:"italic"}}>
-              +{allAvail.length-6} more · use search to find them
-            </p>
-          )}
-          </div>
+            {hasMore&&<p style={{fontSize:12,color:"#bbb",textAlign:"center",marginTop:-4,marginBottom:12,fontStyle:"italic"}}>+{allAvail.length-8} more · use search</p>}
           </>);
         })()}
       </div>
@@ -5749,18 +5661,19 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,position:"relative",overflow:"hidden"}}>
       <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
-      <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"10px 20px 14px",flexShrink:0}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:myBoards.length>1?12:0}}>
-          <div onClick={onBack} style={{width:36,height:36,borderRadius:10,background:"rgba(255,255,255,0.12)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:"#fff"}}>&#8249;</div>
+      <div style={{position:"relative",zIndex:1,background:"transparent",padding:"10px 20px 0",flexShrink:0}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:myBoards.length>1?0:8}}>
+          <div onClick={onBack} style={{width:36,height:36,borderRadius:10,background:"rgba(0,0,0,0.05)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:DARK}}>&#8249;</div>
           <div style={{textAlign:"center"}}>
-            <p style={{fontSize:12,color:RED,margin:0,letterSpacing:2,textTransform:"uppercase",fontWeight:800}}>Predicto</p>
-            <span style={{fontSize:16,fontWeight:800,color:"#fff"}}>{T[lang].leaderboard}</span>
+            <p style={{fontSize:12,color:RED,margin:"0 0 2px",letterSpacing:3,textTransform:"uppercase",fontWeight:800}}>Predicto</p>
+            <h1 style={{fontSize:20,fontWeight:900,color:NAVY,margin:0}}>WORLD CUP 2026</h1>
+            <p style={{fontSize:11,color:"#888",margin:"3px 0 0"}}>{T[lang].location}</p>
           </div>
           <div style={{width:36}}/>
         </div>
         {myBoards.length>0&&(
-          <div style={{display:"flex",alignItems:"flex-start",gap:10,overflowX:"auto",scrollbarWidth:"none",paddingBottom:2}}>
-            {myBoards.map(b=><CircleTab key={b.id} label={b.label} name={b.isGlobal?"Global":b.name.split(" ")[0]} isActive={activeBoardId===b.id} onClick={()=>setActiveBoardId&&setActiveBoardId(b.id)}/>)}
+          <div style={{display:"flex",alignItems:"flex-start",gap:10,overflowX:"auto",scrollbarWidth:"none",padding:"10px 0 2px"}}>
+            {myBoards.map(b=><CircleTab key={b.id} label={b.label} name={b.isGlobal?"Global":b.name.split(" ")[0]} isActive={activeBoardId===b.id} onClick={()=>setActiveBoardId&&setActiveBoardId(b.id)} lightBg/>)}
           </div>
         )}
       </div>
