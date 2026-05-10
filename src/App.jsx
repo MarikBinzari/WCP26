@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import trophy from "./assets/hands-trophy.png";
 import varBg from "./assets/var-bg.jpg";
+import predictoLogo from "./assets/predicto-logo.png";
 import { ALL_GROUPS_DATA, FLAGS, TEAM_COLORS, CALENDAR_EVENTS } from "./data/worldcup2026.js";
 import { supabase } from "./supabase.js";
 import { loadPredictions, savePredictions, loadExactScores, saveExactScore, loadUserBoards, loadAvailableBoards, createBoard, joinBoardByCode, joinBoardById, loadLeaderboard, fetchScoringRules, fetchMemberCounts, removeBoardMember, removeParticipation, deleteBoard, loadBoardMembers, checkDbHealth, checkEmailExists } from "./db.js";
@@ -4958,6 +4959,49 @@ function DevPanel({ onStart, onAutoPick }) {
   );
 }
 
+function PredictoLogo({ scale = 1 }) {
+  const s = scale;
+  const pSize   = Math.round(46 * s);
+  const txtSize = Math.round(39 * s);
+  const ballW   = Math.round(36 * s);
+  const acLeft  = Math.round(6  * s);
+  const acTop   = Math.round(17 * s);
+  const acBT    = Math.round(7  * s);
+  const acBL    = Math.round(13 * s);
+  return (
+    <div style={{display:"flex",alignItems:"center",fontStyle:"italic",fontWeight:900,letterSpacing:-0.5,
+      fontFamily:"'Barlow Condensed','Arial Narrow','Impact',sans-serif"}}>
+      {/* P cu accent roșu */}
+      <div style={{position:"relative",marginRight:Math.round(2*s)}}>
+        <span style={{color:"#002B7F",fontSize:pSize,lineHeight:1,display:"block"}}>P</span>
+        <div style={{
+          position:"absolute",left:acLeft,top:acTop,width:0,height:0,
+          borderTop:`${acBT}px solid transparent`,
+          borderBottom:`${acBT}px solid transparent`,
+          borderLeft:`${acBL}px solid #FF1E1E`,
+          transform:"skewX(-20deg)",
+        }}/>
+      </div>
+      {/* redict + minge */}
+      <div style={{display:"flex",alignItems:"flex-end"}}>
+        <span style={{color:"#002B7F",fontSize:txtSize,lineHeight:1}}>redict</span>
+        <div style={{marginLeft:Math.round(2*s),marginBottom:Math.round(2*s)}}>
+          <svg width={ballW} height={ballW} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="50" cy="50" r="47" stroke="#002B7F" strokeWidth="6" fill="white"/>
+            <polygon points="50,30 65,40 60,58 40,58 35,40" fill="#002B7F"/>
+            <polygon points="50,30 35,40 20,30 30,15 45,18" fill="#002B7F"/>
+            <polygon points="65,40 80,30 70,15 55,18 50,30" fill="#002B7F"/>
+            <polygon points="40,58 30,75 45,85 50,70" fill="#002B7F"/>
+            <polygon points="60,58 70,75 55,85 50,70" fill="#002B7F"/>
+            <path d="M20 30 L35 40 L40 58 L30 75" stroke="#002B7F" strokeWidth="2"/>
+            <path d="M80 30 L65 40 L60 58 L70 75" stroke="#002B7F" strokeWidth="2"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function SplashScreen({ onNext, lang, setLang, simDay, simHour=12, simMin=0, tournamentStarted }) {
   const {d,h,m,s}=useCountdown();
   // Calculate days left based on simDay or real date
@@ -4978,8 +5022,22 @@ function SplashScreen({ onNext, lang, setLang, simDay, simHour=12, simMin=0, tou
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"20px 22px 0",position:"relative",zIndex:10}}>
         <div style={{width:44}}/>
         <div style={{textAlign:"center"}}>
-          <p style={{fontSize:12,color:"#C8102E",margin:"0 0 2px",letterSpacing:3,textTransform:"uppercase",fontWeight:800}}>Predicto</p>
-          <h1 style={{fontSize:20,fontWeight:900,color:"#00205B",margin:0}}>WORLD CUP 2026</h1>
+          {/* Predicto logo */}
+          <img src={predictoLogo} alt="Predicto" style={{
+            height:54, width:"auto",
+            objectFit:"contain",
+            marginBottom:4,
+            display:"block",
+            marginLeft:"auto",
+            marginRight:"auto",
+            position:"relative",
+            left:6,
+          }}/>
+          <h1 style={{
+            fontSize:20,fontWeight:900,margin:0,letterSpacing:2,
+            background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",
+            WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text",
+          }}>WORLD CUP 2026</h1>
           <p style={{fontSize:11,color:"#888",margin:"3px 0 0"}}>{T[lang].location}</p>
         </div>
         <LangSelector lang={lang} setLang={setLang}/>
