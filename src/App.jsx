@@ -5034,7 +5034,7 @@ function SplashScreen({ onNext, lang, setLang, simDay, simHour=12, simMin=0, tou
             left:6,
           }}/>
           <h1 style={{
-            fontSize:20,fontWeight:900,margin:0,letterSpacing:2,
+            fontSize:20,fontWeight:900,margin:"-6px 0 0",letterSpacing:2,lineHeight:1,
             background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",
             WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text",
           }}>WORLD CUP 2026</h1>
