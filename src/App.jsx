@@ -3665,7 +3665,7 @@ function CircleTab({ label, name, isActive, onClick, lightBg=false }) {
 
 
 // ── HOME ────────────────────────────────────────────────────────────────────
-function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenGroups, myBoards, predictionsComplete, instantPickDone, exactScores, activeBoardId, setActiveBoardId, tournamentStarted, simDay, simHour, simMin, createdBoards=[], showFirstAction, leaderboardData={}, boardsLoading=false }) {
+function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenGroups, myBoards, predictionsComplete, instantPickDone, exactScores, activeBoardId, setActiveBoardId, tournamentStarted, simDay, simHour, simMin, createdBoards=[], showFirstAction, leaderboardData={}, boardsLoading=false, predictionsLoaded={} }) {
   const lang = useLang();
   const displayName = useDisplayName();
   const initials = useInitials();
@@ -3794,7 +3794,7 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
                   padding:"10px 12px",cursor:(deadlinePassed&&!boardDone)?"default":"pointer",position:"relative",
                   opacity:isLocked?0.6:1,
                   ...(showFirstAction&&!boardDone&&!deadlinePassed?{animation:"pulse 1.5s ease-in-out 3"}:{})}}>
-                {!boardDone&&!deadlinePassed&&(
+                {!boardDone&&!deadlinePassed&&predictionsLoaded[activeId]&&(
                   <div style={{position:"absolute",top:-5,right:-5,
                     background:RED,borderRadius:"50%",minWidth:18,height:18,
                     display:"flex",alignItems:"center",justifyContent:"center",
@@ -3806,7 +3806,7 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
                 <p style={{fontSize:13,fontWeight:800,color:isLocked?"#aaa":DARK,margin:0}}>{T[lang].predictions}</p>
                 <p style={{fontSize:11,margin:"2px 0 0",fontWeight:600,
                   color:boardDone?GREEN:isLocked?"#bbb":"#888"}}>
-                  {boardDone?T[lang].completed:isLocked?T[lang].deadlinePassed:T[lang].dueJun11}
+                  {!predictionsLoaded[activeId]?"…":boardDone?T[lang].completed:isLocked?T[lang].deadlinePassed:T[lang].dueJun11}
                 </p>
               </div>
             );
@@ -7063,6 +7063,7 @@ function AccountScreen({ setLang, onBoards, onSignOut, onShowGuide, user }) {
   const [deleteError, setDeleteError] = useState("");
 
   const handleSignOut = async () => {
+    try { localStorage.removeItem('myBoards'); } catch {}
     await supabase.auth.signOut();
     onSignOut();
   };
@@ -7345,11 +7346,17 @@ function App() {
             koPicks:       preds.ko_picks       || {},
           }
         }));
+        const hasAnyPicks = Object.keys(preds.group_rankings || {}).length > 0 ||
+                            (preds.best3_picks || []).length > 0 ||
+                            Object.keys(preds.ko_picks || {}).length > 0;
+        if (hasAnyPicks)
+          setPredictionsComplete(p => ({ ...p, [boardId]: true }));
         if (Object.keys(preds.ko_picks || {}).length > 0)
           setAllInstantPickDone(p => ({ ...p, [boardId]: true }));
       }
       if (scores && Object.keys(scores).length > 0)
         setExactScoresByBoard(p => ({ ...p, [boardId]: scores }));
+      setPredictionsLoaded(p => ({ ...p, [boardId]: true }));
     };
 
     // Boards + member counts + predicții pentru toate boardurile
@@ -7366,7 +7373,9 @@ function App() {
       const allMyBoards = [...INITIAL_BOARDS, ...participantBoards];
       const allIds = [...allMyBoards.map(b => b.id), ...adminBoards.map(b => b.id), ...avail.map(b => b.id)];
       const counts = await fetchMemberCounts(allIds);
-      setMyBoards(allMyBoards.map(b => ({ ...b, members: counts[b.id] ?? b.members })));
+      const freshBoards = allMyBoards.map(b => ({ ...b, members: counts[b.id] ?? b.members }));
+      setMyBoards(freshBoards);
+      try { localStorage.setItem('myBoards', JSON.stringify(freshBoards)); } catch {}
       setCreatedBoards(adminBoards.map(b => ({ ...b, members: counts[b.id] ?? 0 })));
       setAvailableBoards(avail.map(b => ({ ...b, members: counts[b.id] ?? 0 })));
       return boards;
@@ -7400,8 +7409,9 @@ function App() {
   // Simulated current date used across app
   const simDate = simDay ? new Date(2026,5,simDay,simHour,simMin,0) : null;
   const [lang, setLang] = useState("en");
-  const [myBoards, setMyBoards] = useState([]);
-  const [boardsLoading, setBoardsLoading] = useState(true);
+  const _cachedBoards = (() => { try { const s = localStorage.getItem('myBoards'); return s ? JSON.parse(s) : []; } catch { return []; } })();
+  const [myBoards, setMyBoards] = useState(_cachedBoards);
+  const [boardsLoading, setBoardsLoading] = useState(_cachedBoards.length === 0);
   const [toast, showToast] = useToast();
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [skipOnboarding, setSkipOnboarding] = useState(false);
@@ -7414,6 +7424,7 @@ function App() {
 
   // Predictions complete per board id
   const [predictionsComplete, setPredictionsComplete] = useState({});
+  const [predictionsLoaded, setPredictionsLoaded] = useState({});
   const [activeBoardId, setActiveBoardId] = useState("global");
 
   useEffect(() => {
@@ -7531,7 +7542,8 @@ function App() {
             createdBoards={createdBoards}
             showFirstAction={showFirstAction}
             leaderboardData={leaderboardData}
-            boardsLoading={boardsLoading}/>}
+            boardsLoading={boardsLoading}
+            predictionsLoaded={predictionsLoaded}/>}
           {screen===SCREENS.BOARDS&&<BoardsScreen
             onBack={()=>setScreen(SCREENS.HOME)}
             myBoards={myBoards} setMyBoards={setMyBoards}
