@@ -3697,18 +3697,18 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",position:"relative"}}>
       <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.03,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
-      <div style={{background:"transparent",padding:"12px 20px 10px",flexShrink:0,position:"relative",zIndex:1}}>
+      <div style={{background:"transparent",padding:"8px 20px 4px",flexShrink:0,position:"relative",zIndex:1}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
           <div style={{width:36}}/>
           <div style={{textAlign:"center"}}>
-            <img src={predictoLogo} alt="Predicto" style={{height:44,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
+            <img src={predictoLogo} alt="Predicto" style={{height:40,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
             <h1 style={{fontSize:18,fontWeight:900,margin:"-4px 0 0",letterSpacing:2,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
-            <p style={{fontSize:11,color:"#888",margin:"3px 0 0"}}>{T[lang].location}</p>
+            <p style={{fontSize:11,color:"#888",margin:"2px 0 0"}}>{T[lang].location}</p>
           </div>
           <div style={{width:36,height:36,borderRadius:10,background:"rgba(0,0,0,0.05)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,alignSelf:"center"}}>🔔</div>
         </div>
         <div style={{overflowX:"auto",overflowY:"visible",scrollbarWidth:"none",margin:"0 -20px"}}>
-        <div style={{display:"flex",alignItems:"flex-start",gap:10,padding:"10px 20px 20px"}}>
+        <div style={{display:"flex",alignItems:"flex-start",gap:10,padding:"6px 20px 14px"}}>
           {boardsLoading
             ? <div style={{height:52,display:"flex",alignItems:"center"}}><span style={{width:44,height:44,borderRadius:"50%",background:"rgba(0,0,0,0.06)",display:"inline-block"}}/></div>
             : myBoards.map(b=><CircleTab key={b.id} label={b.label} name={b.isGlobal?"Global":b.name.split(" ")[0]} isActive={activeId===b.id} onClick={()=>setActiveId(b.id)} lightBg/>)}
@@ -3731,15 +3731,15 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
         {/* User stats card */}
         <div style={{background:"#fff",borderRadius:16,boxShadow:"0 8px 22px rgba(0,0,0,0.07)",padding:"10px 14px",marginBottom:10}}>
           <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:10}}>
-            <div style={{width:48,height:48,borderRadius:"50%",background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,
-              display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:18,fontWeight:800}}>
+            <div style={{width:44,height:44,borderRadius:"50%",background:"linear-gradient(135deg,rgba(10,46,138,0.65),rgba(0,24,64,0.65))",
+              display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:16,fontWeight:800}}>
               {initials}
             </div>
             <div style={{flex:1,minWidth:0}}>
               <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between"}}>
                 <div style={{flex:1,minWidth:0}}>
                   <p style={{fontSize:15,fontWeight:800,color:DARK,margin:0}}>{displayName}</p>
-                  <p style={{fontSize:12,color:"#666",margin:"2px 0 0"}}>{tournamentStarted?`${me?.pts||0} ${T[lang].ptsTotal}`:T[lang].tournamentStarts}</p>
+                  <p style={{fontSize:12,color:"#555",margin:"2px 0 0"}}>{tournamentStarted?`${me?.pts||0} ${T[lang].ptsTotal}`:T[lang].tournamentStarts}</p>
                 </div>
                 <span onClick={onLeaderboard} style={{fontSize:12,color:NAVY,fontWeight:500,cursor:"pointer",flexShrink:0,paddingLeft:8}}>{T[lang].viewAll}</span>
               </div>
@@ -3784,7 +3784,7 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
         </div>
 
         {/* Tasks */}
-        <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 6px"}}>{T[lang].yourTasks}</p>
+        <p style={{fontSize:11,fontWeight:700,color:"#666",textTransform:"uppercase",letterSpacing:0.8,margin:"0 0 6px"}}>{T[lang].yourTasks}</p>
         <div style={{display:"flex",gap:8,marginBottom:10}}>
           {/* Predictions task */}
           {(()=>{
@@ -3834,8 +3834,9 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
               <div onClick={()=>onOpenGroups&&onOpenGroups()}
                 style={{flex:1,background:"#fff",borderRadius:14,
                   boxShadow:missing>0
-                    ?"0 4px 16px rgba(0,0,0,0.15)"
+                    ?"0 4px 18px rgba(10,46,138,0.14)"
                     :"0 8px 22px rgba(0,0,0,0.07)",
+                  border:missing>0?"1.5px solid rgba(10,46,138,0.13)":"1.5px solid transparent",
                   padding:"10px 12px",cursor:"pointer",position:"relative"}}>
                 {missing>0&&(
                   <div style={{position:"absolute",top:2,right:2,
@@ -3898,8 +3899,8 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
             <div style={{marginBottom:10}}>
               {/* Header */}
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
-                <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:0}}>{T[lang].pathToTrophy}</p>
-                <span style={{fontSize:10,color:"#bbb",fontWeight:600}}>{T[lang].unlocksEvery}</span>
+                <p style={{fontSize:11,fontWeight:700,color:"#666",textTransform:"uppercase",letterSpacing:0.8,margin:0}}>{T[lang].pathToTrophy}</p>
+                <span style={{fontSize:10,color:"#777",fontWeight:600}}>{T[lang].unlocksEvery}</span>
               </div>
               <div style={{background:"#fff",borderRadius:14,boxShadow:"0 8px 22px rgba(0,0,0,0.07)",padding:"12px 14px"}}>
                 {steps.map((w,i)=>{
@@ -3943,7 +3944,7 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
                               color:w.locked&&!w.isFinal&&!isPast?"#999":w.isFinal?"#B8860B":isPast?"#999":DARK}}>
                               {w.label}
                             </span>
-                            <span style={{fontSize:10,color:w.locked&&!w.isFinal?"#aaa":"#888",
+                            <span style={{fontSize:10,color:w.locked&&!w.isFinal?"#888":"#666",
                               marginLeft:6,fontWeight:500}}>{w.stage}</span>
                           </div>
                           <span style={{fontSize:11,fontWeight:700,
@@ -4501,13 +4502,13 @@ function Footer({ active, onNavigate, lang }) {
               display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4,padding:0}}>
             <div style={{
               width:36,height:36,borderRadius:12,
-              background:isActive?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:BG,
+              background:isActive?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:"rgba(0,0,0,0.05)",
               boxShadow:isActive?"0 4px 12px rgba(0,32,91,0.3)":SHADOW_OUT,
               display:"flex",alignItems:"center",justifyContent:"center",
               fontSize:18,transition:"all 0.2s"}}>
               {tab.icon}
             </div>
-            <span style={{fontSize:11,fontWeight:isActive?700:500,color:isActive?NAVY:"#bbb",transition:"all 0.2s"}}>
+            <span style={{fontSize:11,fontWeight:isActive?700:500,color:isActive?NAVY:"#777",transition:"all 0.2s"}}>
               {tab.label}
             </span>
           </button>
