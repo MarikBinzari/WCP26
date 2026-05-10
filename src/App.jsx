@@ -3790,7 +3790,10 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
             const isLocked = deadlinePassed && !boardDone;
             return (
               <div onClick={()=>(!deadlinePassed||boardDone)&&onPredict(activeId)}
-                style={{flex:1,background:"#fff",borderRadius:14,boxShadow:"0 8px 22px rgba(0,0,0,0.07)",
+                style={{flex:1,background:"#fff",borderRadius:14,
+                  boxShadow:(!boardDone&&!deadlinePassed&&predictionsLoaded[activeId])
+                    ?"0 0 0 1.5px rgba(0,32,91,0.18), 0 8px 22px rgba(0,32,91,0.12)"
+                    :"0 8px 22px rgba(0,0,0,0.07)",
                   padding:"10px 12px",cursor:(deadlinePassed&&!boardDone)?"default":"pointer",position:"relative",
                   opacity:isLocked?0.6:1,
                   ...(showFirstAction&&!boardDone&&!deadlinePassed?{animation:"pulse 1.5s ease-in-out 3"}:{})}}>
@@ -3825,9 +3828,10 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
             const missing = total - scored;
             return (
               <div onClick={()=>onOpenGroups&&onOpenGroups()}
-                style={{flex:1,background:missing>0?`${NAVY}12`:"#fff",borderRadius:14,
-                  boxShadow:"0 8px 22px rgba(0,0,0,0.07)",
-                  border:missing>0?`1.5px solid ${NAVY}`:"1.5px solid transparent",
+                style={{flex:1,background:"#fff",borderRadius:14,
+                  boxShadow:missing>0
+                    ?"0 0 0 1.5px rgba(0,32,91,0.18), 0 8px 22px rgba(0,32,91,0.12)"
+                    :"0 8px 22px rgba(0,0,0,0.07)",
                   padding:"10px 12px",cursor:"pointer",position:"relative"}}>
                 {missing>0&&(
                   <div style={{position:"absolute",top:2,right:2,
