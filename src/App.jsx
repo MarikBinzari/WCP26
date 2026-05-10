@@ -3711,9 +3711,9 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
           {boardsLoading
             ? <div style={{height:52,display:"flex",alignItems:"center"}}><span style={{width:44,height:44,borderRadius:"50%",background:"rgba(0,0,0,0.06)",display:"inline-block"}}/></div>
             : myBoards.map(b=><CircleTab key={b.id} label={b.label} name={b.isGlobal?"Global":b.name.split(" ")[0]} isActive={activeId===b.id} onClick={()=>setActiveId(b.id)} lightBg/>)}
-          <div onClick={()=>onBoards("available")} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4,cursor:"pointer",flexShrink:0}}>
-            <div style={{width:44,height:44,borderRadius:"50%",background:"transparent",border:"2px dashed rgba(0,0,0,0.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,color:"rgba(0,0,0,0.3)"}}>+</div>
-            <span style={{fontSize:10,color:"rgba(0,0,0,0.35)",fontWeight:500}}>{T[lang].add}</span>
+          <div onClick={()=>onBoards("available")} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:5,cursor:"pointer",flexShrink:0,WebkitTapHighlightColor:"transparent"}}>
+            <div style={{width:44,height:44,borderRadius:"50%",background:"transparent",border:"2px dashed rgba(0,0,0,0.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:19,color:"rgba(0,0,0,0.3)"}}>+</div>
+            <span style={{fontSize:9,color:"rgba(0,0,0,0.45)",fontWeight:500,maxWidth:56,textAlign:"center",lineHeight:1.2}}>{T[lang].add}</span>
           </div>
         </div>
         </div>
