@@ -4426,19 +4426,21 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
             : !boardSearch.trim() ? allAvail.slice(0,8) : [];
           const hasMore=!boardSearch.trim()&&allAvail.length>8;
           return (<>
-            <div style={{background:"rgba(0,0,0,0.04)",borderRadius:10,padding:"9px 12px",display:"flex",gap:8,alignItems:"center",marginBottom:10,border:isCode?`1.5px solid ${NAVY}`:"1.5px solid transparent"}}>
-              <span style={{fontSize:14,opacity:0.4}}>{isCode?"🔑":"🔍"}</span>
-              <input value={boardSearch} onChange={e=>{setBoardSearch(e.target.value);setCodeError("");}} placeholder="Search or enter invite code..." style={{flex:1,background:"transparent",border:"none",outline:"none",fontSize:14,color:DARK}}/>
-              {boardSearch&&(isCode?(
-                <button onClick={()=>{ const found=[...availBoards,...createdBoards].find(b=>b.code===boardSearch.trim().toUpperCase()||b.id===boardSearch.trim()); if(found){joinBoard(found);setBoardSearch("");setCodeError("");}else setCodeError("Code not found."); }} style={{background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,color:"#fff",border:"none",borderRadius:8,padding:"6px 12px",fontSize:12,fontWeight:700,cursor:"pointer"}}>Join</button>
-              ):(<span onClick={()=>setBoardSearch("")} style={{fontSize:13,color:"#bbb",cursor:"pointer"}}>✕</span>))}
-            </div>
-            {isCode&&<p style={{fontSize:11,color:NAVY,margin:"-6px 0 8px",fontWeight:600}}>🔑 Invite code detected — tap Join</p>}
-            {codeError&&<p style={{fontSize:11,color:RED,margin:"-6px 0 8px"}}>{codeError}</p>}
             <div style={{background:"#fff",borderRadius:14,boxShadow:"0 2px 12px rgba(0,0,0,0.10)",marginBottom:12,overflow:"hidden"}}>
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 14px 8px"}}>
                 <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:0}}>{T[lang].availableBoards}</p>
                 <span style={{fontSize:11,color:"#bbb"}}>{allAvail.length} boards</span>
+              </div>
+              <div style={{padding:"0 14px 10px"}}>
+                <div style={{background:"rgba(0,0,0,0.04)",borderRadius:10,padding:"9px 12px",display:"flex",gap:8,alignItems:"center",border:isCode?`1.5px solid ${NAVY}`:"1.5px solid transparent"}}>
+                  <span style={{fontSize:14,opacity:0.4}}>{isCode?"🔑":"🔍"}</span>
+                  <input value={boardSearch} onChange={e=>{setBoardSearch(e.target.value);setCodeError("");}} placeholder="Search or enter invite code..." style={{flex:1,background:"transparent",border:"none",outline:"none",fontSize:14,color:DARK}}/>
+                  {boardSearch&&(isCode?(
+                    <button onClick={()=>{ const found=[...availBoards,...createdBoards].find(b=>b.code===boardSearch.trim().toUpperCase()||b.id===boardSearch.trim()); if(found){joinBoard(found);setBoardSearch("");setCodeError("");}else setCodeError("Code not found."); }} style={{background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,color:"#fff",border:"none",borderRadius:8,padding:"6px 12px",fontSize:12,fontWeight:700,cursor:"pointer"}}>Join</button>
+                  ):(<span onClick={()=>setBoardSearch("")} style={{fontSize:13,color:"#bbb",cursor:"pointer"}}>✕</span>))}
+                </div>
+                {isCode&&<p style={{fontSize:11,color:NAVY,margin:"6px 0 0",fontWeight:600}}>🔑 Invite code detected — tap Join</p>}
+                {codeError&&<p style={{fontSize:11,color:RED,margin:"6px 0 0"}}>{codeError}</p>}
               </div>
               <div style={{height:1,background:"rgba(0,0,0,0.06)"}}/>
               {filtered.length===0
