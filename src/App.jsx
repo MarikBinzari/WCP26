@@ -4341,8 +4341,12 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
                 Toate punctele și înregistrările tale vor fi șterse din boardul <strong style={{color:DARK}}>{leaveConfirmBoard.name}</strong>.
               </p>
               <button onClick={async()=>{
-                if(onRemoveMember) await onRemoveMember(leaveConfirmBoard.id, user?.id);
+                if(onRemoveMember) await onRemoveMember(leaveConfirmBoard.id, user?.id, leaveConfirmBoard.isAdmin);
                 setMyBoards(prev=>prev.filter(x=>x.id!==leaveConfirmBoard.id));
+                if(leaveConfirmBoard.isAdmin) {
+                  // board-ul nu mai e al adminului — apare în Available imediat
+                  setAvailBoards(prev=>[...prev, {...leaveConfirmBoard, isAdmin:false}]);
+                }
                 setLeaveConfirmBoard(null);
               }} style={{width:"100%",background:RED,color:"#fff",border:"none",borderRadius:14,padding:"14px 0",fontSize:15,fontWeight:700,cursor:"pointer",marginBottom:10}}>
                 Da, ieși din board
@@ -7576,8 +7580,13 @@ function App() {
               showToast("Board șters", "🗑️");
             }}
             leaderboardData={leaderboardData}
-            onRemoveMember={async (boardId, memberId) => {
+            onRemoveMember={async (boardId, memberId, isAdmin) => {
               await removeBoardMember(boardId, memberId);
+              if (memberId === user?.id && isAdmin) {
+                // Adminul iese din propriul board: eliberăm created_by
+                // ca refreshBoards să nu-l mai includă în myBoards și să apară în Available
+                await supabase.from('boards').update({ created_by: null }).eq('id', boardId).eq('created_by', memberId);
+              }
               if (memberId === user?.id) {
                 setMyBoards(prev => prev.filter(b => b.id !== boardId));
                 setAllInstantPickStates(prev => { const n = {...prev}; delete n[boardId]; return n; });
