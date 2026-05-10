@@ -2419,7 +2419,7 @@ function Best3Screen({ groups, getGroupStanding, picks, best3, setBest3, onDone 
 
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",position:"relative"}}>
-      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.03,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
       {/* Header with selected chips */}
       <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"12px 16px 14px",flexShrink:0}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
@@ -3053,7 +3053,7 @@ function InstantPickScreen({ onBack, onComplete, onModify, savedState, onStateCh
         <div style={{flex:1,display:"flex",flexDirection:"column",userSelect:"none",background:"#f0f2f8",overflow:"hidden"}}>
           {/* Header navy */}
           <div style={{background:`linear-gradient(135deg,${NAVY},#001840)`,padding:"14px 14px 16px",flexShrink:0,position:"relative",overflow:"hidden"}}>
-            <img src={trophy} alt="" style={{position:"absolute",width:"120%",height:"100%",left:"-10%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.15,pointerEvents:"none",filter:"grayscale(1) contrast(1.5)"}}/>
+            <img src={trophy} alt="" style={{position:"absolute",width:"120%",height:"100%",left:"-10%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.03,pointerEvents:"none",filter:"grayscale(1) contrast(1.5)"}}/>
             <div style={{position:"relative",zIndex:1,display:"flex",alignItems:"center",gap:10,marginBottom:14}}>
               <button onClick={()=>{ if(viewMode) onBack&&onBack(); else setShowFinalSummary(false); }}
                 style={{background:"rgba(255,255,255,0.15)",border:"none",borderRadius:10,
@@ -3080,7 +3080,7 @@ function InstantPickScreen({ onBack, onComplete, onModify, savedState, onStateCh
           {/* Scoring breakdown */}
           <div style={{flex:1,overflowY:"auto",padding:"12px 14px 8px"}}>
             <div style={{fontSize:10,fontWeight:800,color:"#aaa",letterSpacing:1.5,textTransform:"uppercase",marginBottom:8}}>{T[lang].pointsPerPrediction}</div>
-            <div style={{background:"#fff",borderRadius:14,boxShadow:SHADOW_OUT,overflow:"hidden",marginBottom:12}}>
+            <div style={{background:"#fff",borderRadius:14,boxShadow:"0 8px 22px rgba(0,0,0,0.07)",overflow:"hidden",marginBottom:12}}>
               {scoreRows.map((r,i)=>(
                 <div key={i} style={{display:"flex",alignItems:"center",padding:"9px 14px",borderBottom:i<scoreRows.length-1?"1px solid rgba(0,0,0,0.05)":"none"}}>
                   <span style={{fontSize:13,marginRight:8,flexShrink:0}}>{r.icon}</span>
@@ -3114,7 +3114,7 @@ function InstantPickScreen({ onBack, onComplete, onModify, savedState, onStateCh
     }
     if(koShowIntro) return (
       <div style={{flex:1,minHeight:0,display:"flex",flexDirection:"column",background:BG,userSelect:"none",position:"relative",overflow:"hidden"}}>
-        <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
+        <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.03,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
         {sharedHeader}
         <GroupIntroScreen group={koRound} teams={koRoundMatchups.map(m=>[m.home,m.away])}
           isKo={true} hideHeader={true} onStart={()=>setKoShowIntro(false)} picks={koPicks} viewMode={viewMode}/>
@@ -3147,7 +3147,7 @@ function InstantPickScreen({ onBack, onComplete, onModify, savedState, onStateCh
 
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,userSelect:"none",position:"relative",overflow:"hidden"}}>
-      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.03,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
       {sharedHeader}
       <GroupRankingScreen
         hideHeader={true}
@@ -3335,7 +3335,7 @@ function GroupRankingScreen({ group, teams, existingRanking, onConfirm, onAutoSa
 
   return (
     <div style={{flex:1, display:"flex", flexDirection:"column", background:"transparent", userSelect:"none", position:"relative", overflow:"hidden"}}>
-      {!hideHeader && <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>}
+      {!hideHeader && <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.03,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>}
 
       {/* ── NAVY HEADER ── */}
       {!hideHeader && <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`, paddingBottom:0}}>
@@ -3790,7 +3790,7 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
             const isLocked = deadlinePassed && !boardDone;
             return (
               <div onClick={()=>(!deadlinePassed||boardDone)&&onPredict(activeId)}
-                style={{flex:1,background:"#fff",borderRadius:14,boxShadow:SHADOW_OUT,
+                style={{flex:1,background:"#fff",borderRadius:14,boxShadow:"0 8px 22px rgba(0,0,0,0.07)",
                   padding:"10px 12px",cursor:(deadlinePassed&&!boardDone)?"default":"pointer",position:"relative",
                   opacity:isLocked?0.6:1,
                   ...(showFirstAction&&!boardDone&&!deadlinePassed?{animation:"pulse 1.5s ease-in-out 3"}:{})}}>
@@ -3893,7 +3893,7 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
                 <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:0}}>{T[lang].pathToTrophy}</p>
                 <span style={{fontSize:10,color:"#bbb",fontWeight:600}}>{T[lang].unlocksEvery}</span>
               </div>
-              <div style={{background:"#fff",borderRadius:14,boxShadow:SHADOW_OUT,padding:"12px 14px"}}>
+              <div style={{background:"#fff",borderRadius:14,boxShadow:"0 8px 22px rgba(0,0,0,0.07)",padding:"12px 14px"}}>
                 {steps.map((w,i)=>{
                   const pct = w.total?Math.round((w.scored/w.total)*100):0;
                   const done = !w.locked && pct===100;
@@ -4107,7 +4107,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
 
   if(view==="create") return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,position:"relative",overflow:"hidden"}}>
-      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.03,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
       <div style={{position:"relative",zIndex:1,background:"transparent",padding:"12px 20px 14px",flexShrink:0}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
           <div onClick={()=>setView("main")} style={{width:36,height:36,borderRadius:10,background:"rgba(0,0,0,0.05)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:DARK}}>&#8249;</div>
@@ -4265,7 +4265,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
 
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:"transparent",position:"relative",overflow:"hidden"}}>
-      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.03,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
       <div style={{position:"relative",zIndex:1,background:"transparent",padding:"12px 20px 10px",flexShrink:0}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
           <div onClick={onBack} style={{width:36,height:36,borderRadius:10,background:"rgba(0,0,0,0.05)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:DARK,flexShrink:0}}>&#8249;</div>
@@ -5191,7 +5191,7 @@ function ImageCaptcha({ onSolved }) {
   );
 
   return (
-    <div style={{background:"#fff",borderRadius:14,boxShadow:SHADOW_OUT,padding:"14px 16px",marginBottom:10}}>
+    <div style={{background:"#fff",borderRadius:14,boxShadow:"0 8px 22px rgba(0,0,0,0.07)",padding:"14px 16px",marginBottom:10}}>
       <p style={{fontSize:12,color:"#888",fontWeight:600,margin:"0 0 10px",textAlign:"center"}}>{challenge.label}</p>
       <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6}}>
         {challenge.items.map((item, i) => {
@@ -5320,7 +5320,7 @@ function LoginScreen({ onNext }) {
   const forgotCanSend = email.trim() && captchaSolved;
   const signupCanCreate = email.trim() && nickname.trim() && password.length >= 6 && (!captchaNeeded || captchaSolved);
 
-  const bgImg = <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>;
+  const bgImg = <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.03,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>;
   const header = (icon, title) => (
     <div style={{position:"relative",zIndex:1,background:"transparent",padding:"32px 28px 24px",display:"flex",flexDirection:"column",alignItems:"center"}}>
       <div style={{width:64,height:64,borderRadius:20,background:"rgba(0,0,0,0.05)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:32,marginBottom:12}}>{icon}</div>
@@ -5335,13 +5335,13 @@ function LoginScreen({ onNext }) {
       {bgImg}
       {header("✨", "Creează cont")}
       <div style={{flex:1,padding:"24px 24px 32px",display:"flex",flexDirection:"column",position:"relative",zIndex:1}}>
-        <div style={{background:"#fff",borderRadius:14,boxShadow:SHADOW_OUT,padding:"14px 16px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
+        <div style={{background:"#fff",borderRadius:14,boxShadow:"0 8px 22px rgba(0,0,0,0.07)",padding:"14px 16px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
           <span style={{fontSize:15}}>✉️</span>
           <input value={email} onChange={e=>setEmail(e.target.value)} placeholder="adresa@email.com"
             type="email" autoCapitalize="none" autoFocus
             style={{flex:1,border:"none",outline:"none",fontSize:15,color:DARK,background:"transparent"}}/>
         </div>
-        <div style={{background:"#fff",borderRadius:14,boxShadow:SHADOW_OUT,padding:"14px 16px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
+        <div style={{background:"#fff",borderRadius:14,boxShadow:"0 8px 22px rgba(0,0,0,0.07)",padding:"14px 16px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
           <span style={{fontSize:15}}>👤</span>
           <input value={nickname} onChange={e=>setNickname(e.target.value)}
             placeholder="Alege un nickname" type="text" autoCapitalize="words"
@@ -5351,7 +5351,7 @@ function LoginScreen({ onNext }) {
           <ImageCaptcha key="signup-captcha" onSolved={() => setCaptchaSolved(true)} />
         )}
         {(!captchaNeeded || captchaSolved) && (
-          <div style={{background:"#fff",borderRadius:14,boxShadow:SHADOW_OUT,padding:"14px 16px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
+          <div style={{background:"#fff",borderRadius:14,boxShadow:"0 8px 22px rgba(0,0,0,0.07)",padding:"14px 16px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
             <span style={{fontSize:15}}>🔒</span>
             <input value={password} onChange={e=>setPassword(e.target.value)}
               placeholder="parolă (min. 6 caractere)" type="password"
@@ -5384,7 +5384,7 @@ function LoginScreen({ onNext }) {
       {bgImg}
       {header("🔑", "Recuperare cont")}
       <div style={{flex:1,padding:"24px 24px 32px",display:"flex",flexDirection:"column",position:"relative",zIndex:1}}>
-        <div style={{background:"#fff",borderRadius:14,boxShadow:SHADOW_OUT,padding:"14px 16px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
+        <div style={{background:"#fff",borderRadius:14,boxShadow:"0 8px 22px rgba(0,0,0,0.07)",padding:"14px 16px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
           <span style={{fontSize:15}}>✉️</span>
           <input value={email} onChange={e=>setEmail(e.target.value)} placeholder="adresa@email.com"
             type="email" autoCapitalize="none" autoFocus
@@ -5442,13 +5442,13 @@ function LoginScreen({ onNext }) {
       {header("👋", "Cont nou")}
       <div style={{flex:1,padding:"24px 24px 32px",display:"flex",flexDirection:"column",position:"relative",zIndex:1}}>
         {/* No account found card */}
-        <div style={{background:"#fff",borderRadius:14,boxShadow:SHADOW_OUT,padding:"12px 16px",marginBottom:16}}>
+        <div style={{background:"#fff",borderRadius:14,boxShadow:"0 8px 22px rgba(0,0,0,0.07)",padding:"12px 16px",marginBottom:16}}>
           <p style={{fontSize:12,color:"#aaa",margin:"0 0 2px"}}>No account found for</p>
           <p style={{fontSize:15,fontWeight:700,color:DARK,margin:0}}>{email}</p>
         </div>
 
         {/* Nickname */}
-        <div style={{background:"#fff",borderRadius:14,boxShadow:SHADOW_OUT,padding:"14px 16px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
+        <div style={{background:"#fff",borderRadius:14,boxShadow:"0 8px 22px rgba(0,0,0,0.07)",padding:"14px 16px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
           <span style={{fontSize:15}}>👤</span>
           <input value={nickname} onChange={e=>setNickname(e.target.value)}
             placeholder="Alege un nickname" type="text" autoCapitalize="words" autoFocus
@@ -5462,7 +5462,7 @@ function LoginScreen({ onNext }) {
 
         {/* Parolă — apare întotdeauna (pre-completată dacă a fost introdusă pe step 1) */}
         {(!captchaNeeded || captchaSolved) && (
-          <div style={{background:"#fff",borderRadius:14,boxShadow:SHADOW_OUT,padding:"14px 16px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
+          <div style={{background:"#fff",borderRadius:14,boxShadow:"0 8px 22px rgba(0,0,0,0.07)",padding:"14px 16px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
             <span style={{fontSize:15}}>🔒</span>
             <input value={password} onChange={e=>setPassword(e.target.value)}
               placeholder="parolă (min. 6 caractere)" type="password"
@@ -5500,13 +5500,13 @@ function LoginScreen({ onNext }) {
       {bgImg}
       {header("🏆", T[lang].joinTheGame)}
       <div style={{flex:1,padding:"24px 24px 32px",display:"flex",flexDirection:"column",position:"relative",zIndex:1}}>
-        <div style={{background:"#fff",borderRadius:14,boxShadow:SHADOW_OUT,padding:"14px 16px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
+        <div style={{background:"#fff",borderRadius:14,boxShadow:"0 8px 22px rgba(0,0,0,0.07)",padding:"14px 16px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
           <span style={{fontSize:15}}>✉️</span>
           <input value={email} onChange={e=>setEmail(e.target.value)} placeholder="adresa@email.com"
             type="email" autoCapitalize="none"
             style={{flex:1,border:"none",outline:"none",fontSize:15,color:DARK,background:"transparent"}}/>
         </div>
-        <div style={{background:"#fff",borderRadius:14,boxShadow:SHADOW_OUT,padding:"14px 16px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
+        <div style={{background:"#fff",borderRadius:14,boxShadow:"0 8px 22px rgba(0,0,0,0.07)",padding:"14px 16px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
           <span style={{fontSize:15}}>🔒</span>
           <input value={password} onChange={e=>setPassword(e.target.value)}
             onKeyDown={e=>e.key==="Enter"&&handleContinue()}
@@ -5565,12 +5565,12 @@ function ResetPasswordScreen({ onDone }) {
           <h2 style={{fontSize:20,fontWeight:800,color:DARK,margin:"0 0 8px"}}>Parolă nouă</h2>
           <p style={{fontSize:13,color:"#aaa",margin:"0 0 24px"}}>Introdu noua ta parolă</p>
           <div style={{width:"100%",maxWidth:340}}>
-            <div style={{background:"#fff",borderRadius:14,boxShadow:SHADOW_OUT,padding:"14px 16px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
+            <div style={{background:"#fff",borderRadius:14,boxShadow:"0 8px 22px rgba(0,0,0,0.07)",padding:"14px 16px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
               <span style={{fontSize:15}}>🔒</span>
               <input value={password} onChange={e=>setPassword(e.target.value)} placeholder="Parolă nouă" type="password"
                 style={{flex:1,border:"none",outline:"none",fontSize:15,color:DARK,background:"transparent"}}/>
             </div>
-            <div style={{background:"#fff",borderRadius:14,boxShadow:SHADOW_OUT,padding:"14px 16px",marginBottom:14,display:"flex",alignItems:"center",gap:10}}>
+            <div style={{background:"#fff",borderRadius:14,boxShadow:"0 8px 22px rgba(0,0,0,0.07)",padding:"14px 16px",marginBottom:14,display:"flex",alignItems:"center",gap:10}}>
               <span style={{fontSize:15}}>🔒</span>
               <input value={confirm} onChange={e=>setConfirm(e.target.value)} placeholder="Confirmă parola"
                 onKeyDown={e=>e.key==="Enter"&&handleReset()} type="password"
@@ -5621,12 +5621,12 @@ function SetPasswordScreen({ onDone }) {
           <p style={{fontSize:13,color:"#888",margin:"0 0 6px"}}>Contul tău a fost creat prin magic link.</p>
           <p style={{fontSize:13,color:"#aaa",margin:"0 0 24px"}}>Setează o parolă pentru a te putea loga data viitoare fără link.</p>
           <div style={{width:"100%",maxWidth:340}}>
-            <div style={{background:"#fff",borderRadius:14,boxShadow:SHADOW_OUT,padding:"14px 16px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
+            <div style={{background:"#fff",borderRadius:14,boxShadow:"0 8px 22px rgba(0,0,0,0.07)",padding:"14px 16px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
               <span style={{fontSize:15}}>🔒</span>
               <input value={password} onChange={e=>setPassword(e.target.value)} placeholder="Parolă nouă" type="password"
                 style={{flex:1,border:"none",outline:"none",fontSize:15,color:DARK,background:"transparent"}}/>
             </div>
-            <div style={{background:"#fff",borderRadius:14,boxShadow:SHADOW_OUT,padding:"14px 16px",marginBottom:14,display:"flex",alignItems:"center",gap:10}}>
+            <div style={{background:"#fff",borderRadius:14,boxShadow:"0 8px 22px rgba(0,0,0,0.07)",padding:"14px 16px",marginBottom:14,display:"flex",alignItems:"center",gap:10}}>
               <span style={{fontSize:15}}>🔒</span>
               <input value={confirm} onChange={e=>setConfirm(e.target.value)} placeholder="Confirmă parola"
                 onKeyDown={e=>e.key==="Enter"&&handleSet()} type="password"
@@ -5667,7 +5667,7 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
 
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,position:"relative",overflow:"hidden"}}>
-      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.03,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
       <div style={{position:"relative",zIndex:1,background:"transparent",padding:"10px 20px 0",flexShrink:0}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:myBoards.length>1?0:8}}>
           <div onClick={onBack} style={{width:36,height:36,borderRadius:10,background:"rgba(0,0,0,0.05)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:DARK}}>&#8249;</div>
@@ -5778,7 +5778,7 @@ function ScorePicker({ match, day, savedScore, onSave, onBack }) {
 
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",position:"relative"}}>
-      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.03,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
       <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"14px 20px 16px",flexShrink:0}}>
         <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:12}}>
           <div onClick={onBack} style={{width:36,height:36,borderRadius:10,background:"rgba(255,255,255,0.12)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:"#fff"}}>&#8249;</div>
@@ -6016,7 +6016,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
 
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",position:"relative"}}>
-      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.03,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
       <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"10px 20px 12px",flexShrink:0,overflow:"hidden"}}>
         <img src={varBg} alt="" style={{
           position:"absolute",inset:0,width:"100%",height:"100%",
@@ -6932,7 +6932,7 @@ function StatsScreen() {
   const cur = GROUPS.find(g=>g.id===selGroup) || GROUPS[0];
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",position:"relative"}}>
-      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.03,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
       <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"16px 20px 18px",flexShrink:0}}>
         <p style={{fontSize:11,color:RED,margin:"0 0 2px",letterSpacing:2,textTransform:"uppercase",fontWeight:800}}>Predicto</p>
         <h2 style={{fontSize:18,fontWeight:800,color:"#fff",margin:"0 0 12px"}}>{T[lang].groupsSchedule}</h2>
@@ -7008,7 +7008,7 @@ function AccountScreen({ setLang, onBoards, onSignOut, onShowGuide, user }) {
 
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,position:"relative",overflow:"hidden"}}>
-      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.03,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
       <div style={{background:"transparent",padding:"12px 20px 14px",flexShrink:0,position:"relative",zIndex:1,minHeight:100,boxSizing:"border-box"}}>
         <div style={{textAlign:"center",marginBottom:8}}>
           <p style={{fontSize:12,color:RED,margin:"0 0 2px",letterSpacing:3,textTransform:"uppercase",fontWeight:800}}>Predicto</p>
@@ -7104,7 +7104,7 @@ function RulesScreen({ onBack }) {
 
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",position:"relative"}}>
-      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.03,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
       <div style={{position:"relative",zIndex:1,background:"transparent",padding:"12px 20px 0",flexShrink:0,boxSizing:"border-box",textAlign:"center"}}>
         <p style={{fontSize:12,color:RED,margin:"0 0 2px",letterSpacing:3,textTransform:"uppercase",fontWeight:800}}>Predicto</p>
         <h1 style={{fontSize:20,fontWeight:900,color:NAVY,margin:0}}>WORLD CUP 2026</h1>
