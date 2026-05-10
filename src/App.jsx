@@ -3654,7 +3654,7 @@ function CircleTab({ label, name, isActive, onClick, lightBg=false }) {
       </div>
       <span style={{
         fontSize:isActive?10:9,
-        color:isActive?(lightBg?DARK:"#fff"):(lightBg?"rgba(0,0,0,0.45)":"rgba(255,255,255,0.45)"),
+        color:isActive?(lightBg?DARK:"#fff"):(lightBg?"rgba(0,0,0,0.62)":"rgba(255,255,255,0.62)"),
         fontWeight:isActive?800:500,
         maxWidth:56,textAlign:"center",lineHeight:1.2,
       }}>{name}</span>
@@ -3695,7 +3695,7 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
   const meInTop3 = top3.some(u=>u.isMe);
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",position:"relative"}}>
-      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.03,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
       <div style={{background:"transparent",padding:"12px 20px 10px",flexShrink:0,position:"relative",zIndex:1}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
           <div style={{width:36}}/>
@@ -3704,7 +3704,7 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
             <h1 style={{fontSize:20,fontWeight:900,color:NAVY,margin:0}}>WORLD CUP 2026</h1>
             <p style={{fontSize:11,color:"#888",margin:"3px 0 0"}}>{T[lang].location}</p>
           </div>
-          <div style={{width:36,height:36,borderRadius:10,background:"rgba(0,0,0,0.05)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:15}}>🔔</div>
+          <div style={{width:36,height:36,borderRadius:10,background:"rgba(0,0,0,0.05)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,alignSelf:"center"}}>🔔</div>
         </div>
         <div style={{overflowX:"auto",overflowY:"visible",scrollbarWidth:"none",margin:"0 -20px"}}>
         <div style={{display:"flex",alignItems:"flex-start",gap:10,padding:"10px 20px 20px"}}>
@@ -3725,7 +3725,7 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
           <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:0}}>👥 {membersLabel}</p>
         </div>
         {/* User stats card */}
-        <div style={{background:"#fff",borderRadius:16,boxShadow:SHADOW_OUT,padding:"10px 14px",marginBottom:10}}>
+        <div style={{background:"#fff",borderRadius:16,boxShadow:"0 8px 22px rgba(0,0,0,0.07)",padding:"10px 14px",marginBottom:10}}>
           <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:10}}>
             <div style={{width:48,height:48,borderRadius:"50%",background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,
               display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:18,fontWeight:800}}>
@@ -3735,9 +3735,9 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
               <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between"}}>
                 <div style={{flex:1,minWidth:0}}>
                   <p style={{fontSize:15,fontWeight:800,color:DARK,margin:0}}>{displayName}</p>
-                  <p style={{fontSize:12,color:"#888",margin:"2px 0 0"}}>{tournamentStarted?`${me?.pts||0} ${T[lang].ptsTotal}`:T[lang].tournamentStarts}</p>
+                  <p style={{fontSize:12,color:"#666",margin:"2px 0 0"}}>{tournamentStarted?`${me?.pts||0} ${T[lang].ptsTotal}`:T[lang].tournamentStarts}</p>
                 </div>
-                <span onClick={onLeaderboard} style={{fontSize:12,color:NAVY,fontWeight:700,cursor:"pointer",flexShrink:0,paddingLeft:8}}>{T[lang].viewAll}</span>
+                <span onClick={onLeaderboard} style={{fontSize:12,color:NAVY,fontWeight:500,cursor:"pointer",flexShrink:0,paddingLeft:8}}>{T[lang].viewAll}</span>
               </div>
             </div>
           </div>
@@ -3795,7 +3795,7 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
                   opacity:isLocked?0.6:1,
                   ...(showFirstAction&&!boardDone&&!deadlinePassed?{animation:"pulse 1.5s ease-in-out 3"}:{})}}>
                 {!boardDone&&!deadlinePassed&&predictionsLoaded[activeId]&&(
-                  <div style={{position:"absolute",top:-5,right:-5,
+                  <div style={{position:"absolute",top:2,right:2,
                     background:RED,borderRadius:"50%",minWidth:18,height:18,
                     display:"flex",alignItems:"center",justifyContent:"center",
                     boxShadow:"0 1px 4px rgba(0,0,0,0.3)",padding:"0 5px"}}>
@@ -3825,10 +3825,12 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
             const missing = total - scored;
             return (
               <div onClick={()=>onOpenGroups&&onOpenGroups()}
-                style={{flex:1,background:"#fff",borderRadius:14,boxShadow:SHADOW_OUT,
+                style={{flex:1,background:"#fff",borderRadius:14,
+                  boxShadow:missing>0?"0 8px 22px rgba(0,32,91,0.13)":SHADOW_OUT,
+                  border:missing>0?`1.5px solid ${NAVY}33`:"1.5px solid transparent",
                   padding:"10px 12px",cursor:"pointer",position:"relative"}}>
                 {missing>0&&(
-                  <div style={{position:"absolute",top:-5,right:-5,
+                  <div style={{position:"absolute",top:2,right:2,
                     background:RED,borderRadius:"50%",minWidth:18,height:18,
                     display:"flex",alignItems:"center",justifyContent:"center",
                     boxShadow:"0 1px 4px rgba(0,0,0,0.3)",padding:"0 5px"}}>
@@ -3837,7 +3839,7 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
                 )}
                 <div style={{fontSize:28,marginBottom:4,colorScheme:"light",filter:"saturate(0) contrast(3) brightness(1.1)"}}>⚽</div>
                 <p style={{fontSize:13,fontWeight:800,color:DARK,margin:0}}>{T[lang].exactScores}</p>
-                <p style={{fontSize:11,color:missing===0?GREEN:"#888",margin:"2px 0 0",fontWeight:600}}>
+                <p style={{fontSize:11,color:missing===0?GREEN:"#555",margin:"2px 0 0",fontWeight:600}}>
                   {missing===0?T[lang].weekComplete:`${missing} ${T[lang].thisWeek}`}
                 </p>
               </div>
@@ -3930,20 +3932,20 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
                         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:w.isFinal||w.locked?0:4}}>
                           <div>
                             <span style={{fontSize:13,fontWeight:700,
-                              color:w.locked&&!w.isFinal&&!isPast?"#bbb":w.isFinal?"#B8860B":isPast?"#999":DARK}}>
+                              color:w.locked&&!w.isFinal&&!isPast?"#999":w.isFinal?"#B8860B":isPast?"#999":DARK}}>
                               {w.label}
                             </span>
-                            <span style={{fontSize:10,color:w.locked&&!w.isFinal?"#ccc":"#999",
+                            <span style={{fontSize:10,color:w.locked&&!w.isFinal?"#aaa":"#888",
                               marginLeft:6,fontWeight:500}}>{w.stage}</span>
                           </div>
                           <span style={{fontSize:11,fontWeight:700,
-                            color:w.locked&&!isPast?"#ccc":done?GREEN:isPast?"#999":active?NAVY:"#bbb"}}>
+                            color:w.locked&&!isPast?"#aaa":done?GREEN:isPast?"#999":active?NAVY:"#aaa"}}>
                             {w.isFinal?T[lang].final:w.locked&&!isPast?T[lang].locked:done?T[lang].weekComplete:isPast?`${w.scored}/${w.total} · ${T[lang].past}`:`${w.scored}/${w.total}`}
                           </span>
                         </div>
                         {/* Progress bar */}
                         {!w.locked&&!w.isFinal&&(
-                          <div style={{height:4,background:"rgba(0,0,0,0.06)",borderRadius:2,overflow:"hidden",display:"flex"}}>
+                          <div style={{height:4,background:"rgba(0,0,0,0.12)",borderRadius:2,overflow:"hidden",display:"flex"}}>
                             <div style={{height:"100%",width:`${w.totalRaw?Math.round((w.missed/w.totalRaw)*100):0}%`,
                               background:"#b0a0a0",transition:"width 0.3s",flexShrink:0}}/>
                             <div style={{height:"100%",width:`${w.totalRaw?Math.round((w.scored/w.totalRaw)*100):0}%`,
