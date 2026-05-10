@@ -3719,7 +3719,7 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
         </div>
       </div>
       <div style={{flex:1,position:"relative",zIndex:1,minHeight:0}}>
-      <div style={{position:"absolute",top:0,left:0,right:0,height:32,background:`linear-gradient(to top, transparent, ${BG})`,pointerEvents:"none",zIndex:2}}/>
+      <div style={{position:"absolute",top:0,left:0,right:0,height:16,background:`linear-gradient(to top, transparent, ${BG})`,pointerEvents:"none",zIndex:2}}/>
       <div style={{position:"absolute",bottom:0,left:0,right:0,height:80,background:`linear-gradient(to bottom, transparent, ${BG})`,pointerEvents:"none",zIndex:2}}/>
       <div style={{height:"100%",overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",padding:"10px 16px 0"}}>
 
