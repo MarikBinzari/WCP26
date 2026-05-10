@@ -3635,7 +3635,7 @@ function GroupRankingScreen({ group, teams, existingRanking, onConfirm, onAutoSa
 // ── CIRCLE TAB ────────────────────────────────────────────────────────────────
 function CircleTab({ label, name, isActive, onClick, lightBg=false }) {
   return (
-    <div onClick={onClick} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:5,cursor:"pointer",flexShrink:0}}>
+    <div onClick={onClick} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:5,cursor:"pointer",flexShrink:0,WebkitTapHighlightColor:"transparent"}}>
       <div style={{
         width:isActive?52:44, height:isActive?52:44,
         borderRadius:"50%",
@@ -3665,7 +3665,7 @@ function CircleTab({ label, name, isActive, onClick, lightBg=false }) {
 
 
 // ── HOME ────────────────────────────────────────────────────────────────────
-function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenGroups, myBoards, predictionsComplete, instantPickDone, exactScores, activeBoardId, setActiveBoardId, tournamentStarted, simDay, simHour, simMin, createdBoards=[], showFirstAction, leaderboardData={} }) {
+function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenGroups, myBoards, predictionsComplete, instantPickDone, exactScores, activeBoardId, setActiveBoardId, tournamentStarted, simDay, simHour, simMin, createdBoards=[], showFirstAction, leaderboardData={}, boardsLoading=false }) {
   const lang = useLang();
   const displayName = useDisplayName();
   const initials = useInitials();
@@ -3706,12 +3706,16 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
           </div>
           <div style={{width:36,height:36,borderRadius:10,background:"rgba(0,0,0,0.05)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:15}}>🔔</div>
         </div>
-        <div style={{display:"flex",alignItems:"flex-start",gap:10,overflowX:"auto",scrollbarWidth:"none",padding:"10px 0 2px"}}>
-          {myBoards.map(b=><CircleTab key={b.id} label={b.label} name={b.isGlobal?"Global":b.name.split(" ")[0]} isActive={activeId===b.id} onClick={()=>setActiveId(b.id)} lightBg/>)}
+        <div style={{overflowX:"auto",overflowY:"visible",scrollbarWidth:"none",margin:"0 -20px"}}>
+        <div style={{display:"flex",alignItems:"flex-start",gap:10,padding:"10px 20px 20px"}}>
+          {boardsLoading
+            ? <div style={{height:52,display:"flex",alignItems:"center"}}><span style={{width:44,height:44,borderRadius:"50%",background:"rgba(0,0,0,0.06)",display:"inline-block"}}/></div>
+            : myBoards.map(b=><CircleTab key={b.id} label={b.label} name={b.isGlobal?"Global":b.name.split(" ")[0]} isActive={activeId===b.id} onClick={()=>setActiveId(b.id)} lightBg/>)}
           <div onClick={onBoards} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4,cursor:"pointer",flexShrink:0}}>
             <div style={{width:44,height:44,borderRadius:"50%",background:"transparent",border:"2px dashed rgba(0,0,0,0.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,color:"rgba(0,0,0,0.3)"}}>+</div>
             <span style={{fontSize:10,color:"rgba(0,0,0,0.35)",fontWeight:500}}>{T[lang].add}</span>
           </div>
+        </div>
         </div>
       </div>
       <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",padding:"10px 16px 0",position:"relative",zIndex:1}}>
@@ -7086,13 +7090,18 @@ function AccountScreen({ setLang, onBoards, onSignOut, onShowGuide, user }) {
           <h1 style={{fontSize:20,fontWeight:900,color:NAVY,margin:0}}>WORLD CUP 2026</h1>
           <p style={{fontSize:11,color:"#888",margin:"3px 0 0"}}>{T[lang].location}</p>
         </div>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <div style={{borderTop:"2px solid rgba(0,0,0,0.06)",marginTop:10}}/>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:12,paddingTop:10}}>
+          <div style={{position:"relative",flexShrink:0}}>
+            <div style={{width:52,height:52,borderRadius:"50%",background:"rgba(0,0,0,0.05)",border:"2px dashed rgba(0,0,0,0.15)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,cursor:"pointer"}}>👤</div>
+            <div style={{position:"absolute",bottom:0,right:0,width:18,height:18,borderRadius:"50%",background:NAVY,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:"#fff",fontWeight:700,lineHeight:1}}>+</div>
+          </div>
           <div>
             <p style={{fontSize:13,color:"#888",margin:0}}>{user?.email}</p>
             {memberSince && <p style={{fontSize:11,color:"#aaa",margin:"2px 0 0"}}>Membru din {memberSince}</p>}
           </div>
-          <div style={{width:36,height:36,borderRadius:"50%",background:"rgba(0,0,0,0.05)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>👤</div>
         </div>
+        <div style={{borderTop:"2px solid rgba(0,0,0,0.06)",marginTop:10}}/>
       </div>
       <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",position:"relative",zIndex:1}}>
         <div style={{padding:"12px 20px"}}>
@@ -7358,7 +7367,7 @@ function App() {
       setAvailableBoards(avail.map(b => ({ ...b, members: counts[b.id] ?? 0 })));
       return boards;
     };
-    refreshBoards().then(boards => boards.forEach(b => loadForBoard(b.id)));
+    refreshBoards().then(boards => { setBoardsLoading(false); boards.forEach(b => loadForBoard(b.id)); });
 
     // Realtime: actualizează membrii și board-urile când se schimbă ceva
     const boardChannel = supabase
@@ -7387,7 +7396,8 @@ function App() {
   // Simulated current date used across app
   const simDate = simDay ? new Date(2026,5,simDay,simHour,simMin,0) : null;
   const [lang, setLang] = useState("en");
-  const [myBoards, setMyBoards] = useState(INITIAL_BOARDS);
+  const [myBoards, setMyBoards] = useState([]);
+  const [boardsLoading, setBoardsLoading] = useState(true);
   const [toast, showToast] = useToast();
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [skipOnboarding, setSkipOnboarding] = useState(false);
@@ -7516,7 +7526,8 @@ function App() {
             tournamentStarted={tournamentStarted}
             createdBoards={createdBoards}
             showFirstAction={showFirstAction}
-            leaderboardData={leaderboardData}/>}
+            leaderboardData={leaderboardData}
+            boardsLoading={boardsLoading}/>}
           {screen===SCREENS.BOARDS&&<BoardsScreen
             onBack={()=>setScreen(SCREENS.HOME)}
             myBoards={myBoards} setMyBoards={setMyBoards}
