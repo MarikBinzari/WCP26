@@ -3711,7 +3711,7 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
           {boardsLoading
             ? <div style={{height:52,display:"flex",alignItems:"center"}}><span style={{width:44,height:44,borderRadius:"50%",background:"rgba(0,0,0,0.06)",display:"inline-block"}}/></div>
             : myBoards.map(b=><CircleTab key={b.id} label={b.label} name={b.isGlobal?"Global":b.name.split(" ")[0]} isActive={activeId===b.id} onClick={()=>setActiveId(b.id)} lightBg/>)}
-          <div onClick={onBoards} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4,cursor:"pointer",flexShrink:0}}>
+          <div onClick={()=>onBoards("available")} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4,cursor:"pointer",flexShrink:0}}>
             <div style={{width:44,height:44,borderRadius:"50%",background:"transparent",border:"2px dashed rgba(0,0,0,0.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,color:"rgba(0,0,0,0.3)"}}>+</div>
             <span style={{fontSize:10,color:"rgba(0,0,0,0.35)",fontWeight:500}}>{T[lang].add}</span>
           </div>
@@ -3972,10 +3972,11 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
 
 
 // ── BOARDS ────────────────────────────────────────────────────────────────────
-function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: createdBoardsProp, setCreatedBoards: setCreatedBoardsProp, availableBoards: availableBoardsProp, setAvailableBoards: setAvailableBoardsProp, showToast, user, onCreateBoard, onJoinByCode, onJoinBoard, onDeleteBoard, onRemoveMember, leaderboardData={} }) {
+function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: createdBoardsProp, setCreatedBoards: setCreatedBoardsProp, availableBoards: availableBoardsProp, setAvailableBoards: setAvailableBoardsProp, showToast, user, onCreateBoard, onJoinByCode, onJoinBoard, onDeleteBoard, onRemoveMember, leaderboardData={}, initialTab="my" }) {
   const displayName = useDisplayName();
   const lang = useLang();
   const [view, setView] = useState("main"); // main | join | create
+  const [activeTab, setActiveTab] = useState(initialTab); // my | available | admin
   const [showCodeInfo, setShowCodeInfo] = useState(false);
   const [boardSearch, setBoardSearch] = useState("");
   const [code, setCode] = useState("");
@@ -4273,6 +4274,17 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
           </div>
           <div style={{width:36}}/>
         </div>
+        {/* Tabs */}
+        <div style={{display:"flex",gap:0,borderBottom:"2px solid rgba(0,0,0,0.06)",marginTop:10}}>
+          {[{key:"my",label:"My Boards"},{key:"available",label:"Available"},{key:"admin",label:"Admin"}].map(t=>(
+            <div key={t.key} onClick={()=>setActiveTab(t.key)}
+              style={{flex:1,textAlign:"center",padding:"8px 0 10px",fontSize:12,fontWeight:activeTab===t.key?800:500,
+                color:activeTab===t.key?NAVY:"#aaa",cursor:"pointer",position:"relative"}}>
+              {t.label}
+              {activeTab===t.key&&<div style={{position:"absolute",bottom:-2,left:"20%",right:"20%",height:2,background:NAVY,borderRadius:2}}/>}
+            </div>
+          ))}
+        </div>
       </div>
       {/* Password modal */}
       {joinPrompt&&(
@@ -4310,81 +4322,6 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
       )}
       <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",padding:"16px 20px 80px",position:"relative",zIndex:1}}>
 
-        {/* Admin boards */}
-        {createdBoards.length>0&&(
-          <div style={{background:"#fff",borderRadius:14,boxShadow:"0 2px 12px rgba(0,0,0,0.10)",marginBottom:12,overflow:"hidden"}}>
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 14px 8px"}}>
-              <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:0}}>{T[lang].boardAdmin}</p>
-              <span style={{fontSize:11,color:"#bbb"}}>{createdBoards.length} boards</span>
-            </div>
-            <div style={{height:1,background:"rgba(0,0,0,0.06)"}}/>
-            {createdBoards.map((b,bi)=>(
-              <div key={b.id}>
-                <div style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px"}}>
-                  <div style={{width:44,height:44,borderRadius:"50%",background:`linear-gradient(135deg,${GREEN},#007A36)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>{b.label}</div>
-                  <div style={{flex:1,minWidth:0}}>
-                    <p style={{fontSize:13,fontWeight:700,color:DARK,margin:0}}>{b.name}</p>
-                    <p style={{fontSize:11,color:"#aaa",margin:"2px 0 0"}}>👥 {b.members}{b.max?"/"+b.max:""} · 🔑 {b.code}</p>
-                  </div>
-                  <div style={{display:"flex",gap:6}}>
-                    <button onClick={()=>openMembers(b.id)} style={{background:"rgba(0,32,91,0.08)",border:"none",borderRadius:9,padding:"7px 10px",fontSize:11,fontWeight:700,color:NAVY,cursor:"pointer"}}>👥</button>
-                    <button onClick={()=>{ setEditBoard(b); setCName(b.name); setCPassword(b.password||""); setCMaxPlayers(b.max||10); setCSlots(b.prizes?.length||3); setCPrizes(b.prizes?.length?[...b.prizes,...Array(5).fill("")]:["",...Array(4).fill("")]); setView("create"); }} style={{background:"rgba(0,32,91,0.08)",border:"none",borderRadius:9,padding:"7px 10px",fontSize:11,fontWeight:700,color:NAVY,cursor:"pointer"}}>✏️</button>
-                    <button onClick={async()=>{ if(!window.confirm(`Ștergi "${b.name}"?`)) return; if(onDeleteBoard) await onDeleteBoard(b.id); }} style={{background:"rgba(200,16,46,0.08)",border:"none",borderRadius:9,padding:"7px 10px",fontSize:11,fontWeight:700,color:RED,cursor:"pointer"}}>🗑️</button>
-                  </div>
-                </div>
-                {viewMembersBoard===b.id&&(
-                  <div style={{margin:"0 14px 10px",borderTop:"1px solid rgba(0,0,0,0.06)",paddingTop:8}}>
-                    {!(boardMembersMap[b.id]?.length>0)?(<p style={{fontSize:12,color:"#bbb",margin:"4px 0"}}>No members yet</p>)
-                    :(boardMembersMap[b.id]||[]).map((m,mi)=>{
-                      const isMe=m.id===user?.id;
-                      const leaders=boardLeadersMap[b.id]||leaderboardData[b.id]||[];
-                      const lEntry=leaders.find(l=>l.name===m.name);
-                      const rankMedals=["🥇","🥈","🥉"];
-                      const rankLabel=lEntry?(rankMedals[lEntry.rank-1]||`#${lEntry.rank}`):null;
-                      return (
-                        <div key={m.id} style={{display:"flex",alignItems:"center",gap:8,padding:"5px 0",borderBottom:mi<(boardMembersMap[b.id].length-1)?"1px solid rgba(0,0,0,0.04)":"none"}}>
-                          <span style={{flex:1,fontSize:12,fontWeight:600,color:isMe?NAVY:DARK}}>{m.name}{isMe?" (Tu)":""}</span>
-                          <span style={{fontSize:11,color:NAVY,fontWeight:700}}>{rankLabel&&<>{rankLabel} </>}{lEntry?.pts??0}pt</span>
-                          <button onClick={async()=>{ if(onRemoveMember) await onRemoveMember(b.id,m.id); setBoardMembersMap(prev=>({...prev,[b.id]:prev[b.id].filter(x=>x.id!==m.id)})); }} style={{background:"rgba(200,16,46,0.08)",border:"none",borderRadius:8,padding:"4px 10px",fontSize:11,fontWeight:700,color:RED,cursor:"pointer"}}>{T[lang].remove}</button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-                {bi<createdBoards.length-1&&<div style={{height:1,background:"rgba(0,0,0,0.05)",margin:"0 14px"}}/>}
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* My boards */}
-        {myBoards.filter(b=>!createdBoards.some(c=>c.id===b.id)).length>0&&(
-          <div style={{background:"#fff",borderRadius:14,boxShadow:"0 2px 12px rgba(0,0,0,0.10)",marginBottom:12,overflow:"hidden"}}>
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 14px 8px"}}>
-              <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:0}}>{T[lang].joinedBoards}</p>
-              <span style={{fontSize:11,color:"#bbb"}}>{myBoards.filter(b=>!createdBoards.some(c=>c.id===b.id)).length} boards</span>
-            </div>
-            <div style={{height:1,background:"rgba(0,0,0,0.06)"}}/>
-            {myBoards.filter(b=>!createdBoards.some(c=>c.id===b.id)).map((b,bi,arr)=>{
-              const latest=createdBoards.find(c=>c.id===b.id)||availBoards.find(c=>c.id===b.id)||b;
-              return (
-                <div key={b.id}>
-                  <div style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",cursor:"pointer"}} onClick={()=>onJoin&&onJoin(b.id)}>
-                    <div style={{width:44,height:44,borderRadius:"50%",background:b.isGlobal?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:`linear-gradient(135deg,#5856D6,#3634A3)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>{latest.label}</div>
-                    <div style={{flex:1,minWidth:0}}>
-                      <p style={{fontSize:13,fontWeight:700,color:DARK,margin:0}}>{latest.name}</p>
-                      <p style={{fontSize:11,color:"#aaa",margin:"2px 0 0"}}>👥 {latest.members}{latest.max?"/"+latest.max:""} members</p>
-                    </div>
-                    <div style={{background:"#E8F0FF",borderRadius:9,padding:"7px 12px",fontSize:11,fontWeight:700,color:NAVY,flexShrink:0}}>✓ Joined</div>
-                    {!b.isGlobal&&<button onClick={e=>{e.stopPropagation();setLeaveConfirmBoard(b);}} style={{background:"rgba(200,16,46,0.08)",border:"none",borderRadius:9,padding:"7px 10px",fontSize:13,color:RED,cursor:"pointer",flexShrink:0}}>🗑️</button>}
-                  </div>
-                  {bi<arr.length-1&&<div style={{height:1,background:"rgba(0,0,0,0.05)",margin:"0 14px"}}/>}
-                </div>
-              );
-            })}
-          </div>
-        )}
-
         {/* Leave board confirmation popup */}
         {leaveConfirmBoard && (
           <div style={{position:"fixed",inset:0,zIndex:9999,background:"rgba(0,0,0,0.55)",display:"flex",alignItems:"flex-end"}} onClick={()=>setLeaveConfirmBoard(null)}>
@@ -4409,10 +4346,36 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
           </div>
         )}
 
-        {/* Available boards */}
-        {(()=>{
+        {/* Tab: My Boards */}
+        {activeTab==="my"&&(()=>{
+          const joined=myBoards.filter(b=>!createdBoards.some(c=>c.id===b.id));
+          if(joined.length===0) return <p style={{fontSize:13,color:"#bbb",textAlign:"center",marginTop:40}}>Nu ești înscris în niciun board.</p>;
+          return (
+            <div style={{background:"#fff",borderRadius:14,boxShadow:"0 2px 12px rgba(0,0,0,0.10)",overflow:"hidden"}}>
+              {joined.map((b,bi,arr)=>{
+                const latest=availBoards.find(c=>c.id===b.id)||b;
+                return (
+                  <div key={b.id}>
+                    <div style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",cursor:"pointer"}} onClick={()=>onJoin&&onJoin(b.id)}>
+                      <div style={{width:44,height:44,borderRadius:"50%",background:b.isGlobal?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:`linear-gradient(135deg,#5856D6,#3634A3)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>{latest.label}</div>
+                      <div style={{flex:1,minWidth:0}}>
+                        <p style={{fontSize:13,fontWeight:700,color:DARK,margin:0}}>{latest.name}</p>
+                        <p style={{fontSize:11,color:"#aaa",margin:"2px 0 0"}}>👥 {latest.members}{latest.max?"/"+latest.max:""} members</p>
+                      </div>
+                      <div style={{background:"#E8F0FF",borderRadius:9,padding:"7px 12px",fontSize:11,fontWeight:700,color:NAVY,flexShrink:0}}>✓ Joined</div>
+                      {!b.isGlobal&&<button onClick={e=>{e.stopPropagation();setLeaveConfirmBoard(b);}} style={{background:"rgba(200,16,46,0.08)",border:"none",borderRadius:9,padding:"7px 10px",fontSize:13,color:RED,cursor:"pointer",flexShrink:0}}>🗑️</button>}
+                    </div>
+                    {bi<arr.length-1&&<div style={{height:1,background:"rgba(0,0,0,0.05)",margin:"0 14px"}}/>}
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
+
+        {/* Tab: Available Boards */}
+        {activeTab==="available"&&(()=>{
           const allAvail=[...availBoards,...createdBoards].filter(b=>!isJoined(b.id));
-          if(allAvail.length===0) return null;
           const isCode=/^[A-Z][0-9]{5}$/.test(boardSearch.trim().toUpperCase());
           const filtered=boardSearch.trim()&&!isCode
             ? allAvail.filter(b=>b.name.toLowerCase().includes(boardSearch.toLowerCase()))
@@ -4421,14 +4384,11 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
           return (<>
             <div style={{background:"#fff",borderRadius:14,boxShadow:"0 2px 12px rgba(0,0,0,0.10)",marginBottom:12,overflow:"hidden"}}>
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 14px 8px"}}>
-                <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:0}}>{T[lang].availableBoards}</p>
-                <div style={{display:"flex",alignItems:"center",gap:8}}>
-                  <span style={{fontSize:11,color:"#bbb"}}>{allAvail.length} boards</span>
-                  <button onClick={()=>{ setEditBoard(null); setCName(""); setCPassword(""); setCEmoji(""); setCMaxPlayers(10); setCSlots(3); setCPrizes(["","",""]); setView("create"); }}
-                    style={{background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,border:"none",borderRadius:8,padding:"5px 10px",color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer"}}>
-                    + {T[lang].createBoard}
-                  </button>
-                </div>
+                <span style={{fontSize:11,color:"#bbb"}}>{allAvail.length} boards</span>
+                <button onClick={()=>{ setEditBoard(null); setCName(""); setCPassword(""); setCEmoji(""); setCMaxPlayers(10); setCSlots(3); setCPrizes(["","",""]); setView("create"); }}
+                  style={{background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,border:"none",borderRadius:8,padding:"5px 10px",color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer"}}>
+                  + {T[lang].createBoard}
+                </button>
               </div>
               <div style={{padding:"0 14px 10px"}}>
                 <div style={{background:"rgba(0,0,0,0.04)",borderRadius:10,padding:"9px 12px",display:"flex",gap:8,alignItems:"center",border:isCode?`1.5px solid ${NAVY}`:"1.5px solid transparent"}}>
@@ -4442,10 +4402,11 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
                 {codeError&&<p style={{fontSize:11,color:RED,margin:"6px 0 0"}}>{codeError}</p>}
               </div>
               <div style={{height:1,background:"rgba(0,0,0,0.06)"}}/>
-              {filtered.length===0
-                ? <p style={{fontSize:13,color:"#bbb",textAlign:"center",padding:"16px 14px"}}>No boards found for "{boardSearch}"</p>
-                : filtered.map((b,bi)=>{
-                  return (
+              {allAvail.length===0
+                ? <p style={{fontSize:13,color:"#bbb",textAlign:"center",padding:"16px 14px"}}>No boards available to join.</p>
+                : filtered.length===0&&boardSearch.trim()
+                  ? <p style={{fontSize:13,color:"#bbb",textAlign:"center",padding:"16px 14px"}}>No boards found for "{boardSearch}"</p>
+                  : filtered.map((b,bi)=>(
                     <div key={b.id}>
                       <div style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px"}}>
                         <div style={{width:44,height:44,borderRadius:"50%",background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>{b.label}</div>
@@ -4457,12 +4418,56 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
                       </div>
                       {bi<filtered.length-1&&<div style={{height:1,background:"rgba(0,0,0,0.05)",margin:"0 14px"}}/>}
                     </div>
-                  );
-                })
+                  ))
               }
             </div>
             {hasMore&&<p style={{fontSize:12,color:"#bbb",textAlign:"center",marginTop:-4,marginBottom:12,fontStyle:"italic"}}>+{allAvail.length-8} more · use search</p>}
           </>);
+        })()}
+
+        {/* Tab: Admin */}
+        {activeTab==="admin"&&(()=>{
+          if(createdBoards.length===0) return <p style={{fontSize:13,color:"#bbb",textAlign:"center",marginTop:40}}>Nu ai creat niciun board.</p>;
+          return (
+            <div style={{background:"#fff",borderRadius:14,boxShadow:"0 2px 12px rgba(0,0,0,0.10)",overflow:"hidden"}}>
+              {createdBoards.map((b,bi)=>(
+                <div key={b.id}>
+                  <div style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px"}}>
+                    <div style={{width:44,height:44,borderRadius:"50%",background:`linear-gradient(135deg,${GREEN},#007A36)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>{b.label}</div>
+                    <div style={{flex:1,minWidth:0}}>
+                      <p style={{fontSize:13,fontWeight:700,color:DARK,margin:0}}>{b.name}</p>
+                      <p style={{fontSize:11,color:"#aaa",margin:"2px 0 0"}}>👥 {b.members}{b.max?"/"+b.max:""} · 🔑 {b.code}</p>
+                    </div>
+                    <div style={{display:"flex",gap:6}}>
+                      <button onClick={()=>openMembers(b.id)} style={{background:"rgba(0,32,91,0.08)",border:"none",borderRadius:9,padding:"7px 10px",fontSize:11,fontWeight:700,color:NAVY,cursor:"pointer"}}>👥</button>
+                      <button onClick={()=>{ setEditBoard(b); setCName(b.name); setCPassword(b.password||""); setCMaxPlayers(b.max||10); setCSlots(b.prizes?.length||3); setCPrizes(b.prizes?.length?[...b.prizes,...Array(5).fill("")]:["",...Array(4).fill("")]); setView("create"); }} style={{background:"rgba(0,32,91,0.08)",border:"none",borderRadius:9,padding:"7px 10px",fontSize:11,fontWeight:700,color:NAVY,cursor:"pointer"}}>✏️</button>
+                      <button onClick={async()=>{ if(!window.confirm(`Ștergi "${b.name}"?`)) return; if(onDeleteBoard) await onDeleteBoard(b.id); }} style={{background:"rgba(200,16,46,0.08)",border:"none",borderRadius:9,padding:"7px 10px",fontSize:11,fontWeight:700,color:RED,cursor:"pointer"}}>🗑️</button>
+                    </div>
+                  </div>
+                  {viewMembersBoard===b.id&&(
+                    <div style={{margin:"0 14px 10px",borderTop:"1px solid rgba(0,0,0,0.06)",paddingTop:8}}>
+                      {!(boardMembersMap[b.id]?.length>0)?(<p style={{fontSize:12,color:"#bbb",margin:"4px 0"}}>No members yet</p>)
+                      :(boardMembersMap[b.id]||[]).map((m,mi)=>{
+                        const isMe=m.id===user?.id;
+                        const leaders=boardLeadersMap[b.id]||leaderboardData[b.id]||[];
+                        const lEntry=leaders.find(l=>l.name===m.name);
+                        const rankMedals=["🥇","🥈","🥉"];
+                        const rankLabel=lEntry?(rankMedals[lEntry.rank-1]||`#${lEntry.rank}`):null;
+                        return (
+                          <div key={m.id} style={{display:"flex",alignItems:"center",gap:8,padding:"5px 0",borderBottom:mi<(boardMembersMap[b.id].length-1)?"1px solid rgba(0,0,0,0.04)":"none"}}>
+                            <span style={{flex:1,fontSize:12,fontWeight:600,color:isMe?NAVY:DARK}}>{m.name}{isMe?" (Tu)":""}</span>
+                            <span style={{fontSize:11,color:NAVY,fontWeight:700}}>{rankLabel&&<>{rankLabel} </>}{lEntry?.pts??0}pt</span>
+                            <button onClick={async()=>{ if(onRemoveMember) await onRemoveMember(b.id,m.id); setBoardMembersMap(prev=>({...prev,[b.id]:prev[b.id].filter(x=>x.id!==m.id)})); }} style={{background:"rgba(200,16,46,0.08)",border:"none",borderRadius:8,padding:"4px 10px",fontSize:11,fontWeight:700,color:RED,cursor:"pointer"}}>{T[lang].remove}</button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                  {bi<createdBoards.length-1&&<div style={{height:1,background:"rgba(0,0,0,0.05)",margin:"0 14px"}}/>}
+                </div>
+              ))}
+            </div>
+          );
         })()}
       </div>
     </div>
@@ -7315,6 +7320,7 @@ function App() {
   const isLocalhost = import.meta.env.DEV;
   const inRecoveryRef = useRef(false);
   const [screen, setScreen] = useState(SCREENS.SPLASH);
+  const [boardsInitialTab, setBoardsInitialTab] = useState("my");
   const [showDevOverlay, setShowDevOverlay] = useState(false);
   const [simDay, setSimDay] = useState(null);
   const [simHour, setSimHour] = useState(12);
@@ -7443,7 +7449,7 @@ function App() {
           {screen===SCREENS.HOME&&<HomeScreen
             onPredict={(boardId)=>{ setActiveBoardId(boardId); setShowFirstAction(false); setScreen(SCREENS.INSTANT_PICK); }}
             onLeaderboard={()=>setScreen(SCREENS.LEADERBOARD)}
-            onBoards={()=>setScreen(SCREENS.BOARDS)}
+            onBoards={(tab)=>{ setBoardsInitialTab(tab||"my"); setScreen(SCREENS.BOARDS); }}
             onOpenGroups={(week)=>{ setGroupsInitialWeek(week||null); setScreen(SCREENS.GROUPS_SCHEDULE); }}
             myBoards={myBoards}
             predictionsComplete={predictionsComplete}
@@ -7459,6 +7465,7 @@ function App() {
             boardsLoading={boardsLoading}
             predictionsLoaded={predictionsLoaded}/>}
           {screen===SCREENS.BOARDS&&<BoardsScreen
+            initialTab={boardsInitialTab}
             onBack={()=>setScreen(SCREENS.HOME)}
             myBoards={myBoards} setMyBoards={setMyBoards}
             createdBoards={createdBoards} setCreatedBoards={setCreatedBoards}
