@@ -101,26 +101,16 @@ export async function checkDbHealth() {
 // ─── BOARDS ───────────────────────────────────────────────────────────────────
 // Returns boards with isAdmin=true (created_by) and/or isMember=true (board_members)
 export async function loadUserBoards(userId) {
-  const [memberships, created] = await Promise.all([
-    supabase.from('board_members').select('boards(*), role').eq('user_id', userId),
-    supabase.from('boards').select('*').eq('created_by', userId),
-  ])
+  const { data: memberships } = await supabase
+    .from('board_members')
+    .select('role, boards(*)')
+    .eq('user_id', userId)
   const map = new Map()
-  ;(memberships.data || []).forEach(row => {
+  ;(memberships || []).forEach(row => {
     const b = row.boards
     if (!b) return
     map.set(b.id, { ...b, label: b.emoji || '⚽', isGlobal: false, code: b.invite_code, max: b.max_players, isAdmin: row.role === 'admin', isMember: true })
   })
-  // Self-heal: boards created by user but missing from board_members (legacy data)
-  const orphans = (created.data || []).filter(b => !map.has(b.id))
-  if (orphans.length > 0) {
-    await Promise.all(orphans.map(b =>
-      supabase.from('board_members').upsert({ board_id: b.id, user_id: userId, role: 'admin' }, { onConflict: 'board_id,user_id' })
-    ))
-    orphans.forEach(b => {
-      map.set(b.id, { ...b, label: b.emoji || '⚽', isGlobal: false, code: b.invite_code, max: b.max_players, isAdmin: true, isMember: true })
-    })
-  }
   return Array.from(map.values())
 }
 
