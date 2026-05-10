@@ -236,6 +236,20 @@ export async function fetchMemberCounts(boardIds) {
   return counts;
 }
 
+// ─── AUTH HELPERS ─────────────────────────────────────────────────────────────
+// Requires Supabase SQL (run once in SQL editor):
+//   create or replace function public.check_email_exists(p_email text)
+//   returns boolean language plpgsql security definer set search_path = '' as $$
+//   begin return exists (select 1 from auth.users where lower(email)=lower(p_email) and deleted_at is null); end; $$;
+//   grant execute on function public.check_email_exists(text) to anon, authenticated;
+export async function checkEmailExists(email) {
+  try {
+    const { data, error } = await supabase.rpc('check_email_exists', { p_email: email.toLowerCase() });
+    if (error) return null;
+    return data === true;
+  } catch { return null; }
+}
+
 // ─── LEADERBOARD ──────────────────────────────────────────────────────────────
 export async function loadLeaderboard(boardId, search = null, userId = null) {
   const [rpcRes, profileRes] = await Promise.all([

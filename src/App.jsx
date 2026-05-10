@@ -3,7 +3,7 @@ import trophy from "./assets/hands-trophy.png";
 import varBg from "./assets/var-bg.jpg";
 import { ALL_GROUPS_DATA, FLAGS, TEAM_COLORS, CALENDAR_EVENTS } from "./data/worldcup2026.js";
 import { supabase } from "./supabase.js";
-import { loadPredictions, savePredictions, loadExactScores, saveExactScore, loadUserBoards, loadAvailableBoards, createBoard, joinBoardByCode, joinBoardById, loadLeaderboard, fetchScoringRules, fetchMemberCounts, removeBoardMember, removeParticipation, deleteBoard, loadBoardMembers, checkDbHealth } from "./db.js";
+import { loadPredictions, savePredictions, loadExactScores, saveExactScore, loadUserBoards, loadAvailableBoards, createBoard, joinBoardByCode, joinBoardById, loadLeaderboard, fetchScoringRules, fetchMemberCounts, removeBoardMember, removeParticipation, deleteBoard, loadBoardMembers, checkDbHealth, checkEmailExists } from "./db.js";
 
 const TEAM_CODE = {"Mexico":"MEX","South Africa":"RSA","South Korea":"KOR","Czechia":"CZE","Canada":"CAN","Switzerland":"SUI","Qatar":"QAT","Bosnia-Herzegovina":"BIH","Brazil":"BRA","Morocco":"MAR","Scotland":"SCO","Haiti":"HAI","USA":"USA","Paraguay":"PAR","Australia":"AUS","Turkiye":"TUR","Germany":"GER","Ecuador":"ECU","Ivory Coast":"CIV","Curacao":"CUW","Netherlands":"NED","Japan":"JPN","Tunisia":"TUN","Sweden":"SWE","Belgium":"BEL","Iran":"IRI","Egypt":"EGY","New Zealand":"NZL","Spain":"ESP","Uruguay":"URU","Saudi Arabia":"KSA","Cape Verde":"CPV","France":"FRA","Senegal":"SEN","Norway":"NOR","Iraq":"IRQ","Argentina":"ARG","Austria":"AUT","Algeria":"ALG","Jordan":"JOR","Portugal":"POR","Colombia":"COL","Uzbekistan":"UZB","DR Congo":"COD","England":"ENG","Croatia":"CRO","Panama":"PAN","Ghana":"GHA"};
 
@@ -5220,165 +5220,284 @@ function OnboardingSheet({ onDone }) {
   );
 }
 
-function LoginScreen({ onNext }) {
-  const lang = useLang();
-  const [tab, setTab] = useState("password");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [sent, setSent] = useState(false);
-  const [sentType, setSentType] = useState("magic"); // "magic" | "signup" | "forgot"
-  const [forgotMode, setForgotMode] = useState(false);
-  const [error, setError] = useState("");
+const IMAGE_CAPTCHA_CHALLENGES = [
+  { label:"Selectează toate mingile de fotbal ⚽", items:["⚽","🏀","⚽","🎾","🥊","⚽","🏈","🏐","🎱"], correct:new Set([0,2,5]) },
+  { label:"Selectează toate trofeele 🏆", items:["🥇","🏆","🎖️","🏆","🎯","🏅","🏆","⭐","🎗️"], correct:new Set([1,3,6]) },
+  { label:"Selectează toate steagurile 🚩", items:["🚩","🎯","🚩","🎪","🚩","⭐","🏈","🚩","🎱"], correct:new Set([0,2,4,7]) },
+  { label:"Selectează toate coroanele 👑", items:["👑","🎯","🎱","👑","⭐","🏅","👑","💎","🎗️"], correct:new Set([0,3,6]) },
+  { label:"Selectează toate stelele ⭐", items:["⭐","🎯","🏈","⭐","🎪","⭐","🏅","🎱","⭐"], correct:new Set([0,3,5,8]) },
+];
 
-  const handlePassword = async (isRegister=false) => {
-    if (!email.trim()) { setError("Introdu adresa de email."); return; }
-    if (!password.trim()) { setError("Introdu parola."); return; }
-    if (isRegister && password.length < 6) { setError("Parola trebuie să aibă minim 6 caractere."); return; }
-    setLoading(true); setError("");
-    try {
-      if (isRegister) {
-        const { data, error } = await supabase.auth.signUp({
-          email: email.trim(), password,
-          options: { emailRedirectTo: window.location.origin }
-        });
-        if (error) { setError(error.message); return; }
-        if (data?.session) return; // onAuthStateChange navighează spre HOME
-        setSentType("signup"); setSent(true);
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
-        if (error) setError(error.message);
-      }
-    } catch(e) {
-      setError("Eroare neașteptată. Încearcă din nou.");
-    } finally {
-      setLoading(false);
+function ImageCaptcha({ onSolved }) {
+  const [challenge] = useState(() =>
+    IMAGE_CAPTCHA_CHALLENGES[Math.floor(Math.random() * IMAGE_CAPTCHA_CHALLENGES.length)]
+  );
+  const [selected, setSelected] = useState(new Set());
+  const [done, setDone] = useState(false);
+
+  const toggle = (i) => {
+    if (done) return;
+    const next = new Set(selected);
+    if (next.has(i)) next.delete(i); else next.add(i);
+    setSelected(next);
+    const c = challenge.correct;
+    if (next.size === c.size && [...next].every(x => c.has(x))) {
+      setDone(true);
+      setTimeout(() => onSolved(), 350);
     }
   };
 
-  const handleForgotPassword = async () => {
-    if (!email.trim()) return;
-    setLoading(true); setError("");
-    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-      redirectTo: window.location.origin,
-    });
-    setLoading(false);
-    if (error) { setError(error.message); return; }
-    setSentType("forgot"); setSent(true);
+  if (done) return (
+    <div style={{background:"#f0fdf4",borderRadius:14,padding:"12px 16px",display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
+      <span style={{fontSize:20}}>✅</span>
+      <p style={{fontSize:13,fontWeight:700,color:"#16a34a",margin:0}}>Verificare completă</p>
+    </div>
+  );
+
+  return (
+    <div style={{background:"#fff",borderRadius:14,boxShadow:SHADOW_OUT,padding:"14px 16px",marginBottom:10}}>
+      <p style={{fontSize:12,color:"#888",fontWeight:600,margin:"0 0 10px",textAlign:"center"}}>{challenge.label}</p>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6}}>
+        {challenge.items.map((item, i) => {
+          const isSel = selected.has(i);
+          return (
+            <div key={i} onClick={() => toggle(i)} style={{
+              aspectRatio:"1", background: isSel ? "#EEF2FF" : "#f8f8f8",
+              border:`2px solid ${isSel ? NAVY : "#e8e8e8"}`,
+              borderRadius:10, display:"flex", alignItems:"center", justifyContent:"center",
+              fontSize:30, cursor:"pointer", transition:"all 0.15s",
+              userSelect:"none", WebkitUserSelect:"none",
+              boxShadow: isSel ? `0 0 0 3px ${NAVY}22` : "none",
+            }}>
+              {item}
+            </div>
+          );
+        })}
+      </div>
+      <p style={{fontSize:10,color:"#bbb",textAlign:"center",margin:"8px 0 0"}}>
+        Apasă pe fiecare imagine corectă • {selected.size} selectate
+      </p>
+    </div>
+  );
+}
+
+function LoginScreen({ onNext }) {
+  const lang = useLang();
+  const [step, setStep] = useState("credentials"); // "credentials" | "newuser" | "sent"
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [nickname, setNickname] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [captchaNeeded, setCaptchaNeeded] = useState(false);
+  const [captchaSolved, setCaptchaSolved] = useState(false);
+
+  const getAttempts = () => parseInt(localStorage.getItem("_pred_ml") || "0");
+  const incAttempts = () => localStorage.setItem("_pred_ml", String(getAttempts() + 1));
+
+  const goToNewuser = () => {
+    setCaptchaNeeded(getAttempts() >= 2);
+    setCaptchaSolved(false);
+    setStep("newuser");
   };
 
-  const handleMagicLink = async () => {
-    if (!email.trim()) return;
+  const goToForgot = () => {
+    setCaptchaNeeded(true);
+    setCaptchaSolved(false);
+    setError("");
+    setStep("forgot");
+  };
+
+  const handleContinue = async () => {
+    if (!email.trim()) { setError("Introdu adresa de email."); return; }
+    if (!password.trim()) { setError("Introdu parola."); return; }
+    setLoading(true); setError("");
+    try {
+      const { error: signInErr } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+      if (!signInErr) return; // success — onAuthStateChange handles navigation
+
+      // Distinguish wrong password (user exists) vs no account
+      const exists = await checkEmailExists(email.trim());
+      if (exists === true) {
+        setError("Parolă incorectă. Încearcă din nou sau resetează parola.");
+      } else {
+        // exists===false (confirmed no account) or exists===null (RPC not set up → show newuser anyway)
+        goToNewuser();
+      }
+    } catch { setError("Eroare neașteptată. Încearcă din nou."); }
+    finally { setLoading(false); }
+  };
+
+  const handleCreateAccount = async () => {
+    if (!nickname.trim()) { setError("Alege un nickname."); return; }
+    setLoading(true); setError("");
+    const { error: otpErr } = await supabase.auth.signInWithOtp({
+      email: email.trim(),
+      options: { emailRedirectTo: window.location.origin, data: { full_name: nickname.trim() }, shouldCreateUser: true }
+    });
+    setLoading(false);
+    if (otpErr) { setError(otpErr.message); return; }
+    incAttempts(); // increment only after successful magic link send
+    setStep("sent");
+  };
+
+  const handleForgotPassword = async () => {
+    if (!email.trim()) { setError("Introdu adresa de email."); return; }
     setLoading(true); setError("");
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim(),
-      options: { emailRedirectTo: window.location.origin }
+      options: { emailRedirectTo: window.location.origin, shouldCreateUser: false }
     });
     setLoading(false);
-    if (error) setError(error.message);
-    else { setSentType("magic"); setSent(true); }
+    if (error) { setError("Niciun cont găsit pentru această adresă."); return; }
+    setStep("sent");
   };
 
-  if (sent) return (
-    <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"0 32px",textAlign:"center",background:BG,position:"relative",overflow:"hidden"}}>
-      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.1,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
-      <div style={{position:"relative",zIndex:1}}>
-        <div style={{fontSize:56,marginBottom:16}}>📧</div>
-        <h2 style={{fontSize:20,fontWeight:800,color:DARK,margin:"0 0 10px"}}>
-          {sentType==="signup" ? "Confirmă contul!" : sentType==="forgot" ? "Verifică emailul!" : "Check your email!"}
-        </h2>
-        <p style={{fontSize:14,color:"#aaa",lineHeight:1.6,margin:"0 0 24px"}}>
-          {sentType==="signup" && <>Am trimis un link de confirmare la<br/><strong style={{color:DARK}}>{email}</strong><br/><span style={{fontSize:12}}>Click pe link pentru a activa contul.</span></>}
-          {sentType==="forgot" && <>Am trimis un link de resetare la<br/><strong style={{color:DARK}}>{email}</strong><br/><span style={{fontSize:12}}>Click pe link pentru a seta o parolă nouă.</span></>}
-          {sentType==="magic" && <>Am trimis un link la<br/><strong style={{color:DARK}}>{email}</strong></>}
-        </p>
-        <button onClick={()=>{setSent(false);setForgotMode(false);}} style={{background:"transparent",border:`1px solid #ddd`,borderRadius:10,padding:"10px 20px",fontSize:13,color:"#aaa",cursor:"pointer"}}>
+  const canCreate = nickname.trim() && (!captchaNeeded || captchaSolved);
+  const forgotCanSend = email.trim() && captchaSolved;
+
+  const bgImg = <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>;
+  const header = (icon, title) => (
+    <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"32px 28px 24px",display:"flex",flexDirection:"column",alignItems:"center"}}>
+      <div style={{width:64,height:64,borderRadius:20,background:"rgba(255,255,255,0.12)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:32,marginBottom:12}}>{icon}</div>
+      <p style={{fontSize:12,color:RED,margin:"0 0 4px",letterSpacing:3,textTransform:"uppercase",fontWeight:800}}>WORLD CUP 2026</p>
+      <h2 style={{fontSize:22,fontWeight:800,color:"#fff",margin:0,textAlign:"center"}}>{title}</h2>
+    </div>
+  );
+
+  // ── Forgot password ───────────────────────────────────────────────────────
+  if (step === "forgot") return (
+    <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,position:"relative",overflow:"hidden"}}>
+      {bgImg}
+      {header("🔑", "Recuperare cont")}
+      <div style={{flex:1,padding:"24px 24px 32px",display:"flex",flexDirection:"column",position:"relative",zIndex:1}}>
+        <div style={{background:"#fff",borderRadius:14,boxShadow:SHADOW_OUT,padding:"14px 16px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
+          <span style={{fontSize:15}}>✉️</span>
+          <input value={email} onChange={e=>setEmail(e.target.value)} placeholder="adresa@email.com"
+            type="email" autoCapitalize="none" autoFocus
+            style={{flex:1,border:"none",outline:"none",fontSize:15,color:DARK,background:"transparent"}}/>
+        </div>
+
+        <ImageCaptcha key="forgot-captcha" onSolved={() => setCaptchaSolved(true)} />
+
+        {error && <p style={{fontSize:12,color:RED,margin:"0 0 8px",textAlign:"center"}}>{error}</p>}
+
+        <button onClick={handleForgotPassword} disabled={loading || !forgotCanSend}
+          style={{
+            width:"100%",
+            background: forgotCanSend ? `linear-gradient(135deg,${NAVY},#001840)` : "#e0e0e0",
+            color: forgotCanSend ? "#fff" : "#bbb",
+            border:"none", borderRadius:14, padding:"15px 0", fontSize:15, fontWeight:700,
+            cursor: forgotCanSend ? "pointer" : "not-allowed",
+            opacity: loading ? 0.7 : 1,
+            marginBottom:10, transition:"all 0.2s"
+          }}>
+          {loading ? "Se trimite..." : !captchaSolved ? "🔒 Rezolvă verificarea mai sus" : "Trimite magic link →"}
+        </button>
+
+        <button onClick={()=>{setStep("credentials");setError("");}}
+          style={{width:"100%",background:"transparent",color:"#aaa",border:"1px solid #ddd",borderRadius:14,padding:"13px 0",fontSize:14,fontWeight:600,cursor:"pointer"}}>
           ← Înapoi
         </button>
       </div>
     </div>
   );
 
+  // ── Sent ──────────────────────────────────────────────────────────────────
+  if (step === "sent") return (
+    <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"0 32px",textAlign:"center",background:BG,position:"relative",overflow:"hidden"}}>
+      {bgImg}
+      <div style={{position:"relative",zIndex:1}}>
+        <div style={{fontSize:56,marginBottom:16}}>📧</div>
+        <h2 style={{fontSize:20,fontWeight:800,color:DARK,margin:"0 0 10px"}}>Verifică emailul!</h2>
+        <p style={{fontSize:14,color:"#aaa",lineHeight:1.6,margin:"0 0 24px"}}>
+          Am trimis un link la<br/><strong style={{color:DARK}}>{email}</strong><br/>
+          <span style={{fontSize:12}}>Click pe link pentru a continua.</span>
+        </p>
+        <button onClick={()=>setStep("credentials")} style={{background:"transparent",border:"1px solid #ddd",borderRadius:10,padding:"10px 20px",fontSize:13,color:"#aaa",cursor:"pointer"}}>
+          ← Înapoi
+        </button>
+      </div>
+    </div>
+  );
+
+  // ── Cont nou ──────────────────────────────────────────────────────────────
+  if (step === "newuser") return (
+    <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,position:"relative",overflow:"hidden"}}>
+      {bgImg}
+      {header("👋", "Cont nou")}
+      <div style={{flex:1,padding:"24px 24px 32px",display:"flex",flexDirection:"column",position:"relative",zIndex:1}}>
+        {/* No account found card */}
+        <div style={{background:"#fff",borderRadius:14,boxShadow:SHADOW_OUT,padding:"12px 16px",marginBottom:16}}>
+          <p style={{fontSize:12,color:"#aaa",margin:"0 0 2px"}}>No account found for</p>
+          <p style={{fontSize:15,fontWeight:700,color:DARK,margin:0}}>{email}</p>
+        </div>
+
+        {/* Nickname */}
+        <div style={{background:"#fff",borderRadius:14,boxShadow:SHADOW_OUT,padding:"14px 16px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
+          <span style={{fontSize:15}}>👤</span>
+          <input value={nickname} onChange={e=>setNickname(e.target.value)}
+            placeholder="Alege un nickname" type="text" autoCapitalize="words" autoFocus
+            style={{flex:1,border:"none",outline:"none",fontSize:15,color:DARK,background:"transparent"}}/>
+        </div>
+
+        {/* Captcha — apare după 2 magic link-uri trimise */}
+        {captchaNeeded && (
+          <ImageCaptcha key="newuser-captcha" onSolved={() => setCaptchaSolved(true)} />
+        )}
+
+        {error && <p style={{fontSize:12,color:RED,margin:"0 0 8px",textAlign:"center"}}>{error}</p>}
+
+        {/* Create account — read-only until captcha solved */}
+        <button onClick={handleCreateAccount} disabled={loading || !canCreate}
+          style={{
+            width:"100%",
+            background: canCreate ? `linear-gradient(135deg,${RED},#cc2200)` : "#e0e0e0",
+            color: canCreate ? "#fff" : "#bbb",
+            border:"none", borderRadius:14, padding:"15px 0", fontSize:15, fontWeight:700,
+            cursor: canCreate ? "pointer" : "not-allowed",
+            opacity: loading ? 0.7 : 1,
+            marginBottom:10, transition:"all 0.2s"
+          }}>
+          {loading ? "Se trimite..." : captchaNeeded && !captchaSolved ? "🔒 Rezolvă verificarea mai sus" : "Creează cont · Sign up →"}
+        </button>
+
+        <button onClick={()=>{setStep("credentials");setError("");}}
+          style={{width:"100%",background:"transparent",color:"#aaa",border:"1px solid #ddd",borderRadius:14,padding:"13px 0",fontSize:14,fontWeight:600,cursor:"pointer"}}>
+          ← Înapoi
+        </button>
+      </div>
+    </div>
+  );
+
+  // ── Credentials (step 1) ──────────────────────────────────────────────────
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,position:"relative",overflow:"hidden"}}>
-      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
-      <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"32px 28px 28px",display:"flex",flexDirection:"column",alignItems:"center"}}>
-        <div style={{width:64,height:64,borderRadius:20,background:"rgba(255,255,255,0.12)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:32,marginBottom:12}}>🏆</div>
-        <p style={{fontSize:12,color:RED,margin:"0 0 4px",letterSpacing:3,textTransform:"uppercase",fontWeight:800}}>WORLD CUP 2026</p>
-        <h2 style={{fontSize:22,fontWeight:800,color:"#fff",margin:"0 0 16px",textAlign:"center"}}>{T[lang].joinTheGame}</h2>
-        {/* Tabs */}
-        <div style={{display:"flex",gap:0,background:"rgba(255,255,255,0.1)",borderRadius:10,padding:3,width:"100%"}}>
-          {[{id:"password",label:"Parolă"},{id:"magic",label:"Magic Link"}].map(t=>(
-            <button key={t.id} onClick={()=>{setTab(t.id);setError("");}}
-              style={{flex:1,background:tab===t.id?"#fff":"transparent",color:tab===t.id?NAVY:"rgba(255,255,255,0.7)",border:"none",borderRadius:8,padding:"8px 0",fontSize:13,fontWeight:700,cursor:"pointer",transition:"all 0.2s"}}>
-              {t.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
+      {bgImg}
+      {header("🏆", T[lang].joinTheGame)}
       <div style={{flex:1,padding:"24px 24px 32px",display:"flex",flexDirection:"column",position:"relative",zIndex:1}}>
-        {/* Email */}
         <div style={{background:"#fff",borderRadius:14,boxShadow:SHADOW_OUT,padding:"14px 16px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
           <span style={{fontSize:15}}>✉️</span>
           <input value={email} onChange={e=>setEmail(e.target.value)} placeholder="adresa@email.com"
             type="email" autoCapitalize="none"
             style={{flex:1,border:"none",outline:"none",fontSize:15,color:DARK,background:"transparent"}}/>
         </div>
-
-        {/* Parolă — doar pe tab password */}
-        {tab==="password" && (
-          <div style={{background:"#fff",borderRadius:14,boxShadow:SHADOW_OUT,padding:"14px 16px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
-            <span style={{fontSize:15}}>🔒</span>
-            <input value={password} onChange={e=>setPassword(e.target.value)}
-              onKeyDown={e=>e.key==="Enter"&&handlePassword()}
-              placeholder="parolă" type="password"
-              style={{flex:1,border:"none",outline:"none",fontSize:15,color:DARK,background:"transparent"}}/>
-          </div>
-        )}
-
+        <div style={{background:"#fff",borderRadius:14,boxShadow:SHADOW_OUT,padding:"14px 16px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
+          <span style={{fontSize:15}}>🔒</span>
+          <input value={password} onChange={e=>setPassword(e.target.value)}
+            onKeyDown={e=>e.key==="Enter"&&handleContinue()}
+            placeholder="parolă" type="password"
+            style={{flex:1,border:"none",outline:"none",fontSize:15,color:DARK,background:"transparent"}}/>
+        </div>
         {error && <p style={{fontSize:12,color:RED,margin:"0 0 8px",textAlign:"center"}}>{error}</p>}
-
-        {tab==="password" ? (
-          forgotMode ? (
-            <>
-              <button onClick={handleForgotPassword} disabled={loading||!email.trim()}
-                style={{width:"100%",background:email.trim()?`linear-gradient(135deg,${NAVY},#001840)`:"#e0e0e0",color:"#fff",border:"none",borderRadius:14,padding:"15px 0",fontSize:15,fontWeight:700,cursor:"pointer",opacity:loading?0.7:1,marginBottom:10}}>
-                {loading ? "Se trimite..." : "Trimite link resetare →"}
-              </button>
-              <button onClick={()=>{setForgotMode(false);setError("");}}
-                style={{width:"100%",background:"transparent",color:"#aaa",border:"1px solid #ddd",borderRadius:14,padding:"13px 0",fontSize:14,fontWeight:600,cursor:"pointer"}}>
-                ← Înapoi
-              </button>
-            </>
-          ) : (
-            <>
-              <button onClick={()=>handlePassword(false)} disabled={loading}
-                style={{width:"100%",background:`linear-gradient(135deg,${NAVY},#001840)`,color:"#fff",border:"none",borderRadius:14,padding:"15px 0",fontSize:15,fontWeight:700,cursor:"pointer",opacity:loading?0.7:1,marginBottom:10}}>
-                {loading ? "Se încarcă..." : "Intră în cont →"}
-              </button>
-              <button onClick={()=>handlePassword(true)}
-                style={{width:"100%",background:"transparent",color:NAVY,border:`1.5px solid ${NAVY}`,borderRadius:14,padding:"13px 0",fontSize:14,fontWeight:700,cursor:"pointer",marginBottom:10}}>
-                Cont nou
-              </button>
-              <p onClick={()=>{setForgotMode(true);setError("");}}
-                style={{textAlign:"center",fontSize:12,color:"#aaa",margin:"4px 0 0",cursor:"pointer",textDecoration:"underline"}}>
-                Am uitat parola
-              </p>
-            </>
-          )
-        ) : (
-          <button onClick={handleMagicLink} disabled={loading||!email.trim()}
-            style={{width:"100%",background:email.trim()?`linear-gradient(135deg,${NAVY},#001840)`:"#e0e0e0",color:"#fff",border:"none",borderRadius:14,padding:"15px 0",fontSize:15,fontWeight:700,cursor:"pointer",opacity:loading?0.7:1}}>
-            {loading ? "Se trimite..." : "Trimite Magic Link →"}
-          </button>
-        )}
-
-        {false && (
-          <button onClick={onNext} style={{marginTop:16,width:"100%",background:"transparent",border:`1px dashed #ddd`,borderRadius:14,padding:"12px 0",fontSize:13,color:"#bbb",cursor:"pointer",fontWeight:600}}>
-            DEV — Skip Login →
-          </button>
-        )}
+        <button onClick={handleContinue} disabled={loading}
+          style={{width:"100%",background:`linear-gradient(135deg,${NAVY},#001840)`,color:"#fff",border:"none",borderRadius:14,padding:"15px 0",fontSize:15,fontWeight:700,cursor:"pointer",opacity:loading?0.7:1,marginBottom:8}}>
+          {loading ? "Se verifică..." : "Continuă →"}
+        </button>
+        <p onClick={goToForgot}
+          style={{textAlign:"center",fontSize:12,color:"#aaa",margin:"4px 0 0",cursor:"pointer",textDecoration:"underline"}}>
+          Am uitat parola
+        </p>
       </div>
     </div>
   );
@@ -7063,9 +7182,6 @@ function App() {
       setUser(u);
       if (event === 'PASSWORD_RECOVERY') { setScreen(SCREENS.RESET_PASSWORD); return; }
       if (u) {
-        if (isOtpLogin(session) && !u.user_metadata?.has_password) {
-          setScreen(SCREENS.SET_PASSWORD); return;
-        }
         setScreen(SCREENS.HOME);
       } else setScreen(SCREENS.SPLASH);
     });
@@ -7314,7 +7430,6 @@ function App() {
               }
             }}/>}
           {screen===SCREENS.RESET_PASSWORD&&<ResetPasswordScreen onDone={()=>setScreen(SCREENS.HOME)}/>}
-          {screen===SCREENS.SET_PASSWORD&&<SetPasswordScreen onDone={()=>setScreen(SCREENS.HOME)}/>}
           {screen===SCREENS.LEADERBOARD&&<LeaderboardScreen onBack={()=>setScreen(SCREENS.HOME)} tournamentStarted={tournamentStarted}
             myBoards={myBoards} activeBoardId={activeBoardId} setActiveBoardId={setActiveBoardId}
             userId={user?.id}
