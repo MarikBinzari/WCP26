@@ -102,36 +102,35 @@ export async function checkDbHealth() {
 // Returns boards with isAdmin=true (created_by) and/or isMember=true (board_members)
 export async function loadUserBoards(userId) {
   const [memberships, created] = await Promise.all([
-    supabase.from('board_members').select('boards(*)').eq('user_id', userId),
+    supabase.from('board_members').select('boards(*), role').eq('user_id', userId),
     supabase.from('boards').select('*').eq('created_by', userId),
   ])
   const map = new Map()
-  ;(created.data || []).forEach(b => {
-    map.set(b.id, { ...b, label: b.emoji || '⚽', isGlobal: false, code: b.invite_code, max: b.max_players, isAdmin: true, isMember: false })
-  })
   ;(memberships.data || []).forEach(row => {
     const b = row.boards
-    const existing = map.get(b.id)
-    if (existing) {
-      map.set(b.id, { ...existing, isMember: true })
-    } else {
-      map.set(b.id, { ...b, label: b.emoji || '⚽', isGlobal: false, code: b.invite_code, max: b.max_players, isAdmin: false, isMember: true })
-    }
+    if (!b) return
+    map.set(b.id, { ...b, label: b.emoji || '⚽', isGlobal: false, code: b.invite_code, max: b.max_players, isAdmin: row.role === 'admin', isMember: true })
   })
+  // Self-heal: boards created by user but missing from board_members (legacy data)
+  const orphans = (created.data || []).filter(b => !map.has(b.id))
+  if (orphans.length > 0) {
+    await Promise.all(orphans.map(b =>
+      supabase.from('board_members').upsert({ board_id: b.id, user_id: userId, role: 'admin' }, { onConflict: 'board_id,user_id' })
+    ))
+    orphans.forEach(b => {
+      map.set(b.id, { ...b, label: b.emoji || '⚽', isGlobal: false, code: b.invite_code, max: b.max_players, isAdmin: true, isMember: true })
+    })
+  }
   return Array.from(map.values())
 }
 
 export async function loadAvailableBoards(userId) {
-  const [allRes, memberRes, adminRes] = await Promise.all([
+  const [allRes, memberRes] = await Promise.all([
     supabase.from('boards').select('*'),
     supabase.from('board_members').select('board_id').eq('user_id', userId),
-    supabase.from('boards').select('id').eq('created_by', userId),
   ])
   if (allRes.error) { console.error('loadAvailableBoards:', allRes.error); return [] }
-  const excludeSet = new Set([
-    ...(memberRes.data || []).map(r => r.board_id),
-    ...(adminRes.data || []).map(r => r.id),
-  ])
+  const excludeSet = new Set((memberRes.data || []).map(r => r.board_id))
   return (allRes.data || [])
     .filter(b => !excludeSet.has(b.id))
     .map(b => ({ ...b, label: b.emoji || '⚽', isGlobal: false, code: b.invite_code, max: b.max_players }))
@@ -147,7 +146,9 @@ export async function createBoard(userId, { name, emoji, type, password, max_pla
     .select()
     .single()
   if (error) { console.error('createBoard:', error); return { error } }
-  return { data: { ...data, label: data.emoji || '⚽', isGlobal: false, code: data.invite_code, isAdmin: true, isMember: false } }
+  // Add creator to board_members so membership is tracked uniformly
+  await supabase.from('board_members').upsert({ board_id: data.id, user_id: userId, role: 'admin' }, { onConflict: 'board_id,user_id' })
+  return { data: { ...data, label: data.emoji || '⚽', isGlobal: false, code: data.invite_code, isAdmin: true, isMember: true } }
 }
 
 export async function joinBoardByCode(userId, code) {
