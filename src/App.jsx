@@ -4348,12 +4348,11 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
 
         {/* Tab: My Boards */}
         {activeTab==="my"&&(()=>{
-          const joined=myBoards.filter(b=>!createdBoards.some(c=>c.id===b.id));
-          if(joined.length===0) return <p style={{fontSize:13,color:"#bbb",textAlign:"center",marginTop:40}}>Nu ești înscris în niciun board.</p>;
+          if(myBoards.length===0) return <p style={{fontSize:13,color:"#bbb",textAlign:"center",marginTop:40}}>Nu ești înscris în niciun board.</p>;
           return (
             <div style={{background:"#fff",borderRadius:14,boxShadow:"0 2px 12px rgba(0,0,0,0.10)",overflow:"hidden"}}>
-              {joined.map((b,bi,arr)=>{
-                const latest=availBoards.find(c=>c.id===b.id)||b;
+              {myBoards.map((b,bi,arr)=>{
+                const latest=availBoards.find(c=>c.id===b.id)||createdBoards.find(c=>c.id===b.id)||b;
                 return (
                   <div key={b.id}>
                     <div style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",cursor:"pointer"}} onClick={()=>onJoin&&onJoin(b.id)}>
@@ -7287,9 +7286,14 @@ function App() {
       ]);
       // adminBoards = boards where user is creator (isAdmin=true)
       const adminBoards = boards.filter(b => b.isAdmin);
-      // participantBoards = boards where user is member (isMember=true), excludes global
+      // participantBoards = boards where user is member (isMember=true)
       const participantBoards = boards.filter(b => b.isMember);
-      const allMyBoards = [...INITIAL_BOARDS, ...participantBoards];
+      // allMyBoards = Global + joined + created (deduped)
+      const seen = new Set(INITIAL_BOARDS.map(b => b.id));
+      const allMyBoards = [...INITIAL_BOARDS];
+      for (const b of [...participantBoards, ...adminBoards]) {
+        if (!seen.has(b.id)) { seen.add(b.id); allMyBoards.push(b); }
+      }
       const allIds = [...allMyBoards.map(b => b.id), ...adminBoards.map(b => b.id), ...avail.map(b => b.id)];
       const counts = await fetchMemberCounts(allIds);
       const freshBoards = allMyBoards.map(b => ({ ...b, members: counts[b.id] ?? b.members }));
