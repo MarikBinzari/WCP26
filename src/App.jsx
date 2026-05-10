@@ -4273,13 +4273,6 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
           </div>
           <div style={{width:36}}/>
         </div>
-        <div style={{display:"flex",justifyContent:"flex-end",marginTop:10}}>
-          <button onClick={()=>{ setEditBoard(null); setCName(""); setCPassword(""); setCEmoji(""); setCMaxPlayers(10); setCSlots(3); setCPrizes(["","",""]); setView("create"); }}
-            style={{background:"rgba(0,0,0,0.06)",border:"none",borderRadius:10,padding:"8px 14px",
-              color:DARK,fontSize:12,fontWeight:700,cursor:"pointer"}}>
-            + {T[lang].createBoard}
-          </button>
-        </div>
       </div>
       {/* Password modal */}
       {joinPrompt&&(
@@ -4429,7 +4422,13 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
             <div style={{background:"#fff",borderRadius:14,boxShadow:"0 2px 12px rgba(0,0,0,0.10)",marginBottom:12,overflow:"hidden"}}>
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 14px 8px"}}>
                 <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:0}}>{T[lang].availableBoards}</p>
-                <span style={{fontSize:11,color:"#bbb"}}>{allAvail.length} boards</span>
+                <div style={{display:"flex",alignItems:"center",gap:8}}>
+                  <span style={{fontSize:11,color:"#bbb"}}>{allAvail.length} boards</span>
+                  <button onClick={()=>{ setEditBoard(null); setCName(""); setCPassword(""); setCEmoji(""); setCMaxPlayers(10); setCSlots(3); setCPrizes(["","",""]); setView("create"); }}
+                    style={{background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,border:"none",borderRadius:8,padding:"5px 10px",color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer"}}>
+                    + {T[lang].createBoard}
+                  </button>
+                </div>
               </div>
               <div style={{padding:"0 14px 10px"}}>
                 <div style={{background:"rgba(0,0,0,0.04)",borderRadius:10,padding:"9px 12px",display:"flex",gap:8,alignItems:"center",border:isCode?`1.5px solid ${NAVY}`:"1.5px solid transparent"}}>
