@@ -3792,7 +3792,7 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
               <div onClick={()=>(!deadlinePassed||boardDone)&&onPredict(activeId)}
                 style={{flex:1,background:"#fff",borderRadius:14,
                   boxShadow:(!boardDone&&!deadlinePassed&&predictionsLoaded[activeId])
-                    ?"0 0 0 1.5px rgba(0,32,91,0.18), 0 8px 22px rgba(0,32,91,0.12)"
+                    ?`0 0 0 1.5px ${NAVY}, 0 8px 22px rgba(10,46,138,0.14)`
                     :"0 8px 22px rgba(0,0,0,0.07)",
                   padding:"10px 12px",cursor:(deadlinePassed&&!boardDone)?"default":"pointer",position:"relative",
                   opacity:isLocked?0.6:1,
@@ -3830,7 +3830,7 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
               <div onClick={()=>onOpenGroups&&onOpenGroups()}
                 style={{flex:1,background:"#fff",borderRadius:14,
                   boxShadow:missing>0
-                    ?"0 0 0 1.5px rgba(0,32,91,0.18), 0 8px 22px rgba(0,32,91,0.12)"
+                    ?`0 0 0 1.5px ${NAVY}, 0 8px 22px rgba(10,46,138,0.14)`
                     :"0 8px 22px rgba(0,0,0,0.07)",
                   padding:"10px 12px",cursor:"pointer",position:"relative"}}>
                 {missing>0&&(
