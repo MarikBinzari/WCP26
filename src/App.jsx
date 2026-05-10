@@ -5297,6 +5297,7 @@ function LoginScreen({ onNext }) {
   const incAttempts = () => localStorage.setItem("_pred_ml", String(getAttempts() + 1));
 
   const goToNewuser = () => {
+    setPassword("");
     setCaptchaNeeded(getAttempts() >= 2);
     setCaptchaSolved(false);
     setStep("newuser");
@@ -5341,14 +5342,15 @@ function LoginScreen({ onNext }) {
 
   const handleCreateAccount = async () => {
     if (!nickname.trim()) { setError("Alege un nickname."); return; }
+    if (password.length < 6) { setError("Parola trebuie să aibă minim 6 caractere."); return; }
     setLoading(true); setError("");
-    const { error: otpErr } = await supabase.auth.signInWithOtp({
-      email: email.trim(),
-      options: { emailRedirectTo: window.location.origin, data: { full_name: nickname.trim() }, shouldCreateUser: true }
+    const { error: otpErr } = await supabase.auth.signUp({
+      email: email.trim(), password,
+      options: { data: { full_name: nickname.trim() }, emailRedirectTo: window.location.origin }
     });
     setLoading(false);
     if (otpErr) { setError(otpErr.message); return; }
-    incAttempts(); // increment only after successful magic link send
+    incAttempts();
     setStep("sent");
   };
 
@@ -5369,9 +5371,8 @@ function LoginScreen({ onNext }) {
   const handleForgotPassword = async () => {
     if (!email.trim()) { setError("Introdu adresa de email."); return; }
     setLoading(true); setError("");
-    const { error } = await supabase.auth.signInWithOtp({
-      email: email.trim(),
-      options: { emailRedirectTo: window.location.origin, shouldCreateUser: false }
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: window.location.origin
     });
     setLoading(false);
     if (error) { setError("Eroare la trimitere. Încearcă din nou."); return; }
@@ -5379,7 +5380,7 @@ function LoginScreen({ onNext }) {
     setStep("sent");
   };
 
-  const canCreate = nickname.trim() && (!captchaNeeded || captchaSolved);
+  const canCreate = nickname.trim() && password.length >= 6 && (!captchaNeeded || captchaSolved);
   const forgotCanSend = email.trim() && captchaSolved;
   const signupCanCreate = email.trim() && nickname.trim() && password.length >= 6 && (!captchaNeeded || captchaSolved);
 
@@ -5521,6 +5522,16 @@ function LoginScreen({ onNext }) {
         {/* Captcha — apare după 2 magic link-uri trimise */}
         {captchaNeeded && (
           <ImageCaptcha key="newuser-captcha" onSolved={() => setCaptchaSolved(true)} />
+        )}
+
+        {/* Parolă — apare întotdeauna (pre-completată dacă a fost introdusă pe step 1) */}
+        {(!captchaNeeded || captchaSolved) && (
+          <div style={{background:"#fff",borderRadius:14,boxShadow:SHADOW_OUT,padding:"14px 16px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
+            <span style={{fontSize:15}}>🔒</span>
+            <input value={password} onChange={e=>setPassword(e.target.value)}
+              placeholder="parolă (min. 6 caractere)" type="password"
+              style={{flex:1,border:"none",outline:"none",fontSize:15,color:DARK,background:"transparent"}}/>
+          </div>
         )}
 
         {error && <p style={{fontSize:12,color:RED,margin:"0 0 8px",textAlign:"center"}}>{error}</p>}
