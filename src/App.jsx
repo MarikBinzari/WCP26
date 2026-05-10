@@ -7262,7 +7262,8 @@ function App() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       const u = session?.user ?? null;
       setUser(u);
-      if (u) setScreen(SCREENS.HOME);
+      const isRecovery = window.location.hash.includes('type=recovery');
+      if (u && !isRecovery) setScreen(SCREENS.HOME);
       setAuthLoading(false);
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
