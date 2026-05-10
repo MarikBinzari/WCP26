@@ -5291,6 +5291,7 @@ function LoginScreen({ onNext }) {
   const [error, setError] = useState("");
   const [captchaNeeded, setCaptchaNeeded] = useState(false);
   const [captchaSolved, setCaptchaSolved] = useState(false);
+  const [sentFrom, setSentFrom] = useState("");
 
   const getAttempts = () => parseInt(localStorage.getItem("_pred_ml") || "0");
   const incAttempts = () => localStorage.setItem("_pred_ml", String(getAttempts() + 1));
@@ -5299,6 +5300,16 @@ function LoginScreen({ onNext }) {
     setCaptchaNeeded(getAttempts() >= 2);
     setCaptchaSolved(false);
     setStep("newuser");
+  };
+
+  const goToSignup = () => {
+    setEmail("");
+    setPassword("");
+    setNickname("");
+    setCaptchaNeeded(true);
+    setCaptchaSolved(false);
+    setError("");
+    setStep("signup");
   };
 
   const goToForgot = () => {
@@ -5314,7 +5325,7 @@ function LoginScreen({ onNext }) {
     setLoading(true); setError("");
     try {
       const { error: signInErr } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
-      if (!signInErr) return; // success — onAuthStateChange handles navigation
+      if (!signInErr) { setLoading(false); return; } // success — onAuthStateChange handles navigation
 
       // Distinguish wrong password (user exists) vs no account
       const exists = await checkEmailExists(email.trim());
@@ -5341,6 +5352,20 @@ function LoginScreen({ onNext }) {
     setStep("sent");
   };
 
+  const handleSignup = async () => {
+    if (!email.trim()) { setError("Introdu adresa de email."); return; }
+    if (!nickname.trim()) { setError("Alege un nickname."); return; }
+    if (password.length < 6) { setError("Parola trebuie să aibă minim 6 caractere."); return; }
+    setLoading(true); setError("");
+    const { error: err } = await supabase.auth.signUp({
+      email: email.trim(), password,
+      options: { data: { full_name: nickname.trim() }, emailRedirectTo: window.location.origin }
+    });
+    setLoading(false);
+    if (err) { setError(err.message); return; }
+    setStep("sent");
+  };
+
   const handleForgotPassword = async () => {
     if (!email.trim()) { setError("Introdu adresa de email."); return; }
     setLoading(true); setError("");
@@ -5349,12 +5374,14 @@ function LoginScreen({ onNext }) {
       options: { emailRedirectTo: window.location.origin, shouldCreateUser: false }
     });
     setLoading(false);
-    if (error) { setError("Niciun cont găsit pentru această adresă."); return; }
+    if (error) { setError("Eroare la trimitere. Încearcă din nou."); return; }
+    setSentFrom("forgot");
     setStep("sent");
   };
 
   const canCreate = nickname.trim() && (!captchaNeeded || captchaSolved);
   const forgotCanSend = email.trim() && captchaSolved;
+  const signupCanCreate = email.trim() && nickname.trim() && password.length >= 6 && (!captchaNeeded || captchaSolved);
 
   const bgImg = <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.15,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>;
   const header = (icon, title) => (
@@ -5362,6 +5389,55 @@ function LoginScreen({ onNext }) {
       <div style={{width:64,height:64,borderRadius:20,background:"rgba(255,255,255,0.12)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:32,marginBottom:12}}>{icon}</div>
       <p style={{fontSize:12,color:RED,margin:"0 0 4px",letterSpacing:3,textTransform:"uppercase",fontWeight:800}}>WORLD CUP 2026</p>
       <h2 style={{fontSize:22,fontWeight:800,color:"#fff",margin:0,textAlign:"center"}}>{title}</h2>
+    </div>
+  );
+
+  // ── Sign up ───────────────────────────────────────────────────────────────
+  if (step === "signup") return (
+    <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,position:"relative",overflow:"hidden"}}>
+      {bgImg}
+      {header("✨", "Creează cont")}
+      <div style={{flex:1,padding:"24px 24px 32px",display:"flex",flexDirection:"column",position:"relative",zIndex:1}}>
+        <div style={{background:"#fff",borderRadius:14,boxShadow:SHADOW_OUT,padding:"14px 16px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
+          <span style={{fontSize:15}}>✉️</span>
+          <input value={email} onChange={e=>setEmail(e.target.value)} placeholder="adresa@email.com"
+            type="email" autoCapitalize="none" autoFocus
+            style={{flex:1,border:"none",outline:"none",fontSize:15,color:DARK,background:"transparent"}}/>
+        </div>
+        <div style={{background:"#fff",borderRadius:14,boxShadow:SHADOW_OUT,padding:"14px 16px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
+          <span style={{fontSize:15}}>👤</span>
+          <input value={nickname} onChange={e=>setNickname(e.target.value)}
+            placeholder="Alege un nickname" type="text" autoCapitalize="words"
+            style={{flex:1,border:"none",outline:"none",fontSize:15,color:DARK,background:"transparent"}}/>
+        </div>
+        {captchaNeeded && email.trim() && nickname.trim() && (
+          <ImageCaptcha key="signup-captcha" onSolved={() => setCaptchaSolved(true)} />
+        )}
+        {(!captchaNeeded || captchaSolved) && (
+          <div style={{background:"#fff",borderRadius:14,boxShadow:SHADOW_OUT,padding:"14px 16px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
+            <span style={{fontSize:15}}>🔒</span>
+            <input value={password} onChange={e=>setPassword(e.target.value)}
+              placeholder="parolă (min. 6 caractere)" type="password"
+              style={{flex:1,border:"none",outline:"none",fontSize:15,color:DARK,background:"transparent"}}/>
+          </div>
+        )}
+        {error && <p style={{fontSize:12,color:RED,margin:"0 0 8px",textAlign:"center"}}>{error}</p>}
+        <button onClick={handleSignup} disabled={loading || !signupCanCreate}
+          style={{
+            width:"100%",
+            background: signupCanCreate ? `linear-gradient(135deg,${RED},#cc2200)` : "#e0e0e0",
+            color: signupCanCreate ? "#fff" : "#bbb",
+            border:"none", borderRadius:14, padding:"15px 0", fontSize:15, fontWeight:700,
+            cursor: signupCanCreate ? "pointer" : "not-allowed",
+            opacity: loading ? 0.7 : 1, marginBottom:10, transition:"all 0.2s"
+          }}>
+          {loading ? "Se creează..." : "Creează cont →"}
+        </button>
+        <button onClick={()=>{setStep("credentials");setError("");}}
+          style={{width:"100%",background:"transparent",color:"#aaa",border:"1px solid #ddd",borderRadius:14,padding:"13px 0",fontSize:14,fontWeight:600,cursor:"pointer"}}>
+          ← Înapoi
+        </button>
+      </div>
     </div>
   );
 
@@ -5413,6 +5489,7 @@ function LoginScreen({ onNext }) {
         <p style={{fontSize:14,color:"#aaa",lineHeight:1.6,margin:"0 0 24px"}}>
           Am trimis un link la<br/><strong style={{color:DARK}}>{email}</strong><br/>
           <span style={{fontSize:12}}>Click pe link pentru a continua.</span>
+          {sentFrom==="forgot"&&<><br/><span style={{fontSize:11,color:"#bbb"}}>Link trimis dacă adresa există în sistem.</span></>}
         </p>
         <button onClick={()=>setStep("credentials")} style={{background:"transparent",border:"1px solid #ddd",borderRadius:10,padding:"10px 20px",fontSize:13,color:"#aaa",cursor:"pointer"}}>
           ← Înapoi
@@ -5494,10 +5571,16 @@ function LoginScreen({ onNext }) {
           style={{width:"100%",background:`linear-gradient(135deg,${NAVY},#001840)`,color:"#fff",border:"none",borderRadius:14,padding:"15px 0",fontSize:15,fontWeight:700,cursor:"pointer",opacity:loading?0.7:1,marginBottom:8}}>
           {loading ? "Se verifică..." : "Continuă →"}
         </button>
-        <p onClick={goToForgot}
-          style={{textAlign:"center",fontSize:12,color:"#aaa",margin:"4px 0 0",cursor:"pointer",textDecoration:"underline"}}>
-          Am uitat parola
-        </p>
+        <div style={{display:"flex",justifyContent:"space-between",padding:"4px 2px 0"}}>
+          <p onClick={goToForgot}
+            style={{fontSize:12,color:"#aaa",margin:0,cursor:"pointer",textDecoration:"underline"}}>
+            Am uitat parola
+          </p>
+          <p onClick={goToSignup}
+            style={{fontSize:12,color:NAVY,margin:0,cursor:"pointer",textDecoration:"underline",fontWeight:600}}>
+            Cont nou
+          </p>
+        </div>
       </div>
     </div>
   );
@@ -7171,12 +7254,6 @@ function App() {
       if (u) setScreen(SCREENS.HOME);
       setAuthLoading(false);
     });
-    const isOtpLogin = (session) => {
-      try {
-        const payload = JSON.parse(atob(session.access_token.split('.')[1]));
-        return payload.amr?.some(a => a.method === 'otp' || a.method === 'magiclink');
-      } catch { return false; }
-    };
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       const u = session?.user ?? null;
       setUser(u);
