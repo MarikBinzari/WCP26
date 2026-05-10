@@ -2584,8 +2584,7 @@ function GroupIntroScreen({ group, teams: teamsProp, isKo, onStart, hideHeader=f
       ) : (
         <div style={{padding:"20px 24px"}}>
           <div style={{background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,borderRadius:20,padding:"20px",width:"100%",marginBottom:16,boxShadow:SHADOW_OUT}}>
-            {!hideHeader && <><p style={{fontSize:10,color:RED,margin:"0 0 4px",letterSpacing:2,textTransform:"uppercase",fontWeight:800,textAlign:"center"}}>Predicto</p>
-            <h2 style={{fontSize:26,fontWeight:900,color:"#fff",margin:"0 0 20px",textAlign:"center",letterSpacing:1}}>{group}</h2></>}
+            {!hideHeader && <h2 style={{fontSize:26,fontWeight:900,color:"#fff",margin:"0 0 20px",textAlign:"center",letterSpacing:1}}>{group}</h2>}
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
               {teams.map((t)=>(
                 <div key={t} style={{background:"rgba(255,255,255,0.1)",borderRadius:14,padding:"14px 12px",display:"flex",flexDirection:"column",alignItems:"center",gap:8,border:"1px solid rgba(255,255,255,0.15)"}}>
@@ -2760,7 +2759,6 @@ function InstantPickScreen({ onBack, onComplete, onModify, savedState, onStateCh
       <div style={{display:"flex", alignItems:"center", gap:10, padding:"10px 20px 6px"}}>
         <button onClick={headerBack} style={{background:"rgba(255,255,255,0.12)",border:"none",borderRadius:10,width:34,height:34,color:"#fff",fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>‹</button>
         <div style={{flex:1}}>
-          <div style={{fontSize:11,color:RED,fontWeight:800,letterSpacing:2,textTransform:"uppercase"}}>Predicto</div>
           <div style={{fontSize:18,fontWeight:800,color:"#fff"}}>{headerTitle}</div>
         </div>
         <div style={{textAlign:"right",flexShrink:0}}>
@@ -3349,7 +3347,6 @@ function GroupRankingScreen({ group, teams, existingRanking, onConfirm, onAutoSa
             display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0,
           }}>‹</button>
           <div style={{flex:1}}>
-            <div style={{fontSize:10, color:RED, fontWeight:800, letterSpacing:1.5}}>Predicto</div>
             <div style={{fontSize:18, fontWeight:900, color:"#fff"}}>{T[lang].group} {group}</div>
           </div>
           <div style={{textAlign:"right", flexShrink:0}}>
@@ -4122,8 +4119,8 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
           <div onClick={()=>setView("main")} style={{width:36,height:36,borderRadius:10,background:"rgba(0,0,0,0.05)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:DARK}}>&#8249;</div>
           <div style={{textAlign:"center"}}>
-            <p style={{fontSize:12,color:RED,margin:"0 0 2px",letterSpacing:3,textTransform:"uppercase",fontWeight:800}}>Predicto</p>
-            <h1 style={{fontSize:20,fontWeight:900,color:NAVY,margin:0}}>WORLD CUP 2026</h1>
+            <img src={predictoLogo} alt="Predicto" style={{height:40,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
+            <h1 style={{fontSize:18,fontWeight:900,margin:"-4px 0 0",letterSpacing:2,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
             <p style={{fontSize:11,color:"#888",margin:"3px 0 0"}}>{T[lang].location}</p>
           </div>
           <div style={{width:36}}/>
@@ -6094,7 +6091,6 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
           <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:14}}>
             <div onClick={onBack} style={{width:36,height:36,borderRadius:10,background:"rgba(255,255,255,0.12)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:"#fff"}}>&#8249;</div>
             <div>
-              <p style={{fontSize:11,color:RED,margin:"0 0 2px",letterSpacing:2,textTransform:"uppercase",fontWeight:800}}>Predicto</p>
               <h2 style={{fontSize:18,fontWeight:800,color:"#fff",margin:0}}>{T[lang].groupsSchedule}</h2>
             </div>
           </div>
@@ -7001,7 +6997,6 @@ function StatsScreen() {
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",position:"relative"}}>
       <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.03,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
       <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"16px 20px 18px",flexShrink:0}}>
-        <p style={{fontSize:11,color:RED,margin:"0 0 2px",letterSpacing:2,textTransform:"uppercase",fontWeight:800}}>Predicto</p>
         <h2 style={{fontSize:18,fontWeight:800,color:"#fff",margin:"0 0 12px"}}>{T[lang].groupsSchedule}</h2>
         {/* Group tabs */}
         <div style={{display:"flex",gap:6,overflowX:"auto",scrollbarWidth:"none"}}>
