@@ -54,7 +54,7 @@ const T = {
     exactScores:"Exact Scores", weekComplete:"✓ Week complete", thisWeek:"this week",
     pathToTrophy:"Path to the Trophy", unlocksEvery:"Unlocks every Sunday 8AM",
     groupStage:"Group Stage", week:"Week", roundOf16QF:"Round of 16 · QF · SF",
-    final:"Final", locked:"Locked", past:"Past", viewAll:"🏆 View all ›",
+    final:"Final", locked:"Locked", past:"Past", viewAll:"View all ›",
     tournamentStarts:"Tournament starts Jun 11", ptsTotal:"pts total",
     leaderboard:"Leaderboard", searchPlayer:"Search player...",
     tournamentNotStarted:"Tournament not started",
@@ -134,7 +134,7 @@ const T = {
     exactScores:"Scoruri Exacte", weekComplete:"✓ Săptămâna completă", thisWeek:"această săptămână",
     pathToTrophy:"Drumul spre Trofeu", unlocksEvery:"Se deschide duminică la 8:00",
     groupStage:"Faza Grupelor", week:"Săptămâna", roundOf16QF:"Optimi · Sferturi · Semi",
-    final:"Finală", locked:"Blocat", past:"Trecut", viewAll:"🏆 Vezi tot ›",
+    final:"Finală", locked:"Blocat", past:"Trecut", viewAll:"Vezi tot ›",
     tournamentStarts:"Turneul începe pe 11 Iun", ptsTotal:"pts total",
     leaderboard:"Clasament", searchPlayer:"Caută jucător...",
     tournamentNotStarted:"Turneul nu a început",
@@ -214,7 +214,7 @@ const T = {
     exactScores:"Scores Exacts", weekComplete:"✓ Semaine complète", thisWeek:"cette semaine",
     pathToTrophy:"Chemin vers le Trophée", unlocksEvery:"Ouvre chaque dimanche à 8h",
     groupStage:"Phase de Groupes", week:"Semaine", roundOf16QF:"H.d.F. · Quarts · Demi",
-    final:"Finale", locked:"Bloqué", past:"Passé", viewAll:"🏆 Voir tout ›",
+    final:"Finale", locked:"Bloqué", past:"Passé", viewAll:"Voir tout ›",
     tournamentStarts:"Tournoi débute le 11 Juin", ptsTotal:"pts total",
     leaderboard:"Classement", searchPlayer:"Chercher joueur...",
     tournamentNotStarted:"Tournoi pas encore commencé",
@@ -3732,10 +3732,14 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
               {initials}
             </div>
             <div style={{flex:1,minWidth:0}}>
-              <p style={{fontSize:15,fontWeight:800,color:DARK,margin:0}}>{displayName}</p>
-              <p style={{fontSize:12,color:"#888",margin:"2px 0 0"}}>{tournamentStarted?`${me?.pts||0} ${T[lang].ptsTotal}`:T[lang].tournamentStarts}</p>
+              <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between"}}>
+                <div style={{flex:1,minWidth:0}}>
+                  <p style={{fontSize:15,fontWeight:800,color:DARK,margin:0}}>{displayName}</p>
+                  <p style={{fontSize:12,color:"#888",margin:"2px 0 0"}}>{tournamentStarted?`${me?.pts||0} ${T[lang].ptsTotal}`:T[lang].tournamentStarts}</p>
+                </div>
+                <span onClick={onLeaderboard} style={{fontSize:12,color:NAVY,fontWeight:700,cursor:"pointer",flexShrink:0,paddingLeft:8}}>{T[lang].viewAll}</span>
+              </div>
             </div>
-            <span onClick={onLeaderboard} style={{fontSize:12,color:NAVY,fontWeight:700,cursor:"pointer",flexShrink:0}}>{T[lang].viewAll}</span>
           </div>
           {/* Ranking across boards — horizontal scroll with fade indicator */}
           <div style={{position:"relative",margin:"0 -14px"}}>
