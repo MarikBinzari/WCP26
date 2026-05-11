@@ -3724,15 +3724,15 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",position:"relative"}}>
       <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.03,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
-      <div style={{background:"transparent",padding:"8px 20px 4px",flexShrink:0,position:"relative",zIndex:1}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
-          <div style={{width:36}}/>
+      <div style={{background:"linear-gradient(180deg,#CCDAFF 0%,#E2EBFF 40%,#F8F8F8 100%)",padding:"4px 20px 2px",flexShrink:0,position:"relative",zIndex:1}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <div style={{width:40}}/>
           <div style={{textAlign:"center"}}>
-            <img src={predictoLogo} alt="Predicto" decoding="sync" style={{height:40,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
-            <h1 style={{fontSize:18,fontWeight:900,margin:"-4px 0 0",letterSpacing:2,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
-            <p style={{fontSize:11,color:"#888",margin:"2px 0 0"}}>{T[lang].location}</p>
+            <img src={predictoLogo} alt="Predicto" decoding="sync" style={{height:34,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
+            <h1 style={{fontSize:18,fontWeight:900,margin:"-3px 0 0",letterSpacing:2,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
+            <p style={{fontSize:11,color:"#6B7280",margin:"0"}}>{T[lang].location}</p>
           </div>
-          <div style={{width:36,height:36,borderRadius:10,background:"rgba(0,0,0,0.05)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,alignSelf:"center"}}>🔔</div>
+          <div style={{width:40,height:40,borderRadius:"50%",background:"rgba(10,46,138,0.11)",boxShadow:"0 2px 8px rgba(10,46,138,0.13)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:17}}>🔔</div>
         </div>
         <div style={{overflowX:"auto",overflowY:"visible",scrollbarWidth:"none",margin:"0 -20px"}}>
         <div style={{display:"flex",alignItems:"flex-start",gap:10,padding:"6px 20px 14px"}}>
@@ -3753,14 +3753,14 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
 
         {/* User stats card */}
         <div style={{background:"#fff",borderRadius:16,boxShadow:"0 8px 22px rgba(0,0,0,0.07)",padding:"10px 14px",marginBottom:10}}>
-          <div style={{display:"flex",alignItems:"flex-start",gap:0,marginBottom:10}}>
+          <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:10}}>
             <div style={{width:44,height:44,borderRadius:"50%",background:"linear-gradient(135deg,rgba(10,46,138,0.65),rgba(0,24,64,0.65))",
               display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:16,fontWeight:800,flexShrink:0}}>
               {initials}
             </div>
-            <div style={{flex:1,minWidth:0,paddingLeft:12}}>
-              <p style={{fontSize:15,fontWeight:800,color:DARK,margin:0,lineHeight:1.2}}>{displayName}</p>
-              <p style={{fontSize:12,color:"#555",margin:"4px 0 0"}}>{tournamentStarted?`${me?.pts||0} ${T[lang].ptsTotal}`:T[lang].tournamentStarts}</p>
+            <div style={{flex:1,minWidth:0,textAlign:"left"}}>
+              <div style={{fontSize:15,fontWeight:800,color:DARK,lineHeight:1.2}}>{displayName}</div>
+              <div style={{fontSize:12,color:"#6B7280",marginTop:3}}>{tournamentStarted?`${me?.pts||0} ${T[lang].ptsTotal}`:T[lang].tournamentStarts}</div>
             </div>
           </div>
           {/* Ranking across boards — horizontal scroll with fade indicator */}
@@ -3789,21 +3789,21 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
                 );
               })}
               {/* Extra padding for fade */}
-              <div style={{flexShrink:0,width:24}}/>
+              <div style={{flexShrink:0,width:8}}/>
             </div>
-            {/* Fade */}
-            <div style={{position:"absolute",right:0,top:0,bottom:0,width:20,
+            {/* Fade — wide enough to cover the overlap with View all */}
+            <div style={{position:"absolute",right:0,top:0,bottom:0,width:52,
               background:"linear-gradient(to right, transparent, #fff)",
               pointerEvents:"none"}}/>
           </div>
-          <div style={{flexShrink:0,paddingRight:14,paddingLeft:6}}>
+          <div style={{flexShrink:0,paddingRight:14,paddingLeft:4,marginLeft:-32,position:"relative",zIndex:2}}>
             <span onClick={onLeaderboard} style={{fontSize:12,color:NAVY,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap"}}>{T[lang].viewAll}</span>
           </div>
           </div>
         </div>
 
         {/* Tasks */}
-        <p style={{fontSize:11,fontWeight:700,color:"#666",textTransform:"uppercase",letterSpacing:0.8,margin:"0 0 6px"}}>{T[lang].yourTasks}</p>
+        <p style={{fontSize:11,fontWeight:700,color:"#6B7280",textTransform:"uppercase",letterSpacing:0.8,margin:"0 0 6px"}}>{T[lang].yourTasks}</p>
         <div style={{display:"flex",gap:8,marginBottom:10}}>
           {/* Predictions task */}
           {(()=>{
@@ -3829,9 +3829,9 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
                   </div>
                 )}
                 <div style={{fontSize:28,marginBottom:4}}>{isLocked?"🔒":"🎯"}</div>
-                <p style={{fontSize:13,fontWeight:800,color:isLocked?"#aaa":DARK,margin:0}}>{T[lang].predictions}</p>
+                <p style={{fontSize:13,fontWeight:800,color:isLocked?"#9CA3AF":DARK,margin:0}}>{T[lang].predictions}</p>
                 <p style={{fontSize:11,margin:"2px 0 0",fontWeight:600,
-                  color:boardDone?GREEN:isLocked?"#bbb":"#888"}}>
+                  color:boardDone?GREEN:isLocked?"#9CA3AF":"#6B7280"}}>
                   {!predictionsLoaded[activeId]?"…":boardDone?T[lang].completed:isLocked?T[lang].deadlinePassed:T[lang].dueJun11}
                 </p>
               </div>
@@ -3866,7 +3866,7 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
                 )}
                 <div style={{fontSize:28,marginBottom:4,colorScheme:"light",filter:"saturate(0) contrast(3) brightness(1.1)"}}>⚽</div>
                 <p style={{fontSize:13,fontWeight:800,color:DARK,margin:0}}>{T[lang].exactScores}</p>
-                <p style={{fontSize:11,color:missing===0?GREEN:"#555",margin:"2px 0 0",fontWeight:600}}>
+                <p style={{fontSize:11,color:missing===0?GREEN:"#6B7280",margin:"2px 0 0",fontWeight:600}}>
                   {missing===0?T[lang].weekComplete:`${missing} ${T[lang].thisWeek}`}
                 </p>
               </div>
@@ -3917,8 +3917,8 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
             <div style={{marginBottom:10}}>
               {/* Header */}
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
-                <p style={{fontSize:11,fontWeight:700,color:"#666",textTransform:"uppercase",letterSpacing:0.8,margin:0}}>{T[lang].pathToTrophy}</p>
-                <span style={{fontSize:10,color:"#777",fontWeight:600}}>{T[lang].unlocksEvery}</span>
+                <p style={{fontSize:11,fontWeight:700,color:"#6B7280",textTransform:"uppercase",letterSpacing:0.8,margin:0}}>{T[lang].pathToTrophy}</p>
+                <span style={{fontSize:10,color:"#6B7280",fontWeight:600}}>{T[lang].unlocksEvery}</span>
               </div>
               <div style={{background:"#fff",borderRadius:14,boxShadow:"0 8px 22px rgba(0,0,0,0.07)",padding:"12px 14px"}}>
                 {steps.map((w,i)=>{
@@ -3959,14 +3959,14 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
                         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:w.isFinal||w.locked?0:4}}>
                           <div>
                             <span style={{fontSize:13,fontWeight:700,
-                              color:w.locked&&!w.isFinal&&!isPast?"#999":w.isFinal?"#B8860B":isPast?"#999":DARK}}>
+                              color:w.locked&&!w.isFinal&&!isPast?"#9CA3AF":w.isFinal?"#B8860B":isPast?"#9CA3AF":DARK}}>
                               {w.label}
                             </span>
-                            <span style={{fontSize:10,color:w.locked&&!w.isFinal?"#888":"#666",
+                            <span style={{fontSize:10,color:w.locked&&!w.isFinal?"#9CA3AF":"#6B7280",
                               marginLeft:6,fontWeight:500}}>{w.stage}</span>
                           </div>
                           <span style={{fontSize:11,fontWeight:700,
-                            color:w.locked&&!isPast?"#aaa":done?GREEN:isPast?"#999":active?NAVY:"#aaa"}}>
+                            color:w.locked&&!isPast?"#9CA3AF":done?GREEN:isPast?"#9CA3AF":active?NAVY:"#9CA3AF"}}>
                             {w.isFinal?T[lang].final:w.locked&&!isPast?T[lang].locked:done?T[lang].weekComplete:isPast?`${w.scored}/${w.total} · ${T[lang].past}`:`${w.scored}/${w.total}`}
                           </span>
                         </div>
@@ -4136,13 +4136,13 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
   if(view==="create") return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,position:"relative",overflow:"hidden"}}>
       <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.03,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
-      <div style={{position:"relative",zIndex:1,background:"transparent",padding:"12px 20px 14px",flexShrink:0}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
-          <div onClick={()=>setView("main")} style={{width:36,height:36,borderRadius:10,background:"rgba(0,0,0,0.05)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:DARK}}>&#8249;</div>
+      <div style={{position:"relative",zIndex:1,background:"linear-gradient(180deg,#CCDAFF 0%,#E2EBFF 40%,#F8F8F8 100%)",padding:"4px 20px 10px",flexShrink:0}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <div onClick={()=>setView("main")} style={{width:36,height:36,borderRadius:10,background:"rgba(10,46,138,0.08)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:DARK}}>&#8249;</div>
           <div style={{textAlign:"center"}}>
-            <img src={predictoLogo} alt="Predicto" decoding="sync" style={{height:40,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
-            <h1 style={{fontSize:18,fontWeight:900,margin:"-4px 0 0",letterSpacing:2,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
-            <p style={{fontSize:11,color:"#888",margin:"3px 0 0"}}>{T[lang].location}</p>
+            <img src={predictoLogo} alt="Predicto" decoding="sync" style={{height:34,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
+            <h1 style={{fontSize:18,fontWeight:900,margin:"-3px 0 0",letterSpacing:2,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
+            <p style={{fontSize:11,color:"#6B7280",margin:"0"}}>{T[lang].location}</p>
           </div>
           <div style={{width:36}}/>
         </div>
@@ -4294,13 +4294,13 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:"transparent",position:"relative",overflow:"hidden"}}>
       <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.03,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
-      <div style={{position:"relative",zIndex:1,background:"transparent",padding:"12px 20px 10px",flexShrink:0}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
-          <div onClick={onBack} style={{width:36,height:36,borderRadius:10,background:"rgba(0,0,0,0.05)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:DARK,flexShrink:0}}>&#8249;</div>
+      <div style={{position:"relative",zIndex:1,background:"linear-gradient(180deg,#CCDAFF 0%,#E2EBFF 40%,#F8F8F8 100%)",padding:"4px 20px 10px",flexShrink:0}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <div onClick={onBack} style={{width:36,height:36,borderRadius:10,background:"rgba(10,46,138,0.08)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:DARK,flexShrink:0}}>&#8249;</div>
           <div style={{textAlign:"center"}}>
-            <img src={predictoLogo} alt="Predicto" decoding="sync" style={{height:44,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
-            <h1 style={{fontSize:18,fontWeight:900,margin:"-4px 0 0",letterSpacing:2,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
-            <p style={{fontSize:11,color:"#888",margin:"3px 0 0"}}>{T[lang].location}</p>
+            <img src={predictoLogo} alt="Predicto" decoding="sync" style={{height:34,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
+            <h1 style={{fontSize:18,fontWeight:900,margin:"-3px 0 0",letterSpacing:2,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
+            <p style={{fontSize:11,color:"#6B7280",margin:"0"}}>{T[lang].location}</p>
           </div>
           <div style={{width:36}}/>
         </div>
@@ -5038,26 +5038,25 @@ function SplashScreen({ onNext, lang, setLang, simDay, simHour=12, simMin=0, tou
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",position:"relative",overflow:"hidden",background:BG}}>
       <div style={{position:"absolute",width:"100%",height:"100%",background:"linear-gradient(180deg,rgba(0,32,91,0.04) 0%,rgba(200,16,46,0.07) 100%)",zIndex:0,pointerEvents:"none"}}/>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"20px 22px 0",position:"relative",zIndex:10}}>
+      <div style={{background:"linear-gradient(180deg,#CCDAFF 0%,rgba(226,235,255,0.7) 55%,transparent 100%)",padding:"4px 22px 14px",position:"relative",zIndex:10,display:"flex",justifyContent:"space-between",alignItems:"center",flexShrink:0}}>
         <div style={{width:44}}/>
         <div style={{textAlign:"center"}}>
-          {/* Predicto logo */}
           <img src={predictoLogo} alt="Predicto" decoding="sync" style={{
-            height:54, width:"auto",
+            height:34, width:"auto",
             objectFit:"contain",
             marginBottom:0,
             display:"block",
             marginLeft:"auto",
             marginRight:"auto",
             position:"relative",
-            left:6,
+            left:3,
           }}/>
           <h1 style={{
-            fontSize:20,fontWeight:900,margin:"-6px 0 0",letterSpacing:2,lineHeight:1,
+            fontSize:18,fontWeight:900,margin:"-3px 0 0",letterSpacing:2,lineHeight:1,
             background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",
             WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text",
           }}>WORLD CUP 2026</h1>
-          <p style={{fontSize:11,color:"#888",margin:"3px 0 0"}}>{T[lang].location}</p>
+          <p style={{fontSize:11,color:"#6B7280",margin:"0"}}>{T[lang].location}</p>
         </div>
         <LangSelector lang={lang} setLang={setLang}/>
       </div>
@@ -5407,10 +5406,10 @@ function LoginScreen({ onNext }) {
 
   const bgImg = <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.03,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>;
   const header = (icon, title) => (
-    <div style={{position:"relative",zIndex:1,background:"transparent",padding:"28px 28px 20px",display:"flex",flexDirection:"column",alignItems:"center"}}>
-      <img src={predictoLogo} alt="Predicto" decoding="sync" style={{height:54,width:"auto",objectFit:"contain",display:"block",marginBottom:0}}/>
-      <h1 style={{fontSize:18,fontWeight:900,margin:"-4px 0 0",letterSpacing:2,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
-      <h2 style={{fontSize:20,fontWeight:800,color:DARK,margin:"12px 0 0",textAlign:"center"}}>{title}</h2>
+    <div style={{position:"relative",zIndex:1,background:"linear-gradient(180deg,#CCDAFF 0%,#E2EBFF 40%,#F8F8F8 100%)",padding:"12px 28px 16px",display:"flex",flexDirection:"column",alignItems:"center"}}>
+      <img src={predictoLogo} alt="Predicto" decoding="sync" style={{height:40,width:"auto",objectFit:"contain",display:"block",marginBottom:0,position:"relative",left:3}}/>
+      <h1 style={{fontSize:18,fontWeight:900,margin:"-3px 0 0",letterSpacing:2,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
+      <h2 style={{fontSize:20,fontWeight:800,color:DARK,margin:"10px 0 0",textAlign:"center"}}>{title}</h2>
     </div>
   );
 
@@ -5753,13 +5752,13 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,position:"relative",overflow:"hidden"}}>
       <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.03,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
-      <div style={{position:"relative",zIndex:1,background:"transparent",padding:"10px 20px 0",flexShrink:0}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:myBoards.length>1?0:8}}>
-          <div onClick={onBack} style={{width:36,height:36,borderRadius:10,background:"rgba(0,0,0,0.05)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:DARK}}>&#8249;</div>
+      <div style={{position:"relative",zIndex:1,background:"linear-gradient(180deg,#CCDAFF 0%,#E2EBFF 40%,#F8F8F8 100%)",padding:"4px 20px 0",flexShrink:0}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:myBoards.length>1?0:8}}>
+          <div onClick={onBack} style={{width:36,height:36,borderRadius:10,background:"rgba(10,46,138,0.08)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:DARK}}>&#8249;</div>
           <div style={{textAlign:"center"}}>
-            <img src={predictoLogo} alt="Predicto" decoding="sync" style={{height:44,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
-            <h1 style={{fontSize:18,fontWeight:900,margin:"-4px 0 0",letterSpacing:2,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
-            <p style={{fontSize:11,color:"#888",margin:"3px 0 0"}}>{T[lang].location}</p>
+            <img src={predictoLogo} alt="Predicto" decoding="sync" style={{height:34,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
+            <h1 style={{fontSize:18,fontWeight:900,margin:"-3px 0 0",letterSpacing:2,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
+            <p style={{fontSize:11,color:"#6B7280",margin:"0"}}>{T[lang].location}</p>
           </div>
           <div style={{width:36}}/>
         </div>
@@ -7092,11 +7091,11 @@ function AccountScreen({ setLang, onBoards, onSignOut, onShowGuide, user }) {
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,position:"relative",overflow:"hidden"}}>
       <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.03,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
-      <div style={{background:"transparent",padding:"12px 20px 14px",flexShrink:0,position:"relative",zIndex:1,minHeight:100,boxSizing:"border-box"}}>
+      <div style={{background:"linear-gradient(180deg,#CCDAFF 0%,#E2EBFF 40%,#F8F8F8 100%)",padding:"4px 20px 10px",flexShrink:0,position:"relative",zIndex:1,boxSizing:"border-box"}}>
         <div style={{textAlign:"center",marginBottom:8}}>
-          <img src={predictoLogo} alt="Predicto" decoding="sync" style={{height:44,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
-          <h1 style={{fontSize:18,fontWeight:900,margin:"-4px 0 0",letterSpacing:2,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
-          <p style={{fontSize:11,color:"#888",margin:"3px 0 0"}}>{T[lang].location}</p>
+          <img src={predictoLogo} alt="Predicto" decoding="sync" style={{height:34,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
+          <h1 style={{fontSize:18,fontWeight:900,margin:"-3px 0 0",letterSpacing:2,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
+          <p style={{fontSize:11,color:"#6B7280",margin:"0"}}>{T[lang].location}</p>
         </div>
         <div style={{borderTop:"2px solid rgba(0,0,0,0.06)",marginTop:10}}/>
         <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:12,paddingTop:10}}>
@@ -7188,10 +7187,10 @@ function RulesScreen({ onBack }) {
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",position:"relative"}}>
       <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.03,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
-      <div style={{position:"relative",zIndex:1,background:"transparent",padding:"12px 20px 0",flexShrink:0,boxSizing:"border-box",textAlign:"center"}}>
-        <img src={predictoLogo} alt="Predicto" decoding="sync" style={{height:44,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
-        <h1 style={{fontSize:18,fontWeight:900,margin:"-4px 0 0",letterSpacing:2,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
-        <p style={{fontSize:11,color:"#888",margin:"3px 0 0"}}>{T[lang].location}</p>
+      <div style={{position:"relative",zIndex:1,background:"linear-gradient(180deg,#CCDAFF 0%,#E2EBFF 40%,#F8F8F8 100%)",padding:"4px 20px 0",flexShrink:0,boxSizing:"border-box",textAlign:"center"}}>
+        <img src={predictoLogo} alt="Predicto" decoding="sync" style={{height:34,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
+        <h1 style={{fontSize:18,fontWeight:900,margin:"-3px 0 0",letterSpacing:2,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
+        <p style={{fontSize:11,color:"#6B7280",margin:"0"}}>{T[lang].location}</p>
         <div style={{display:"flex",gap:0,borderBottom:`2px solid rgba(0,0,0,0.06)`,marginTop:10}}>
           {[{id:"predictions",label:"🎯 Predictions"},{id:"exact",label:<><span>⚽</span>{" Exact Score"}</>}].map(t=>(
             <button key={t.id} onClick={()=>setTab(t.id)}
@@ -7338,9 +7337,13 @@ function App() {
       }
 
       if (u) {
-        const nonRestorable = [SCREENS.SPLASH, SCREENS.LOGIN, SCREENS.RESET_PASSWORD, SCREENS.SET_PASSWORD];
-        const saved = (() => { try { return sessionStorage.getItem('lastScreen'); } catch { return null; } })();
-        setScreen(saved && !nonRestorable.includes(saved) ? saved : SCREENS.HOME);
+        if (event === 'INITIAL_SESSION') {
+          const nonRestorable = [SCREENS.SPLASH, SCREENS.LOGIN, SCREENS.RESET_PASSWORD, SCREENS.SET_PASSWORD];
+          const saved = (() => { try { return sessionStorage.getItem('lastScreen'); } catch { return null; } })();
+          setScreen(saved && !nonRestorable.includes(saved) ? saved : SCREENS.HOME);
+        } else {
+          setScreen(SCREENS.HOME);
+        }
       } else setScreen(SCREENS.SPLASH);
     });
 
