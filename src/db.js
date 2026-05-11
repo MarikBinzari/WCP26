@@ -101,15 +101,25 @@ export async function checkDbHealth() {
 // ─── BOARDS ───────────────────────────────────────────────────────────────────
 // Returns boards with isAdmin=true (created_by) and/or isMember=true (board_members)
 export async function loadUserBoards(userId) {
-  const { data: memberships } = await supabase
-    .from('board_members')
-    .select('role, boards(*)')
-    .eq('user_id', userId)
+  const [memberships, created] = await Promise.all([
+    supabase.from('board_members').select('role, boards(*)').eq('user_id', userId),
+    supabase.from('boards').select('*').eq('created_by', userId),
+  ])
   const map = new Map()
-  ;(memberships || []).forEach(row => {
+  // Creatorul vede mereu boardul său (indiferent de board_members)
+  ;(created.data || []).forEach(b => {
+    map.set(b.id, { ...b, label: b.emoji || '⚽', isGlobal: false, code: b.invite_code, max: b.max_players, isAdmin: true, isMember: false })
+  })
+  // Membrii (inclusiv cu rol admin) din board_members
+  ;(memberships.data || []).forEach(row => {
     const b = row.boards
     if (!b) return
-    map.set(b.id, { ...b, label: b.emoji || '⚽', isGlobal: false, code: b.invite_code, max: b.max_players, isAdmin: row.role === 'admin', isMember: true })
+    const existing = map.get(b.id)
+    if (existing) {
+      map.set(b.id, { ...existing, isMember: true })
+    } else {
+      map.set(b.id, { ...b, label: b.emoji || '⚽', isGlobal: false, code: b.invite_code, max: b.max_players, isAdmin: false, isMember: true })
+    }
   })
   return Array.from(map.values())
 }

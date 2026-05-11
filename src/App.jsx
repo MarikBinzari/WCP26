@@ -315,11 +315,27 @@ const WEEK_UNLOCKED = {
   22: now >= june(21),         // Sun June 21
   29: now >= june(28),         // Sun June 28
 };
+// Returns the current day in tournament encoding (June N=N, July N=N+30).
+// Returns 0 before the tournament months so no matches appear as past.
+const getRealTournamentDay = () => {
+  const now = new Date();
+  const y = now.getFullYear(), mo = now.getMonth(), d = now.getDate();
+  if (y < 2026 || (y === 2026 && mo < 5)) return 0;  // before June 2026
+  if (y === 2026 && mo === 5) return d;               // June 2026
+  if (y === 2026 && mo === 6) return d + 30;          // July 2026
+  return 999;                                         // after tournament
+};
+
 const isMatchPast = (matchDay, matchTime, simDay=null, simHour=12) => {
   const mHour = parseInt((matchTime||"23:00").split(":")[0]);
-  const nowDay = simDay || new Date().getDate();
-  const nowHour = simDay ? (simHour||0) : new Date().getHours();
-  return matchDay < nowDay || (matchDay === nowDay && mHour <= nowHour);
+  if (simDay) {
+    const nowHour = simHour || 0;
+    return matchDay < simDay || (matchDay === simDay && mHour <= nowHour);
+  }
+  // matchDay encoding: June N = N (1-30), July N = N+30 (31-61)
+  const matchMonth = matchDay <= 30 ? 5 : 6; // 5=June, 6=July (0-indexed)
+  const matchDom = matchDay <= 30 ? matchDay : matchDay - 30;
+  return new Date() >= new Date(2026, matchMonth, matchDom, mHour, 0, 0);
 };
 
 const isWeekUnlocked = (day, simDay=null, simHour=12, simMin=0) => {
@@ -356,16 +372,30 @@ const computeLiveScores = (simDay=null, simHour=12, simMin=0) => {
       const key = `${e.day}-${idx}`;
       const kickH = parseInt((m.time||"23:00").split(":")[0]);
       const kickM = parseInt((m.time||"00:00").split(":")[1]||0);
-      const nowDay = simDay || new Date().getDate();
-      const nowH   = simDay ? simHour : new Date().getHours();
-      const nowM   = simDay ? simMin  : new Date().getMinutes();
+      let nowDay, nowH, nowM;
+      if (simDay) {
+        nowDay = simDay; nowH = simHour; nowM = simMin;
+      } else {
+        // matchDay encoding: June N=N (1-30), July N=N+30 (31-61)
+        const matchMonth = e.day <= 30 ? 5 : 6;
+        const matchDom   = e.day <= 30 ? e.day : e.day - 30;
+        const matchDate  = new Date(2026, matchMonth, matchDom, kickH, kickM, 0);
+        const now = new Date();
+        if (now < matchDate) { scores[key] = {status:"NS"}; return; }
+        const startMins = kickH*60 + kickM;
+        const nowMins   = now.getHours()*60 + now.getMinutes() +
+                          (now.getMonth() !== matchMonth || now.getDate() !== matchDom ? 99999 : 0);
+        if (nowMins > startMins + 115) { scores[key] = {status:"FT",home:null,away:null}; return; }
+        scores[key] = {status:"LIVE", home:0, away:0, min: Math.min(90, nowMins - startMins)};
+        return;
+      }
       if(e.day > nowDay) { scores[key] = {status:"NS"}; return; }
       if(e.day < nowDay) {
         // Use mock final scores if available
         scores[key] = {status:"FT",home:null,away:null};
         return;
       }
-      // Same day
+      // Same day (sim mode)
       const startMins = kickH*60 + kickM;
       const nowMins   = nowH*60 + nowM;
       if(nowMins < startMins)       { scores[key] = {status:"NS"}; return; }
@@ -3459,19 +3489,19 @@ function GroupRankingScreen({ group, teams, existingRanking, onConfirm, onAutoSa
       </div>}
 
       {/* ── TEAM TILES ── */}
-      <div style={{background:"transparent", padding:"14px 14px 10px",
+      <div style={{background:"transparent", padding:"8px 14px 8px",
         borderBottom:"1px solid rgba(0,0,0,0.08)", position:"relative", zIndex:1}}>
         {!viewMode && <div style={{fontSize:10, color:"rgba(0,0,0,0.4)", letterSpacing:2,
-          fontWeight:700, marginBottom:8, textAlign:"center"}}>TAP TO ASSIGN · TAP AGAIN TO REMOVE</div>}
-        <div style={{display:"flex", gap:8, justifyContent:"space-between"}}>
+          fontWeight:700, marginBottom:6, textAlign:"center"}}>TAP TO ASSIGN · TAP AGAIN TO REMOVE</div>}
+        <div style={{display:"flex", gap:6, justifyContent:"space-between"}}>
           {teams.map(team => {
             const pos = ranking.indexOf(team);
             const isPlaced = pos !== -1;
             return (
               <div key={team} onClick={() => !viewMode && handleTileClick(team)} style={{
                 flex:1, background: isPlaced ? "rgba(0,32,91,0.07)" : "#fff",
-                borderRadius:12, padding:"10px 4px",
-                display:"flex", flexDirection:"column", alignItems:"center", gap:5,
+                borderRadius:10, padding:"7px 2px",
+                display:"flex", flexDirection:"column", alignItems:"center", gap:4,
                 cursor:viewMode?"default":"pointer", position:"relative",
                 border:`2px solid ${isPlaced ? "rgba(0,32,91,0.25)" : "rgba(0,0,0,0.08)"}`,
                 transition:"all 0.15s",
@@ -3481,20 +3511,20 @@ function GroupRankingScreen({ group, teams, existingRanking, onConfirm, onAutoSa
               }}>
                 {isPlaced && (
                   <div style={{
-                    position:"absolute", top:-8, right:-6,
+                    position:"absolute", top:-7, right:-5,
                     background: placeColors[pos],
-                    borderRadius:"50%", width:20, height:20,
+                    borderRadius:"50%", width:18, height:18,
                     display:"flex", alignItems:"center", justifyContent:"center",
-                    fontSize:11, fontWeight:900,
+                    fontSize:10, fontWeight:900,
                     color: placeTextColor[pos],
                     border:"2px solid #f0f2f8",
                     boxShadow:"0 1px 4px rgba(0,0,0,0.2)",
                   }}>{pos+1}</div>
                 )}
-                <span style={{fontSize:28, lineHeight:1}}>{FLAGS[team]||"🏳"}</span>
+                <span style={{fontSize:24, lineHeight:1}}>{FLAGS[team]||"🏳"}</span>
                 <span style={{fontSize:9, fontWeight:800,
                   color: isPlaced ? NAVY : "rgba(0,0,0,0.5)",
-                  letterSpacing:1, textTransform:"uppercase"}}>
+                  letterSpacing:0.5, textTransform:"uppercase"}}>
                   {CODE[team]||team.slice(0,3).toUpperCase()}
                 </span>
               </div>
@@ -3504,7 +3534,7 @@ function GroupRankingScreen({ group, teams, existingRanking, onConfirm, onAutoSa
       </div>
 
       {/* ── RANKING ROWS ── */}
-      <div ref={rankingContainerRef} style={{flex:1, overflowY:"auto", background:"transparent", padding:"8px 14px", display:"flex", flexDirection:"column", gap:6, position:"relative", zIndex:1}}>
+      <div ref={rankingContainerRef} style={{flex:1, overflowY:"auto", background:"transparent", padding:"6px 14px", display:"flex", flexDirection:"column", gap:5, position:"relative", zIndex:1}}>
         {[0,1,2,3].map(idx => {
           const team = ranking[idx];
           const teamColor = team ? (TEAM_COLORS[team]||["#555"])[0] : null;
@@ -3516,45 +3546,45 @@ function GroupRankingScreen({ group, teams, existingRanking, onConfirm, onAutoSa
               onTouchMove={team && !viewMode ? handleTouchMove : undefined}
               onTouchEnd={team && !viewMode ? handleTouchEnd : undefined}
               style={{
-                display:"flex", alignItems:"center", gap:12,
-                padding:"11px 14px", borderRadius:14,
+                display:"flex", alignItems:"center", gap:10,
+                padding:"8px 12px", borderRadius:12,
                 background: isDragging ? "#e8eeff" : isOver ? "#dde8ff" : "#fff",
                 border:`1.5px solid ${isOver ? "#4a90e2" : isDragging ? "#7aaff5" : "rgba(0,0,0,0.06)"}`,
                 boxShadow: isDragging ? "0 6px 20px rgba(0,0,0,0.15)" : "0 1px 4px rgba(0,0,0,0.05)",
                 transform: isDragging ? "scale(1.02)" : "scale(1)",
                 transition:"background 0.1s, box-shadow 0.1s, transform 0.1s",
-                minHeight:58, cursor: team ? "grab" : "default",
+                minHeight:50, cursor: team ? "grab" : "default",
                 userSelect:"none", WebkitUserSelect:"none",
               }}>
 
               {/* Place badge */}
               {(idx < 3 || !team) ? (
                 <div style={{
-                  width:36, height:36, borderRadius:10, flexShrink:0,
+                  width:30, height:30, borderRadius:8, flexShrink:0,
                   background: team ? placeColors[idx] : "rgba(0,0,0,0.05)",
                   display:"flex", alignItems:"center", justifyContent:"center",
-                  fontSize:16, fontWeight:900,
+                  fontSize:14, fontWeight:900,
                   color: team ? placeTextColor[idx] : "rgba(0,0,0,0.2)",
                   boxShadow: team ? `0 2px 8px ${placeColors[idx]}88` : "none",
                 }}>{idx+1}</div>
               ) : (
-                <div style={{width:36, height:36, flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center"}}>
-                  <span style={{fontSize:20, fontWeight:700, color:"#aaa"}}>4</span>
+                <div style={{width:30, height:30, flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center"}}>
+                  <span style={{fontSize:17, fontWeight:700, color:"#aaa"}}>4</span>
                 </div>
               )}
 
               {team ? (
                 <>
                   {/* Flag */}
-                  <div style={{width:40, height:28, borderRadius:6, overflow:"hidden",
+                  <div style={{width:36, height:24, borderRadius:5, overflow:"hidden",
                     boxShadow:"0 2px 8px rgba(0,0,0,0.15)", flexShrink:0, position:"relative"}}>
                     <FlagBg team={team} style={{}}/>
                   </div>
                   {/* Name */}
                   <div style={{flex:1, cursor:viewMode?"default":"pointer"}} onClick={()=>!viewMode&&handleSlotClick(idx)}>
-                    <div style={{fontSize:14, fontWeight:800, color:"#111",
+                    <div style={{fontSize:13, fontWeight:800, color:"#111",
                       letterSpacing:0.3, textTransform:"uppercase"}}>{team}</div>
-                    <div style={{fontSize:10, color:idx===0?GREEN:idx===1?"#4a90e2":idx===2?"#CD7F32":"rgba(0,0,0,0.35)",
+                    <div style={{fontSize:9.5, color:idx===0?GREEN:idx===1?"#4a90e2":idx===2?"#CD7F32":"rgba(0,0,0,0.35)",
                       marginTop:1, fontWeight:600}}>
                       {idx===0?"Group Winner · Advances":idx===1?"Runner-up · Advances":idx===2?"Possible 3rd Place":"Eliminated"}
                     </div>
@@ -3566,11 +3596,11 @@ function GroupRankingScreen({ group, teams, existingRanking, onConfirm, onAutoSa
                     onTouchEnd={e=>{ e.stopPropagation(); handleTouchEnd(); }}
                     style={{
                       display:"flex", flexDirection:"column", gap:4,
-                      padding:"10px 6px", cursor:"grab", flexShrink:0,
+                      padding:"8px 6px", cursor:"grab", flexShrink:0,
                       touchAction:"none",
                     }}>
-                    <div style={{width:22, height:2.5, background:"#999", borderRadius:2}}/>
-                    <div style={{width:22, height:2.5, background:"#999", borderRadius:2}}/>
+                    <div style={{width:20, height:2, background:"#999", borderRadius:2}}/>
+                    <div style={{width:20, height:2, background:"#999", borderRadius:2}}/>
                   </div>}
                 </>
               ) : (
@@ -3586,21 +3616,21 @@ function GroupRankingScreen({ group, teams, existingRanking, onConfirm, onAutoSa
       </div>
 
       {/* ── BOTTOM ACTIONS ── */}
-      <div style={{background:"#fff", padding:"10px 14px 22px",
+      <div style={{background:"#fff", padding:"8px 14px 16px",
         borderTop:"1px solid rgba(0,0,0,0.07)",
-        display:"flex", flexDirection:"column", gap:8,
+        display:"flex", flexDirection:"column", gap:6,
         position:"relative", zIndex:1}}>
 
         {/* Reset / Auto-pick row */}
         {!viewMode && <div style={{display:"flex", justifyContent:"space-between"}}>
           <button onClick={autoPickRanking} style={{
             background:"rgba(0,0,0,0.04)", border:"1px solid rgba(0,0,0,0.08)",
-            borderRadius:10, padding:"7px 14px",
+            borderRadius:10, padding:"6px 14px",
             color:"rgba(0,0,0,0.45)", fontSize:12, cursor:"pointer", fontWeight:700,
           }}>🎲 Auto-pick</button>
           <button onClick={resetRanking} style={{
             background:"rgba(0,0,0,0.04)", border:"1px solid rgba(0,0,0,0.08)",
-            borderRadius:10, padding:"7px 14px",
+            borderRadius:10, padding:"6px 14px",
             color:"rgba(0,0,0,0.45)", fontSize:12, cursor:"pointer", fontWeight:700,
           }}>↺ Reset</button>
         </div>}
@@ -3609,7 +3639,7 @@ function GroupRankingScreen({ group, teams, existingRanking, onConfirm, onAutoSa
         <button onClick={() => (viewMode || isComplete) && onConfirm(ranking)}
           disabled={!viewMode && !isComplete}
           style={{
-            width:"100%", padding:"14px 0", borderRadius:14, border:"none",
+            width:"100%", padding:"12px 0", borderRadius:14, border:"none",
             background: (viewMode || isComplete)
               ? `linear-gradient(135deg, ${NAVY}, #003580)`
               : "rgba(0,0,0,0.06)",
@@ -3818,8 +3848,7 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
           {/* Exact Score task */}
           {(()=>{
             // Count this week's missing scores
-            const simNowDate = simDay ? new Date(2026,5,simDay,simHour||12,simMin||0,0) : new Date();
-            const todaySim = simDay || simNowDate.getDate();
+            const todaySim = simDay ?? getRealTournamentDay();
             const weekStart = todaySim<=14?8:todaySim<=21?15:todaySim<=28?22:29;
             const days = Array.from({length:7},(_,i)=>weekStart+i).filter(d=>d>=1&&d<=50);
             const mm = {};
@@ -3861,7 +3890,7 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
           const w2Open = simNowDate >= june(14);
           const w3Open = simNowDate >= june(21);
           const w4Open = simNowDate >= june(28);
-          const todaySim = simDay ? Number(simDay) : simNowDate.getDate();
+          const todaySim = simDay ?? getRealTournamentDay();
           const weekDays = (start) => Array.from({length:7},(_,i)=>start+i).filter(d=>d>=1&&d<=50);
           const weekMatchMap = () => { const mm={}; CALENDAR_EVENTS.forEach(e=>{mm[e.day]=e.matches;}); return mm; };
           const totalRawInWeek = (start) => {
@@ -5947,7 +5976,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
   // Find first day with matches in first week
   const firstMatchDay = Array.from({length:7},(_,i)=>8+i).find(d=>!!mm0[d]) || null;
   // Auto-select today if it has matches, else first match day
-  const todayDay = simDay || new Date().getDate();
+  const todayDay = simDay ?? getRealTournamentDay();
   const todayHasMatches = !!mm0[todayDay];
   const defaultDay = todayHasMatches ? todayDay : firstMatchDay;
   // Auto-select the week that contains today
@@ -6185,7 +6214,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
                 // Compute status from sim time
                 const matchH = parseInt((m.time||"23:00").split(":")[0]);
                 const matchMin2 = parseInt((m.time||"00:00").split(":")[1]||0);
-                const nowDay2 = simDay || new Date().getDate();
+                const nowDay2 = simDay ?? getRealTournamentDay();
                 const nowH2   = simDay!=null ? (simHour||0) : new Date().getHours();
                 const nowM2   = simDay!=null ? (simMin||0)  : new Date().getMinutes();
                 const nowMins2 = nowH2*60 + nowM2;
@@ -6436,7 +6465,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
       <div key={week} style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:4,marginBottom:4}}>
         {days.slice(week*7,(week+1)*7).map((day,i)=>{
           const isS=day===11,has=!!mm[day],isSel=sel===day,isSun=i%7===6;
-          const today = simDay || new Date().getDate();
+          const today = simDay ?? getRealTournamentDay();
           const isPast = has && day < today;
           const isToday2 = day === today;
           const locked = has && !isWeekUnlocked(day, simDay, simHour, simMin);
@@ -6708,7 +6737,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                                   const sc2=scores&&scores[m.key];
                                   const live2=LIVE_SCORES[m.key];
                                   const _mH=parseInt((m.time||"23:00").split(":")[0]);
-                                  const _nd=simDay||new Date().getDate();
+                                  const _nd=simDay ?? getRealTournamentDay();
                                   const _nh=simDay!=null?(simHour||0):new Date().getHours();
                                   const _kick=_mH*60, _now=_nh*60;
                                   const isFT2 = m.day<_nd || (m.day===_nd && _now>_kick+115);
@@ -6827,7 +6856,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                               // Compute status from sim time directly
                               const _mH=parseInt((m.time||"23:00").split(":")[0]);
                               const _mM=parseInt((m.time||"00:00").split(":")[1]||0);
-                              const _nd=simDay||new Date().getDate();
+                              const _nd=simDay ?? getRealTournamentDay();
                               const _nh=simDay!=null?(simHour||0):new Date().getHours();
                               const _nm=simDay!=null?(simMin||0):new Date().getMinutes();
                               const _kick=_mH*60+_mM, _now=_nh*60+_nm;
@@ -6836,7 +6865,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                               const liveScore2 = live2&&live2.home!==null&&live2.home!==undefined ? live2 : (isLive2?{home:0,away:0}:null);
                               const hasScore2 = !!liveScore2;
                               const matchHourM=parseInt((m.time||"23:00").split(":")[0]);
-                              const nowDM = simDay || new Date().getDate();
+                              const nowDM = simDay ?? getRealTournamentDay();
                               const nowHM = simDay ? (simHour||0) : new Date().getHours();
                               const isPastM = m.day < nowDM || (m.day === nowDM && matchHourM <= nowHM);
                               const canEdit=!isLive2&&!isFT2&&!isPastM&&isWeekUnlocked(m.day,simDay,simHour,simMin);
@@ -6883,7 +6912,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                     const live = LIVE_SCORES[key];
                     const mH2 = parseInt((m.time||"23:00").split(":")[0]);
                     const mM2 = parseInt((m.time||"00:00").split(":")[1]||0);
-                    const _nowDay = simDay || new Date().getDate();
+                    const _nowDay = simDay ?? getRealTournamentDay();
                     const _nowH   = simDay!=null?(simHour||0):new Date().getHours();
                     const _nowM   = simDay!=null?(simMin||0):new Date().getMinutes();
                     const _kick = mH2*60+mM2, _now2 = _nowH*60+_nowM;
@@ -7282,7 +7311,23 @@ function App() {
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       const u = session?.user ?? null;
-      setUser(u);
+      setUser(prev => {
+        // Reset all user-specific state when user changes (sign out or different user)
+        if (prev?.id !== u?.id) {
+          setAllInstantPickStates({});
+          setExactScoresByBoard({});
+          setPredictionsComplete({});
+          setPredictionsLoaded({});
+          setAllInstantPickDone({});
+          setLeaderboardData({});
+          setCreatedBoards([]);
+          setAvailableBoards([]);
+          setMyBoards(INITIAL_BOARDS);
+          setBoardsLoading(true);
+          try { localStorage.removeItem('myBoards'); } catch {}
+        }
+        return u;
+      });
       setAuthLoading(false);
 
       // PASSWORD_RECOVERY: Supabase a procesat token-ul de reset — arată formularul.
