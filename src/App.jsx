@@ -4368,8 +4368,6 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
               </p>
               <button onClick={async()=>{
                 if(onRemoveMember) await onRemoveMember(leaveConfirmBoard.id, user?.id);
-                setMyBoards(prev=>prev.filter(x=>x.id!==leaveConfirmBoard.id));
-                setAvailBoards(prev=>[...prev, {...leaveConfirmBoard, isAdmin:false}]);
                 setLeaveConfirmBoard(null);
               }} style={{width:"100%",background:RED,color:"#fff",border:"none",borderRadius:14,padding:"14px 0",fontSize:15,fontWeight:700,cursor:"pointer",marginBottom:10}}>
                 Da, ieși din board
@@ -4410,7 +4408,8 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
 
         {/* Tab: Available Boards */}
         {activeTab==="available"&&(()=>{
-          const allAvail=[...availBoards,...createdBoards].filter(b=>!isJoined(b.id));
+          const _seenAvail=new Set();
+          const allAvail=[...availBoards,...createdBoards].filter(b=>!isJoined(b.id)&&!_seenAvail.has(b.id)&&_seenAvail.add(b.id));
           const isCode=/^[A-Z][0-9]{5}$/.test(boardSearch.trim().toUpperCase());
           const filtered=boardSearch.trim()&&!isCode
             ? allAvail.filter(b=>b.name.toLowerCase().includes(boardSearch.toLowerCase()))
@@ -7395,10 +7394,11 @@ function App() {
       const adminBoards = boards.filter(b => b.isAdmin);
       // participantBoards = boards where user is member (isMember=true)
       const participantBoards = boards.filter(b => b.isMember);
-      // allMyBoards = Global + joined + created (deduped)
+      // allMyBoards = Global + boards where user is actually in board_members (isMember)
+      // adminBoards excluded here if not also isMember (creator who left shouldn't appear)
       const seen = new Set(INITIAL_BOARDS.map(b => b.id));
       const allMyBoards = [...INITIAL_BOARDS];
-      for (const b of [...participantBoards, ...adminBoards]) {
+      for (const b of participantBoards) {
         if (!seen.has(b.id)) { seen.add(b.id); allMyBoards.push(b); }
       }
       const allIds = [...allMyBoards.map(b => b.id), ...adminBoards.map(b => b.id), ...avail.map(b => b.id)];
@@ -7616,8 +7616,14 @@ function App() {
             onJoin={(boardId)=>{ setActiveBoardId(boardId); setScreen(SCREENS.HOME); }}
             onJoinBoard={async (boardId) => {
               if (!user) return;
+              await removeParticipation(boardId, user.id);
               const { data, error } = await joinBoardById(user.id, boardId);
               if (error) { showToast(error, "❌"); return; }
+              setAllInstantPickStates(prev => { const n = {...prev}; delete n[boardId]; return n; });
+              setAllInstantPickDone(prev => { const n = {...prev}; delete n[boardId]; return n; });
+              setExactScoresByBoard(prev => { const n = {...prev}; delete n[boardId]; return n; });
+              setPredictionsComplete(prev => { const n = {...prev}; delete n[boardId]; return n; });
+              setPredictionsLoaded(prev => ({ ...prev, [boardId]: true }));
               const board = availableBoards.find(b => b.id === boardId) || createdBoards.find(b => b.id === boardId);
               if (board) {
                 setMyBoards(prev => prev.some(b => b.id === boardId) ? prev : [...prev, { ...board, isMember: true }]);
@@ -7638,7 +7644,11 @@ function App() {
               await removeBoardMember(boardId, memberId);
               if (memberId === user?.id) {
                 await removeParticipation(boardId, memberId);
-                setMyBoards(prev => prev.filter(b => b.id !== boardId));
+                setMyBoards(prev => {
+                  const updated = prev.filter(b => b.id !== boardId);
+                  try { localStorage.setItem('myBoards', JSON.stringify(updated)); } catch {}
+                  return updated;
+                });
                 setAllInstantPickStates(prev => { const n = {...prev}; delete n[boardId]; return n; });
                 setAllInstantPickDone(prev => { const n = {...prev}; delete n[boardId]; return n; });
                 setExactScoresByBoard(prev => { const n = {...prev}; delete n[boardId]; return n; });

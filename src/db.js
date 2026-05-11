@@ -193,29 +193,34 @@ export async function joinBoardById(userId, boardId) {
 }
 
 export async function removeBoardMember(boardId, userId) {
-  await Promise.all([
+  const [memberRes, predRes, scoreRes] = await Promise.all([
     supabase.from('board_members').delete().eq('board_id', boardId).eq('user_id', userId),
     supabase.from('predictions').delete().eq('board_id', boardId).eq('user_id', userId),
     supabase.from('exact_scores').delete().eq('board_id', boardId).eq('user_id', userId),
   ])
+  if (memberRes.error) console.error('removeBoardMember board_members:', memberRes.error)
+  if (predRes.error) console.error('removeBoardMember predictions:', predRes.error)
+  if (scoreRes.error) console.error('removeBoardMember exact_scores:', scoreRes.error)
 }
 
 export async function removeParticipation(boardId, userId) {
-  await Promise.all([
+  const [predRes, scoreRes] = await Promise.all([
     supabase.from('predictions').delete().eq('board_id', boardId).eq('user_id', userId),
     supabase.from('exact_scores').delete().eq('board_id', boardId).eq('user_id', userId),
   ])
+  if (predRes.error) console.error('removeParticipation predictions:', predRes.error)
+  if (scoreRes.error) console.error('removeParticipation exact_scores:', scoreRes.error)
 }
 
 export async function deleteBoard(boardId) {
+  const { error } = await supabase.from('boards').delete().eq('id', boardId)
+  if (error) { console.error('deleteBoard:', error); return { error }; }
   await Promise.all([
     supabase.from('exact_scores').delete().eq('board_id', boardId),
     supabase.from('predictions').delete().eq('board_id', boardId),
     supabase.from('board_members').delete().eq('board_id', boardId),
   ])
-  const { error } = await supabase.from('boards').delete().eq('id', boardId)
-  if (error) console.error('deleteBoard:', error)
-  return { error }
+  return { error: null }
 }
 
 // ─── MEMBER COUNTS ───────────────────────────────────────────────────────────
