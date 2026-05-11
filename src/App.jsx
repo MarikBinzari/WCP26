@@ -5312,6 +5312,7 @@ function LoginScreen({ onNext }) {
   const [error, setError] = useState("");
   const [captchaNeeded, setCaptchaNeeded] = useState(false);
   const [captchaSolved, setCaptchaSolved] = useState(false);
+  const [showPwd, setShowPwd] = useState(false);
   const [sentFrom, setSentFrom] = useState("");
 
   const getAttempts = () => parseInt(localStorage.getItem("_pred_ml") || "0");
@@ -5595,8 +5596,12 @@ function LoginScreen({ onNext }) {
           <span style={{fontSize:15}}>🔒</span>
           <input value={password} onChange={e=>setPassword(e.target.value)}
             onKeyDown={e=>e.key==="Enter"&&handleContinue()}
-            placeholder="parolă" type="password"
+            placeholder="parolă" type={showPwd?"text":"password"}
             style={{flex:1,border:"none",outline:"none",fontSize:15,color:DARK,background:"transparent"}}/>
+          <span onClick={()=>setShowPwd(p=>!p)}
+            style={{fontSize:16,cursor:"pointer",color:"#aaa",userSelect:"none",padding:"0 2px"}}>
+            {showPwd?"🙈":"👁️"}
+          </span>
         </div>
         {error && <p style={{fontSize:12,color:RED,margin:"0 0 8px",textAlign:"center"}}>{error}</p>}
         <button onClick={handleContinue} disabled={loading}
