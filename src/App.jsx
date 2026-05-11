@@ -3728,7 +3728,7 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
           <div style={{width:36}}/>
           <div style={{textAlign:"center"}}>
-            <img src={predictoLogo} alt="Predicto" style={{height:40,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
+            <img src={predictoLogo} alt="Predicto" decoding="sync" style={{height:40,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
             <h1 style={{fontSize:18,fontWeight:900,margin:"-4px 0 0",letterSpacing:2,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
             <p style={{fontSize:11,color:"#888",margin:"2px 0 0"}}>{T[lang].location}</p>
           </div>
@@ -3751,10 +3751,6 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
       <div style={{position:"absolute",bottom:0,left:0,right:0,height:80,background:`linear-gradient(to bottom, transparent, ${BG})`,pointerEvents:"none",zIndex:2}}/>
       <div style={{height:"100%",overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",padding:"10px 16px 0"}}>
 
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-          <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:0}}>{activeBoard?.name||"Global Board"}</p>
-          <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:0}}>👥 {membersLabel}</p>
-        </div>
         {/* User stats card */}
         <div style={{background:"#fff",borderRadius:16,boxShadow:"0 8px 22px rgba(0,0,0,0.07)",padding:"10px 14px",marginBottom:10}}>
           <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:10}}>
@@ -3768,7 +3764,10 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
                   <p style={{fontSize:15,fontWeight:800,color:DARK,margin:0}}>{displayName}</p>
                   <p style={{fontSize:12,color:"#555",margin:"2px 0 0"}}>{tournamentStarted?`${me?.pts||0} ${T[lang].ptsTotal}`:T[lang].tournamentStarts}</p>
                 </div>
-                <span onClick={onLeaderboard} style={{fontSize:12,color:NAVY,fontWeight:500,cursor:"pointer",flexShrink:0,paddingLeft:8}}>{T[lang].viewAll}</span>
+                <div style={{display:"flex",alignItems:"center",gap:6,flexShrink:0,paddingLeft:8}}>
+                  <span onClick={onLeaderboard} style={{fontSize:12,color:NAVY,fontWeight:500,cursor:"pointer"}}>{T[lang].viewAll}</span>
+                  {!boardsLoading && <span style={{fontSize:11,color:"#aaa",fontWeight:600}}>👥 {membersLabel}</span>}
+                </div>
               </div>
             </div>
           </div>
@@ -4148,7 +4147,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
           <div onClick={()=>setView("main")} style={{width:36,height:36,borderRadius:10,background:"rgba(0,0,0,0.05)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:DARK}}>&#8249;</div>
           <div style={{textAlign:"center"}}>
-            <img src={predictoLogo} alt="Predicto" style={{height:40,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
+            <img src={predictoLogo} alt="Predicto" decoding="sync" style={{height:40,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
             <h1 style={{fontSize:18,fontWeight:900,margin:"-4px 0 0",letterSpacing:2,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
             <p style={{fontSize:11,color:"#888",margin:"3px 0 0"}}>{T[lang].location}</p>
           </div>
@@ -4306,7 +4305,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
           <div onClick={onBack} style={{width:36,height:36,borderRadius:10,background:"rgba(0,0,0,0.05)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:DARK,flexShrink:0}}>&#8249;</div>
           <div style={{textAlign:"center"}}>
-            <img src={predictoLogo} alt="Predicto" style={{height:44,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
+            <img src={predictoLogo} alt="Predicto" decoding="sync" style={{height:44,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
             <h1 style={{fontSize:18,fontWeight:900,margin:"-4px 0 0",letterSpacing:2,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
             <p style={{fontSize:11,color:"#888",margin:"3px 0 0"}}>{T[lang].location}</p>
           </div>
@@ -5051,7 +5050,7 @@ function SplashScreen({ onNext, lang, setLang, simDay, simHour=12, simMin=0, tou
         <div style={{width:44}}/>
         <div style={{textAlign:"center"}}>
           {/* Predicto logo */}
-          <img src={predictoLogo} alt="Predicto" style={{
+          <img src={predictoLogo} alt="Predicto" decoding="sync" style={{
             height:54, width:"auto",
             objectFit:"contain",
             marginBottom:0,
@@ -5417,7 +5416,7 @@ function LoginScreen({ onNext }) {
   const bgImg = <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.03,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>;
   const header = (icon, title) => (
     <div style={{position:"relative",zIndex:1,background:"transparent",padding:"28px 28px 20px",display:"flex",flexDirection:"column",alignItems:"center"}}>
-      <img src={predictoLogo} alt="Predicto" style={{height:54,width:"auto",objectFit:"contain",display:"block",marginBottom:0}}/>
+      <img src={predictoLogo} alt="Predicto" decoding="sync" style={{height:54,width:"auto",objectFit:"contain",display:"block",marginBottom:0}}/>
       <h1 style={{fontSize:18,fontWeight:900,margin:"-4px 0 0",letterSpacing:2,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
       <h2 style={{fontSize:20,fontWeight:800,color:DARK,margin:"12px 0 0",textAlign:"center"}}>{title}</h2>
     </div>
@@ -5766,7 +5765,7 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:myBoards.length>1?0:8}}>
           <div onClick={onBack} style={{width:36,height:36,borderRadius:10,background:"rgba(0,0,0,0.05)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:DARK}}>&#8249;</div>
           <div style={{textAlign:"center"}}>
-            <img src={predictoLogo} alt="Predicto" style={{height:44,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
+            <img src={predictoLogo} alt="Predicto" decoding="sync" style={{height:44,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
             <h1 style={{fontSize:18,fontWeight:900,margin:"-4px 0 0",letterSpacing:2,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
             <p style={{fontSize:11,color:"#888",margin:"3px 0 0"}}>{T[lang].location}</p>
           </div>
@@ -7103,7 +7102,7 @@ function AccountScreen({ setLang, onBoards, onSignOut, onShowGuide, user }) {
       <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.03,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
       <div style={{background:"transparent",padding:"12px 20px 14px",flexShrink:0,position:"relative",zIndex:1,minHeight:100,boxSizing:"border-box"}}>
         <div style={{textAlign:"center",marginBottom:8}}>
-          <img src={predictoLogo} alt="Predicto" style={{height:44,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
+          <img src={predictoLogo} alt="Predicto" decoding="sync" style={{height:44,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
           <h1 style={{fontSize:18,fontWeight:900,margin:"-4px 0 0",letterSpacing:2,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
           <p style={{fontSize:11,color:"#888",margin:"3px 0 0"}}>{T[lang].location}</p>
         </div>
@@ -7198,7 +7197,7 @@ function RulesScreen({ onBack }) {
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",position:"relative"}}>
       <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.03,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
       <div style={{position:"relative",zIndex:1,background:"transparent",padding:"12px 20px 0",flexShrink:0,boxSizing:"border-box",textAlign:"center"}}>
-        <img src={predictoLogo} alt="Predicto" style={{height:44,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
+        <img src={predictoLogo} alt="Predicto" decoding="sync" style={{height:44,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
         <h1 style={{fontSize:18,fontWeight:900,margin:"-4px 0 0",letterSpacing:2,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
         <p style={{fontSize:11,color:"#888",margin:"3px 0 0"}}>{T[lang].location}</p>
         <div style={{display:"flex",gap:0,borderBottom:`2px solid rgba(0,0,0,0.06)`,marginTop:10}}>
@@ -7322,7 +7321,7 @@ function App() {
           setLeaderboardData({});
           setCreatedBoards([]);
           setAvailableBoards([]);
-          setMyBoards(INITIAL_BOARDS);
+          setMyBoards([]);
           setBoardsLoading(true);
           try { localStorage.removeItem('myBoards'); } catch {}
         }
@@ -7529,6 +7528,8 @@ function App() {
   const showFooter = !noFooter.includes(screen);
   const footerActive = screen===SCREENS.RULES?SCREENS.RULES:screen===SCREENS.ACCOUNT?SCREENS.ACCOUNT:SCREENS.HOME;
 
+  if (authLoading || (user && boardsLoading)) return <div style={{width:"100%",height:"100%",background:BG}}/>;
+
   return (
     <UserCtx.Provider value={user}>
     <LangCtx.Provider value={lang}>
@@ -7560,24 +7561,26 @@ function App() {
           {screen===SCREENS.HOME&&showOnboarding&&(
             <OnboardingSheet onDone={(skip)=>{ if(skip) setSkipOnboarding(true); setShowOnboarding(false); setShowFirstAction(true); setTimeout(()=>setShowFirstAction(false), 5000); }}/>
           )}
-          {screen===SCREENS.HOME&&<HomeScreen
-            onPredict={(boardId)=>{ setActiveBoardId(boardId); setShowFirstAction(false); setScreen(SCREENS.INSTANT_PICK); }}
-            onLeaderboard={()=>setScreen(SCREENS.LEADERBOARD)}
-            onBoards={(tab)=>{ setBoardsInitialTab(tab||"my"); setScreen(SCREENS.BOARDS); }}
-            onOpenGroups={(week)=>{ setGroupsInitialWeek(week||null); setScreen(SCREENS.GROUPS_SCHEDULE); }}
-            myBoards={myBoards}
-            predictionsComplete={predictionsComplete}
-            instantPickDone={instantPickDone}
-            exactScores={exactScores}
-            simDay={simDay} simHour={simHour} simMin={simMin}
-            activeBoardId={activeBoardId}
-            setActiveBoardId={setActiveBoardId}
-            tournamentStarted={tournamentStarted}
-            createdBoards={createdBoards}
-            showFirstAction={showFirstAction}
-            leaderboardData={leaderboardData}
-            boardsLoading={boardsLoading}
-            predictionsLoaded={predictionsLoaded}/>}
+          {user&&<div style={{display:screen===SCREENS.HOME?'flex':'none',flex:1,flexDirection:'column',overflow:'hidden',minHeight:0}}>
+            <HomeScreen
+              onPredict={(boardId)=>{ setActiveBoardId(boardId); setShowFirstAction(false); setScreen(SCREENS.INSTANT_PICK); }}
+              onLeaderboard={()=>setScreen(SCREENS.LEADERBOARD)}
+              onBoards={(tab)=>{ setBoardsInitialTab(tab||"my"); setScreen(SCREENS.BOARDS); }}
+              onOpenGroups={(week)=>{ setGroupsInitialWeek(week||null); setScreen(SCREENS.GROUPS_SCHEDULE); }}
+              myBoards={myBoards}
+              predictionsComplete={predictionsComplete}
+              instantPickDone={instantPickDone}
+              exactScores={exactScores}
+              simDay={simDay} simHour={simHour} simMin={simMin}
+              activeBoardId={activeBoardId}
+              setActiveBoardId={setActiveBoardId}
+              tournamentStarted={tournamentStarted}
+              createdBoards={createdBoards}
+              showFirstAction={showFirstAction}
+              leaderboardData={leaderboardData}
+              boardsLoading={boardsLoading}
+              predictionsLoaded={predictionsLoaded}/>
+          </div>}
           {screen===SCREENS.BOARDS&&<BoardsScreen
             initialTab={boardsInitialTab}
             onBack={()=>setScreen(SCREENS.HOME)}
@@ -7668,7 +7671,9 @@ function App() {
             }}/>}
 
           {screen===SCREENS.STATS&&<StatsScreen/>}
-          {screen===SCREENS.RULES&&<RulesScreen onBack={()=>setScreen(SCREENS.HOME)}/>}
+          {user&&<div style={{display:screen===SCREENS.RULES?'flex':'none',flex:1,flexDirection:'column',overflow:'hidden',minHeight:0}}>
+            <RulesScreen onBack={()=>setScreen(SCREENS.HOME)}/>
+          </div>}
           {screen===SCREENS.GROUPS_SCHEDULE&&<GroupsScheduleScreen scores={exactScores} setScores={async (newScores)=>{
               const oldScores = exactScores;
               setExactScores(newScores);
@@ -7686,7 +7691,9 @@ function App() {
                 showToast("Score saved!", "⚽");
               }
             }} simDay={simDay} simHour={simHour} simMin={simMin} initialWeek={groupsInitialWeek} onBack={()=>{ setGroupsInitialWeek(null); setScreen(SCREENS.HOME); }}/>}
-          {screen===SCREENS.ACCOUNT&&<AccountScreen setLang={setLang} onBoards={()=>setScreen(SCREENS.BOARDS)} onSignOut={()=>setScreen(SCREENS.SPLASH)} onShowGuide={()=>{ setShowOnboarding(true); setScreen(SCREENS.HOME); }} user={user}/>}
+          {user&&<div style={{display:screen===SCREENS.ACCOUNT?'flex':'none',flex:1,flexDirection:'column',overflow:'hidden',minHeight:0}}>
+            <AccountScreen setLang={setLang} onBoards={()=>setScreen(SCREENS.BOARDS)} onSignOut={()=>setScreen(SCREENS.SPLASH)} onShowGuide={()=>{ setShowOnboarding(true); setScreen(SCREENS.HOME); }} user={user}/>
+          </div>}
         </div>
         <Toast message={toast.message} emoji={toast.emoji} visible={toast.visible}/>
         {showFooter&&<Footer active={footerActive} onNavigate={setScreen} lang={lang}/>}
