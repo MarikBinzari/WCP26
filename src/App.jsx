@@ -7621,7 +7621,7 @@ function App() {
               if (!user) return null;
               const { data, error } = await joinBoardByCode(user.id, code);
               if (error) { showToast(error, "❌"); return null; }
-              setMyBoards(prev => [...prev, { ...data, isMember: true }]);
+              setMyBoards(prev => [...prev, { ...data, isMember: true, members: (data.members || 0) + 1 }]);
               setAvailableBoards(prev => prev.filter(b => b.id !== data.id));
               return data;
             }}
@@ -7638,7 +7638,7 @@ function App() {
               setPredictionsLoaded(prev => ({ ...prev, [boardId]: true }));
               const board = availableBoards.find(b => b.id === boardId) || createdBoards.find(b => b.id === boardId);
               if (board) {
-                setMyBoards(prev => prev.some(b => b.id === boardId) ? prev : [...prev, { ...board, isMember: true }]);
+                setMyBoards(prev => prev.some(b => b.id === boardId) ? prev : [...prev, { ...board, isMember: true, members: (board.members || 0) + 1 }]);
                 setAvailableBoards(prev => prev.filter(b => b.id !== boardId));
               }
             }}
