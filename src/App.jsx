@@ -7342,8 +7342,11 @@ function App() {
         return;
       }
 
-      if (u) setScreen(SCREENS.HOME);
-      else setScreen(SCREENS.SPLASH);
+      if (u) {
+        const nonRestorable = [SCREENS.SPLASH, SCREENS.LOGIN, SCREENS.RESET_PASSWORD, SCREENS.SET_PASSWORD];
+        const saved = (() => { try { return sessionStorage.getItem('lastScreen'); } catch { return null; } })();
+        setScreen(saved && !nonRestorable.includes(saved) ? saved : SCREENS.HOME);
+      } else setScreen(SCREENS.SPLASH);
     });
 
     supabase.auth.getSession().then(() => setAuthLoading(false));
@@ -7535,6 +7538,8 @@ function App() {
 
   const noFooter = [SCREENS.SPLASH, SCREENS.LOGIN, SCREENS.INSTANT_PICK, SCREENS.GROUPS_SCHEDULE];
   const showFooter = !noFooter.includes(screen);
+  const _nonSaveable = [SCREENS.SPLASH, SCREENS.LOGIN, SCREENS.RESET_PASSWORD, SCREENS.SET_PASSWORD];
+  if (!_nonSaveable.includes(screen)) { try { sessionStorage.setItem('lastScreen', screen); } catch {} }
   const footerActive = screen===SCREENS.RULES?SCREENS.RULES:screen===SCREENS.ACCOUNT?SCREENS.ACCOUNT:SCREENS.HOME;
 
   if (authLoading || (user && boardsLoading)) return <div style={{width:"100%",height:"100%",background:BG}}/>;
@@ -7714,7 +7719,7 @@ function App() {
               }
             }} simDay={simDay} simHour={simHour} simMin={simMin} initialWeek={groupsInitialWeek} onBack={()=>{ setGroupsInitialWeek(null); setScreen(SCREENS.HOME); }}/>}
           {user&&<div style={{display:screen===SCREENS.ACCOUNT?'flex':'none',flex:1,flexDirection:'column',overflow:'hidden',minHeight:0}}>
-            <AccountScreen setLang={setLang} onBoards={()=>setScreen(SCREENS.BOARDS)} onSignOut={()=>setScreen(SCREENS.SPLASH)} onShowGuide={()=>{ setShowOnboarding(true); setScreen(SCREENS.HOME); }} user={user}/>
+            <AccountScreen setLang={setLang} onBoards={()=>{ setBoardsInitialTab("my"); setScreen(SCREENS.BOARDS); }} onSignOut={()=>setScreen(SCREENS.SPLASH)} onShowGuide={()=>{ setShowOnboarding(true); setScreen(SCREENS.HOME); }} user={user}/>
           </div>}
         </div>
         <Toast message={toast.message} emoji={toast.emoji} visible={toast.visible}/>
