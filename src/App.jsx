@@ -3663,31 +3663,48 @@ function GroupRankingScreen({ group, teams, existingRanking, onConfirm, onAutoSa
 
 // ── CIRCLE TAB ────────────────────────────────────────────────────────────────
 function CircleTab({ label, name, isActive, onClick, lightBg=false }) {
+  const innerBg = lightBg ? "#fff" : "rgba(255,255,255,0.95)";
   return (
     <div onClick={onClick} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:5,cursor:"pointer",flexShrink:0,WebkitTapHighlightColor:"transparent"}}>
-      <div style={{
-        width:isActive?52:44, height:isActive?52:44,
-        borderRadius:"50%",
-        background:isActive
-          ? (lightBg?"#fff":"rgba(255,255,255,0.95)")
-          : (lightBg?"rgba(0,0,0,0.07)":"rgba(255,255,255,0.1)"),
-        border:isActive
-          ? (lightBg?"3px solid rgba(0,0,0,0.14)":"3px solid #fff")
-          : (lightBg?"2px solid rgba(0,0,0,0.22)":"2px solid rgba(255,255,255,0.2)"),
-        display:"flex",alignItems:"center",justifyContent:"center",
-        fontSize:isActive?24:19,
-        transition:"all 0.2s",
-        boxShadow:isActive?"0 4px 16px rgba(0,0,0,0.15)":"none",
-      }}>
-        {label}
-      </div>
+      {isActive ? (
+        <div style={{
+          width:58, height:58,
+          borderRadius:"50%",
+          background:"linear-gradient(135deg,#C8102E,#EF3340 40%,#009A44)",
+          padding:3,
+          display:"flex",alignItems:"center",justifyContent:"center",
+          boxShadow:"0 4px 16px rgba(0,0,0,0.15)",
+          transition:"all 0.2s",
+        }}>
+          <div style={{
+            width:"100%", height:"100%",
+            borderRadius:"50%",
+            background:innerBg,
+            display:"flex",alignItems:"center",justifyContent:"center",
+            fontSize:24,
+          }}>
+            {label}
+          </div>
+        </div>
+      ) : (
+        <div style={{
+          width:44, height:44,
+          borderRadius:"50%",
+          background:lightBg?"rgba(0,0,0,0.07)":"rgba(255,255,255,0.1)",
+          border:lightBg?"2px solid rgba(0,0,0,0.22)":"2px solid rgba(255,255,255,0.2)",
+          display:"flex",alignItems:"center",justifyContent:"center",
+          fontSize:19,
+          transition:"all 0.2s",
+        }}>
+          {label}
+        </div>
+      )}
       <span style={{
         fontSize:isActive?10:9,
         color:isActive?(lightBg?DARK:"#fff"):(lightBg?"rgba(0,0,0,0.72)":"rgba(255,255,255,0.62)"),
         fontWeight:isActive?800:600,
         maxWidth:56,textAlign:"center",lineHeight:1.2,
       }}>{name}</span>
-
     </div>
   );
 }
