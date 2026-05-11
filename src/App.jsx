@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import trophy from "./assets/hands-trophy.png";
 import varBg from "./assets/var-bg.jpg";
 import predictoLogo from "./assets/predicto-logo.png";
+import bellIcon from "./assets/bell-icon.svg";
 import { ALL_GROUPS_DATA, FLAGS, TEAM_COLORS, CALENDAR_EVENTS } from "./data/worldcup2026.js";
 import { supabase } from "./supabase.js";
 import { loadPredictions, savePredictions, loadExactScores, saveExactScore, loadUserBoards, loadAvailableBoards, createBoard, joinBoardByCode, joinBoardById, loadLeaderboard, fetchScoringRules, fetchMemberCounts, removeBoardMember, removeParticipation, deleteBoard, loadBoardMembers, checkDbHealth, checkEmailExists } from "./db.js";
@@ -3732,7 +3733,7 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
             <h1 style={{fontSize:18,fontWeight:900,margin:"-3px 0 0",letterSpacing:2,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
             <p style={{fontSize:11,color:"#6B7280",margin:"0"}}>{T[lang].location}</p>
           </div>
-          <div style={{width:40,height:40,borderRadius:"50%",background:"rgba(10,46,138,0.11)",boxShadow:"0 2px 8px rgba(10,46,138,0.13)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:17}}>🔔</div>
+          <img src={bellIcon} alt="Notifications" style={{width:44,height:44,flexShrink:0}}/>
         </div>
         <div style={{overflowX:"auto",overflowY:"visible",scrollbarWidth:"none",margin:"0 -20px"}}>
         <div style={{display:"flex",alignItems:"flex-start",gap:10,padding:"6px 20px 14px"}}>
