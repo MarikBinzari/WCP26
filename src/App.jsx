@@ -5584,8 +5584,7 @@ function LoginScreen({ onNext }) {
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,position:"relative",overflow:"hidden"}}>
       {bgImg}
       {header("🏆", T[lang].joinTheGame)}
-      <div style={{flex:1}}/>
-      <div style={{padding:"0 24px 48px",display:"flex",flexDirection:"column",position:"relative",zIndex:1}}>
+      <div style={{flex:1,padding:"36px 24px 32px",display:"flex",flexDirection:"column",position:"relative",zIndex:1}}>
         <div style={{background:"#fff",borderRadius:14,boxShadow:"0 8px 22px rgba(0,0,0,0.07)",padding:"14px 16px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
           <span style={{fontSize:15}}>✉️</span>
           <input value={email} onChange={e=>setEmail(e.target.value)} placeholder="adresa@email.com"
