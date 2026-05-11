@@ -5584,34 +5584,38 @@ function LoginScreen({ onNext }) {
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,position:"relative",overflow:"hidden"}}>
       {bgImg}
       {header("🏆", T[lang].joinTheGame)}
-      <div style={{flex:1,padding:"48px 24px 32px",display:"flex",flexDirection:"column",position:"relative",zIndex:1}}>
-        <div style={{background:"#fff",borderRadius:14,boxShadow:"0 8px 22px rgba(0,0,0,0.07)",padding:"14px 16px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
-          <span style={{fontSize:15}}>✉️</span>
-          <input value={email} onChange={e=>setEmail(e.target.value)} placeholder="adresa@email.com"
-            type="email" autoCapitalize="none"
-            style={{flex:1,border:"none",outline:"none",fontSize:15,color:DARK,background:"transparent"}}/>
-        </div>
-        <div style={{background:"#fff",borderRadius:14,boxShadow:"0 8px 22px rgba(0,0,0,0.07)",padding:"14px 16px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
-          <span style={{fontSize:15}}>🔒</span>
-          <input value={password} onChange={e=>setPassword(e.target.value)}
-            onKeyDown={e=>e.key==="Enter"&&handleContinue()}
-            placeholder="parolă" type="password"
-            style={{flex:1,border:"none",outline:"none",fontSize:15,color:DARK,background:"transparent"}}/>
-        </div>
-        {error && <p style={{fontSize:12,color:RED,margin:"0 0 8px",textAlign:"center"}}>{error}</p>}
-        <button onClick={handleContinue} disabled={loading}
-          style={{width:"100%",background:`linear-gradient(135deg,${NAVY},#001840)`,color:"#fff",border:"none",borderRadius:14,padding:"15px 0",fontSize:15,fontWeight:700,cursor:"pointer",opacity:loading?0.7:1,marginBottom:8}}>
-          {loading ? "Se verifică..." : "Continuă →"}
-        </button>
-        <div style={{display:"flex",justifyContent:"space-between",padding:"4px 2px 0"}}>
-          <p onClick={goToForgot}
-            style={{fontSize:12,color:"#aaa",margin:0,cursor:"pointer",textDecoration:"underline"}}>
-            Am uitat parola
-          </p>
-          <p onClick={goToSignup}
-            style={{fontSize:12,color:NAVY,margin:0,cursor:"pointer",textDecoration:"underline",fontWeight:600}}>
-            Cont nou
-          </p>
+      <div style={{flex:1}}/>
+      <div style={{padding:"0 20px 40px",display:"flex",flexDirection:"column",position:"relative",zIndex:1}}>
+        <div style={{background:"rgba(0,32,91,0.6)",borderRadius:20,padding:"20px 16px 16px"}}>
+          <div style={{background:"rgba(255,255,255,0.12)",borderRadius:12,padding:"14px 16px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
+            <span style={{fontSize:15}}>✉️</span>
+            <input value={email} onChange={e=>setEmail(e.target.value)} placeholder="adresa@email.com"
+              type="email" autoCapitalize="none"
+              style={{flex:1,border:"none",outline:"none",fontSize:15,color:"#fff",background:"transparent"}}
+              placeholderStyle={{color:"rgba(255,255,255,0.5)"}}/>
+          </div>
+          <div style={{background:"rgba(255,255,255,0.12)",borderRadius:12,padding:"14px 16px",marginBottom:14,display:"flex",alignItems:"center",gap:10}}>
+            <span style={{fontSize:15}}>🔒</span>
+            <input value={password} onChange={e=>setPassword(e.target.value)}
+              onKeyDown={e=>e.key==="Enter"&&handleContinue()}
+              placeholder="parolă" type="password"
+              style={{flex:1,border:"none",outline:"none",fontSize:15,color:"#fff",background:"transparent"}}/>
+          </div>
+          {error && <p style={{fontSize:12,color:"#ffaaaa",margin:"0 0 10px",textAlign:"center"}}>{error}</p>}
+          <button onClick={handleContinue} disabled={loading}
+            style={{width:"100%",background:"linear-gradient(135deg,#fff,#e8eeff)",color:NAVY,border:"none",borderRadius:14,padding:"15px 0",fontSize:15,fontWeight:800,cursor:"pointer",opacity:loading?0.7:1,marginBottom:10}}>
+            {loading ? "Se verifică..." : "Continuă →"}
+          </button>
+          <div style={{display:"flex",justifyContent:"space-between",padding:"0 2px"}}>
+            <p onClick={goToForgot}
+              style={{fontSize:12,color:"rgba(255,255,255,0.6)",margin:0,cursor:"pointer",textDecoration:"underline"}}>
+              Am uitat parola
+            </p>
+            <p onClick={goToSignup}
+              style={{fontSize:12,color:"rgba(255,255,255,0.9)",margin:0,cursor:"pointer",textDecoration:"underline",fontWeight:600}}>
+              Cont nou
+            </p>
+          </div>
         </div>
       </div>
     </div>
