@@ -3753,23 +3753,19 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
 
         {/* User stats card */}
         <div style={{background:"#fff",borderRadius:16,boxShadow:"0 8px 22px rgba(0,0,0,0.07)",padding:"10px 14px",marginBottom:10}}>
-          <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:10}}>
+          <div style={{display:"flex",alignItems:"flex-start",gap:0,marginBottom:10}}>
             <div style={{width:44,height:44,borderRadius:"50%",background:"linear-gradient(135deg,rgba(10,46,138,0.65),rgba(0,24,64,0.65))",
-              display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:16,fontWeight:800}}>
+              display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:16,fontWeight:800,flexShrink:0}}>
               {initials}
             </div>
-            <div style={{flex:1,minWidth:0}}>
-              <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between"}}>
-                <div style={{flex:1,minWidth:0}}>
-                  <p style={{fontSize:15,fontWeight:800,color:DARK,margin:0}}>{displayName}</p>
-                  <p style={{fontSize:12,color:"#555",margin:"2px 0 0"}}>{tournamentStarted?`${me?.pts||0} ${T[lang].ptsTotal}`:T[lang].tournamentStarts}</p>
-                </div>
-                <span onClick={onLeaderboard} style={{fontSize:12,color:NAVY,fontWeight:500,cursor:"pointer",flexShrink:0,paddingLeft:8}}>{T[lang].viewAll}</span>
-              </div>
+            <div style={{flex:1,minWidth:0,paddingLeft:12}}>
+              <p style={{fontSize:15,fontWeight:800,color:DARK,margin:0,lineHeight:1.2}}>{displayName}</p>
+              <p style={{fontSize:12,color:"#555",margin:"4px 0 0"}}>{tournamentStarted?`${me?.pts||0} ${T[lang].ptsTotal}`:T[lang].tournamentStarts}</p>
             </div>
           </div>
           {/* Ranking across boards — horizontal scroll with fade indicator */}
-          <div style={{position:"relative",margin:"0 -14px"}}>
+          <div style={{display:"flex",alignItems:"flex-end",margin:"0 -14px"}}>
+          <div style={{flex:1,position:"relative",overflow:"hidden"}}>
             <div style={{display:"flex",gap:8,overflowX:"auto",scrollbarWidth:"none",
               WebkitOverflowScrolling:"touch",padding:"0 14px 2px"}}>
               {myBoards.map(b=>{
@@ -3778,7 +3774,7 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
                 const totalMembers = b.members || bLeaders.length || 1;
                 const isActive = activeId===b.id;
                 return (
-                  <div key={b.id} onClick={()=>{ setActiveId(b.id); onLeaderboard(); }}
+                  <div key={b.id} onClick={()=>setActiveId(b.id)}
                     style={{flexShrink:0,minWidth:84,
                       background:isActive?`${NAVY}12`:BG,borderRadius:10,padding:"7px 10px",
                       border:isActive?`1.5px solid ${NAVY}`:"1.5px solid rgba(0,0,0,0.07)",
@@ -3795,15 +3791,14 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
               {/* Extra padding for fade */}
               <div style={{flexShrink:0,width:24}}/>
             </div>
-            {/* Fade + arrow indicator on right */}
-            {myBoards.length>2&&(
-              <div style={{position:"absolute",right:0,top:0,bottom:0,width:40,
-                background:"linear-gradient(to right, transparent, #fff 70%)",
-                display:"flex",alignItems:"center",justifyContent:"flex-end",
-                paddingRight:4,pointerEvents:"none"}}>
-                <span style={{fontSize:12,color:"#aaa",fontWeight:700}}>›</span>
-              </div>
-            )}
+            {/* Fade */}
+            <div style={{position:"absolute",right:0,top:0,bottom:0,width:20,
+              background:"linear-gradient(to right, transparent, #fff)",
+              pointerEvents:"none"}}/>
+          </div>
+          <div style={{flexShrink:0,paddingRight:14,paddingLeft:6}}>
+            <span onClick={onLeaderboard} style={{fontSize:12,color:NAVY,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap"}}>{T[lang].viewAll}</span>
+          </div>
           </div>
         </div>
 
