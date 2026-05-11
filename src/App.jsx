@@ -3764,10 +3764,7 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
                   <p style={{fontSize:15,fontWeight:800,color:DARK,margin:0}}>{displayName}</p>
                   <p style={{fontSize:12,color:"#555",margin:"2px 0 0"}}>{tournamentStarted?`${me?.pts||0} ${T[lang].ptsTotal}`:T[lang].tournamentStarts}</p>
                 </div>
-                <div style={{display:"flex",alignItems:"center",gap:6,flexShrink:0,paddingLeft:8}}>
-                  <span onClick={onLeaderboard} style={{fontSize:12,color:NAVY,fontWeight:500,cursor:"pointer"}}>{T[lang].viewAll}</span>
-                  {!boardsLoading && <span style={{fontSize:11,color:"#aaa",fontWeight:600}}>👥 {membersLabel}</span>}
-                </div>
+                <span onClick={onLeaderboard} style={{fontSize:12,color:NAVY,fontWeight:500,cursor:"pointer",flexShrink:0,paddingLeft:8}}>{T[lang].viewAll}</span>
               </div>
             </div>
           </div>
@@ -3778,9 +3775,10 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
               {myBoards.map(b=>{
                 const bLeaders = leaderboardData[b.id] || [];
                 const myRank = bLeaders.find(u=>u.isMe)?.rank || 1;
+                const totalMembers = b.members || bLeaders.length || 1;
                 const isActive = activeId===b.id;
                 return (
-                  <div key={b.id} onClick={()=>setActiveId(b.id)}
+                  <div key={b.id} onClick={()=>{ setActiveId(b.id); onLeaderboard(); }}
                     style={{flexShrink:0,minWidth:84,
                       background:isActive?`${NAVY}12`:BG,borderRadius:10,padding:"7px 10px",
                       border:isActive?`1.5px solid ${NAVY}`:"1.5px solid rgba(0,0,0,0.07)",
@@ -3790,7 +3788,7 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
                       overflow:"hidden",textOverflow:"ellipsis",maxWidth:70}}>
                       {b.isGlobal?"🌍 Global":`${b.label} ${b.name.split(" ")[0]}`}
                     </p>
-                    <p style={{fontSize:15,fontWeight:800,color:isActive?NAVY:DARK,margin:"2px 0 0"}}>#{myRank}</p>
+                    <p style={{fontSize:15,fontWeight:800,color:isActive?NAVY:DARK,margin:"2px 0 0"}}>{myRank}{totalMembers?<span style={{fontSize:10,fontWeight:500,color:isActive?NAVY:"#aaa"}}> of {totalMembers>999?`${Math.round(totalMembers/1000)}k`:totalMembers}</span>:null}</p>
                   </div>
                 );
               })}
@@ -4528,8 +4526,8 @@ function Footer({ active, onNavigate, lang }) {
               display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4,padding:0}}>
             <div style={{
               width:36,height:36,borderRadius:12,
-              background:isActive?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:"rgba(0,0,0,0.05)",
-              boxShadow:isActive?"0 4px 12px rgba(0,32,91,0.3)":SHADOW_OUT,
+              background:isActive?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:"transparent",
+              boxShadow:isActive?"0 4px 12px rgba(0,32,91,0.3)":"none",
               display:"flex",alignItems:"center",justifyContent:"center",
               fontSize:18,transition:"all 0.2s"}}>
               {tab.icon}
@@ -7468,6 +7466,17 @@ function App() {
     });
   }, [user, screen, activeBoardId]);
 
+  useEffect(() => {
+    if (!user || screen !== SCREENS.HOME || myBoards.length === 0) return;
+    myBoards.forEach(b => {
+      if (leaderboardData[b.id]?.length > 0) return;
+      loadLeaderboard(b.id, null, user.id).then(rows => {
+        if (rows.length > 0)
+          setLeaderboardData(prev => ({ ...prev, [b.id]: rows }));
+      });
+    });
+  }, [user, screen, myBoards]);
+
   const [allInstantPickStates, setAllInstantPickStates] = useState({});
   const [exactScoresByBoard, setExactScoresByBoard] = useState({});
   const exactScores = exactScoresByBoard[activeBoardId] || {};
@@ -7628,10 +7637,13 @@ function App() {
             onRemoveMember={async (boardId, memberId) => {
               await removeBoardMember(boardId, memberId);
               if (memberId === user?.id) {
+                await removeParticipation(boardId, memberId);
                 setMyBoards(prev => prev.filter(b => b.id !== boardId));
                 setAllInstantPickStates(prev => { const n = {...prev}; delete n[boardId]; return n; });
                 setAllInstantPickDone(prev => { const n = {...prev}; delete n[boardId]; return n; });
                 setExactScoresByBoard(prev => { const n = {...prev}; delete n[boardId]; return n; });
+                setPredictionsComplete(prev => { const n = {...prev}; delete n[boardId]; return n; });
+                setPredictionsLoaded(prev => { const n = {...prev}; delete n[boardId]; return n; });
                 if (activeBoardId === boardId) setActiveBoardId('global');
               }
             }}/>}
