@@ -3670,10 +3670,10 @@ function CircleTab({ label, name, isActive, onClick, lightBg=false }) {
         borderRadius:"50%",
         background:isActive
           ? (lightBg?"#fff":"rgba(255,255,255,0.95)")
-          : (lightBg?"rgba(0,0,0,0.06)":"rgba(255,255,255,0.1)"),
+          : (lightBg?"rgba(0,0,0,0.07)":"rgba(255,255,255,0.1)"),
         border:isActive
-          ? (lightBg?"3px solid rgba(0,0,0,0.12)":"3px solid #fff")
-          : (lightBg?"2px solid rgba(0,0,0,0.12)":"2px solid rgba(255,255,255,0.2)"),
+          ? (lightBg?"3px solid rgba(0,0,0,0.14)":"3px solid #fff")
+          : (lightBg?"2px solid rgba(0,0,0,0.22)":"2px solid rgba(255,255,255,0.2)"),
         display:"flex",alignItems:"center",justifyContent:"center",
         fontSize:isActive?24:19,
         transition:"all 0.2s",
@@ -3683,8 +3683,8 @@ function CircleTab({ label, name, isActive, onClick, lightBg=false }) {
       </div>
       <span style={{
         fontSize:isActive?10:9,
-        color:isActive?(lightBg?DARK:"#fff"):(lightBg?"rgba(0,0,0,0.62)":"rgba(255,255,255,0.62)"),
-        fontWeight:isActive?800:500,
+        color:isActive?(lightBg?DARK:"#fff"):(lightBg?"rgba(0,0,0,0.72)":"rgba(255,255,255,0.62)"),
+        fontWeight:isActive?800:600,
         maxWidth:56,textAlign:"center",lineHeight:1.2,
       }}>{name}</span>
 
@@ -3724,7 +3724,7 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
   const meInTop3 = top3.some(u=>u.isMe);
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",position:"relative"}}>
-      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.03,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.055,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
       <div style={{background:"linear-gradient(180deg,#CCDAFF 0%,#E2EBFF 40%,#F8F8F8 100%)",padding:"4px 20px 2px",flexShrink:0,position:"relative",zIndex:1}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
           <div style={{width:40}}/>
@@ -3749,7 +3749,7 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
       </div>
       <div style={{flex:1,position:"relative",zIndex:1,minHeight:0}}>
       <div style={{position:"absolute",top:0,left:0,right:0,height:16,background:`linear-gradient(to top, transparent, ${BG})`,pointerEvents:"none",zIndex:2}}/>
-      <div style={{position:"absolute",bottom:0,left:0,right:0,height:80,background:`linear-gradient(to bottom, transparent, ${BG})`,pointerEvents:"none",zIndex:2}}/>
+      <div style={{position:"absolute",bottom:0,left:0,right:0,height:52,background:`linear-gradient(to bottom, transparent, rgba(248,248,248,0.88))`,pointerEvents:"none",zIndex:2}}/>
       <div style={{height:"100%",overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",padding:"10px 16px 0"}}>
 
         {/* User stats card */}
