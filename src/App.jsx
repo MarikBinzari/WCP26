@@ -53,6 +53,7 @@ const T = {
     footerHome:"Home", footerStats:"Groups", footerFast:"Instant Pick ⚡", footerAccount:"Account",
     participants:"participants", add:"Add", yourTasks:"Your tasks",
     predictions:"Predictions", completed:"✓ Completed", deadlinePassed:"Deadline passed", dueJun11:"Due Jun 11",
+    koUnlockedLabel:"⚡ Knockout available", koDueJun27:"Due Jun 27",
     exactScores:"Exact Scores", weekComplete:"✓ Week complete", thisWeek:"this week",
     pathToTrophy:"Path to the Trophy", unlocksEvery:"Unlocks every Sunday 8AM",
     groupStage:"Group Stage", week:"Week", roundOf16QF:"Round of 16 · QF · SF",
@@ -87,7 +88,9 @@ const T = {
     invalidCode:"Invalid code. Please check and try again.",
     rules:"Rules", howPredictionsWork:"How does Predictions work?",
     howExactScoreWork:"How does Exact Score work?",
-    predictionsDesc:"Predict the winner of every match — from group stage to the final. One shot per tournament.",
+    predictionsDesc:"Two phases: rank all 12 groups + pick 8 best-third teams before Jun 11. The knockout bracket unlocks Jun 27 after the last group match.",
+    rulesTask1Header:"Task 1 · Groups & Best Third", rulesTask1Due:"Deadline Jun 11",
+    rulesTask2Header:"Task 2 · Knockout Phase", rulesTask2Due:"Unlocks Jun 27",
     exactDesc:"Predict the exact score of each match every week. Unlocks on Sundays after 8:00 PM.",
     exactScore:"EXACT SCORE", confirmScore:"Confirm Score",
     save:"Save", cancel:"Cancel", del:"Delete", done:"Done",
@@ -105,8 +108,8 @@ const T = {
     noMembersYet:"No members yet", searchOrCode:"Search or enter invite code...",
     joinBtn:"Join", noBoardsFor:"No boards found for",
     dontShowAgain:"Don't show again",
-    onb0Title:"Predict the Tournament", onb0Sub:"Once · From Groups to the Final",
-    onb0Desc:"Pick the winner of every match before the tournament kicks off. One shot — make it count.",
+    onb0Title:"Two Prediction Phases", onb0Sub:"Groups + Best Third · Knockout",
+    onb0Desc:"Phase 1 (before Jun 11): Rank all 12 groups and pick your 8 best-third teams. Phase 2: The knockout bracket unlocks Jun 27 after the last group match — build your path to the trophy.",
     onb0Next:"Show me scores →",
     onb1Title:"Weekly Exact Score", onb1Sub:"Unlocks every Sunday at 8:00 AM",
     onb1Desc:"Predict the exact score of each week's matches for bonus points. New matches every Sunday.",
@@ -133,6 +136,7 @@ const T = {
     footerHome:"Acasa", footerStats:"Grupe", footerFast:"Instant Pick ⚡", footerAccount:"Cont",
     participants:"participanți", add:"Adaugă", yourTasks:"Sarcinile tale",
     predictions:"Predicții", completed:"✓ Completat", deadlinePassed:"Termen expirat", dueJun11:"Termen 11 Iun",
+    koUnlockedLabel:"⚡ Knockout disponibil", koDueJun27:"Termen 27 Iun",
     exactScores:"Scoruri Exacte", weekComplete:"✓ Săptămâna completă", thisWeek:"această săptămână",
     pathToTrophy:"Drumul spre Trofeu", unlocksEvery:"Se deschide duminică la 8:00",
     groupStage:"Faza Grupelor", week:"Săptămâna", roundOf16QF:"Optimi · Sferturi · Semi",
@@ -167,7 +171,9 @@ const T = {
     invalidCode:"Cod invalid. Verifică și încearcă din nou.",
     rules:"Reguli", howPredictionsWork:"Cum funcționează Predicțiile?",
     howExactScoreWork:"Cum funcționează Scorul Exact?",
-    predictionsDesc:"Prezice câștigătorul fiecărui meci — din faza grupelor până la finală. O singură șansă pe turneu.",
+    predictionsDesc:"Două etape: clasează cele 12 grupe + alege 8 echipe best-third înainte de 11 Iun. Bracket-ul knockout se deblochează pe 27 Iun după ultimul meci din grupe.",
+    rulesTask1Header:"Task 1 · Grupe & Best Third", rulesTask1Due:"Termen 11 Iun",
+    rulesTask2Header:"Task 2 · Faza Knockout", rulesTask2Due:"Disponibil din 27 Iun",
     exactDesc:"Prezice scorul exact al fiecărui meci în fiecare săptămână. Se deschide duminicile după 20:00.",
     exactScore:"SCOR EXACT", confirmScore:"Confirmă Scorul",
     save:"Salvează", cancel:"Anulează", del:"Șterge", done:"Gata",
@@ -185,8 +191,8 @@ const T = {
     noMembersYet:"Niciun membru încă", searchOrCode:"Caută sau introdu codul...",
     joinBtn:"Alătură-te", noBoardsFor:"Niciun board găsit pentru",
     dontShowAgain:"Nu mai arăta",
-    onb0Title:"Prezice Turneul", onb0Sub:"O singură dată · De la Grupe la Finală",
-    onb0Desc:"Alege câștigătorul fiecărui meci înainte să înceapă turneul. O singură șansă — folosește-o bine.",
+    onb0Title:"Predicții în Două Etape", onb0Sub:"Grupe + Best Third · Knockout",
+    onb0Desc:"Etapa 1 (înainte de 11 Iun): Clasează cele 12 grupe și alege 8 echipe best-third. Etapa 2: Bracket-ul knockout se deblochează pe 27 Iun după ultimul meci din grupe.",
     onb0Next:"Arată-mi scorurile →",
     onb1Title:"Scor Exact Săptămânal", onb1Sub:"Se deschide duminică la 8:00",
     onb1Desc:"Prezice scorul exact al meciurilor săptămânii pentru puncte bonus. Meciuri noi în fiecare duminică.",
@@ -213,6 +219,7 @@ const T = {
     footerHome:"Accueil", footerStats:"Groupes", footerFast:"Instant Pick ⚡", footerAccount:"Compte",
     participants:"participants", add:"Ajouter", yourTasks:"Vos tâches",
     predictions:"Pronostics", completed:"✓ Complété", deadlinePassed:"Délai expiré", dueJun11:"Délai 11 Juin",
+    koUnlockedLabel:"⚡ Knockout disponible", koDueJun27:"Délai 27 Juin",
     exactScores:"Scores Exacts", weekComplete:"✓ Semaine complète", thisWeek:"cette semaine",
     pathToTrophy:"Chemin vers le Trophée", unlocksEvery:"Ouvre chaque dimanche à 8h",
     groupStage:"Phase de Groupes", week:"Semaine", roundOf16QF:"H.d.F. · Quarts · Demi",
@@ -247,7 +254,9 @@ const T = {
     invalidCode:"Code invalide. Veuillez vérifier et réessayer.",
     rules:"Règles", howPredictionsWork:"Comment fonctionnent les Pronostics ?",
     howExactScoreWork:"Comment fonctionne le Score Exact ?",
-    predictionsDesc:"Prédisez le vainqueur de chaque match — de la phase de groupes à la finale. Une seule chance par tournoi.",
+    predictionsDesc:"Deux phases : classez les 12 groupes + choisissez 8 équipes meilleur 3e avant le 11 Juin. Le bracket knockout se déverrouille le 27 Juin après le dernier match de groupes.",
+    rulesTask1Header:"Tâche 1 · Groupes & Meilleur 3e", rulesTask1Due:"Date limite 11 Juin",
+    rulesTask2Header:"Tâche 2 · Phase Knockout", rulesTask2Due:"Disponible dès le 27 Juin",
     exactDesc:"Prédisez le score exact de chaque match chaque semaine. Déverrouillé le dimanche après 20h.",
     exactScore:"SCORE EXACT", confirmScore:"Confirmer le Score",
     save:"Enregistrer", cancel:"Annuler", del:"Supprimer", done:"Terminé",
@@ -265,8 +274,8 @@ const T = {
     noMembersYet:"Aucun membre encore", searchOrCode:"Chercher ou entrer le code...",
     joinBtn:"Rejoindre", noBoardsFor:"Aucun board trouvé pour",
     dontShowAgain:"Ne plus afficher",
-    onb0Title:"Prédire le Tournoi", onb0Sub:"Une fois · Des Groupes à la Finale",
-    onb0Desc:"Choisissez le vainqueur de chaque match avant le début du tournoi. Une seule chance — faites-la compter.",
+    onb0Title:"Deux Phases de Pronostics", onb0Sub:"Groupes + Meilleur 3e · Knockout",
+    onb0Desc:"Phase 1 (avant le 11 Juin) : Classez les 12 groupes et choisissez 8 équipes meilleur 3e. Phase 2 : Le bracket knockout se déverrouille le 27 Juin après le dernier match de groupes.",
     onb0Next:"Montrez-moi les scores →",
     onb1Title:"Score Exact Hebdomadaire", onb1Sub:"Déverrouillé chaque dimanche à 8h",
     onb1Desc:"Prédisez le score exact des matchs de la semaine pour des points bonus. Nouveaux matchs chaque dimanche.",
@@ -304,7 +313,14 @@ const useInitials = () => {
 // ECHIPE_DATA, FLAGS, TEAM_COLORS — importate din ./data/worldcup2026.js
 
 // Clasamente reale finale — se actualizează după încheierea turneului
+// Format: { "A": ["team1","team2","team3","team4"], ... }
 const REAL_STANDINGS = {};
+// Statistici reale per echipă din faza grupelor — pentru ranking best3
+// Format: { "Mexico": { pts:7, gf:5, ga:2, w:2, d:1, l:0 }, ... }
+const REAL_GROUP_STATS = {};
+// Cele 8 best3 care avansează — override manual dacă vrei să eviți calculul auto
+// Format: ["team1","team2",...] în ordinea ranking-ului FIFA (1st vs 2nd, 3rd vs 4th etc.)
+const REAL_BEST3 = [];
 const GROUP_STAGE_FINISHED = false;
 
 // Week unlock logic — Sunday after 20:00
@@ -1275,6 +1291,30 @@ const getAutoStanding = (group) => {
   });
   return [...teams].sort((a,b)=>(pts[b]||0)-(pts[a]||0));
 };
+// ── RANKING BEST3 DUPĂ REGULILE FIFA ─────────────────────────────────────────
+// Criterii oficiale FIFA 2026 pentru cele 8 best 3rd-place teams care avansează:
+// 1. Puncte  2. Diferență goluri  3. Goluri marcate  4. Victorii  5. Fair play  6. Ranking FIFA
+function rankBest3ByFifa(groups, standings, stats) {
+  const thirds = groups.map(g => (standings[g]||[])[2]).filter(Boolean);
+  if(!thirds.length) return [];
+  const hasStats = Object.keys(stats).length > 0;
+  if(hasStats) {
+    return [...thirds]
+      .sort((a, b) => {
+        const sa = stats[a] || { pts:0, gf:0, ga:0, w:0 };
+        const sb = stats[b] || { pts:0, gf:0, ga:0, w:0 };
+        if(sb.pts !== sa.pts) return sb.pts - sa.pts;
+        const gdA = sa.gf - sa.ga, gdB = sb.gf - sb.ga;
+        if(gdB !== gdA) return gdB - gdA;
+        if(sb.gf !== sa.gf) return sb.gf - sa.gf;
+        if(sb.w !== sa.w) return sb.w - sa.w;
+        return 0;
+      })
+      .slice(0, 8);
+  }
+  return thirds.slice(0, 8);
+}
+
 // KO matchups generated dynamically based on group standings
 const KO_MATCHUP_TEMPLATE = [
   {id:"r16_0",round:"R16"},{id:"r16_1",round:"R16"},{id:"r16_2",round:"R16"},{id:"r16_3",round:"R16"},
@@ -2643,7 +2683,7 @@ function GroupIntroScreen({ group, teams: teamsProp, isKo, onStart, hideHeader=f
 }
 
 
-function InstantPickScreen({ onBack, onComplete, onModify, savedState, onStateChange, tournamentStarted, viewMode=false }) {
+function InstantPickScreen({ onBack, onComplete, onKoComplete, onModify, savedState, onStateChange, tournamentStarted, viewMode=false, koUnlocked=false, startAtKo=false }) {
   const lang = useLang();
   const GROUPS = INTERACTIVE_GROUPS;
   const [stage, setStage] = useState(savedState?.stage||"groups");
@@ -2695,7 +2735,12 @@ function InstantPickScreen({ onBack, onComplete, onModify, savedState, onStateCh
 
   const handleGroupConfirm = (ranking) => {
     handleGroupAutoSave(ranking);
-    if(groupIdx < GROUPS.length-1) { setGroupIdx(g=>g+1); setShowIntro(viewMode?false:true); }
+    if(groupIdx < GROUPS.length-1) {
+      const nextGroup = GROUPS[groupIdx + 1];
+      const nextHasRanking = !!(groupRankings[nextGroup]?.every(t => t !== null));
+      setGroupIdx(g=>g+1);
+      setShowIntro(effectiveViewMode ? false : !nextHasRanking);
+    }
     else setStage("best3");
   };
 
@@ -2707,19 +2752,48 @@ function InstantPickScreen({ onBack, onComplete, onModify, savedState, onStateCh
   const allGroupStandings = {};
   GROUPS.forEach(g=>{ allGroupStandings[g]=getGroupStanding(g); });
 
-  // 32 teams: 12 group winners + 12 runners-up + 8 best 3rd
-  const groupWinners  = GROUPS.map(g=>(allGroupStandings[g]||[])[0]).filter(Boolean);
-  const groupRunners  = GROUPS.map(g=>(allGroupStandings[g]||[])[1]).filter(Boolean);
-  const best3Teams    = best3.length === 8 ? best3
-                        : GROUPS.map(g=>(allGroupStandings[g]||[])[2]).filter(Boolean).slice(0,8);
+  // For KO bracket: use REAL_STANDINGS when available, else auto-standings
+  const getRealGroupStanding = (group) => {
+    if(REAL_STANDINGS[group]?.length) return REAL_STANDINGS[group];
+    return getAutoStanding(group);
+  };
+  const allRealGroupStandings = {};
+  GROUPS.forEach(g=>{ allRealGroupStandings[g]=getRealGroupStanding(g); });
 
-  // Round of 32 (16 meciuri): 8 winners vs 8 best3rd + 8 runners vs 4 winners + 4 runners
-  // Simplified pairing: winner[i] vs best3[i] for i=0-7, runner[i] vs runner[i+4] for i=0-3,
-  // winner[8-11] vs runner[8-11]
+  // 32 teams: 12 group winners + 12 runners-up + 8 best 3rd — din clasamentele REALE
+  const groupWinners  = GROUPS.map(g=>(allRealGroupStandings[g]||[])[0]).filter(Boolean);
+  const groupRunners  = GROUPS.map(g=>(allRealGroupStandings[g]||[])[1]).filter(Boolean);
+  // best3Teams: REAL_BEST3 override > user's picks > FIFA-ranked auto
+  const best3Teams = REAL_BEST3.length === 8 ? REAL_BEST3
+    : best3.length === 8 ? best3
+    : rankBest3ByFifa(GROUPS, allRealGroupStandings, REAL_GROUP_STATS);
+
+  // Bracket oficial FIFA 2026 — Round of 32 (16 meciuri)
+  // GROUPS index: A=0, B=1, C=2, D=3, E=4, F=5, G=6, H=7, I=8, J=9, K=10, L=11
+  const W = (i) => groupWinners[i] || "TBD";
+  const R = (i) => groupRunners[i]  || "TBD";
+  const B = (i) => best3Teams[i]    || "TBD";
   const r32Matchups = [
-    ...Array.from({length:8}, (_,i)=>({home:groupWinners[i]||"TBD", away:best3Teams[i]||"TBD"})),
-    ...Array.from({length:4}, (_,i)=>({home:groupRunners[i]||"TBD", away:groupRunners[i+4]||"TBD"})),
-    ...Array.from({length:4}, (_,i)=>({home:groupWinners[i+8]||"TBD", away:groupRunners[i+8]||"TBD"})),
+    // Grupa A-D cross
+    {home:W(0), away:R(2)}, // 1A vs 2C
+    {home:W(2), away:R(0)}, // 1C vs 2A
+    {home:W(1), away:R(3)}, // 1B vs 2D
+    {home:W(3), away:R(1)}, // 1D vs 2B
+    // Grupa E-H cross
+    {home:W(4), away:R(6)}, // 1E vs 2G
+    {home:W(6), away:R(4)}, // 1G vs 2E
+    {home:W(5), away:R(7)}, // 1F vs 2H
+    {home:W(7), away:R(5)}, // 1H vs 2F
+    // Grupa I-L cross
+    {home:W(8),  away:R(10)}, // 1I vs 2K
+    {home:W(10), away:R(8)},  // 1K vs 2I
+    {home:W(9),  away:R(11)}, // 1J vs 2L
+    {home:W(11), away:R(9)},  // 1L vs 2J
+    // Best 3rd joacă între ele (4 meciuri)
+    {home:B(0), away:B(1)},
+    {home:B(2), away:B(3)},
+    {home:B(4), away:B(5)},
+    {home:B(6), away:B(7)},
   ]; // = 16 meciuri
 
   const getWinners = (roundKey) =>
@@ -2766,7 +2840,7 @@ function InstantPickScreen({ onBack, onComplete, onModify, savedState, onStateCh
   const activePhaseId = stage==="best3"?"best3":stage==="ko"?koRound:null;
   const phaseAccessible = (id) => {
     if(id==="best3") return allGroupsDone;
-    return best3Done;
+    return koUnlocked && best3Done;
   };
   const goToPhase = (id) => {
     if(!phaseAccessible(id)) return;
@@ -2776,11 +2850,9 @@ function InstantPickScreen({ onBack, onComplete, onModify, savedState, onStateCh
   const headerTitle = stage==="groups"?`Group ${currentGroup}`:stage==="best3"?"Best 3rd Place":koLabel;
   const headerCounterVal = stage==="groups"?`${groupIdx+1}/${GROUPS.length}`:stage==="best3"?`${best3.length}/8`:`${koIdx+1}/${Math.max(koRoundMatchups.length,1)}`;
   const headerSub = stage==="groups"?"groups":stage==="best3"?"selected":"matches";
-  const headerBack = () => {
-    if(stage==="groups"){ onBack&&onBack(); }
-    else if(stage==="best3"){ setGroupIdx(GROUPS.length-1); setStage("groups"); }
-    else { setStage("best3"); }
-  };
+  // When startAtKo=true: groups/best3 are view-only; back from any stage goes to ko/home
+  const effectiveViewMode = startAtKo ? (stage === "groups" || stage === "best3") : viewMode;
+  const headerBack = () => { onBack&&onBack(); };
   const sharedNavIdx = stage==="groups" ? groupIdx : GROUPS.length-1;
 
   const sharedHeader = (
@@ -2907,7 +2979,7 @@ function InstantPickScreen({ onBack, onComplete, onModify, savedState, onStateCh
         <div style={{background:"#f0f2f8",borderBottom:"1px solid rgba(0,0,0,0.08)",
           padding:"10px 14px",minHeight:70}}>
           <div style={{fontSize:9,color:"rgba(0,0,0,0.38)",fontWeight:800,
-            letterSpacing:1.5,marginBottom:8}}>{viewMode?"ADVANCING":"ADVANCING · TAP TO REMOVE"}</div>
+            letterSpacing:1.5,marginBottom:8}}>{effectiveViewMode?"ADVANCING":"ADVANCING · TAP TO REMOVE"}</div>
           {best3.length===0 ? (
             <div style={{fontSize:12,color:"rgba(0,0,0,0.25)",fontStyle:"italic",paddingBottom:4}}>
               Tap a team below to add them here
@@ -2915,12 +2987,12 @@ function InstantPickScreen({ onBack, onComplete, onModify, savedState, onStateCh
           ) : (
             <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
               {best3.map(team=>(
-                <div key={team} onClick={()=>!viewMode&&setBest3(prev=>prev.filter(t=>t!==team))}
+                <div key={team} onClick={()=>!effectiveViewMode&&setBest3(prev=>prev.filter(t=>t!==team))}
                   style={{
                     display:"flex",alignItems:"center",gap:5,
                     padding:"4px 10px 4px 6px",borderRadius:20,
                     background:`${GREEN}18`,border:`1.5px solid ${GREEN}`,
-                    cursor:viewMode?"default":"pointer",transition:"all 0.15s",
+                    cursor:effectiveViewMode?"default":"pointer",transition:"all 0.15s",
                   }}>
                   <span style={{fontSize:18,lineHeight:1}}>{FLAGS[team]||"🏳"}</span>
                   <span style={{fontSize:11,fontWeight:800,color:NAVY,
@@ -2939,14 +3011,14 @@ function InstantPickScreen({ onBack, onComplete, onModify, savedState, onStateCh
             const grp=GROUPS.find(g=>(allGroupStandings[g]||[])[2]===team)||"?";
             const disabled=best3.length>=needed;
             return (
-              <div key={team} onClick={()=>!viewMode&&!disabled&&setBest3(prev=>[...prev,team])}
+              <div key={team} onClick={()=>!effectiveViewMode&&!disabled&&setBest3(prev=>[...prev,team])}
                 style={{
                   display:"flex",alignItems:"center",gap:12,
                   padding:"11px 14px",borderRadius:14,
                   background:"#fff",
                   border:"1.5px solid rgba(0,0,0,0.06)",
                   boxShadow:"0 1px 4px rgba(0,0,0,0.05)",
-                  cursor:(viewMode||disabled)?"default":"pointer",
+                  cursor:(effectiveViewMode||disabled)?"default":"pointer",
                   opacity:disabled?0.4:1,
                   transition:"all 0.15s",
                   minHeight:56,
@@ -2994,23 +3066,23 @@ function InstantPickScreen({ onBack, onComplete, onModify, savedState, onStateCh
         {/* ── CONFIRM BUTTON ── */}
         <div style={{background:"#fff",padding:"10px 14px 22px",
           borderTop:"1px solid rgba(0,0,0,0.07)"}}>
-          <button onClick={()=>{ if(viewMode||best3.length>=needed){ setStage("ko"); if(viewMode) setShowFinalSummary(true); } }}
-            disabled={!viewMode&&best3.length<needed}
+          <button onClick={()=>{ if(effectiveViewMode){ startAtKo ? setStage("ko") : (onBack&&onBack()); } else if(best3.length>=needed){ onComplete&&onComplete(); } }}
+            disabled={!effectiveViewMode&&best3.length<needed}
             style={{
               width:"100%",padding:"14px 0",borderRadius:14,border:"none",
-              background:(viewMode||best3.length>=needed)
-                ?`linear-gradient(135deg,${NAVY},#003580)`
+              background:(effectiveViewMode||best3.length>=needed)
+                ?`linear-gradient(135deg,${GREEN},#007A36)`
                 :"rgba(0,0,0,0.06)",
-              color:(viewMode||best3.length>=needed)?"#fff":"rgba(0,0,0,0.2)",
+              color:(effectiveViewMode||best3.length>=needed)?"#fff":"rgba(0,0,0,0.2)",
               fontSize:15,fontWeight:900,letterSpacing:1,
-              cursor:(viewMode||best3.length>=needed)?"pointer":"default",
+              cursor:(effectiveViewMode||best3.length>=needed)?"pointer":"default",
               transition:"all 0.2s",
-              boxShadow:(viewMode||best3.length>=needed)?"0 4px 20px rgba(0,32,91,0.3)":"none",
+              boxShadow:(effectiveViewMode||best3.length>=needed)?"0 4px 20px rgba(0,154,68,0.3)":"none",
             }}>
             {best3.length>=needed
-              ?"CONFIRM & GO TO KNOCKOUT →"
-              :viewMode
-                ?"VIEW KNOCKOUT STAGE →"
+              ?"SALVEAZĂ PREDICȚIILE ✓"
+              :effectiveViewMode
+                ? startAtKo ? "← Back to Knockout" : "← Back to Home"
                 :`SELECT ${needed-best3.length} MORE TEAM${needed-best3.length!==1?"S":""}`}
           </button>
         </div>
@@ -3131,7 +3203,7 @@ function InstantPickScreen({ onBack, onComplete, onModify, savedState, onStateCh
 
           {/* Save button */}
           {!viewMode && <div style={{padding:"8px 14px 24px",flexShrink:0}}>
-            <button onClick={()=>onComplete&&onComplete()}
+            <button onClick={()=>startAtKo ? (onKoComplete&&onKoComplete()) : (onComplete&&onComplete())}
               style={{width:"100%",padding:"15px 0",borderRadius:14,border:"none",
                 background:`linear-gradient(135deg,${GREEN},#007A36)`,
                 color:"#fff",fontSize:15,fontWeight:900,letterSpacing:1,cursor:"pointer",
@@ -3192,7 +3264,7 @@ function InstantPickScreen({ onBack, onComplete, onModify, savedState, onStateCh
         totalGroups={GROUPS.length}
         groupRankings={groupRankings}
         onNavigate={navigateGroup}
-        viewMode={viewMode}
+        viewMode={effectiveViewMode}
       />
     </div>
   );
@@ -3711,10 +3783,12 @@ function CircleTab({ label, name, isActive, onClick, lightBg=false }) {
 
 
 // ── HOME ────────────────────────────────────────────────────────────────────
-function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenGroups, myBoards, predictionsComplete, instantPickDone, exactScores, activeBoardId, setActiveBoardId, tournamentStarted, simDay, simHour, simMin, createdBoards=[], showFirstAction, leaderboardData={}, boardsLoading=false, predictionsLoaded={} }) {
+function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateBoard, onOpenGroups, onCopyPredictions, onCopyExactScores, myBoards, predictionsComplete, instantPickDone, koPickDone, koUnlocked, exactScores, activeBoardId, setActiveBoardId, tournamentStarted, simDay, simHour, simMin, createdBoards=[], showFirstAction, leaderboardData={}, boardsLoading=false, predictionsLoaded={} }) {
   const lang = useLang();
   const displayName = useDisplayName();
   const initials = useInitials();
+  const [showCopySheet, setShowCopySheet] = useState(null); // "predictions" | "scores" | null
+  const [copyDone, setCopyDone] = useState(null);
   const activeId = activeBoardId;
   const setActiveId = setActiveBoardId;
   const activeBoard = myBoards.find(b=>b.id===activeId)||myBoards[0];
@@ -3825,33 +3899,59 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
         <div style={{display:"flex",gap:8,marginBottom:10}}>
           {/* Predictions task */}
           {(()=>{
-            const boardDone = instantPickDone || predictionsComplete[activeId];
             // Deadline: June 11 19:00 (tournament kickoff)
-            const deadlinePassed = simDay ? (simDay > 11 || (simDay === 11 && (simHour||0) >= 19)) : false;
+            const deadlinePassed = simDay ? (simDay > 11 || (simDay === 11 && (simHour||0) >= 19)) : new Date() >= new Date(2026,5,11,19,0,0);
+            // Before deadline: trust only in-memory state (allows edit→incomplete→back to show not-done)
+            const boardDone = deadlinePassed ? (instantPickDone || predictionsComplete[activeId]) : instantPickDone;
             const isLocked = deadlinePassed && !boardDone;
+            // KO task state
+            const koAvailable = koUnlocked && boardDone && !koPickDone;
+            const allDone = boardDone && koPickDone;
+            const handleClick = () => {
+              if (koAvailable) { onPredictKo&&onPredictKo(activeId); return; }
+              if (!deadlinePassed || boardDone) onPredict(activeId);
+            };
+            const icon = isLocked?"🔒":koAvailable?"⚡":allDone?"🏆":"🎯";
+            const subtitleColor = allDone?GREEN:koAvailable?RED:boardDone?GREEN:isLocked?"#9CA3AF":"#6B7280";
+            const subtitle = !predictionsLoaded[activeId]?"…"
+              : allDone ? "Phase 1 completed"
+              : koAvailable ? T[lang].koDueJun27
+              : boardDone ? "Phase 1 completed"
+              : isLocked ? T[lang].deadlinePassed
+              : T[lang].dueJun11;
+            const showBadge = koAvailable || (!boardDone && !deadlinePassed && predictionsLoaded[activeId]);
             return (
-              <div onClick={()=>(!deadlinePassed||boardDone)&&onPredict(activeId)}
+              <div onClick={handleClick}
                 style={{flex:1,background:"#fff",borderRadius:14,
-                  boxShadow:(!boardDone&&!deadlinePassed&&predictionsLoaded[activeId])
+                  boxShadow:(koAvailable||(!boardDone&&!deadlinePassed&&predictionsLoaded[activeId]))
                     ?"0 4px 16px rgba(0,0,0,0.15)"
                     :"0 8px 22px rgba(0,0,0,0.07)",
-                  padding:"10px 12px",cursor:(deadlinePassed&&!boardDone)?"default":"pointer",position:"relative",
+                  border:koAvailable?"1.5px solid rgba(220,38,38,0.2)":"1.5px solid transparent",
+                  padding:"10px 12px",cursor:(isLocked)?"default":"pointer",position:"relative",
                   opacity:isLocked?0.6:1,
                   ...(showFirstAction&&!boardDone&&!deadlinePassed?{animation:"pulse 1.5s ease-in-out 3"}:{})}}>
-                {!boardDone&&!deadlinePassed&&predictionsLoaded[activeId]&&(
+                {showBadge&&(
                   <div style={{position:"absolute",top:2,right:2,
                     background:RED,borderRadius:"50%",minWidth:18,height:18,
                     display:"flex",alignItems:"center",justifyContent:"center",
                     boxShadow:"0 1px 4px rgba(0,0,0,0.3)",padding:"0 5px"}}>
-                    <span style={{fontSize:10,fontWeight:800,color:"#fff"}}>1</span>
+                    <span style={{fontSize:10,fontWeight:800,color:"#fff"}}>{koAvailable?"KO":"1"}</span>
                   </div>
                 )}
-                <div style={{fontSize:28,marginBottom:4}}>{isLocked?"🔒":"🎯"}</div>
+                {boardDone&&(
+                  <div onClick={e=>{e.stopPropagation();setCopyDone(null);setShowCopySheet("predictions");}}
+                    style={{position:"absolute",bottom:6,right:6,width:20,height:20,borderRadius:5,
+                      border:`1.5px solid ${GREEN}66`,background:"rgba(255,255,255,0.8)",
+                      display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",zIndex:2}}>
+                    <svg width="10" height="10" viewBox="0 0 14 14" fill="none">
+                      <rect x="4" y="4" width="8" height="8" rx="1.5" stroke={GREEN} strokeWidth="1.8"/>
+                      <path d="M2 10V2h8" stroke={GREEN} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </div>
+                )}
+                <div style={{fontSize:28,marginBottom:4}}>{icon}</div>
                 <p style={{fontSize:13,fontWeight:800,color:isLocked?"#9CA3AF":DARK,margin:0}}>{T[lang].predictions}</p>
-                <p style={{fontSize:11,margin:"2px 0 0",fontWeight:600,
-                  color:boardDone?GREEN:isLocked?"#9CA3AF":"#6B7280"}}>
-                  {!predictionsLoaded[activeId]?"…":boardDone?T[lang].completed:isLocked?T[lang].deadlinePassed:T[lang].dueJun11}
-                </p>
+                <p style={{fontSize:11,margin:"2px 0 0",fontWeight:600,color:subtitleColor}}>{subtitle}</p>
               </div>
             );
           })()}
@@ -3866,6 +3966,8 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
             const total = days.reduce((s,d)=>s+(mm[d]||[]).length,0);
             const scored = days.reduce((s,d)=>s+(mm[d]||[]).filter((_,i)=>(exactScores||{})[`${d}-${i}`]).length,0);
             const missing = total - scored;
+            const weekNum = weekStart===8?1:weekStart===15?2:weekStart===22?3:4;
+            const scoreSubtitle = missing===0?`Week ${weekNum} completed`:`${missing} ${T[lang].thisWeek}`;
             return (
               <div onClick={()=>onOpenGroups&&onOpenGroups()}
                 style={{flex:1,background:"#fff",borderRadius:14,
@@ -3882,11 +3984,20 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
                     <span style={{fontSize:10,fontWeight:800,color:"#fff"}}>{missing}</span>
                   </div>
                 )}
+                {scored>0&&(
+                  <div onClick={e=>{e.stopPropagation();setCopyDone(null);setShowCopySheet("scores");}}
+                    style={{position:"absolute",bottom:6,right:6,width:20,height:20,borderRadius:5,
+                      border:`1.5px solid ${GREEN}66`,background:"rgba(255,255,255,0.8)",
+                      display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",zIndex:2}}>
+                    <svg width="10" height="10" viewBox="0 0 14 14" fill="none">
+                      <rect x="4" y="4" width="8" height="8" rx="1.5" stroke={GREEN} strokeWidth="1.8"/>
+                      <path d="M2 10V2h8" stroke={GREEN} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </div>
+                )}
                 <div style={{fontSize:28,marginBottom:4,colorScheme:"light",filter:"saturate(0) contrast(3) brightness(1.1)"}}>⚽</div>
                 <p style={{fontSize:13,fontWeight:800,color:DARK,margin:0}}>{T[lang].exactScores}</p>
-                <p style={{fontSize:11,color:missing===0?GREEN:"#6B7280",margin:"2px 0 0",fontWeight:600}}>
-                  {missing===0?T[lang].weekComplete:`${missing} ${T[lang].thisWeek}`}
-                </p>
+                <p style={{fontSize:11,color:missing===0?GREEN:"#6B7280",margin:"2px 0 0",fontWeight:600}}>{scoreSubtitle}</p>
               </div>
             );
           })()}
@@ -4010,6 +4121,71 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
 
       </div>
       </div>
+
+    {/* Copy predictions sheet */}
+    {showCopySheet&&(
+      <div style={{position:"fixed",inset:0,zIndex:200,display:"flex",flexDirection:"column",justifyContent:"flex-end"}}
+        onClick={()=>setShowCopySheet(false)}>
+        <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.5)"}}/>
+        <div onClick={e=>e.stopPropagation()}
+          style={{position:"relative",background:"#1C1C1E",borderRadius:"20px 20px 0 0",padding:"0 0 34px",maxHeight:"70vh",display:"flex",flexDirection:"column"}}>
+          {/* Handle */}
+          <div style={{display:"flex",justifyContent:"center",padding:"10px 0 4px"}}>
+            <div style={{width:36,height:4,borderRadius:2,background:"rgba(255,255,255,0.2)"}}/>
+          </div>
+          {/* Header */}
+          <div style={{padding:"8px 20px 14px",borderBottom:"1px solid rgba(255,255,255,0.08)"}}>
+            <div style={{display:"flex",alignItems:"center",gap:8}}>
+              <svg width="18" height="18" viewBox="0 0 14 14" fill="none">
+                <rect x="4" y="4" width="8" height="8" rx="1.5" stroke={GREEN} strokeWidth="1.8"/>
+                <path d="M2 10V2h8" stroke={GREEN} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              <span style={{fontSize:15,fontWeight:800,color:"#fff"}}>
+                {showCopySheet==="scores"?"Copy exact scores":"Copy predictions"}
+              </span>
+            </div>
+            <p style={{fontSize:12,color:"rgba(255,255,255,0.45)",margin:"4px 0 0"}}>
+              {showCopySheet==="scores"
+                ?"Replicate this week's exact scores to another board"
+                :"Replicate your Group phase predictions to another board"}
+            </p>
+          </div>
+          {/* Board list */}
+          <div style={{overflowY:"auto",flex:1,padding:"10px 16px 0"}}>
+            {myBoards.filter(b=>b.id!==activeId).length===0?(
+              <div style={{textAlign:"center",padding:"24px 0",color:"rgba(255,255,255,0.35)",fontSize:13}}>
+                No other boards available
+              </div>
+            ):myBoards.filter(b=>b.id!==activeId).map(b=>(
+              <div key={b.id}
+                onClick={async()=>{
+                  if(copyDone===b.id) return;
+                  if(showCopySheet==="scores") await onCopyExactScores&&onCopyExactScores(b.id);
+                  else await onCopyPredictions&&onCopyPredictions(b.id);
+                  setCopyDone(b.id);
+                }}
+                style={{display:"flex",alignItems:"center",gap:12,padding:"12px 4px",
+                  borderBottom:"1px solid rgba(255,255,255,0.07)",cursor:"pointer"}}>
+                <span style={{fontSize:22,display:"inline-block",width:30,flexShrink:0}}>{b.emoji||"⚽"}</span>
+                <span style={{flex:1,fontSize:13,fontWeight:700,color:"#fff"}}>{b.name}</span>
+                {copyDone===b.id?(
+                  <span style={{fontSize:12,fontWeight:700,color:GREEN}}>✓ Copied</span>
+                ):(
+                  <div style={{background:`linear-gradient(135deg,${GREEN},#007A36)`,borderRadius:8,
+                    padding:"5px 12px",display:"flex",alignItems:"center",gap:5}}>
+                    <svg width="11" height="11" viewBox="0 0 14 14" fill="none">
+                      <rect x="4" y="4" width="8" height="8" rx="1.5" stroke="#fff" strokeWidth="1.8"/>
+                      <path d="M2 10V2h8" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    <span style={{fontSize:12,fontWeight:700,color:"#fff"}}>Paste</span>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    )}
     </div>
   );
 }
@@ -5966,6 +6142,9 @@ function ScorePicker({ match, day, savedScore, onSave, onBack }) {
   );
 }
 
+const scH = (sc) => Array.isArray(sc) ? sc[0] : (sc?.home ?? 0);
+const scA = (sc) => Array.isArray(sc) ? sc[1] : (sc?.away ?? 0);
+
 function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScoresProp, simDay, simHour=12, simMin=0, initialWeek }) {
   const lang = useLang();
   const LIVE_SCORES = computeLiveScores(simDay, simHour, simMin);
@@ -6034,8 +6213,8 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
   useEffect(()=>{
     if(scorePick){
       const saved = scores[scorePick.key];
-      const h = saved?saved[0]:0;
-      const a = saved?saved[1]:0;
+      const h = saved ? (Array.isArray(saved) ? saved[0] : (saved.home ?? 0)) : 0;
+      const a = saved ? (Array.isArray(saved) ? saved[1] : (saved.away ?? 0)) : 0;
       setPickerHome(h);
       setPickerAway(a);
       // Scroll to correct position after render
@@ -6112,7 +6291,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
   groupMatches.forEach(m=>{
     const sc = scores[m.key];
     if(!sc) return;
-    const [h,a] = sc;
+    const h = scH(sc); const a = scA(sc);
     const home = standing.find(t=>t.name===m.home);
     const away = standing.find(t=>t.name===m.away);
     if(!home||!away) return;
@@ -6244,8 +6423,8 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
                 // Check prediction accuracy
                 let exactMatch = false, resultMatch = false;
                 if(sc && hasLive && isFinished) {
-                  exactMatch = sc[0]===live.home && sc[1]===live.away;
-                  const predResult = sc[0]>sc[1]?"H":sc[0]<sc[1]?"A":"D";
+                  exactMatch = scH(sc)===live.home && scA(sc)===live.away;
+                  const predResult = scH(sc)>scA(sc)?"H":scH(sc)<scA(sc)?"A":"D";
                   const realResult = live.home>live.away?"H":live.home<live.away?"A":"D";
                   resultMatch = predResult===realResult;
                 }
@@ -6282,12 +6461,12 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
                           const predBox = (isPast||isLive||isFinished) ? (sc ? (
                             isLive ? (
                               <div style={{background:"rgba(0,0,0,0.06)",borderRadius:6,padding:"3px 8px"}}>
-                                <span style={{fontSize:11,fontWeight:900,color:RED,}}>{sc[0]}-{sc[1]}</span>
+                                <span style={{fontSize:11,fontWeight:900,color:RED,}}>{scH(sc)}-{scA(sc)}</span>
                               </div>
                             ) : (
                             <div style={{background:exactMatch?`linear-gradient(135deg,${GREEN},#007A36)`:resultMatch?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:`linear-gradient(135deg,${RED},#EF3340)`,
                               borderRadius:6,padding:"3px 8px",display:"flex",alignItems:"center",gap:3}}>
-                              <span style={{fontSize:11,fontWeight:900,color:"#fff"}}>{sc[0]}-{sc[1]}</span>
+                              <span style={{fontSize:11,fontWeight:900,color:"#fff"}}>{scH(sc)}-{scA(sc)}</span>
                               {isFinished&&(exactMatch?<span style={{fontSize:11}}>🎯</span>:resultMatch?<span style={{fontSize:11}}>✓</span>:<span style={{fontSize:11}}>✗</span>)}
                             </div>)
                           ) : (
@@ -6399,7 +6578,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
                 // Read scroll position directly from refs at save time
                 const h = homeRef.current ? Math.max(0,Math.min(9,Math.round(homeRef.current.scrollTop/52))) : pickerHome;
                 const a = awayRef.current ? Math.max(0,Math.min(9,Math.round(awayRef.current.scrollTop/52))) : pickerAway;
-                setScores(s=>({...s,[scorePick.key]:[h,a]}));
+                setScores(s=>({...s,[scorePick.key]:{home:h,away:a}}));
                 setScorePick(null);
               }}
                 style={{background:"#FF9500",border:"none",borderRadius:10,padding:"6px 14px",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer"}}>
@@ -6776,7 +6955,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                                           <span style={{fontSize:12,fontWeight:900,color:liveScore2?"#fff":"#bbb"}}>{liveScore2?`${liveScore2.home}-${liveScore2.away}`:"-"}</span>
                                         </div>
                                         {sc2?(
-                                          <span style={{fontSize:11,fontWeight:700,color:NAVY}}>tu: {sc2[0]}-{sc2[1]}</span>
+                                          <span style={{fontSize:11,fontWeight:700,color:NAVY}}>tu: {scH(sc2)}-{scA(sc2)}</span>
                                         ):canEdit?(
                                           <div style={{background:`linear-gradient(135deg,${RED},${GREEN})`,borderRadius:6,padding:"2px 8px",cursor:"pointer"}}>
                                             <span style={{fontSize:11,color:"#fff",fontWeight:700}}>+ scor</span>
@@ -6804,7 +6983,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                             if(m.group!==activeGrp) return;
                             const sc = getScore(e.day, idx);
                             if(!sc) return;
-                            const [h,a]=sc;
+                            const h=scH(sc); const a=scA(sc);
                             const home=st.find(t=>t.name===m.home);
                             const away=st.find(t=>t.name===m.away);
                             if(!home||!away) return;
@@ -6902,7 +7081,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                                     <span style={{fontSize:7,fontWeight:700,color:"#bbb",textTransform:"uppercase",letterSpacing:0.5}}>{T[lang].prediction}</span>
                                     {!isWeekUnlocked(m.day,simDay,simHour,simMin)?<span style={{fontSize:12,color:"#ccc"}}>🔒</span>
                                       :sc2?<div style={{background:canEdit?`rgba(0,32,91,0.1)`:"rgba(0,0,0,0.06)",border:canEdit?`1.5px solid ${NAVY}`:"none",borderRadius:6,padding:"2px 8px",minWidth:46,textAlign:"center",opacity:isPastM?0.5:1}}>
-                                          <span style={{fontSize:11,fontWeight:900,color:canEdit?NAVY:"#888"}}>{sc2[0]}-{sc2[1]}</span>
+                                          <span style={{fontSize:11,fontWeight:900,color:canEdit?NAVY:"#888"}}>{scH(sc2)}-{scA(sc2)}</span>
                                         </div>
                                       :<div style={{background:`linear-gradient(135deg,${RED},${GREEN})`,borderRadius:6,padding:"2px 8px",minWidth:46,textAlign:"center",cursor:canEdit?"pointer":"default",opacity:isPastM||isFT2||isLive2?0.5:1}}>
                                           <span style={{fontSize:11,color:"#fff",fontWeight:700}}>+ scor</span>
@@ -6937,8 +7116,8 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                     const isNS2 = !isFT && !isLive;
                     const liveMin2 = isLive?Math.min(90,_now2-_kick):0;
                     const hasScore = live && live.home !== undefined && live.home !== null;
-                    const exactMatch = sc&&hasScore&&isFT&&sc[0]===live.home&&sc[1]===live.away;
-                    const predRes = sc?sc[0]>sc[1]?"H":sc[0]<sc[1]?"A":"D":null;
+                    const exactMatch = sc&&hasScore&&isFT&&scH(sc)===live.home&&scA(sc)===live.away;
+                    const predRes = sc?scH(sc)>scA(sc)?"H":scH(sc)<scA(sc)?"A":"D":null;
                     const realRes = hasScore?live.home>live.away?"H":live.home<live.away?"A":"D":null;
                     const resultMatch = predRes&&realRes&&predRes===realRes&&isFT;
                     const isPastDay2 = !!(simDay && sel < simDay);
@@ -6977,7 +7156,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                                       borderRadius:6,padding:"3px 10px",minWidth:54,textAlign:"center",
                                       display:"flex",alignItems:"center",justifyContent:"center",gap:3,
                                       cursor:canPredict?"pointer":"default"}}>
-                                    <span style={{fontSize:12,fontWeight:900,color:isLive?RED:"#fff",...(isLive?{}:{})}}>{sc[0]}-{sc[1]}</span>
+                                    <span style={{fontSize:12,fontWeight:900,color:isLive?RED:"#fff",...(isLive?{}:{})}}>{scH(sc)}-{scA(sc)}</span>
                                     {(isFT||isPast)&&(exactMatch?<span style={{fontSize:12}}>🎯</span>:resultMatch?<span style={{fontSize:12}}>✓</span>:<span style={{fontSize:12}}>✗</span>)}
                                   </div>
                                 );
@@ -7207,8 +7386,6 @@ function RulesScreen({ onBack }) {
     { phase:"🏆 SF · Winner", pts:90, desc:"Correct match winner" },
     { phase:"🏆 Final · Winner", pts:120, desc:"Tournament winner" },
   ];
-  const rules = tab==="predictions" ? predRules : exactRules;
-  const totalMax = rules.reduce((s,r)=>s+r.pts, 0);
 
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",position:"relative"}}>
@@ -7244,12 +7421,19 @@ function RulesScreen({ onBack }) {
 
         {/* Rules table */}
         <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 8px"}}>{T[lang].pointsPerPrediction}</p>
-        <div style={{background:BG,borderRadius:14,boxShadow:SHADOW_OUT,overflow:"hidden",marginBottom:16}}>
-          {rules.map((r,i)=>(
-            <div key={i} style={{display:"flex",alignItems:"center",padding:"12px 16px",background:"#fff",borderBottom:i<rules.length-1?"1px solid rgba(0,0,0,0.05)":"none",gap:12}}>
+        {tab==="predictions" ? (()=>{
+          const SectionHeader = ({label,due,color})=>(
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",
+              background:"#f0f2f8",padding:"7px 16px",borderBottom:"1px solid rgba(0,0,0,0.06)"}}>
+              <span style={{fontSize:10,fontWeight:800,color,letterSpacing:1.2,textTransform:"uppercase"}}>{label}</span>
+              <span style={{fontSize:10,fontWeight:700,color:"#9CA3AF"}}>{due}</span>
+            </div>
+          );
+          const Row = ({r,i,last})=>(
+            <div style={{display:"flex",alignItems:"center",padding:"12px 16px",background:"#fff",borderBottom:last?"none":"1px solid rgba(0,0,0,0.05)",gap:12}}>
               <div style={{flex:1}}>
                 <p style={{fontSize:13,fontWeight:700,color:DARK,margin:"0 0 2px"}}>
-                  {r.phase.split("⚽").flatMap((p,i)=>i===0?[p]:[<span key={i} style={{colorScheme:"light",filter:"saturate(0) contrast(3) brightness(1.1)"}}>⚽</span>,p])}
+                  {r.phase.split("⚽").flatMap((p,j)=>j===0?[p]:[<span key={j} style={{colorScheme:"light",filter:"saturate(0) contrast(3) brightness(1.1)"}}>⚽</span>,p])}
                 </p>
                 <p style={{fontSize:11,color:"#aaa",margin:0}}>{r.desc}</p>
               </div>
@@ -7257,8 +7441,34 @@ function RulesScreen({ onBack }) {
                 <span style={{fontSize:13,fontWeight:900,color:"#fff"}}>+{r.pts}</span>
               </div>
             </div>
-          ))}
-        </div>
+          );
+          const task1 = predRules.slice(0,4);
+          const task2 = predRules.slice(4);
+          return (
+            <div style={{background:BG,borderRadius:14,boxShadow:SHADOW_OUT,overflow:"hidden",marginBottom:16}}>
+              <SectionHeader label={T[lang].rulesTask1Header} due={T[lang].rulesTask1Due} color={NAVY}/>
+              {task1.map((r,i)=><Row key={i} r={r} last={false}/>)}
+              <SectionHeader label={T[lang].rulesTask2Header} due={T[lang].rulesTask2Due} color={RED}/>
+              {task2.map((r,i)=><Row key={i+4} r={r} last={i===task2.length-1}/>)}
+            </div>
+          );
+        })() : (
+          <div style={{background:BG,borderRadius:14,boxShadow:SHADOW_OUT,overflow:"hidden",marginBottom:16}}>
+            {exactRules.map((r,i)=>(
+              <div key={i} style={{display:"flex",alignItems:"center",padding:"12px 16px",background:"#fff",borderBottom:i<exactRules.length-1?"1px solid rgba(0,0,0,0.05)":"none",gap:12}}>
+                <div style={{flex:1}}>
+                  <p style={{fontSize:13,fontWeight:700,color:DARK,margin:"0 0 2px"}}>
+                    {r.phase.split("⚽").flatMap((p,j)=>j===0?[p]:[<span key={j} style={{colorScheme:"light",filter:"saturate(0) contrast(3) brightness(1.1)"}}>⚽</span>,p])}
+                  </p>
+                  <p style={{fontSize:11,color:"#aaa",margin:0}}>{r.desc}</p>
+                </div>
+                <div style={{background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,borderRadius:10,padding:"5px 12px",flexShrink:0}}>
+                  <span style={{fontSize:13,fontWeight:900,color:"#fff"}}>+{r.pts}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Example */}
         <div style={{background:"#E8F0FF",borderRadius:14,padding:"14px 16px",marginBottom:24,border:`1px solid rgba(0,32,91,0.1)`}}>
@@ -7397,13 +7607,14 @@ function App() {
             koPicks:       preds.ko_picks       || {},
           }
         }));
-        const hasAnyPicks = Object.keys(preds.group_rankings || {}).length > 0 ||
-                            (preds.best3_picks || []).length > 0 ||
-                            Object.keys(preds.ko_picks || {}).length > 0;
-        if (hasAnyPicks)
+        const hasTask1 = Object.keys(preds.group_rankings || {}).length > 0 || (preds.best3_picks || []).length > 0;
+        const hasTask2 = Object.keys(preds.ko_picks || {}).length > 0;
+        if (hasTask1 || hasTask2)
           setPredictionsComplete(p => ({ ...p, [boardId]: true }));
-        if (Object.keys(preds.ko_picks || {}).length > 0)
+        if (hasTask1 || hasTask2)
           setAllInstantPickDone(p => ({ ...p, [boardId]: true }));
+        if (hasTask2)
+          setAllKoPickDone(p => ({ ...p, [boardId]: true }));
       }
       if (scores && Object.keys(scores).length > 0)
         setExactScoresByBoard(p => ({ ...p, [boardId]: scores }));
@@ -7515,6 +7726,7 @@ function App() {
     });
   };
   const [allInstantPickDone, setAllInstantPickDone] = useState({});
+  const [allKoPickDone, setAllKoPickDone] = useState({});
   const [bugLog, setBugLog] = useState([]);
   useEffect(()=>{
     const fmt = ()=>new Date().toLocaleTimeString("ro-RO",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
@@ -7531,8 +7743,13 @@ function App() {
   },[]);
   const instantPickState = allInstantPickStates[activeBoardId]||null;
   const instantPickDone = allInstantPickDone[activeBoardId]||false;
+  const koPickDone = allKoPickDone[activeBoardId]||false;
   const setInstantPickState = (s) => setAllInstantPickStates(p=>({...p,[activeBoardId]:s}));
   const setInstantPickDone = (v) => setAllInstantPickDone(p=>({...p,[activeBoardId]:v}));
+  const setKoPickDone = (v) => setAllKoPickDone(p=>({...p,[activeBoardId]:v}));
+  const koUnlocked = simDay ? (simDay > 27 || (simDay === 27 && (simHour||0) >= 21)) : new Date() >= new Date(2026,5,27,21,0,0);
+  const task1DeadlinePassed = simDay ? (simDay > 11 || (simDay === 11 && (simHour||0) >= 19)) : new Date() >= new Date(2026,5,11,19,0,0);
+  const shouldStartAtKo = koUnlocked && instantPickDone && !koPickDone;
 
   // Auto-save: persistă selecțiile intermediare în DB (debounced 1s)
   // Previne pierderea datelor la refresh de browser
@@ -7602,12 +7819,39 @@ function App() {
           {user&&<div style={{display:screen===SCREENS.HOME?'flex':'none',flex:1,flexDirection:'column',overflow:'hidden',minHeight:0}}>
             <HomeScreen
               onPredict={(boardId)=>{ setActiveBoardId(boardId); setShowFirstAction(false); setScreen(SCREENS.INSTANT_PICK); }}
+              onPredictKo={(boardId)=>{ setActiveBoardId(boardId); setShowFirstAction(false); setScreen(SCREENS.INSTANT_PICK); }}
               onLeaderboard={()=>setScreen(SCREENS.LEADERBOARD)}
               onBoards={(tab)=>{ setBoardsInitialTab(tab||"my"); setScreen(SCREENS.BOARDS); }}
               onOpenGroups={(week)=>{ setGroupsInitialWeek(week||null); setScreen(SCREENS.GROUPS_SCHEDULE); }}
+              onCopyExactScores={async (targetBoardId)=>{
+                if(!user||!exactScores) return;
+                const todaySim = simDay ?? getRealTournamentDay();
+                const wStart = todaySim<=14?8:todaySim<=21?15:todaySim<=28?22:29;
+                const days = Array.from({length:7},(_,i)=>wStart+i).filter(d=>d>=1&&d<=50);
+                const mm={};
+                CALENDAR_EVENTS.forEach(e=>{mm[e.day]=e.matches;});
+                for(const d of days){
+                  const matches=mm[d]||[];
+                  for(let i=0;i<matches.length;i++){
+                    const sc=exactScores[`${d}-${i}`];
+                    if(sc) await saveExactScore(user.id,targetBoardId,`${d}-${i}`,sc.home,sc.away);
+                  }
+                }
+                showToast("Scores copied!","⚽");
+              }}
+              onCopyPredictions={async (targetBoardId)=>{
+                if(!user||!instantPickState) return;
+                await savePredictions(user.id, targetBoardId, instantPickState);
+                setAllInstantPickDone(p=>({...p,[targetBoardId]:true}));
+                setPredictionsComplete(p=>({...p,[targetBoardId]:true}));
+                setAllInstantPickStates(p=>({...p,[targetBoardId]:instantPickState}));
+                showToast("Predictions copied!","✅");
+              }}
               myBoards={myBoards}
               predictionsComplete={predictionsComplete}
               instantPickDone={instantPickDone}
+              koPickDone={koPickDone}
+              koUnlocked={koUnlocked}
               exactScores={exactScores}
               simDay={simDay} simHour={simHour} simMin={simMin}
               activeBoardId={activeBoardId}
@@ -7705,16 +7949,39 @@ function App() {
               ];
             })()}/>}
           {screen===SCREENS.INSTANT_PICK&&<InstantPickScreen
-            savedState={instantPickDone
-              ? {...instantPickState, stage:"groups", groupIdx:0, showIntro:false, showFinalSummary:false, koShowIntro:false}
-              : instantPickState}
-            viewMode={instantPickDone}
+            savedState={shouldStartAtKo
+              ? {...(instantPickState||{}), stage:"ko", koRound:"R32", koIdx:0, showIntro:false, showFinalSummary:false, koShowIntro:true}
+              : instantPickDone
+                ? {...instantPickState, stage:"groups", groupIdx:0, showIntro:false, showFinalSummary:false, koShowIntro:false}
+                : instantPickState}
+            viewMode={(instantPickDone && !shouldStartAtKo) && task1DeadlinePassed}
+            startAtKo={shouldStartAtKo}
             onStateChange={setInstantPickState}
             tournamentStarted={tournamentStarted}
-            onBack={()=>setScreen(SCREENS.HOME)}
+            koUnlocked={koUnlocked}
+            onBack={async ()=>{
+              if (!shouldStartAtKo && !task1DeadlinePassed) {
+                const state = instantPickState;
+                const best3Complete = (state?.best3?.length || 0) >= 8;
+                if (best3Complete) {
+                  setInstantPickDone(true);
+                  if (user && state) await savePredictions(user.id, activeBoardId, state);
+                } else {
+                  setInstantPickDone(false);
+                }
+              }
+              setScreen(SCREENS.HOME);
+            }}
             onModify={()=>setInstantPickDone(false)}
             onComplete={async ()=>{
               setInstantPickDone(true);
+              if (user && instantPickState) {
+                await savePredictions(user.id, activeBoardId, instantPickState);
+              }
+              setScreen(SCREENS.HOME);
+            }}
+            onKoComplete={async ()=>{
+              setKoPickDone(true);
               if (user && instantPickState) {
                 await savePredictions(user.id, activeBoardId, instantPickState);
               }
