@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import trophy from "./assets/hands-trophy.png";
 import varBg from "./assets/var-bg.jpg";
 import predictoLogo from "./assets/predicto-logo.png";
+import bellIcon from "./assets/bell-icon.svg";
 import { ALL_GROUPS_DATA, FLAGS, TEAM_COLORS, CALENDAR_EVENTS } from "./data/worldcup2026.js";
 import { supabase } from "./supabase.js";
 import { loadPredictions, savePredictions, loadExactScores, saveExactScore, loadUserBoards, loadAvailableBoards, createBoard, joinBoardByCode, joinBoardById, loadLeaderboard, fetchScoringRules, fetchMemberCounts, removeBoardMember, removeParticipation, deleteBoard, loadBoardMembers, checkDbHealth, checkEmailExists } from "./db.js";
@@ -52,6 +53,7 @@ const T = {
     footerHome:"Home", footerStats:"Groups", footerFast:"Instant Pick ⚡", footerAccount:"Account",
     participants:"participants", add:"Add", yourTasks:"Your tasks",
     predictions:"Predictions", completed:"✓ Completed", deadlinePassed:"Deadline passed", dueJun11:"Due Jun 11",
+    koUnlockedLabel:"⚡ Knockout available", koDueJun27:"Due Jun 27",
     exactScores:"Exact Scores", weekComplete:"✓ Week complete", thisWeek:"this week",
     pathToTrophy:"Path to the Trophy", unlocksEvery:"Unlocks every Sunday 8AM",
     groupStage:"Group Stage", week:"Week", roundOf16QF:"Round of 16 · QF · SF",
@@ -86,7 +88,9 @@ const T = {
     invalidCode:"Invalid code. Please check and try again.",
     rules:"Rules", howPredictionsWork:"How does Predictions work?",
     howExactScoreWork:"How does Exact Score work?",
-    predictionsDesc:"Predict the winner of every match — from group stage to the final. One shot per tournament.",
+    predictionsDesc:"Two phases: rank all 12 groups + pick 8 best-third teams before Jun 11. The knockout bracket unlocks Jun 27 after the last group match.",
+    rulesTask1Header:"Task 1 · Groups & Best Third", rulesTask1Due:"Deadline Jun 11",
+    rulesTask2Header:"Task 2 · Knockout Phase", rulesTask2Due:"Unlocks Jun 27",
     exactDesc:"Predict the exact score of each match every week. Unlocks on Sundays after 8:00 PM.",
     exactScore:"EXACT SCORE", confirmScore:"Confirm Score",
     save:"Save", cancel:"Cancel", del:"Delete", done:"Done",
@@ -104,8 +108,8 @@ const T = {
     noMembersYet:"No members yet", searchOrCode:"Search or enter invite code...",
     joinBtn:"Join", noBoardsFor:"No boards found for",
     dontShowAgain:"Don't show again",
-    onb0Title:"Predict the Tournament", onb0Sub:"Once · From Groups to the Final",
-    onb0Desc:"Pick the winner of every match before the tournament kicks off. One shot — make it count.",
+    onb0Title:"Two Prediction Phases", onb0Sub:"Groups + Best Third · Knockout",
+    onb0Desc:"Phase 1 (before Jun 11): Rank all 12 groups and pick your 8 best-third teams. Phase 2: The knockout bracket unlocks Jun 27 after the last group match — build your path to the trophy.",
     onb0Next:"Show me scores →",
     onb1Title:"Weekly Exact Score", onb1Sub:"Unlocks every Sunday at 8:00 AM",
     onb1Desc:"Predict the exact score of each week's matches for bonus points. New matches every Sunday.",
@@ -132,6 +136,7 @@ const T = {
     footerHome:"Acasa", footerStats:"Grupe", footerFast:"Instant Pick ⚡", footerAccount:"Cont",
     participants:"participanți", add:"Adaugă", yourTasks:"Sarcinile tale",
     predictions:"Predicții", completed:"✓ Completat", deadlinePassed:"Termen expirat", dueJun11:"Termen 11 Iun",
+    koUnlockedLabel:"⚡ Knockout disponibil", koDueJun27:"Termen 27 Iun",
     exactScores:"Scoruri Exacte", weekComplete:"✓ Săptămâna completă", thisWeek:"această săptămână",
     pathToTrophy:"Drumul spre Trofeu", unlocksEvery:"Se deschide duminică la 8:00",
     groupStage:"Faza Grupelor", week:"Săptămâna", roundOf16QF:"Optimi · Sferturi · Semi",
@@ -166,7 +171,9 @@ const T = {
     invalidCode:"Cod invalid. Verifică și încearcă din nou.",
     rules:"Reguli", howPredictionsWork:"Cum funcționează Predicțiile?",
     howExactScoreWork:"Cum funcționează Scorul Exact?",
-    predictionsDesc:"Prezice câștigătorul fiecărui meci — din faza grupelor până la finală. O singură șansă pe turneu.",
+    predictionsDesc:"Două etape: clasează cele 12 grupe + alege 8 echipe best-third înainte de 11 Iun. Bracket-ul knockout se deblochează pe 27 Iun după ultimul meci din grupe.",
+    rulesTask1Header:"Task 1 · Grupe & Best Third", rulesTask1Due:"Termen 11 Iun",
+    rulesTask2Header:"Task 2 · Faza Knockout", rulesTask2Due:"Disponibil din 27 Iun",
     exactDesc:"Prezice scorul exact al fiecărui meci în fiecare săptămână. Se deschide duminicile după 20:00.",
     exactScore:"SCOR EXACT", confirmScore:"Confirmă Scorul",
     save:"Salvează", cancel:"Anulează", del:"Șterge", done:"Gata",
@@ -184,8 +191,8 @@ const T = {
     noMembersYet:"Niciun membru încă", searchOrCode:"Caută sau introdu codul...",
     joinBtn:"Alătură-te", noBoardsFor:"Niciun board găsit pentru",
     dontShowAgain:"Nu mai arăta",
-    onb0Title:"Prezice Turneul", onb0Sub:"O singură dată · De la Grupe la Finală",
-    onb0Desc:"Alege câștigătorul fiecărui meci înainte să înceapă turneul. O singură șansă — folosește-o bine.",
+    onb0Title:"Predicții în Două Etape", onb0Sub:"Grupe + Best Third · Knockout",
+    onb0Desc:"Etapa 1 (înainte de 11 Iun): Clasează cele 12 grupe și alege 8 echipe best-third. Etapa 2: Bracket-ul knockout se deblochează pe 27 Iun după ultimul meci din grupe.",
     onb0Next:"Arată-mi scorurile →",
     onb1Title:"Scor Exact Săptămânal", onb1Sub:"Se deschide duminică la 8:00",
     onb1Desc:"Prezice scorul exact al meciurilor săptămânii pentru puncte bonus. Meciuri noi în fiecare duminică.",
@@ -212,6 +219,7 @@ const T = {
     footerHome:"Accueil", footerStats:"Groupes", footerFast:"Instant Pick ⚡", footerAccount:"Compte",
     participants:"participants", add:"Ajouter", yourTasks:"Vos tâches",
     predictions:"Pronostics", completed:"✓ Complété", deadlinePassed:"Délai expiré", dueJun11:"Délai 11 Juin",
+    koUnlockedLabel:"⚡ Knockout disponible", koDueJun27:"Délai 27 Juin",
     exactScores:"Scores Exacts", weekComplete:"✓ Semaine complète", thisWeek:"cette semaine",
     pathToTrophy:"Chemin vers le Trophée", unlocksEvery:"Ouvre chaque dimanche à 8h",
     groupStage:"Phase de Groupes", week:"Semaine", roundOf16QF:"H.d.F. · Quarts · Demi",
@@ -246,7 +254,9 @@ const T = {
     invalidCode:"Code invalide. Veuillez vérifier et réessayer.",
     rules:"Règles", howPredictionsWork:"Comment fonctionnent les Pronostics ?",
     howExactScoreWork:"Comment fonctionne le Score Exact ?",
-    predictionsDesc:"Prédisez le vainqueur de chaque match — de la phase de groupes à la finale. Une seule chance par tournoi.",
+    predictionsDesc:"Deux phases : classez les 12 groupes + choisissez 8 équipes meilleur 3e avant le 11 Juin. Le bracket knockout se déverrouille le 27 Juin après le dernier match de groupes.",
+    rulesTask1Header:"Tâche 1 · Groupes & Meilleur 3e", rulesTask1Due:"Date limite 11 Juin",
+    rulesTask2Header:"Tâche 2 · Phase Knockout", rulesTask2Due:"Disponible dès le 27 Juin",
     exactDesc:"Prédisez le score exact de chaque match chaque semaine. Déverrouillé le dimanche après 20h.",
     exactScore:"SCORE EXACT", confirmScore:"Confirmer le Score",
     save:"Enregistrer", cancel:"Annuler", del:"Supprimer", done:"Terminé",
@@ -264,8 +274,8 @@ const T = {
     noMembersYet:"Aucun membre encore", searchOrCode:"Chercher ou entrer le code...",
     joinBtn:"Rejoindre", noBoardsFor:"Aucun board trouvé pour",
     dontShowAgain:"Ne plus afficher",
-    onb0Title:"Prédire le Tournoi", onb0Sub:"Une fois · Des Groupes à la Finale",
-    onb0Desc:"Choisissez le vainqueur de chaque match avant le début du tournoi. Une seule chance — faites-la compter.",
+    onb0Title:"Deux Phases de Pronostics", onb0Sub:"Groupes + Meilleur 3e · Knockout",
+    onb0Desc:"Phase 1 (avant le 11 Juin) : Classez les 12 groupes et choisissez 8 équipes meilleur 3e. Phase 2 : Le bracket knockout se déverrouille le 27 Juin après le dernier match de groupes.",
     onb0Next:"Montrez-moi les scores →",
     onb1Title:"Score Exact Hebdomadaire", onb1Sub:"Déverrouillé chaque dimanche à 8h",
     onb1Desc:"Prédisez le score exact des matchs de la semaine pour des points bonus. Nouveaux matchs chaque dimanche.",
@@ -303,7 +313,14 @@ const useInitials = () => {
 // ECHIPE_DATA, FLAGS, TEAM_COLORS — importate din ./data/worldcup2026.js
 
 // Clasamente reale finale — se actualizează după încheierea turneului
+// Format: { "A": ["team1","team2","team3","team4"], ... }
 const REAL_STANDINGS = {};
+// Statistici reale per echipă din faza grupelor — pentru ranking best3
+// Format: { "Mexico": { pts:7, gf:5, ga:2, w:2, d:1, l:0 }, ... }
+const REAL_GROUP_STATS = {};
+// Cele 8 best3 care avansează — override manual dacă vrei să eviți calculul auto
+// Format: ["team1","team2",...] în ordinea ranking-ului FIFA (1st vs 2nd, 3rd vs 4th etc.)
+const REAL_BEST3 = [];
 const GROUP_STAGE_FINISHED = false;
 
 // Week unlock logic — Sunday after 20:00
@@ -315,11 +332,27 @@ const WEEK_UNLOCKED = {
   22: now >= june(21),         // Sun June 21
   29: now >= june(28),         // Sun June 28
 };
+// Returns the current day in tournament encoding (June N=N, July N=N+30).
+// Returns 0 before the tournament months so no matches appear as past.
+const getRealTournamentDay = () => {
+  const now = new Date();
+  const y = now.getFullYear(), mo = now.getMonth(), d = now.getDate();
+  if (y < 2026 || (y === 2026 && mo < 5)) return 0;  // before June 2026
+  if (y === 2026 && mo === 5) return d;               // June 2026
+  if (y === 2026 && mo === 6) return d + 30;          // July 2026
+  return 999;                                         // after tournament
+};
+
 const isMatchPast = (matchDay, matchTime, simDay=null, simHour=12) => {
   const mHour = parseInt((matchTime||"23:00").split(":")[0]);
-  const nowDay = simDay || new Date().getDate();
-  const nowHour = simDay ? (simHour||0) : new Date().getHours();
-  return matchDay < nowDay || (matchDay === nowDay && mHour <= nowHour);
+  if (simDay) {
+    const nowHour = simHour || 0;
+    return matchDay < simDay || (matchDay === simDay && mHour <= nowHour);
+  }
+  // matchDay encoding: June N = N (1-30), July N = N+30 (31-61)
+  const matchMonth = matchDay <= 30 ? 5 : 6; // 5=June, 6=July (0-indexed)
+  const matchDom = matchDay <= 30 ? matchDay : matchDay - 30;
+  return new Date() >= new Date(2026, matchMonth, matchDom, mHour, 0, 0);
 };
 
 const isWeekUnlocked = (day, simDay=null, simHour=12, simMin=0) => {
@@ -356,16 +389,30 @@ const computeLiveScores = (simDay=null, simHour=12, simMin=0) => {
       const key = `${e.day}-${idx}`;
       const kickH = parseInt((m.time||"23:00").split(":")[0]);
       const kickM = parseInt((m.time||"00:00").split(":")[1]||0);
-      const nowDay = simDay || new Date().getDate();
-      const nowH   = simDay ? simHour : new Date().getHours();
-      const nowM   = simDay ? simMin  : new Date().getMinutes();
+      let nowDay, nowH, nowM;
+      if (simDay) {
+        nowDay = simDay; nowH = simHour; nowM = simMin;
+      } else {
+        // matchDay encoding: June N=N (1-30), July N=N+30 (31-61)
+        const matchMonth = e.day <= 30 ? 5 : 6;
+        const matchDom   = e.day <= 30 ? e.day : e.day - 30;
+        const matchDate  = new Date(2026, matchMonth, matchDom, kickH, kickM, 0);
+        const now = new Date();
+        if (now < matchDate) { scores[key] = {status:"NS"}; return; }
+        const startMins = kickH*60 + kickM;
+        const nowMins   = now.getHours()*60 + now.getMinutes() +
+                          (now.getMonth() !== matchMonth || now.getDate() !== matchDom ? 99999 : 0);
+        if (nowMins > startMins + 115) { scores[key] = {status:"FT",home:null,away:null}; return; }
+        scores[key] = {status:"LIVE", home:0, away:0, min: Math.min(90, nowMins - startMins)};
+        return;
+      }
       if(e.day > nowDay) { scores[key] = {status:"NS"}; return; }
       if(e.day < nowDay) {
         // Use mock final scores if available
         scores[key] = {status:"FT",home:null,away:null};
         return;
       }
-      // Same day
+      // Same day (sim mode)
       const startMins = kickH*60 + kickM;
       const nowMins   = nowH*60 + nowM;
       if(nowMins < startMins)       { scores[key] = {status:"NS"}; return; }
@@ -1244,6 +1291,30 @@ const getAutoStanding = (group) => {
   });
   return [...teams].sort((a,b)=>(pts[b]||0)-(pts[a]||0));
 };
+// ── RANKING BEST3 DUPĂ REGULILE FIFA ─────────────────────────────────────────
+// Criterii oficiale FIFA 2026 pentru cele 8 best 3rd-place teams care avansează:
+// 1. Puncte  2. Diferență goluri  3. Goluri marcate  4. Victorii  5. Fair play  6. Ranking FIFA
+function rankBest3ByFifa(groups, standings, stats) {
+  const thirds = groups.map(g => (standings[g]||[])[2]).filter(Boolean);
+  if(!thirds.length) return [];
+  const hasStats = Object.keys(stats).length > 0;
+  if(hasStats) {
+    return [...thirds]
+      .sort((a, b) => {
+        const sa = stats[a] || { pts:0, gf:0, ga:0, w:0 };
+        const sb = stats[b] || { pts:0, gf:0, ga:0, w:0 };
+        if(sb.pts !== sa.pts) return sb.pts - sa.pts;
+        const gdA = sa.gf - sa.ga, gdB = sb.gf - sb.ga;
+        if(gdB !== gdA) return gdB - gdA;
+        if(sb.gf !== sa.gf) return sb.gf - sa.gf;
+        if(sb.w !== sa.w) return sb.w - sa.w;
+        return 0;
+      })
+      .slice(0, 8);
+  }
+  return thirds.slice(0, 8);
+}
+
 // KO matchups generated dynamically based on group standings
 const KO_MATCHUP_TEMPLATE = [
   {id:"r16_0",round:"R16"},{id:"r16_1",round:"R16"},{id:"r16_2",round:"R16"},{id:"r16_3",round:"R16"},
@@ -2420,7 +2491,7 @@ function Best3Screen({ groups, getGroupStanding, picks, best3, setBest3, onDone 
 
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",position:"relative"}}>
-      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.03,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.055,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
       {/* Header with selected chips */}
       <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"12px 16px 14px",flexShrink:0}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
@@ -2584,8 +2655,7 @@ function GroupIntroScreen({ group, teams: teamsProp, isKo, onStart, hideHeader=f
       ) : (
         <div style={{padding:"20px 24px"}}>
           <div style={{background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,borderRadius:20,padding:"20px",width:"100%",marginBottom:16,boxShadow:SHADOW_OUT}}>
-            {!hideHeader && <><p style={{fontSize:10,color:RED,margin:"0 0 4px",letterSpacing:2,textTransform:"uppercase",fontWeight:800,textAlign:"center"}}>Predicto</p>
-            <h2 style={{fontSize:26,fontWeight:900,color:"#fff",margin:"0 0 20px",textAlign:"center",letterSpacing:1}}>{group}</h2></>}
+            {!hideHeader && <h2 style={{fontSize:26,fontWeight:900,color:"#fff",margin:"0 0 20px",textAlign:"center",letterSpacing:1}}>{group}</h2>}
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
               {teams.map((t)=>(
                 <div key={t} style={{background:"rgba(255,255,255,0.1)",borderRadius:14,padding:"14px 12px",display:"flex",flexDirection:"column",alignItems:"center",gap:8,border:"1px solid rgba(255,255,255,0.15)"}}>
@@ -2613,7 +2683,7 @@ function GroupIntroScreen({ group, teams: teamsProp, isKo, onStart, hideHeader=f
 }
 
 
-function InstantPickScreen({ onBack, onComplete, onModify, savedState, onStateChange, tournamentStarted, viewMode=false }) {
+function InstantPickScreen({ onBack, onComplete, onKoComplete, onModify, savedState, onStateChange, tournamentStarted, viewMode=false, koUnlocked=false, startAtKo=false }) {
   const lang = useLang();
   const GROUPS = INTERACTIVE_GROUPS;
   const [stage, setStage] = useState(savedState?.stage||"groups");
@@ -2665,7 +2735,12 @@ function InstantPickScreen({ onBack, onComplete, onModify, savedState, onStateCh
 
   const handleGroupConfirm = (ranking) => {
     handleGroupAutoSave(ranking);
-    if(groupIdx < GROUPS.length-1) { setGroupIdx(g=>g+1); setShowIntro(viewMode?false:true); }
+    if(groupIdx < GROUPS.length-1) {
+      const nextGroup = GROUPS[groupIdx + 1];
+      const nextHasRanking = !!(groupRankings[nextGroup]?.every(t => t !== null));
+      setGroupIdx(g=>g+1);
+      setShowIntro(effectiveViewMode ? false : !nextHasRanking);
+    }
     else setStage("best3");
   };
 
@@ -2677,19 +2752,48 @@ function InstantPickScreen({ onBack, onComplete, onModify, savedState, onStateCh
   const allGroupStandings = {};
   GROUPS.forEach(g=>{ allGroupStandings[g]=getGroupStanding(g); });
 
-  // 32 teams: 12 group winners + 12 runners-up + 8 best 3rd
-  const groupWinners  = GROUPS.map(g=>(allGroupStandings[g]||[])[0]).filter(Boolean);
-  const groupRunners  = GROUPS.map(g=>(allGroupStandings[g]||[])[1]).filter(Boolean);
-  const best3Teams    = best3.length === 8 ? best3
-                        : GROUPS.map(g=>(allGroupStandings[g]||[])[2]).filter(Boolean).slice(0,8);
+  // For KO bracket: use REAL_STANDINGS when available, else auto-standings
+  const getRealGroupStanding = (group) => {
+    if(REAL_STANDINGS[group]?.length) return REAL_STANDINGS[group];
+    return getAutoStanding(group);
+  };
+  const allRealGroupStandings = {};
+  GROUPS.forEach(g=>{ allRealGroupStandings[g]=getRealGroupStanding(g); });
 
-  // Round of 32 (16 meciuri): 8 winners vs 8 best3rd + 8 runners vs 4 winners + 4 runners
-  // Simplified pairing: winner[i] vs best3[i] for i=0-7, runner[i] vs runner[i+4] for i=0-3,
-  // winner[8-11] vs runner[8-11]
+  // 32 teams: 12 group winners + 12 runners-up + 8 best 3rd — din clasamentele REALE
+  const groupWinners  = GROUPS.map(g=>(allRealGroupStandings[g]||[])[0]).filter(Boolean);
+  const groupRunners  = GROUPS.map(g=>(allRealGroupStandings[g]||[])[1]).filter(Boolean);
+  // best3Teams: REAL_BEST3 override > user's picks > FIFA-ranked auto
+  const best3Teams = REAL_BEST3.length === 8 ? REAL_BEST3
+    : best3.length === 8 ? best3
+    : rankBest3ByFifa(GROUPS, allRealGroupStandings, REAL_GROUP_STATS);
+
+  // Bracket oficial FIFA 2026 — Round of 32 (16 meciuri)
+  // GROUPS index: A=0, B=1, C=2, D=3, E=4, F=5, G=6, H=7, I=8, J=9, K=10, L=11
+  const W = (i) => groupWinners[i] || "TBD";
+  const R = (i) => groupRunners[i]  || "TBD";
+  const B = (i) => best3Teams[i]    || "TBD";
   const r32Matchups = [
-    ...Array.from({length:8}, (_,i)=>({home:groupWinners[i]||"TBD", away:best3Teams[i]||"TBD"})),
-    ...Array.from({length:4}, (_,i)=>({home:groupRunners[i]||"TBD", away:groupRunners[i+4]||"TBD"})),
-    ...Array.from({length:4}, (_,i)=>({home:groupWinners[i+8]||"TBD", away:groupRunners[i+8]||"TBD"})),
+    // Grupa A-D cross
+    {home:W(0), away:R(2)}, // 1A vs 2C
+    {home:W(2), away:R(0)}, // 1C vs 2A
+    {home:W(1), away:R(3)}, // 1B vs 2D
+    {home:W(3), away:R(1)}, // 1D vs 2B
+    // Grupa E-H cross
+    {home:W(4), away:R(6)}, // 1E vs 2G
+    {home:W(6), away:R(4)}, // 1G vs 2E
+    {home:W(5), away:R(7)}, // 1F vs 2H
+    {home:W(7), away:R(5)}, // 1H vs 2F
+    // Grupa I-L cross
+    {home:W(8),  away:R(10)}, // 1I vs 2K
+    {home:W(10), away:R(8)},  // 1K vs 2I
+    {home:W(9),  away:R(11)}, // 1J vs 2L
+    {home:W(11), away:R(9)},  // 1L vs 2J
+    // Best 3rd joacă între ele (4 meciuri)
+    {home:B(0), away:B(1)},
+    {home:B(2), away:B(3)},
+    {home:B(4), away:B(5)},
+    {home:B(6), away:B(7)},
   ]; // = 16 meciuri
 
   const getWinners = (roundKey) =>
@@ -2736,7 +2840,7 @@ function InstantPickScreen({ onBack, onComplete, onModify, savedState, onStateCh
   const activePhaseId = stage==="best3"?"best3":stage==="ko"?koRound:null;
   const phaseAccessible = (id) => {
     if(id==="best3") return allGroupsDone;
-    return best3Done;
+    return koUnlocked && best3Done;
   };
   const goToPhase = (id) => {
     if(!phaseAccessible(id)) return;
@@ -2746,11 +2850,9 @@ function InstantPickScreen({ onBack, onComplete, onModify, savedState, onStateCh
   const headerTitle = stage==="groups"?`Group ${currentGroup}`:stage==="best3"?"Best 3rd Place":koLabel;
   const headerCounterVal = stage==="groups"?`${groupIdx+1}/${GROUPS.length}`:stage==="best3"?`${best3.length}/8`:`${koIdx+1}/${Math.max(koRoundMatchups.length,1)}`;
   const headerSub = stage==="groups"?"groups":stage==="best3"?"selected":"matches";
-  const headerBack = () => {
-    if(stage==="groups"){ onBack&&onBack(); }
-    else if(stage==="best3"){ setGroupIdx(GROUPS.length-1); setStage("groups"); }
-    else { setStage("best3"); }
-  };
+  // When startAtKo=true: groups/best3 are view-only; back from any stage goes to ko/home
+  const effectiveViewMode = startAtKo ? (stage === "groups" || stage === "best3") : viewMode;
+  const headerBack = () => { onBack&&onBack(); };
   const sharedNavIdx = stage==="groups" ? groupIdx : GROUPS.length-1;
 
   const sharedHeader = (
@@ -2760,7 +2862,6 @@ function InstantPickScreen({ onBack, onComplete, onModify, savedState, onStateCh
       <div style={{display:"flex", alignItems:"center", gap:10, padding:"10px 20px 6px"}}>
         <button onClick={headerBack} style={{background:"rgba(255,255,255,0.12)",border:"none",borderRadius:10,width:34,height:34,color:"#fff",fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>‹</button>
         <div style={{flex:1}}>
-          <div style={{fontSize:11,color:RED,fontWeight:800,letterSpacing:2,textTransform:"uppercase"}}>Predicto</div>
           <div style={{fontSize:18,fontWeight:800,color:"#fff"}}>{headerTitle}</div>
         </div>
         <div style={{textAlign:"right",flexShrink:0}}>
@@ -2878,7 +2979,7 @@ function InstantPickScreen({ onBack, onComplete, onModify, savedState, onStateCh
         <div style={{background:"#f0f2f8",borderBottom:"1px solid rgba(0,0,0,0.08)",
           padding:"10px 14px",minHeight:70}}>
           <div style={{fontSize:9,color:"rgba(0,0,0,0.38)",fontWeight:800,
-            letterSpacing:1.5,marginBottom:8}}>{viewMode?"ADVANCING":"ADVANCING · TAP TO REMOVE"}</div>
+            letterSpacing:1.5,marginBottom:8}}>{effectiveViewMode?"ADVANCING":"ADVANCING · TAP TO REMOVE"}</div>
           {best3.length===0 ? (
             <div style={{fontSize:12,color:"rgba(0,0,0,0.25)",fontStyle:"italic",paddingBottom:4}}>
               Tap a team below to add them here
@@ -2886,12 +2987,12 @@ function InstantPickScreen({ onBack, onComplete, onModify, savedState, onStateCh
           ) : (
             <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
               {best3.map(team=>(
-                <div key={team} onClick={()=>!viewMode&&setBest3(prev=>prev.filter(t=>t!==team))}
+                <div key={team} onClick={()=>!effectiveViewMode&&setBest3(prev=>prev.filter(t=>t!==team))}
                   style={{
                     display:"flex",alignItems:"center",gap:5,
                     padding:"4px 10px 4px 6px",borderRadius:20,
                     background:`${GREEN}18`,border:`1.5px solid ${GREEN}`,
-                    cursor:viewMode?"default":"pointer",transition:"all 0.15s",
+                    cursor:effectiveViewMode?"default":"pointer",transition:"all 0.15s",
                   }}>
                   <span style={{fontSize:18,lineHeight:1}}>{FLAGS[team]||"🏳"}</span>
                   <span style={{fontSize:11,fontWeight:800,color:NAVY,
@@ -2910,14 +3011,14 @@ function InstantPickScreen({ onBack, onComplete, onModify, savedState, onStateCh
             const grp=GROUPS.find(g=>(allGroupStandings[g]||[])[2]===team)||"?";
             const disabled=best3.length>=needed;
             return (
-              <div key={team} onClick={()=>!viewMode&&!disabled&&setBest3(prev=>[...prev,team])}
+              <div key={team} onClick={()=>!effectiveViewMode&&!disabled&&setBest3(prev=>[...prev,team])}
                 style={{
                   display:"flex",alignItems:"center",gap:12,
                   padding:"11px 14px",borderRadius:14,
                   background:"#fff",
                   border:"1.5px solid rgba(0,0,0,0.06)",
                   boxShadow:"0 1px 4px rgba(0,0,0,0.05)",
-                  cursor:(viewMode||disabled)?"default":"pointer",
+                  cursor:(effectiveViewMode||disabled)?"default":"pointer",
                   opacity:disabled?0.4:1,
                   transition:"all 0.15s",
                   minHeight:56,
@@ -2965,23 +3066,23 @@ function InstantPickScreen({ onBack, onComplete, onModify, savedState, onStateCh
         {/* ── CONFIRM BUTTON ── */}
         <div style={{background:"#fff",padding:"10px 14px 22px",
           borderTop:"1px solid rgba(0,0,0,0.07)"}}>
-          <button onClick={()=>{ if(viewMode||best3.length>=needed){ setStage("ko"); if(viewMode) setShowFinalSummary(true); } }}
-            disabled={!viewMode&&best3.length<needed}
+          <button onClick={()=>{ if(effectiveViewMode){ startAtKo ? setStage("ko") : (onBack&&onBack()); } else if(best3.length>=needed){ onComplete&&onComplete(); } }}
+            disabled={!effectiveViewMode&&best3.length<needed}
             style={{
               width:"100%",padding:"14px 0",borderRadius:14,border:"none",
-              background:(viewMode||best3.length>=needed)
-                ?`linear-gradient(135deg,${NAVY},#003580)`
+              background:(effectiveViewMode||best3.length>=needed)
+                ?`linear-gradient(135deg,${GREEN},#007A36)`
                 :"rgba(0,0,0,0.06)",
-              color:(viewMode||best3.length>=needed)?"#fff":"rgba(0,0,0,0.2)",
+              color:(effectiveViewMode||best3.length>=needed)?"#fff":"rgba(0,0,0,0.2)",
               fontSize:15,fontWeight:900,letterSpacing:1,
-              cursor:(viewMode||best3.length>=needed)?"pointer":"default",
+              cursor:(effectiveViewMode||best3.length>=needed)?"pointer":"default",
               transition:"all 0.2s",
-              boxShadow:(viewMode||best3.length>=needed)?"0 4px 20px rgba(0,32,91,0.3)":"none",
+              boxShadow:(effectiveViewMode||best3.length>=needed)?"0 4px 20px rgba(0,154,68,0.3)":"none",
             }}>
             {best3.length>=needed
-              ?"CONFIRM & GO TO KNOCKOUT →"
-              :viewMode
-                ?"VIEW KNOCKOUT STAGE →"
+              ?"SALVEAZĂ PREDICȚIILE ✓"
+              :effectiveViewMode
+                ? startAtKo ? "← Back to Knockout" : "← Back to Home"
                 :`SELECT ${needed-best3.length} MORE TEAM${needed-best3.length!==1?"S":""}`}
           </button>
         </div>
@@ -3054,7 +3155,7 @@ function InstantPickScreen({ onBack, onComplete, onModify, savedState, onStateCh
         <div style={{flex:1,display:"flex",flexDirection:"column",userSelect:"none",background:"#f0f2f8",overflow:"hidden"}}>
           {/* Header navy */}
           <div style={{background:`linear-gradient(135deg,${NAVY},#001840)`,padding:"14px 14px 16px",flexShrink:0,position:"relative",overflow:"hidden"}}>
-            <img src={trophy} alt="" style={{position:"absolute",width:"120%",height:"100%",left:"-10%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.03,pointerEvents:"none",filter:"grayscale(1) contrast(1.5)"}}/>
+            <img src={trophy} alt="" style={{position:"absolute",width:"120%",height:"100%",left:"-10%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.055,pointerEvents:"none",filter:"grayscale(1) contrast(1.5)"}}/>
             <div style={{position:"relative",zIndex:1,display:"flex",alignItems:"center",gap:10,marginBottom:14}}>
               <button onClick={()=>{ if(viewMode) onBack&&onBack(); else setShowFinalSummary(false); }}
                 style={{background:"rgba(255,255,255,0.15)",border:"none",borderRadius:10,
@@ -3102,7 +3203,7 @@ function InstantPickScreen({ onBack, onComplete, onModify, savedState, onStateCh
 
           {/* Save button */}
           {!viewMode && <div style={{padding:"8px 14px 24px",flexShrink:0}}>
-            <button onClick={()=>onComplete&&onComplete()}
+            <button onClick={()=>startAtKo ? (onKoComplete&&onKoComplete()) : (onComplete&&onComplete())}
               style={{width:"100%",padding:"15px 0",borderRadius:14,border:"none",
                 background:`linear-gradient(135deg,${GREEN},#007A36)`,
                 color:"#fff",fontSize:15,fontWeight:900,letterSpacing:1,cursor:"pointer",
@@ -3115,7 +3216,7 @@ function InstantPickScreen({ onBack, onComplete, onModify, savedState, onStateCh
     }
     if(koShowIntro) return (
       <div style={{flex:1,minHeight:0,display:"flex",flexDirection:"column",background:BG,userSelect:"none",position:"relative",overflow:"hidden"}}>
-        <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.03,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
+        <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.055,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
         {sharedHeader}
         <GroupIntroScreen group={koRound} teams={koRoundMatchups.map(m=>[m.home,m.away])}
           isKo={true} hideHeader={true} onStart={()=>setKoShowIntro(false)} picks={koPicks} viewMode={viewMode}/>
@@ -3148,7 +3249,7 @@ function InstantPickScreen({ onBack, onComplete, onModify, savedState, onStateCh
 
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,userSelect:"none",position:"relative",overflow:"hidden"}}>
-      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.03,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.055,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
       {sharedHeader}
       <GroupRankingScreen
         hideHeader={true}
@@ -3163,7 +3264,7 @@ function InstantPickScreen({ onBack, onComplete, onModify, savedState, onStateCh
         totalGroups={GROUPS.length}
         groupRankings={groupRankings}
         onNavigate={navigateGroup}
-        viewMode={viewMode}
+        viewMode={effectiveViewMode}
       />
     </div>
   );
@@ -3336,7 +3437,7 @@ function GroupRankingScreen({ group, teams, existingRanking, onConfirm, onAutoSa
 
   return (
     <div style={{flex:1, display:"flex", flexDirection:"column", background:"transparent", userSelect:"none", position:"relative", overflow:"hidden"}}>
-      {!hideHeader && <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.03,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>}
+      {!hideHeader && <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.055,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>}
 
       {/* ── NAVY HEADER ── */}
       {!hideHeader && <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`, paddingBottom:0}}>
@@ -3349,7 +3450,6 @@ function GroupRankingScreen({ group, teams, existingRanking, onConfirm, onAutoSa
             display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0,
           }}>‹</button>
           <div style={{flex:1}}>
-            <div style={{fontSize:10, color:RED, fontWeight:800, letterSpacing:1.5}}>Predicto</div>
             <div style={{fontSize:18, fontWeight:900, color:"#fff"}}>{T[lang].group} {group}</div>
           </div>
           <div style={{textAlign:"right", flexShrink:0}}>
@@ -3462,19 +3562,19 @@ function GroupRankingScreen({ group, teams, existingRanking, onConfirm, onAutoSa
       </div>}
 
       {/* ── TEAM TILES ── */}
-      <div style={{background:"transparent", padding:"14px 14px 10px",
+      <div style={{background:"transparent", padding:"8px 14px 8px",
         borderBottom:"1px solid rgba(0,0,0,0.08)", position:"relative", zIndex:1}}>
         {!viewMode && <div style={{fontSize:10, color:"rgba(0,0,0,0.4)", letterSpacing:2,
-          fontWeight:700, marginBottom:8, textAlign:"center"}}>TAP TO ASSIGN · TAP AGAIN TO REMOVE</div>}
-        <div style={{display:"flex", gap:8, justifyContent:"space-between"}}>
+          fontWeight:700, marginBottom:6, textAlign:"center"}}>TAP TO ASSIGN · TAP AGAIN TO REMOVE</div>}
+        <div style={{display:"flex", gap:6, justifyContent:"space-between"}}>
           {teams.map(team => {
             const pos = ranking.indexOf(team);
             const isPlaced = pos !== -1;
             return (
               <div key={team} onClick={() => !viewMode && handleTileClick(team)} style={{
                 flex:1, background: isPlaced ? "rgba(0,32,91,0.07)" : "#fff",
-                borderRadius:12, padding:"10px 4px",
-                display:"flex", flexDirection:"column", alignItems:"center", gap:5,
+                borderRadius:10, padding:"7px 2px",
+                display:"flex", flexDirection:"column", alignItems:"center", gap:4,
                 cursor:viewMode?"default":"pointer", position:"relative",
                 border:`2px solid ${isPlaced ? "rgba(0,32,91,0.25)" : "rgba(0,0,0,0.08)"}`,
                 transition:"all 0.15s",
@@ -3484,20 +3584,20 @@ function GroupRankingScreen({ group, teams, existingRanking, onConfirm, onAutoSa
               }}>
                 {isPlaced && (
                   <div style={{
-                    position:"absolute", top:-8, right:-6,
+                    position:"absolute", top:-7, right:-5,
                     background: placeColors[pos],
-                    borderRadius:"50%", width:20, height:20,
+                    borderRadius:"50%", width:18, height:18,
                     display:"flex", alignItems:"center", justifyContent:"center",
-                    fontSize:11, fontWeight:900,
+                    fontSize:10, fontWeight:900,
                     color: placeTextColor[pos],
                     border:"2px solid #f0f2f8",
                     boxShadow:"0 1px 4px rgba(0,0,0,0.2)",
                   }}>{pos+1}</div>
                 )}
-                <span style={{fontSize:28, lineHeight:1}}>{FLAGS[team]||"🏳"}</span>
+                <span style={{fontSize:24, lineHeight:1}}>{FLAGS[team]||"🏳"}</span>
                 <span style={{fontSize:9, fontWeight:800,
                   color: isPlaced ? NAVY : "rgba(0,0,0,0.5)",
-                  letterSpacing:1, textTransform:"uppercase"}}>
+                  letterSpacing:0.5, textTransform:"uppercase"}}>
                   {CODE[team]||team.slice(0,3).toUpperCase()}
                 </span>
               </div>
@@ -3507,7 +3607,7 @@ function GroupRankingScreen({ group, teams, existingRanking, onConfirm, onAutoSa
       </div>
 
       {/* ── RANKING ROWS ── */}
-      <div ref={rankingContainerRef} style={{flex:1, overflowY:"auto", background:"transparent", padding:"8px 14px", display:"flex", flexDirection:"column", gap:6, position:"relative", zIndex:1}}>
+      <div ref={rankingContainerRef} style={{flex:1, overflowY:"auto", background:"transparent", padding:"6px 14px", display:"flex", flexDirection:"column", gap:5, position:"relative", zIndex:1}}>
         {[0,1,2,3].map(idx => {
           const team = ranking[idx];
           const teamColor = team ? (TEAM_COLORS[team]||["#555"])[0] : null;
@@ -3519,45 +3619,45 @@ function GroupRankingScreen({ group, teams, existingRanking, onConfirm, onAutoSa
               onTouchMove={team && !viewMode ? handleTouchMove : undefined}
               onTouchEnd={team && !viewMode ? handleTouchEnd : undefined}
               style={{
-                display:"flex", alignItems:"center", gap:12,
-                padding:"11px 14px", borderRadius:14,
+                display:"flex", alignItems:"center", gap:10,
+                padding:"8px 12px", borderRadius:12,
                 background: isDragging ? "#e8eeff" : isOver ? "#dde8ff" : "#fff",
                 border:`1.5px solid ${isOver ? "#4a90e2" : isDragging ? "#7aaff5" : "rgba(0,0,0,0.06)"}`,
                 boxShadow: isDragging ? "0 6px 20px rgba(0,0,0,0.15)" : "0 1px 4px rgba(0,0,0,0.05)",
                 transform: isDragging ? "scale(1.02)" : "scale(1)",
                 transition:"background 0.1s, box-shadow 0.1s, transform 0.1s",
-                minHeight:58, cursor: team ? "grab" : "default",
+                minHeight:50, cursor: team ? "grab" : "default",
                 userSelect:"none", WebkitUserSelect:"none",
               }}>
 
               {/* Place badge */}
               {(idx < 3 || !team) ? (
                 <div style={{
-                  width:36, height:36, borderRadius:10, flexShrink:0,
+                  width:30, height:30, borderRadius:8, flexShrink:0,
                   background: team ? placeColors[idx] : "rgba(0,0,0,0.05)",
                   display:"flex", alignItems:"center", justifyContent:"center",
-                  fontSize:16, fontWeight:900,
+                  fontSize:14, fontWeight:900,
                   color: team ? placeTextColor[idx] : "rgba(0,0,0,0.2)",
                   boxShadow: team ? `0 2px 8px ${placeColors[idx]}88` : "none",
                 }}>{idx+1}</div>
               ) : (
-                <div style={{width:36, height:36, flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center"}}>
-                  <span style={{fontSize:20, fontWeight:700, color:"#aaa"}}>4</span>
+                <div style={{width:30, height:30, flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center"}}>
+                  <span style={{fontSize:17, fontWeight:700, color:"#aaa"}}>4</span>
                 </div>
               )}
 
               {team ? (
                 <>
                   {/* Flag */}
-                  <div style={{width:40, height:28, borderRadius:6, overflow:"hidden",
+                  <div style={{width:36, height:24, borderRadius:5, overflow:"hidden",
                     boxShadow:"0 2px 8px rgba(0,0,0,0.15)", flexShrink:0, position:"relative"}}>
                     <FlagBg team={team} style={{}}/>
                   </div>
                   {/* Name */}
                   <div style={{flex:1, cursor:viewMode?"default":"pointer"}} onClick={()=>!viewMode&&handleSlotClick(idx)}>
-                    <div style={{fontSize:14, fontWeight:800, color:"#111",
+                    <div style={{fontSize:13, fontWeight:800, color:"#111",
                       letterSpacing:0.3, textTransform:"uppercase"}}>{team}</div>
-                    <div style={{fontSize:10, color:idx===0?GREEN:idx===1?"#4a90e2":idx===2?"#CD7F32":"rgba(0,0,0,0.35)",
+                    <div style={{fontSize:9.5, color:idx===0?GREEN:idx===1?"#4a90e2":idx===2?"#CD7F32":"rgba(0,0,0,0.35)",
                       marginTop:1, fontWeight:600}}>
                       {idx===0?"Group Winner · Advances":idx===1?"Runner-up · Advances":idx===2?"Possible 3rd Place":"Eliminated"}
                     </div>
@@ -3569,11 +3669,11 @@ function GroupRankingScreen({ group, teams, existingRanking, onConfirm, onAutoSa
                     onTouchEnd={e=>{ e.stopPropagation(); handleTouchEnd(); }}
                     style={{
                       display:"flex", flexDirection:"column", gap:4,
-                      padding:"10px 6px", cursor:"grab", flexShrink:0,
+                      padding:"8px 6px", cursor:"grab", flexShrink:0,
                       touchAction:"none",
                     }}>
-                    <div style={{width:22, height:2.5, background:"#999", borderRadius:2}}/>
-                    <div style={{width:22, height:2.5, background:"#999", borderRadius:2}}/>
+                    <div style={{width:20, height:2, background:"#999", borderRadius:2}}/>
+                    <div style={{width:20, height:2, background:"#999", borderRadius:2}}/>
                   </div>}
                 </>
               ) : (
@@ -3589,21 +3689,21 @@ function GroupRankingScreen({ group, teams, existingRanking, onConfirm, onAutoSa
       </div>
 
       {/* ── BOTTOM ACTIONS ── */}
-      <div style={{background:"#fff", padding:"10px 14px 22px",
+      <div style={{background:"#fff", padding:"8px 14px 16px",
         borderTop:"1px solid rgba(0,0,0,0.07)",
-        display:"flex", flexDirection:"column", gap:8,
+        display:"flex", flexDirection:"column", gap:6,
         position:"relative", zIndex:1}}>
 
         {/* Reset / Auto-pick row */}
         {!viewMode && <div style={{display:"flex", justifyContent:"space-between"}}>
           <button onClick={autoPickRanking} style={{
             background:"rgba(0,0,0,0.04)", border:"1px solid rgba(0,0,0,0.08)",
-            borderRadius:10, padding:"7px 14px",
+            borderRadius:10, padding:"6px 14px",
             color:"rgba(0,0,0,0.45)", fontSize:12, cursor:"pointer", fontWeight:700,
           }}>🎲 Auto-pick</button>
           <button onClick={resetRanking} style={{
             background:"rgba(0,0,0,0.04)", border:"1px solid rgba(0,0,0,0.08)",
-            borderRadius:10, padding:"7px 14px",
+            borderRadius:10, padding:"6px 14px",
             color:"rgba(0,0,0,0.45)", fontSize:12, cursor:"pointer", fontWeight:700,
           }}>↺ Reset</button>
         </div>}
@@ -3612,7 +3712,7 @@ function GroupRankingScreen({ group, teams, existingRanking, onConfirm, onAutoSa
         <button onClick={() => (viewMode || isComplete) && onConfirm(ranking)}
           disabled={!viewMode && !isComplete}
           style={{
-            width:"100%", padding:"14px 0", borderRadius:14, border:"none",
+            width:"100%", padding:"12px 0", borderRadius:14, border:"none",
             background: (viewMode || isComplete)
               ? `linear-gradient(135deg, ${NAVY}, #003580)`
               : "rgba(0,0,0,0.06)",
@@ -3637,39 +3737,49 @@ function GroupRankingScreen({ group, teams, existingRanking, onConfirm, onAutoSa
 function CircleTab({ label, name, isActive, onClick, lightBg=false }) {
   return (
     <div onClick={onClick} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:5,cursor:"pointer",flexShrink:0,WebkitTapHighlightColor:"transparent"}}>
-      <div style={{
-        width:isActive?52:44, height:isActive?52:44,
-        borderRadius:"50%",
-        background:isActive
-          ? (lightBg?"#fff":"rgba(255,255,255,0.95)")
-          : (lightBg?"rgba(0,0,0,0.06)":"rgba(255,255,255,0.1)"),
-        border:isActive
-          ? (lightBg?"3px solid rgba(0,0,0,0.12)":"3px solid #fff")
-          : (lightBg?"2px solid rgba(0,0,0,0.12)":"2px solid rgba(255,255,255,0.2)"),
-        display:"flex",alignItems:"center",justifyContent:"center",
-        fontSize:isActive?24:19,
-        transition:"all 0.2s",
-        boxShadow:isActive?"0 4px 16px rgba(0,0,0,0.15)":"none",
-      }}>
-        {label}
-      </div>
+      {isActive ? (
+        <div style={{
+          width:52, height:52,
+          borderRadius:"50%",
+          background:"#fff",
+          display:"flex",alignItems:"center",justifyContent:"center",
+          fontSize:24,
+          boxShadow:"0 4px 14px rgba(0,0,0,0.15)",
+          transition:"all 0.2s",
+        }}>
+          {label}
+        </div>
+      ) : (
+        <div style={{
+          width:44, height:44,
+          borderRadius:"50%",
+          background:lightBg?"rgba(0,0,0,0.04)":"rgba(255,255,255,0.08)",
+          border:lightBg?"1px solid rgba(0,0,0,0.10)":"1px solid rgba(255,255,255,0.12)",
+          display:"flex",alignItems:"center",justifyContent:"center",
+          fontSize:22,
+          transition:"all 0.2s",
+        }}>
+          {label}
+        </div>
+      )}
       <span style={{
         fontSize:isActive?10:9,
-        color:isActive?(lightBg?DARK:"#fff"):(lightBg?"rgba(0,0,0,0.62)":"rgba(255,255,255,0.62)"),
-        fontWeight:isActive?800:500,
+        color:isActive?(lightBg?DARK:"#fff"):(lightBg?"rgba(0,0,0,0.72)":"rgba(255,255,255,0.62)"),
+        fontWeight:isActive?800:600,
         maxWidth:56,textAlign:"center",lineHeight:1.2,
       }}>{name}</span>
-
     </div>
   );
 }
 
 
 // ── HOME ────────────────────────────────────────────────────────────────────
-function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenGroups, myBoards, predictionsComplete, instantPickDone, exactScores, activeBoardId, setActiveBoardId, tournamentStarted, simDay, simHour, simMin, createdBoards=[], showFirstAction, leaderboardData={}, boardsLoading=false, predictionsLoaded={} }) {
+function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateBoard, onOpenGroups, onCopyPredictions, onCopyExactScores, myBoards, predictionsComplete, instantPickDone, koPickDone, koUnlocked, exactScores, activeBoardId, setActiveBoardId, tournamentStarted, simDay, simHour, simMin, createdBoards=[], showFirstAction, leaderboardData={}, boardsLoading=false, predictionsLoaded={} }) {
   const lang = useLang();
   const displayName = useDisplayName();
   const initials = useInitials();
+  const [showCopySheet, setShowCopySheet] = useState(null); // "predictions" | "scores" | null
+  const [copyDone, setCopyDone] = useState(null);
   const activeId = activeBoardId;
   const setActiveId = setActiveBoardId;
   const activeBoard = myBoards.find(b=>b.id===activeId)||myBoards[0];
@@ -3696,19 +3806,19 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
   const meInTop3 = top3.some(u=>u.isMe);
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",position:"relative"}}>
-      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.03,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
-      <div style={{background:"transparent",padding:"12px 20px 10px",flexShrink:0,position:"relative",zIndex:1}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
-          <div style={{width:36}}/>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.055,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
+      <div style={{background:"linear-gradient(180deg,#CCDAFF 0%,#E2EBFF 40%,#F8F8F8 100%)",padding:"12px 20px 4px",flexShrink:0,position:"relative",zIndex:1}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <div style={{width:44}}/>
           <div style={{textAlign:"center"}}>
-            <img src={predictoLogo} alt="Predicto" style={{height:44,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
-            <h1 style={{fontSize:18,fontWeight:900,margin:"-4px 0 0",letterSpacing:2,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
-            <p style={{fontSize:11,color:"#888",margin:"3px 0 0"}}>{T[lang].location}</p>
+            <img src={predictoLogo} alt="Predicto" decoding="sync" style={{height:36,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
+            <h1 style={{fontSize:18,fontWeight:900,margin:"2px 0 0",letterSpacing:2,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
+            <p style={{fontSize:11,color:"#6B7280",margin:"3px 0 0"}}>{T[lang].location}</p>
           </div>
-          <div style={{width:36,height:36,borderRadius:10,background:"rgba(0,0,0,0.05)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,alignSelf:"center"}}>🔔</div>
+          <img src={bellIcon} alt="Notifications" style={{width:44,height:44,flexShrink:0}}/>
         </div>
         <div style={{overflowX:"auto",overflowY:"visible",scrollbarWidth:"none",margin:"0 -20px"}}>
-        <div style={{display:"flex",alignItems:"flex-start",gap:10,padding:"10px 20px 20px"}}>
+        <div style={{display:"flex",alignItems:"flex-start",gap:10,padding:"10px 20px 16px"}}>
           {boardsLoading
             ? <div style={{height:52,display:"flex",alignItems:"center"}}><span style={{width:44,height:44,borderRadius:"50%",background:"rgba(0,0,0,0.06)",display:"inline-block"}}/></div>
             : myBoards.map(b=><CircleTab key={b.id} label={b.label} name={b.isGlobal?"Global":b.name.split(" ")[0]} isActive={activeId===b.id} onClick={()=>setActiveId(b.id)} lightBg/>)}
@@ -3721,37 +3831,30 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
       </div>
       <div style={{flex:1,position:"relative",zIndex:1,minHeight:0}}>
       <div style={{position:"absolute",top:0,left:0,right:0,height:16,background:`linear-gradient(to top, transparent, ${BG})`,pointerEvents:"none",zIndex:2}}/>
-      <div style={{position:"absolute",bottom:0,left:0,right:0,height:80,background:`linear-gradient(to bottom, transparent, ${BG})`,pointerEvents:"none",zIndex:2}}/>
+      <div style={{position:"absolute",bottom:0,left:0,right:0,height:52,background:`linear-gradient(to bottom, transparent, rgba(248,248,248,0.88))`,pointerEvents:"none",zIndex:2}}/>
       <div style={{height:"100%",overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",padding:"10px 16px 0"}}>
 
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-          <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:0}}>{activeBoard?.name||"Global Board"}</p>
-          <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:0}}>👥 {membersLabel}</p>
-        </div>
         {/* User stats card */}
         <div style={{background:"#fff",borderRadius:16,boxShadow:"0 8px 22px rgba(0,0,0,0.07)",padding:"10px 14px",marginBottom:10}}>
           <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:10}}>
-            <div style={{width:48,height:48,borderRadius:"50%",background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,
-              display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:18,fontWeight:800}}>
+            <div style={{width:44,height:44,borderRadius:"50%",background:"linear-gradient(135deg,rgba(10,46,138,0.65),rgba(0,24,64,0.65))",
+              display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:16,fontWeight:800,flexShrink:0}}>
               {initials}
             </div>
-            <div style={{flex:1,minWidth:0}}>
-              <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between"}}>
-                <div style={{flex:1,minWidth:0}}>
-                  <p style={{fontSize:15,fontWeight:800,color:DARK,margin:0}}>{displayName}</p>
-                  <p style={{fontSize:12,color:"#666",margin:"2px 0 0"}}>{tournamentStarted?`${me?.pts||0} ${T[lang].ptsTotal}`:T[lang].tournamentStarts}</p>
-                </div>
-                <span onClick={onLeaderboard} style={{fontSize:12,color:NAVY,fontWeight:500,cursor:"pointer",flexShrink:0,paddingLeft:8}}>{T[lang].viewAll}</span>
-              </div>
+            <div style={{flex:1,minWidth:0,textAlign:"left"}}>
+              <div style={{fontSize:15,fontWeight:800,color:DARK,lineHeight:1.2}}>{displayName}</div>
+              <div style={{fontSize:12,color:"#6B7280",marginTop:3}}>{tournamentStarted?`${me?.pts||0} ${T[lang].ptsTotal}`:T[lang].tournamentStarts}</div>
             </div>
           </div>
           {/* Ranking across boards — horizontal scroll with fade indicator */}
-          <div style={{position:"relative",margin:"0 -14px"}}>
+          <div style={{display:"flex",alignItems:"flex-end",margin:"0 -14px"}}>
+          <div style={{flex:1,position:"relative",overflow:"hidden"}}>
             <div style={{display:"flex",gap:8,overflowX:"auto",scrollbarWidth:"none",
               WebkitOverflowScrolling:"touch",padding:"0 14px 2px"}}>
               {myBoards.map(b=>{
                 const bLeaders = leaderboardData[b.id] || [];
                 const myRank = bLeaders.find(u=>u.isMe)?.rank || 1;
+                const totalMembers = b.members || bLeaders.length || 1;
                 const isActive = activeId===b.id;
                 return (
                   <div key={b.id} onClick={()=>setActiveId(b.id)}
@@ -3764,65 +3867,89 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
                       overflow:"hidden",textOverflow:"ellipsis",maxWidth:70}}>
                       {b.isGlobal?"🌍 Global":`${b.label} ${b.name.split(" ")[0]}`}
                     </p>
-                    <p style={{fontSize:15,fontWeight:800,color:isActive?NAVY:DARK,margin:"2px 0 0"}}>#{myRank}</p>
+                    <p style={{fontSize:15,fontWeight:800,color:isActive?NAVY:DARK,margin:"2px 0 0"}}>{myRank}{totalMembers?<span style={{fontSize:10,fontWeight:500,color:isActive?NAVY:"#aaa"}}> of {totalMembers>999?`${Math.round(totalMembers/1000)}k`:totalMembers}</span>:null}</p>
                   </div>
                 );
               })}
               {/* Extra padding for fade */}
-              <div style={{flexShrink:0,width:24}}/>
+              <div style={{flexShrink:0,width:8}}/>
             </div>
-            {/* Fade + arrow indicator on right */}
-            {myBoards.length>2&&(
-              <div style={{position:"absolute",right:0,top:0,bottom:0,width:40,
-                background:"linear-gradient(to right, transparent, #fff 70%)",
-                display:"flex",alignItems:"center",justifyContent:"flex-end",
-                paddingRight:4,pointerEvents:"none"}}>
-                <span style={{fontSize:12,color:"#aaa",fontWeight:700}}>›</span>
-              </div>
-            )}
+            {/* Fade — wide enough to cover the overlap with View all */}
+            <div style={{position:"absolute",right:0,top:0,bottom:0,width:52,
+              background:"linear-gradient(to right, transparent, #fff)",
+              pointerEvents:"none"}}/>
+          </div>
+          <div style={{flexShrink:0,paddingRight:14,paddingLeft:4,marginLeft:-32,position:"relative",zIndex:2}}>
+            <span onClick={onLeaderboard} style={{fontSize:12,color:NAVY,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap"}}>{T[lang].viewAll}</span>
+          </div>
           </div>
         </div>
 
         {/* Tasks */}
-        <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 6px"}}>{T[lang].yourTasks}</p>
+        <p style={{fontSize:11,fontWeight:700,color:"#6B7280",textTransform:"uppercase",letterSpacing:0.8,margin:"0 0 6px"}}>{T[lang].yourTasks}</p>
         <div style={{display:"flex",gap:8,marginBottom:10}}>
           {/* Predictions task */}
           {(()=>{
-            const boardDone = instantPickDone || predictionsComplete[activeId];
             // Deadline: June 11 19:00 (tournament kickoff)
-            const deadlinePassed = simDay ? (simDay > 11 || (simDay === 11 && (simHour||0) >= 19)) : false;
+            const deadlinePassed = simDay ? (simDay > 11 || (simDay === 11 && (simHour||0) >= 19)) : new Date() >= new Date(2026,5,11,19,0,0);
+            // Before deadline: trust only in-memory state (allows edit→incomplete→back to show not-done)
+            const boardDone = deadlinePassed ? (instantPickDone || predictionsComplete[activeId]) : instantPickDone;
             const isLocked = deadlinePassed && !boardDone;
+            // KO task state
+            const koAvailable = koUnlocked && boardDone && !koPickDone;
+            const allDone = boardDone && koPickDone;
+            const handleClick = () => {
+              if (koAvailable) { onPredictKo&&onPredictKo(activeId); return; }
+              if (!deadlinePassed || boardDone) onPredict(activeId);
+            };
+            const icon = isLocked?"🔒":koAvailable?"⚡":allDone?"🏆":"🎯";
+            const subtitleColor = allDone?GREEN:koAvailable?RED:boardDone?GREEN:isLocked?"#9CA3AF":"#6B7280";
+            const subtitle = !predictionsLoaded[activeId]?"…"
+              : allDone ? "Phase 1 completed"
+              : koAvailable ? T[lang].koDueJun27
+              : boardDone ? "Phase 1 completed"
+              : isLocked ? T[lang].deadlinePassed
+              : T[lang].dueJun11;
+            const showBadge = koAvailable || (!boardDone && !deadlinePassed && predictionsLoaded[activeId]);
             return (
-              <div onClick={()=>(!deadlinePassed||boardDone)&&onPredict(activeId)}
+              <div onClick={handleClick}
                 style={{flex:1,background:"#fff",borderRadius:14,
-                  boxShadow:(!boardDone&&!deadlinePassed&&predictionsLoaded[activeId])
+                  boxShadow:(koAvailable||(!boardDone&&!deadlinePassed&&predictionsLoaded[activeId]))
                     ?"0 4px 16px rgba(0,0,0,0.15)"
                     :"0 8px 22px rgba(0,0,0,0.07)",
-                  padding:"10px 12px",cursor:(deadlinePassed&&!boardDone)?"default":"pointer",position:"relative",
+                  border:koAvailable?"1.5px solid rgba(220,38,38,0.2)":"1.5px solid transparent",
+                  padding:"10px 12px",cursor:(isLocked)?"default":"pointer",position:"relative",
                   opacity:isLocked?0.6:1,
                   ...(showFirstAction&&!boardDone&&!deadlinePassed?{animation:"pulse 1.5s ease-in-out 3"}:{})}}>
-                {!boardDone&&!deadlinePassed&&predictionsLoaded[activeId]&&(
+                {showBadge&&(
                   <div style={{position:"absolute",top:2,right:2,
                     background:RED,borderRadius:"50%",minWidth:18,height:18,
                     display:"flex",alignItems:"center",justifyContent:"center",
                     boxShadow:"0 1px 4px rgba(0,0,0,0.3)",padding:"0 5px"}}>
-                    <span style={{fontSize:10,fontWeight:800,color:"#fff"}}>1</span>
+                    <span style={{fontSize:10,fontWeight:800,color:"#fff"}}>{koAvailable?"KO":"1"}</span>
                   </div>
                 )}
-                <div style={{fontSize:28,marginBottom:4}}>{isLocked?"🔒":"🎯"}</div>
-                <p style={{fontSize:13,fontWeight:800,color:isLocked?"#aaa":DARK,margin:0}}>{T[lang].predictions}</p>
-                <p style={{fontSize:11,margin:"2px 0 0",fontWeight:600,
-                  color:boardDone?GREEN:isLocked?"#bbb":"#888"}}>
-                  {!predictionsLoaded[activeId]?"…":boardDone?T[lang].completed:isLocked?T[lang].deadlinePassed:T[lang].dueJun11}
-                </p>
+                {boardDone&&(
+                  <div onClick={e=>{e.stopPropagation();setCopyDone(null);setShowCopySheet("predictions");}}
+                    style={{position:"absolute",bottom:6,right:6,width:20,height:20,borderRadius:5,
+                      border:`1.5px solid ${GREEN}66`,background:"rgba(255,255,255,0.8)",
+                      display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",zIndex:2}}>
+                    <svg width="10" height="10" viewBox="0 0 14 14" fill="none">
+                      <rect x="4" y="4" width="8" height="8" rx="1.5" stroke={GREEN} strokeWidth="1.8"/>
+                      <path d="M2 10V2h8" stroke={GREEN} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </div>
+                )}
+                <div style={{fontSize:28,marginBottom:4}}>{icon}</div>
+                <p style={{fontSize:13,fontWeight:800,color:isLocked?"#9CA3AF":DARK,margin:0}}>{T[lang].predictions}</p>
+                <p style={{fontSize:11,margin:"2px 0 0",fontWeight:600,color:subtitleColor}}>{subtitle}</p>
               </div>
             );
           })()}
           {/* Exact Score task */}
           {(()=>{
             // Count this week's missing scores
-            const simNowDate = simDay ? new Date(2026,5,simDay,simHour||12,simMin||0,0) : new Date();
-            const todaySim = simDay || simNowDate.getDate();
+            const todaySim = simDay ?? getRealTournamentDay();
             const weekStart = todaySim<=14?8:todaySim<=21?15:todaySim<=28?22:29;
             const days = Array.from({length:7},(_,i)=>weekStart+i).filter(d=>d>=1&&d<=50);
             const mm = {};
@@ -3830,12 +3957,15 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
             const total = days.reduce((s,d)=>s+(mm[d]||[]).length,0);
             const scored = days.reduce((s,d)=>s+(mm[d]||[]).filter((_,i)=>(exactScores||{})[`${d}-${i}`]).length,0);
             const missing = total - scored;
+            const weekNum = weekStart===8?1:weekStart===15?2:weekStart===22?3:4;
+            const scoreSubtitle = missing===0?`Week ${weekNum} completed`:`${missing} ${T[lang].thisWeek}`;
             return (
               <div onClick={()=>onOpenGroups&&onOpenGroups()}
                 style={{flex:1,background:"#fff",borderRadius:14,
                   boxShadow:missing>0
-                    ?"0 4px 16px rgba(0,0,0,0.15)"
+                    ?"0 4px 18px rgba(10,46,138,0.14)"
                     :"0 8px 22px rgba(0,0,0,0.07)",
+                  border:missing>0?"1.5px solid rgba(10,46,138,0.13)":"1.5px solid transparent",
                   padding:"10px 12px",cursor:"pointer",position:"relative"}}>
                 {missing>0&&(
                   <div style={{position:"absolute",top:2,right:2,
@@ -3845,11 +3975,20 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
                     <span style={{fontSize:10,fontWeight:800,color:"#fff"}}>{missing}</span>
                   </div>
                 )}
+                {scored>0&&(
+                  <div onClick={e=>{e.stopPropagation();setCopyDone(null);setShowCopySheet("scores");}}
+                    style={{position:"absolute",bottom:6,right:6,width:20,height:20,borderRadius:5,
+                      border:`1.5px solid ${GREEN}66`,background:"rgba(255,255,255,0.8)",
+                      display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",zIndex:2}}>
+                    <svg width="10" height="10" viewBox="0 0 14 14" fill="none">
+                      <rect x="4" y="4" width="8" height="8" rx="1.5" stroke={GREEN} strokeWidth="1.8"/>
+                      <path d="M2 10V2h8" stroke={GREEN} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </div>
+                )}
                 <div style={{fontSize:28,marginBottom:4,colorScheme:"light",filter:"saturate(0) contrast(3) brightness(1.1)"}}>⚽</div>
                 <p style={{fontSize:13,fontWeight:800,color:DARK,margin:0}}>{T[lang].exactScores}</p>
-                <p style={{fontSize:11,color:missing===0?GREEN:"#555",margin:"2px 0 0",fontWeight:600}}>
-                  {missing===0?T[lang].weekComplete:`${missing} ${T[lang].thisWeek}`}
-                </p>
+                <p style={{fontSize:11,color:missing===0?GREEN:"#6B7280",margin:"2px 0 0",fontWeight:600}}>{scoreSubtitle}</p>
               </div>
             );
           })()}
@@ -3863,7 +4002,7 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
           const w2Open = simNowDate >= june(14);
           const w3Open = simNowDate >= june(21);
           const w4Open = simNowDate >= june(28);
-          const todaySim = simDay ? Number(simDay) : simNowDate.getDate();
+          const todaySim = simDay ?? getRealTournamentDay();
           const weekDays = (start) => Array.from({length:7},(_,i)=>start+i).filter(d=>d>=1&&d<=50);
           const weekMatchMap = () => { const mm={}; CALENDAR_EVENTS.forEach(e=>{mm[e.day]=e.matches;}); return mm; };
           const totalRawInWeek = (start) => {
@@ -3891,15 +4030,15 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
             { label:"Jun 15-21", stage:`${T[lang].groupStage} · ${T[lang].week} 2`, locked:!w2Open, total:matchesInWeek(15), scored:scoredInWeek(15), missed:missedInWeek(15), totalRaw:totalRawInWeek(15), past:todaySim>21, weekStart:15 },
             { label:"Jun 22-28", stage:`${T[lang].groupStage} · ${T[lang].week} 3`, locked:!w3Open, total:matchesInWeek(22), scored:scoredInWeek(22), missed:missedInWeek(22), totalRaw:totalRawInWeek(22), past:todaySim>28, weekStart:22 },
             { label:"Jun 29+",   stage:T[lang].roundOf16QF, locked:!w4Open, total:matchesInWeek(29), scored:scoredInWeek(29), missed:missedInWeek(29), totalRaw:totalRawInWeek(29), past:false,       weekStart:29 },
-            { label:"Jul 19",    stage:`🏆 ${T[lang].final}`, locked:true, total:1, scored:0, missed:0, totalRaw:1, isFinal:true },
+            { label:"Jul 19",    stage:T[lang].final, locked:true, total:1, scored:0, missed:0, totalRaw:1, isFinal:true },
           ];
 
           return (
             <div style={{marginBottom:10}}>
               {/* Header */}
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
-                <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:0}}>{T[lang].pathToTrophy}</p>
-                <span style={{fontSize:10,color:"#bbb",fontWeight:600}}>{T[lang].unlocksEvery}</span>
+                <p style={{fontSize:11,fontWeight:700,color:"#6B7280",textTransform:"uppercase",letterSpacing:0.8,margin:0}}>{T[lang].pathToTrophy}</p>
+                <span style={{fontSize:10,color:"#6B7280",fontWeight:600}}>{T[lang].unlocksEvery}</span>
               </div>
               <div style={{background:"#fff",borderRadius:14,boxShadow:"0 8px 22px rgba(0,0,0,0.07)",padding:"12px 14px"}}>
                 {steps.map((w,i)=>{
@@ -3940,14 +4079,14 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
                         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:w.isFinal||w.locked?0:4}}>
                           <div>
                             <span style={{fontSize:13,fontWeight:700,
-                              color:w.locked&&!w.isFinal&&!isPast?"#999":w.isFinal?"#B8860B":isPast?"#999":DARK}}>
+                              color:w.locked&&!w.isFinal&&!isPast?"#9CA3AF":w.isFinal?"#B8860B":isPast?"#9CA3AF":DARK}}>
                               {w.label}
                             </span>
-                            <span style={{fontSize:10,color:w.locked&&!w.isFinal?"#aaa":"#888",
+                            <span style={{fontSize:10,color:w.locked&&!w.isFinal?"#9CA3AF":"#6B7280",
                               marginLeft:6,fontWeight:500}}>{w.stage}</span>
                           </div>
                           <span style={{fontSize:11,fontWeight:700,
-                            color:w.locked&&!isPast?"#aaa":done?GREEN:isPast?"#999":active?NAVY:"#aaa"}}>
+                            color:w.locked&&!isPast?"#9CA3AF":done?GREEN:isPast?"#9CA3AF":active?NAVY:"#9CA3AF"}}>
                             {w.isFinal?T[lang].final:w.locked&&!isPast?T[lang].locked:done?T[lang].weekComplete:isPast?`${w.scored}/${w.total} · ${T[lang].past}`:`${w.scored}/${w.total}`}
                           </span>
                         </div>
@@ -3973,6 +4112,71 @@ function HomeScreen({ onPredict, onLeaderboard, onBoards, onCreateBoard, onOpenG
 
       </div>
       </div>
+
+    {/* Copy predictions sheet */}
+    {showCopySheet&&(
+      <div style={{position:"fixed",inset:0,zIndex:200,display:"flex",flexDirection:"column",justifyContent:"flex-end"}}
+        onClick={()=>setShowCopySheet(false)}>
+        <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.5)"}}/>
+        <div onClick={e=>e.stopPropagation()}
+          style={{position:"relative",background:"#1C1C1E",borderRadius:"20px 20px 0 0",padding:"0 0 34px",maxHeight:"70vh",display:"flex",flexDirection:"column"}}>
+          {/* Handle */}
+          <div style={{display:"flex",justifyContent:"center",padding:"10px 0 4px"}}>
+            <div style={{width:36,height:4,borderRadius:2,background:"rgba(255,255,255,0.2)"}}/>
+          </div>
+          {/* Header */}
+          <div style={{padding:"8px 20px 14px",borderBottom:"1px solid rgba(255,255,255,0.08)"}}>
+            <div style={{display:"flex",alignItems:"center",gap:8}}>
+              <svg width="18" height="18" viewBox="0 0 14 14" fill="none">
+                <rect x="4" y="4" width="8" height="8" rx="1.5" stroke={GREEN} strokeWidth="1.8"/>
+                <path d="M2 10V2h8" stroke={GREEN} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              <span style={{fontSize:15,fontWeight:800,color:"#fff"}}>
+                {showCopySheet==="scores"?"Copy exact scores":"Copy predictions"}
+              </span>
+            </div>
+            <p style={{fontSize:12,color:"rgba(255,255,255,0.45)",margin:"4px 0 0"}}>
+              {showCopySheet==="scores"
+                ?"Replicate this week's exact scores to another board"
+                :"Replicate your Group phase predictions to another board"}
+            </p>
+          </div>
+          {/* Board list */}
+          <div style={{overflowY:"auto",flex:1,padding:"10px 16px 0"}}>
+            {myBoards.filter(b=>b.id!==activeId).length===0?(
+              <div style={{textAlign:"center",padding:"24px 0",color:"rgba(255,255,255,0.35)",fontSize:13}}>
+                No other boards available
+              </div>
+            ):myBoards.filter(b=>b.id!==activeId).map(b=>(
+              <div key={b.id}
+                onClick={async()=>{
+                  if(copyDone===b.id) return;
+                  if(showCopySheet==="scores") await onCopyExactScores&&onCopyExactScores(b.id);
+                  else await onCopyPredictions&&onCopyPredictions(b.id);
+                  setCopyDone(b.id);
+                }}
+                style={{display:"flex",alignItems:"center",gap:12,padding:"12px 4px",
+                  borderBottom:"1px solid rgba(255,255,255,0.07)",cursor:"pointer"}}>
+                <span style={{fontSize:22,display:"inline-block",width:30,flexShrink:0}}>{b.emoji||"⚽"}</span>
+                <span style={{flex:1,fontSize:13,fontWeight:700,color:"#fff"}}>{b.name}</span>
+                {copyDone===b.id?(
+                  <span style={{fontSize:12,fontWeight:700,color:GREEN}}>✓ Copied</span>
+                ):(
+                  <div style={{background:`linear-gradient(135deg,${GREEN},#007A36)`,borderRadius:8,
+                    padding:"5px 12px",display:"flex",alignItems:"center",gap:5}}>
+                    <svg width="11" height="11" viewBox="0 0 14 14" fill="none">
+                      <rect x="4" y="4" width="8" height="8" rx="1.5" stroke="#fff" strokeWidth="1.8"/>
+                      <path d="M2 10V2h8" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    <span style={{fontSize:12,fontWeight:700,color:"#fff"}}>Paste</span>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    )}
     </div>
   );
 }
@@ -4116,14 +4320,14 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
 
   if(view==="create") return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,position:"relative",overflow:"hidden"}}>
-      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.03,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
-      <div style={{position:"relative",zIndex:1,background:"transparent",padding:"12px 20px 14px",flexShrink:0}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
-          <div onClick={()=>setView("main")} style={{width:36,height:36,borderRadius:10,background:"rgba(0,0,0,0.05)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:DARK}}>&#8249;</div>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.055,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
+      <div style={{position:"relative",zIndex:1,background:"linear-gradient(180deg,#CCDAFF 0%,#E2EBFF 40%,#F8F8F8 100%)",padding:"12px 20px 10px",flexShrink:0}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <div onClick={()=>setView("main")} style={{width:36,height:36,borderRadius:10,background:"rgba(10,46,138,0.08)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:DARK}}>&#8249;</div>
           <div style={{textAlign:"center"}}>
-            <p style={{fontSize:12,color:RED,margin:"0 0 2px",letterSpacing:3,textTransform:"uppercase",fontWeight:800}}>Predicto</p>
-            <h1 style={{fontSize:20,fontWeight:900,color:NAVY,margin:0}}>WORLD CUP 2026</h1>
-            <p style={{fontSize:11,color:"#888",margin:"3px 0 0"}}>{T[lang].location}</p>
+            <img src={predictoLogo} alt="Predicto" decoding="sync" style={{height:36,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
+            <h1 style={{fontSize:18,fontWeight:900,margin:"2px 0 0",letterSpacing:2,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
+            <p style={{fontSize:11,color:"#6B7280",margin:"3px 0 0"}}>{T[lang].location}</p>
           </div>
           <div style={{width:36}}/>
         </div>
@@ -4274,14 +4478,14 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
 
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:"transparent",position:"relative",overflow:"hidden"}}>
-      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.03,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
-      <div style={{position:"relative",zIndex:1,background:"transparent",padding:"12px 20px 10px",flexShrink:0}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
-          <div onClick={onBack} style={{width:36,height:36,borderRadius:10,background:"rgba(0,0,0,0.05)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:DARK,flexShrink:0}}>&#8249;</div>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.055,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
+      <div style={{position:"relative",zIndex:1,background:"linear-gradient(180deg,#CCDAFF 0%,#E2EBFF 40%,#F8F8F8 100%)",padding:"12px 20px 10px",flexShrink:0}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <div onClick={onBack} style={{width:36,height:36,borderRadius:10,background:"rgba(10,46,138,0.08)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:DARK,flexShrink:0}}>&#8249;</div>
           <div style={{textAlign:"center"}}>
-            <img src={predictoLogo} alt="Predicto" style={{height:44,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
-            <h1 style={{fontSize:18,fontWeight:900,margin:"-4px 0 0",letterSpacing:2,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
-            <p style={{fontSize:11,color:"#888",margin:"3px 0 0"}}>{T[lang].location}</p>
+            <img src={predictoLogo} alt="Predicto" decoding="sync" style={{height:36,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
+            <h1 style={{fontSize:18,fontWeight:900,margin:"2px 0 0",letterSpacing:2,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
+            <p style={{fontSize:11,color:"#6B7280",margin:"3px 0 0"}}>{T[lang].location}</p>
           </div>
           <div style={{width:36}}/>
         </div>
@@ -4344,7 +4548,6 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
               </p>
               <button onClick={async()=>{
                 if(onRemoveMember) await onRemoveMember(leaveConfirmBoard.id, user?.id);
-                setMyBoards(prev=>prev.filter(x=>x.id!==leaveConfirmBoard.id));
                 setLeaveConfirmBoard(null);
               }} style={{width:"100%",background:RED,color:"#fff",border:"none",borderRadius:14,padding:"14px 0",fontSize:15,fontWeight:700,cursor:"pointer",marginBottom:10}}>
                 Da, ieși din board
@@ -4385,7 +4588,8 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
 
         {/* Tab: Available Boards */}
         {activeTab==="available"&&(()=>{
-          const allAvail=[...availBoards,...createdBoards].filter(b=>!isJoined(b.id));
+          const _seenAvail=new Set();
+          const allAvail=[...availBoards,...createdBoards].filter(b=>!isJoined(b.id)&&!_seenAvail.has(b.id)&&_seenAvail.add(b.id));
           const isCode=/^[A-Z][0-9]{5}$/.test(boardSearch.trim().toUpperCase());
           const filtered=boardSearch.trim()&&!isCode
             ? allAvail.filter(b=>b.name.toLowerCase().includes(boardSearch.toLowerCase()))
@@ -4501,13 +4705,13 @@ function Footer({ active, onNavigate, lang }) {
               display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4,padding:0}}>
             <div style={{
               width:36,height:36,borderRadius:12,
-              background:isActive?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:BG,
-              boxShadow:isActive?"0 4px 12px rgba(0,32,91,0.3)":SHADOW_OUT,
+              background:isActive?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:"transparent",
+              boxShadow:isActive?"0 4px 12px rgba(0,32,91,0.3)":"none",
               display:"flex",alignItems:"center",justifyContent:"center",
               fontSize:18,transition:"all 0.2s"}}>
               {tab.icon}
             </div>
-            <span style={{fontSize:11,fontWeight:isActive?700:500,color:isActive?NAVY:"#bbb",transition:"all 0.2s"}}>
+            <span style={{fontSize:11,fontWeight:isActive?700:500,color:isActive?NAVY:"#777",transition:"all 0.2s"}}>
               {tab.label}
             </span>
           </button>
@@ -5019,26 +5223,12 @@ function SplashScreen({ onNext, lang, setLang, simDay, simHour=12, simMin=0, tou
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",position:"relative",overflow:"hidden",background:BG}}>
       <div style={{position:"absolute",width:"100%",height:"100%",background:"linear-gradient(180deg,rgba(0,32,91,0.04) 0%,rgba(200,16,46,0.07) 100%)",zIndex:0,pointerEvents:"none"}}/>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"20px 22px 0",position:"relative",zIndex:10}}>
+      <div style={{background:"linear-gradient(180deg,#CCDAFF 0%,rgba(226,235,255,0.7) 55%,transparent 100%)",padding:"12px 22px 14px",position:"relative",zIndex:10,display:"flex",justifyContent:"space-between",alignItems:"center",flexShrink:0}}>
         <div style={{width:44}}/>
         <div style={{textAlign:"center"}}>
-          {/* Predicto logo */}
-          <img src={predictoLogo} alt="Predicto" style={{
-            height:54, width:"auto",
-            objectFit:"contain",
-            marginBottom:0,
-            display:"block",
-            marginLeft:"auto",
-            marginRight:"auto",
-            position:"relative",
-            left:6,
-          }}/>
-          <h1 style={{
-            fontSize:20,fontWeight:900,margin:"-6px 0 0",letterSpacing:2,lineHeight:1,
-            background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",
-            WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text",
-          }}>WORLD CUP 2026</h1>
-          <p style={{fontSize:11,color:"#888",margin:"3px 0 0"}}>{T[lang].location}</p>
+          <img src={predictoLogo} alt="Predicto" decoding="sync" style={{height:36,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
+          <h1 style={{fontSize:18,fontWeight:900,margin:"2px 0 0",letterSpacing:2,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
+          <p style={{fontSize:11,color:"#6B7280",margin:"3px 0 0"}}>{T[lang].location}</p>
         </div>
         <LangSelector lang={lang} setLang={setLang}/>
       </div>
@@ -5293,6 +5483,7 @@ function LoginScreen({ onNext }) {
   const [error, setError] = useState("");
   const [captchaNeeded, setCaptchaNeeded] = useState(false);
   const [captchaSolved, setCaptchaSolved] = useState(false);
+  const [showPwd, setShowPwd] = useState(false);
   const [sentFrom, setSentFrom] = useState("");
 
   const getAttempts = () => parseInt(localStorage.getItem("_pred_ml") || "0");
@@ -5386,12 +5577,12 @@ function LoginScreen({ onNext }) {
   const forgotCanSend = email.trim() && captchaSolved;
   const signupCanCreate = email.trim() && nickname.trim() && password.length >= 6 && (!captchaNeeded || captchaSolved);
 
-  const bgImg = <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.03,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>;
+  const bgImg = <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.055,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>;
   const header = (icon, title) => (
-    <div style={{position:"relative",zIndex:1,background:"transparent",padding:"28px 28px 20px",display:"flex",flexDirection:"column",alignItems:"center"}}>
-      <img src={predictoLogo} alt="Predicto" style={{height:54,width:"auto",objectFit:"contain",display:"block",marginBottom:0}}/>
-      <h1 style={{fontSize:18,fontWeight:900,margin:"-4px 0 0",letterSpacing:2,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
-      <h2 style={{fontSize:20,fontWeight:800,color:DARK,margin:"12px 0 0",textAlign:"center"}}>{title}</h2>
+    <div style={{position:"relative",zIndex:1,background:"linear-gradient(180deg,#CCDAFF 0%,#E2EBFF 40%,#F8F8F8 100%)",padding:"12px 28px 16px",display:"flex",flexDirection:"column",alignItems:"center"}}>
+      <img src={predictoLogo} alt="Predicto" decoding="sync" style={{height:36,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
+      <h1 style={{fontSize:18,fontWeight:900,margin:"2px 0 0",letterSpacing:2,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
+      <h2 style={{fontSize:20,fontWeight:800,color:DARK,margin:"10px 0 0",textAlign:"center"}}>{title}</h2>
     </div>
   );
 
@@ -5565,7 +5756,7 @@ function LoginScreen({ onNext }) {
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,position:"relative",overflow:"hidden"}}>
       {bgImg}
       {header("🏆", T[lang].joinTheGame)}
-      <div style={{flex:1,padding:"24px 24px 32px",display:"flex",flexDirection:"column",position:"relative",zIndex:1}}>
+      <div style={{flex:1,padding:"36px 24px 32px",display:"flex",flexDirection:"column",position:"relative",zIndex:1}}>
         <div style={{background:"#fff",borderRadius:14,boxShadow:"0 8px 22px rgba(0,0,0,0.07)",padding:"14px 16px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
           <span style={{fontSize:15}}>✉️</span>
           <input value={email} onChange={e=>setEmail(e.target.value)} placeholder="adresa@email.com"
@@ -5576,8 +5767,15 @@ function LoginScreen({ onNext }) {
           <span style={{fontSize:15}}>🔒</span>
           <input value={password} onChange={e=>setPassword(e.target.value)}
             onKeyDown={e=>e.key==="Enter"&&handleContinue()}
-            placeholder="parolă" type="password"
+            placeholder="parolă" type={showPwd?"text":"password"}
             style={{flex:1,border:"none",outline:"none",fontSize:15,color:DARK,background:"transparent"}}/>
+          <span onClick={()=>setShowPwd(p=>!p)}
+            style={{cursor:"pointer",color:"#bbb",userSelect:"none",display:"flex",alignItems:"center",padding:"0 2px",flexShrink:0}}>
+            {showPwd
+              ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+              : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            }
+          </span>
         </div>
         {error && <p style={{fontSize:12,color:RED,margin:"0 0 8px",textAlign:"center"}}>{error}</p>}
         <button onClick={handleContinue} disabled={loading}
@@ -5733,14 +5931,14 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
 
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,position:"relative",overflow:"hidden"}}>
-      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.03,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
-      <div style={{position:"relative",zIndex:1,background:"transparent",padding:"10px 20px 0",flexShrink:0}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:myBoards.length>1?0:8}}>
-          <div onClick={onBack} style={{width:36,height:36,borderRadius:10,background:"rgba(0,0,0,0.05)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:DARK}}>&#8249;</div>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.055,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
+      <div style={{position:"relative",zIndex:1,background:"linear-gradient(180deg,#CCDAFF 0%,#E2EBFF 40%,#F8F8F8 100%)",padding:"12px 20px 0",flexShrink:0}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:myBoards.length>1?0:8}}>
+          <div onClick={onBack} style={{width:36,height:36,borderRadius:10,background:"rgba(10,46,138,0.08)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:DARK}}>&#8249;</div>
           <div style={{textAlign:"center"}}>
-            <img src={predictoLogo} alt="Predicto" style={{height:44,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
-            <h1 style={{fontSize:18,fontWeight:900,margin:"-4px 0 0",letterSpacing:2,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
-            <p style={{fontSize:11,color:"#888",margin:"3px 0 0"}}>{T[lang].location}</p>
+            <img src={predictoLogo} alt="Predicto" decoding="sync" style={{height:36,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
+            <h1 style={{fontSize:18,fontWeight:900,margin:"2px 0 0",letterSpacing:2,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
+            <p style={{fontSize:11,color:"#6B7280",margin:"3px 0 0"}}>{T[lang].location}</p>
           </div>
           <div style={{width:36}}/>
         </div>
@@ -5844,7 +6042,7 @@ function ScorePicker({ match, day, savedScore, onSave, onBack }) {
 
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",position:"relative"}}>
-      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.03,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.055,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
       <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"14px 20px 16px",flexShrink:0}}>
         <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:12}}>
           <div onClick={onBack} style={{width:36,height:36,borderRadius:10,background:"rgba(255,255,255,0.12)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:"#fff"}}>&#8249;</div>
@@ -5922,6 +6120,9 @@ function ScorePicker({ match, day, savedScore, onSave, onBack }) {
   );
 }
 
+const scH = (sc) => Array.isArray(sc) ? sc[0] : (sc?.home ?? 0);
+const scA = (sc) => Array.isArray(sc) ? sc[1] : (sc?.away ?? 0);
+
 function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScoresProp, simDay, simHour=12, simMin=0, initialWeek }) {
   const lang = useLang();
   const LIVE_SCORES = computeLiveScores(simDay, simHour, simMin);
@@ -5948,7 +6149,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
   // Find first day with matches in first week
   const firstMatchDay = Array.from({length:7},(_,i)=>8+i).find(d=>!!mm0[d]) || null;
   // Auto-select today if it has matches, else first match day
-  const todayDay = simDay || new Date().getDate();
+  const todayDay = simDay ?? getRealTournamentDay();
   const todayHasMatches = !!mm0[todayDay];
   const defaultDay = todayHasMatches ? todayDay : firstMatchDay;
   // Auto-select the week that contains today
@@ -5990,8 +6191,8 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
   useEffect(()=>{
     if(scorePick){
       const saved = scores[scorePick.key];
-      const h = saved?saved[0]:0;
-      const a = saved?saved[1]:0;
+      const h = saved ? (Array.isArray(saved) ? saved[0] : (saved.home ?? 0)) : 0;
+      const a = saved ? (Array.isArray(saved) ? saved[1] : (saved.away ?? 0)) : 0;
       setPickerHome(h);
       setPickerAway(a);
       // Scroll to correct position after render
@@ -6068,7 +6269,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
   groupMatches.forEach(m=>{
     const sc = scores[m.key];
     if(!sc) return;
-    const [h,a] = sc;
+    const h = scH(sc); const a = scA(sc);
     const home = standing.find(t=>t.name===m.home);
     const away = standing.find(t=>t.name===m.away);
     if(!home||!away) return;
@@ -6082,7 +6283,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
 
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",position:"relative"}}>
-      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.03,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.055,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
       <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"10px 20px 12px",flexShrink:0,overflow:"hidden"}}>
         <img src={varBg} alt="" style={{
           position:"absolute",inset:0,width:"100%",height:"100%",
@@ -6093,7 +6294,6 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
           <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:14}}>
             <div onClick={onBack} style={{width:36,height:36,borderRadius:10,background:"rgba(255,255,255,0.12)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:"#fff"}}>&#8249;</div>
             <div>
-              <p style={{fontSize:11,color:RED,margin:"0 0 2px",letterSpacing:2,textTransform:"uppercase",fontWeight:800}}>Predicto</p>
               <h2 style={{fontSize:18,fontWeight:800,color:"#fff",margin:0}}>{T[lang].groupsSchedule}</h2>
             </div>
           </div>
@@ -6187,7 +6387,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
                 // Compute status from sim time
                 const matchH = parseInt((m.time||"23:00").split(":")[0]);
                 const matchMin2 = parseInt((m.time||"00:00").split(":")[1]||0);
-                const nowDay2 = simDay || new Date().getDate();
+                const nowDay2 = simDay ?? getRealTournamentDay();
                 const nowH2   = simDay!=null ? (simHour||0) : new Date().getHours();
                 const nowM2   = simDay!=null ? (simMin||0)  : new Date().getMinutes();
                 const nowMins2 = nowH2*60 + nowM2;
@@ -6201,8 +6401,8 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
                 // Check prediction accuracy
                 let exactMatch = false, resultMatch = false;
                 if(sc && hasLive && isFinished) {
-                  exactMatch = sc[0]===live.home && sc[1]===live.away;
-                  const predResult = sc[0]>sc[1]?"H":sc[0]<sc[1]?"A":"D";
+                  exactMatch = scH(sc)===live.home && scA(sc)===live.away;
+                  const predResult = scH(sc)>scA(sc)?"H":scH(sc)<scA(sc)?"A":"D";
                   const realResult = live.home>live.away?"H":live.home<live.away?"A":"D";
                   resultMatch = predResult===realResult;
                 }
@@ -6239,12 +6439,12 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
                           const predBox = (isPast||isLive||isFinished) ? (sc ? (
                             isLive ? (
                               <div style={{background:"rgba(0,0,0,0.06)",borderRadius:6,padding:"3px 8px"}}>
-                                <span style={{fontSize:11,fontWeight:900,color:RED,}}>{sc[0]}-{sc[1]}</span>
+                                <span style={{fontSize:11,fontWeight:900,color:RED,}}>{scH(sc)}-{scA(sc)}</span>
                               </div>
                             ) : (
                             <div style={{background:exactMatch?`linear-gradient(135deg,${GREEN},#007A36)`:resultMatch?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:`linear-gradient(135deg,${RED},#EF3340)`,
                               borderRadius:6,padding:"3px 8px",display:"flex",alignItems:"center",gap:3}}>
-                              <span style={{fontSize:11,fontWeight:900,color:"#fff"}}>{sc[0]}-{sc[1]}</span>
+                              <span style={{fontSize:11,fontWeight:900,color:"#fff"}}>{scH(sc)}-{scA(sc)}</span>
                               {isFinished&&(exactMatch?<span style={{fontSize:11}}>🎯</span>:resultMatch?<span style={{fontSize:11}}>✓</span>:<span style={{fontSize:11}}>✗</span>)}
                             </div>)
                           ) : (
@@ -6356,7 +6556,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
                 // Read scroll position directly from refs at save time
                 const h = homeRef.current ? Math.max(0,Math.min(9,Math.round(homeRef.current.scrollTop/52))) : pickerHome;
                 const a = awayRef.current ? Math.max(0,Math.min(9,Math.round(awayRef.current.scrollTop/52))) : pickerAway;
-                setScores(s=>({...s,[scorePick.key]:[h,a]}));
+                setScores(s=>({...s,[scorePick.key]:{home:h,away:a}}));
                 setScorePick(null);
               }}
                 style={{background:"#FF9500",border:"none",borderRadius:10,padding:"6px 14px",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer"}}>
@@ -6438,7 +6638,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
       <div key={week} style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:4,marginBottom:4}}>
         {days.slice(week*7,(week+1)*7).map((day,i)=>{
           const isS=day===11,has=!!mm[day],isSel=sel===day,isSun=i%7===6;
-          const today = simDay || new Date().getDate();
+          const today = simDay ?? getRealTournamentDay();
           const isPast = has && day < today;
           const isToday2 = day === today;
           const locked = has && !isWeekUnlocked(day, simDay, simHour, simMin);
@@ -6710,7 +6910,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                                   const sc2=scores&&scores[m.key];
                                   const live2=LIVE_SCORES[m.key];
                                   const _mH=parseInt((m.time||"23:00").split(":")[0]);
-                                  const _nd=simDay||new Date().getDate();
+                                  const _nd=simDay ?? getRealTournamentDay();
                                   const _nh=simDay!=null?(simHour||0):new Date().getHours();
                                   const _kick=_mH*60, _now=_nh*60;
                                   const isFT2 = m.day<_nd || (m.day===_nd && _now>_kick+115);
@@ -6733,7 +6933,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                                           <span style={{fontSize:12,fontWeight:900,color:liveScore2?"#fff":"#bbb"}}>{liveScore2?`${liveScore2.home}-${liveScore2.away}`:"-"}</span>
                                         </div>
                                         {sc2?(
-                                          <span style={{fontSize:11,fontWeight:700,color:NAVY}}>tu: {sc2[0]}-{sc2[1]}</span>
+                                          <span style={{fontSize:11,fontWeight:700,color:NAVY}}>tu: {scH(sc2)}-{scA(sc2)}</span>
                                         ):canEdit?(
                                           <div style={{background:`linear-gradient(135deg,${RED},${GREEN})`,borderRadius:6,padding:"2px 8px",cursor:"pointer"}}>
                                             <span style={{fontSize:11,color:"#fff",fontWeight:700}}>+ scor</span>
@@ -6761,7 +6961,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                             if(m.group!==activeGrp) return;
                             const sc = getScore(e.day, idx);
                             if(!sc) return;
-                            const [h,a]=sc;
+                            const h=scH(sc); const a=scA(sc);
                             const home=st.find(t=>t.name===m.home);
                             const away=st.find(t=>t.name===m.away);
                             if(!home||!away) return;
@@ -6829,7 +7029,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                               // Compute status from sim time directly
                               const _mH=parseInt((m.time||"23:00").split(":")[0]);
                               const _mM=parseInt((m.time||"00:00").split(":")[1]||0);
-                              const _nd=simDay||new Date().getDate();
+                              const _nd=simDay ?? getRealTournamentDay();
                               const _nh=simDay!=null?(simHour||0):new Date().getHours();
                               const _nm=simDay!=null?(simMin||0):new Date().getMinutes();
                               const _kick=_mH*60+_mM, _now=_nh*60+_nm;
@@ -6838,7 +7038,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                               const liveScore2 = live2&&live2.home!==null&&live2.home!==undefined ? live2 : (isLive2?{home:0,away:0}:null);
                               const hasScore2 = !!liveScore2;
                               const matchHourM=parseInt((m.time||"23:00").split(":")[0]);
-                              const nowDM = simDay || new Date().getDate();
+                              const nowDM = simDay ?? getRealTournamentDay();
                               const nowHM = simDay ? (simHour||0) : new Date().getHours();
                               const isPastM = m.day < nowDM || (m.day === nowDM && matchHourM <= nowHM);
                               const canEdit=!isLive2&&!isFT2&&!isPastM&&isWeekUnlocked(m.day,simDay,simHour,simMin);
@@ -6859,7 +7059,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                                     <span style={{fontSize:7,fontWeight:700,color:"#bbb",textTransform:"uppercase",letterSpacing:0.5}}>{T[lang].prediction}</span>
                                     {!isWeekUnlocked(m.day,simDay,simHour,simMin)?<span style={{fontSize:12,color:"#ccc"}}>🔒</span>
                                       :sc2?<div style={{background:canEdit?`rgba(0,32,91,0.1)`:"rgba(0,0,0,0.06)",border:canEdit?`1.5px solid ${NAVY}`:"none",borderRadius:6,padding:"2px 8px",minWidth:46,textAlign:"center",opacity:isPastM?0.5:1}}>
-                                          <span style={{fontSize:11,fontWeight:900,color:canEdit?NAVY:"#888"}}>{sc2[0]}-{sc2[1]}</span>
+                                          <span style={{fontSize:11,fontWeight:900,color:canEdit?NAVY:"#888"}}>{scH(sc2)}-{scA(sc2)}</span>
                                         </div>
                                       :<div style={{background:`linear-gradient(135deg,${RED},${GREEN})`,borderRadius:6,padding:"2px 8px",minWidth:46,textAlign:"center",cursor:canEdit?"pointer":"default",opacity:isPastM||isFT2||isLive2?0.5:1}}>
                                           <span style={{fontSize:11,color:"#fff",fontWeight:700}}>+ scor</span>
@@ -6885,7 +7085,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                     const live = LIVE_SCORES[key];
                     const mH2 = parseInt((m.time||"23:00").split(":")[0]);
                     const mM2 = parseInt((m.time||"00:00").split(":")[1]||0);
-                    const _nowDay = simDay || new Date().getDate();
+                    const _nowDay = simDay ?? getRealTournamentDay();
                     const _nowH   = simDay!=null?(simHour||0):new Date().getHours();
                     const _nowM   = simDay!=null?(simMin||0):new Date().getMinutes();
                     const _kick = mH2*60+mM2, _now2 = _nowH*60+_nowM;
@@ -6894,8 +7094,8 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                     const isNS2 = !isFT && !isLive;
                     const liveMin2 = isLive?Math.min(90,_now2-_kick):0;
                     const hasScore = live && live.home !== undefined && live.home !== null;
-                    const exactMatch = sc&&hasScore&&isFT&&sc[0]===live.home&&sc[1]===live.away;
-                    const predRes = sc?sc[0]>sc[1]?"H":sc[0]<sc[1]?"A":"D":null;
+                    const exactMatch = sc&&hasScore&&isFT&&scH(sc)===live.home&&scA(sc)===live.away;
+                    const predRes = sc?scH(sc)>scA(sc)?"H":scH(sc)<scA(sc)?"A":"D":null;
                     const realRes = hasScore?live.home>live.away?"H":live.home<live.away?"A":"D":null;
                     const resultMatch = predRes&&realRes&&predRes===realRes&&isFT;
                     const isPastDay2 = !!(simDay && sel < simDay);
@@ -6934,7 +7134,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                                       borderRadius:6,padding:"3px 10px",minWidth:54,textAlign:"center",
                                       display:"flex",alignItems:"center",justifyContent:"center",gap:3,
                                       cursor:canPredict?"pointer":"default"}}>
-                                    <span style={{fontSize:12,fontWeight:900,color:isLive?RED:"#fff",...(isLive?{}:{})}}>{sc[0]}-{sc[1]}</span>
+                                    <span style={{fontSize:12,fontWeight:900,color:isLive?RED:"#fff",...(isLive?{}:{})}}>{scH(sc)}-{scA(sc)}</span>
                                     {(isFT||isPast)&&(exactMatch?<span style={{fontSize:12}}>🎯</span>:resultMatch?<span style={{fontSize:12}}>✓</span>:<span style={{fontSize:12}}>✗</span>)}
                                   </div>
                                 );
@@ -6998,9 +7198,8 @@ function StatsScreen() {
   const cur = GROUPS.find(g=>g.id===selGroup) || GROUPS[0];
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",position:"relative"}}>
-      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.03,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.055,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
       <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"16px 20px 18px",flexShrink:0}}>
-        <p style={{fontSize:11,color:RED,margin:"0 0 2px",letterSpacing:2,textTransform:"uppercase",fontWeight:800}}>Predicto</p>
         <h2 style={{fontSize:18,fontWeight:800,color:"#fff",margin:"0 0 12px"}}>{T[lang].groupsSchedule}</h2>
         {/* Group tabs */}
         <div style={{display:"flex",gap:6,overflowX:"auto",scrollbarWidth:"none"}}>
@@ -7074,12 +7273,12 @@ function AccountScreen({ setLang, onBoards, onSignOut, onShowGuide, user }) {
 
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,position:"relative",overflow:"hidden"}}>
-      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.03,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
-      <div style={{background:"transparent",padding:"12px 20px 14px",flexShrink:0,position:"relative",zIndex:1,minHeight:100,boxSizing:"border-box"}}>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.055,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
+      <div style={{background:"linear-gradient(180deg,#CCDAFF 0%,#E2EBFF 40%,#F8F8F8 100%)",padding:"12px 20px 10px",flexShrink:0,position:"relative",zIndex:1,boxSizing:"border-box"}}>
         <div style={{textAlign:"center",marginBottom:8}}>
-          <img src={predictoLogo} alt="Predicto" style={{height:44,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
-          <h1 style={{fontSize:18,fontWeight:900,margin:"-4px 0 0",letterSpacing:2,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
-          <p style={{fontSize:11,color:"#888",margin:"3px 0 0"}}>{T[lang].location}</p>
+          <img src={predictoLogo} alt="Predicto" decoding="sync" style={{height:36,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
+          <h1 style={{fontSize:18,fontWeight:900,margin:"2px 0 0",letterSpacing:2,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
+          <p style={{fontSize:11,color:"#6B7280",margin:"3px 0 0"}}>{T[lang].location}</p>
         </div>
         <div style={{borderTop:"2px solid rgba(0,0,0,0.06)",marginTop:10}}/>
         <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:12,paddingTop:10}}>
@@ -7165,16 +7364,14 @@ function RulesScreen({ onBack }) {
     { phase:"🏆 SF · Winner", pts:90, desc:"Correct match winner" },
     { phase:"🏆 Final · Winner", pts:120, desc:"Tournament winner" },
   ];
-  const rules = tab==="predictions" ? predRules : exactRules;
-  const totalMax = rules.reduce((s,r)=>s+r.pts, 0);
 
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",position:"relative"}}>
-      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.03,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
-      <div style={{position:"relative",zIndex:1,background:"transparent",padding:"12px 20px 0",flexShrink:0,boxSizing:"border-box",textAlign:"center"}}>
-        <img src={predictoLogo} alt="Predicto" style={{height:44,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
-        <h1 style={{fontSize:18,fontWeight:900,margin:"-4px 0 0",letterSpacing:2,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
-        <p style={{fontSize:11,color:"#888",margin:"3px 0 0"}}>{T[lang].location}</p>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.055,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
+      <div style={{position:"relative",zIndex:1,background:"linear-gradient(180deg,#CCDAFF 0%,#E2EBFF 40%,#F8F8F8 100%)",padding:"12px 20px 0",flexShrink:0,boxSizing:"border-box",textAlign:"center"}}>
+        <img src={predictoLogo} alt="Predicto" decoding="sync" style={{height:36,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
+        <h1 style={{fontSize:18,fontWeight:900,margin:"2px 0 0",letterSpacing:2,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
+        <p style={{fontSize:11,color:"#6B7280",margin:"3px 0 0"}}>{T[lang].location}</p>
         <div style={{display:"flex",gap:0,borderBottom:`2px solid rgba(0,0,0,0.06)`,marginTop:10}}>
           {[{id:"predictions",label:"🎯 Predictions"},{id:"exact",label:<><span>⚽</span>{" Exact Score"}</>}].map(t=>(
             <button key={t.id} onClick={()=>setTab(t.id)}
@@ -7202,12 +7399,19 @@ function RulesScreen({ onBack }) {
 
         {/* Rules table */}
         <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 8px"}}>{T[lang].pointsPerPrediction}</p>
-        <div style={{background:BG,borderRadius:14,boxShadow:SHADOW_OUT,overflow:"hidden",marginBottom:16}}>
-          {rules.map((r,i)=>(
-            <div key={i} style={{display:"flex",alignItems:"center",padding:"12px 16px",background:"#fff",borderBottom:i<rules.length-1?"1px solid rgba(0,0,0,0.05)":"none",gap:12}}>
+        {tab==="predictions" ? (()=>{
+          const SectionHeader = ({label,due,color})=>(
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",
+              background:"#f0f2f8",padding:"7px 16px",borderBottom:"1px solid rgba(0,0,0,0.06)"}}>
+              <span style={{fontSize:10,fontWeight:800,color,letterSpacing:1.2,textTransform:"uppercase"}}>{label}</span>
+              <span style={{fontSize:10,fontWeight:700,color:"#9CA3AF"}}>{due}</span>
+            </div>
+          );
+          const Row = ({r,i,last})=>(
+            <div style={{display:"flex",alignItems:"center",padding:"12px 16px",background:"#fff",borderBottom:last?"none":"1px solid rgba(0,0,0,0.05)",gap:12}}>
               <div style={{flex:1}}>
                 <p style={{fontSize:13,fontWeight:700,color:DARK,margin:"0 0 2px"}}>
-                  {r.phase.split("⚽").flatMap((p,i)=>i===0?[p]:[<span key={i} style={{colorScheme:"light",filter:"saturate(0) contrast(3) brightness(1.1)"}}>⚽</span>,p])}
+                  {r.phase.split("⚽").flatMap((p,j)=>j===0?[p]:[<span key={j} style={{colorScheme:"light",filter:"saturate(0) contrast(3) brightness(1.1)"}}>⚽</span>,p])}
                 </p>
                 <p style={{fontSize:11,color:"#aaa",margin:0}}>{r.desc}</p>
               </div>
@@ -7215,8 +7419,34 @@ function RulesScreen({ onBack }) {
                 <span style={{fontSize:13,fontWeight:900,color:"#fff"}}>+{r.pts}</span>
               </div>
             </div>
-          ))}
-        </div>
+          );
+          const task1 = predRules.slice(0,4);
+          const task2 = predRules.slice(4);
+          return (
+            <div style={{background:BG,borderRadius:14,boxShadow:SHADOW_OUT,overflow:"hidden",marginBottom:16}}>
+              <SectionHeader label={T[lang].rulesTask1Header} due={T[lang].rulesTask1Due} color={NAVY}/>
+              {task1.map((r,i)=><Row key={i} r={r} last={false}/>)}
+              <SectionHeader label={T[lang].rulesTask2Header} due={T[lang].rulesTask2Due} color={RED}/>
+              {task2.map((r,i)=><Row key={i+4} r={r} last={i===task2.length-1}/>)}
+            </div>
+          );
+        })() : (
+          <div style={{background:BG,borderRadius:14,boxShadow:SHADOW_OUT,overflow:"hidden",marginBottom:16}}>
+            {exactRules.map((r,i)=>(
+              <div key={i} style={{display:"flex",alignItems:"center",padding:"12px 16px",background:"#fff",borderBottom:i<exactRules.length-1?"1px solid rgba(0,0,0,0.05)":"none",gap:12}}>
+                <div style={{flex:1}}>
+                  <p style={{fontSize:13,fontWeight:700,color:DARK,margin:"0 0 2px"}}>
+                    {r.phase.split("⚽").flatMap((p,j)=>j===0?[p]:[<span key={j} style={{colorScheme:"light",filter:"saturate(0) contrast(3) brightness(1.1)"}}>⚽</span>,p])}
+                  </p>
+                  <p style={{fontSize:11,color:"#aaa",margin:0}}>{r.desc}</p>
+                </div>
+                <div style={{background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,borderRadius:10,padding:"5px 12px",flexShrink:0}}>
+                  <span style={{fontSize:13,fontWeight:900,color:"#fff"}}>+{r.pts}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Example */}
         <div style={{background:"#E8F0FF",borderRadius:14,padding:"14px 16px",marginBottom:24,border:`1px solid rgba(0,32,91,0.1)`}}>
@@ -7285,7 +7515,23 @@ function App() {
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       const u = session?.user ?? null;
-      setUser(u);
+      setUser(prev => {
+        // Reset all user-specific state when user changes (sign out or different user)
+        if (prev?.id !== u?.id) {
+          setAllInstantPickStates({});
+          setExactScoresByBoard({});
+          setPredictionsComplete({});
+          setPredictionsLoaded({});
+          setAllInstantPickDone({});
+          setLeaderboardData({});
+          setCreatedBoards([]);
+          setAvailableBoards([]);
+          setMyBoards([]);
+          setBoardsLoading(true);
+          try { localStorage.removeItem('myBoards'); } catch {}
+        }
+        return u;
+      });
       setAuthLoading(false);
 
       // PASSWORD_RECOVERY: Supabase a procesat token-ul de reset — arată formularul.
@@ -7304,8 +7550,15 @@ function App() {
         return;
       }
 
-      if (u) setScreen(SCREENS.HOME);
-      else setScreen(SCREENS.SPLASH);
+      if (u) {
+        if (event === 'INITIAL_SESSION') {
+          const nonRestorable = [SCREENS.SPLASH, SCREENS.LOGIN, SCREENS.RESET_PASSWORD, SCREENS.SET_PASSWORD];
+          const saved = (() => { try { return sessionStorage.getItem('lastScreen'); } catch { return null; } })();
+          setScreen(saved && !nonRestorable.includes(saved) ? saved : SCREENS.HOME);
+        } else {
+          setScreen(SCREENS.HOME);
+        }
+      } else setScreen(SCREENS.SPLASH);
     });
 
     supabase.auth.getSession().then(() => setAuthLoading(false));
@@ -7332,13 +7585,14 @@ function App() {
             koPicks:       preds.ko_picks       || {},
           }
         }));
-        const hasAnyPicks = Object.keys(preds.group_rankings || {}).length > 0 ||
-                            (preds.best3_picks || []).length > 0 ||
-                            Object.keys(preds.ko_picks || {}).length > 0;
-        if (hasAnyPicks)
+        const hasTask1 = Object.keys(preds.group_rankings || {}).length > 0 || (preds.best3_picks || []).length > 0;
+        const hasTask2 = Object.keys(preds.ko_picks || {}).length > 0;
+        if (hasTask1 || hasTask2)
           setPredictionsComplete(p => ({ ...p, [boardId]: true }));
-        if (Object.keys(preds.ko_picks || {}).length > 0)
+        if (hasTask1 || hasTask2)
           setAllInstantPickDone(p => ({ ...p, [boardId]: true }));
+        if (hasTask2)
+          setAllKoPickDone(p => ({ ...p, [boardId]: true }));
       }
       if (scores && Object.keys(scores).length > 0)
         setExactScoresByBoard(p => ({ ...p, [boardId]: scores }));
@@ -7356,10 +7610,11 @@ function App() {
       const adminBoards = boards.filter(b => b.isAdmin);
       // participantBoards = boards where user is member (isMember=true)
       const participantBoards = boards.filter(b => b.isMember);
-      // allMyBoards = Global + joined + created (deduped)
+      // allMyBoards = Global + boards where user is actually in board_members (isMember)
+      // adminBoards excluded here if not also isMember (creator who left shouldn't appear)
       const seen = new Set(INITIAL_BOARDS.map(b => b.id));
       const allMyBoards = [...INITIAL_BOARDS];
-      for (const b of [...participantBoards, ...adminBoards]) {
+      for (const b of participantBoards) {
         if (!seen.has(b.id)) { seen.add(b.id); allMyBoards.push(b); }
       }
       const allIds = [...allMyBoards.map(b => b.id), ...adminBoards.map(b => b.id), ...avail.map(b => b.id)];
@@ -7427,6 +7682,17 @@ function App() {
     });
   }, [user, screen, activeBoardId]);
 
+  useEffect(() => {
+    if (!user || screen !== SCREENS.HOME || myBoards.length === 0) return;
+    myBoards.forEach(b => {
+      if (leaderboardData[b.id]?.length > 0) return;
+      loadLeaderboard(b.id, null, user.id).then(rows => {
+        if (rows.length > 0)
+          setLeaderboardData(prev => ({ ...prev, [b.id]: rows }));
+      });
+    });
+  }, [user, screen, myBoards]);
+
   const [allInstantPickStates, setAllInstantPickStates] = useState({});
   const [exactScoresByBoard, setExactScoresByBoard] = useState({});
   const exactScores = exactScoresByBoard[activeBoardId] || {};
@@ -7438,6 +7704,7 @@ function App() {
     });
   };
   const [allInstantPickDone, setAllInstantPickDone] = useState({});
+  const [allKoPickDone, setAllKoPickDone] = useState({});
   const [bugLog, setBugLog] = useState([]);
   useEffect(()=>{
     const fmt = ()=>new Date().toLocaleTimeString("ro-RO",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
@@ -7454,8 +7721,13 @@ function App() {
   },[]);
   const instantPickState = allInstantPickStates[activeBoardId]||null;
   const instantPickDone = allInstantPickDone[activeBoardId]||false;
+  const koPickDone = allKoPickDone[activeBoardId]||false;
   const setInstantPickState = (s) => setAllInstantPickStates(p=>({...p,[activeBoardId]:s}));
   const setInstantPickDone = (v) => setAllInstantPickDone(p=>({...p,[activeBoardId]:v}));
+  const setKoPickDone = (v) => setAllKoPickDone(p=>({...p,[activeBoardId]:v}));
+  const koUnlocked = simDay ? (simDay > 27 || (simDay === 27 && (simHour||0) >= 21)) : new Date() >= new Date(2026,5,27,21,0,0);
+  const task1DeadlinePassed = simDay ? (simDay > 11 || (simDay === 11 && (simHour||0) >= 19)) : new Date() >= new Date(2026,5,11,19,0,0);
+  const shouldStartAtKo = koUnlocked && instantPickDone && !koPickDone;
 
   // Auto-save: persistă selecțiile intermediare în DB (debounced 1s)
   // Previne pierderea datelor la refresh de browser
@@ -7485,7 +7757,11 @@ function App() {
 
   const noFooter = [SCREENS.SPLASH, SCREENS.LOGIN, SCREENS.INSTANT_PICK, SCREENS.GROUPS_SCHEDULE];
   const showFooter = !noFooter.includes(screen);
+  const _nonSaveable = [SCREENS.SPLASH, SCREENS.LOGIN, SCREENS.RESET_PASSWORD, SCREENS.SET_PASSWORD];
+  if (!_nonSaveable.includes(screen)) { try { sessionStorage.setItem('lastScreen', screen); } catch {} }
   const footerActive = screen===SCREENS.RULES?SCREENS.RULES:screen===SCREENS.ACCOUNT?SCREENS.ACCOUNT:SCREENS.HOME;
+
+  if (authLoading || (user && boardsLoading)) return <div style={{width:"100%",height:"100%",background:BG}}/>;
 
   return (
     <UserCtx.Provider value={user}>
@@ -7518,24 +7794,53 @@ function App() {
           {screen===SCREENS.HOME&&showOnboarding&&(
             <OnboardingSheet onDone={(skip)=>{ if(skip) setSkipOnboarding(true); setShowOnboarding(false); setShowFirstAction(true); setTimeout(()=>setShowFirstAction(false), 5000); }}/>
           )}
-          {screen===SCREENS.HOME&&<HomeScreen
-            onPredict={(boardId)=>{ setActiveBoardId(boardId); setShowFirstAction(false); setScreen(SCREENS.INSTANT_PICK); }}
-            onLeaderboard={()=>setScreen(SCREENS.LEADERBOARD)}
-            onBoards={(tab)=>{ setBoardsInitialTab(tab||"my"); setScreen(SCREENS.BOARDS); }}
-            onOpenGroups={(week)=>{ setGroupsInitialWeek(week||null); setScreen(SCREENS.GROUPS_SCHEDULE); }}
-            myBoards={myBoards}
-            predictionsComplete={predictionsComplete}
-            instantPickDone={instantPickDone}
-            exactScores={exactScores}
-            simDay={simDay} simHour={simHour} simMin={simMin}
-            activeBoardId={activeBoardId}
-            setActiveBoardId={setActiveBoardId}
-            tournamentStarted={tournamentStarted}
-            createdBoards={createdBoards}
-            showFirstAction={showFirstAction}
-            leaderboardData={leaderboardData}
-            boardsLoading={boardsLoading}
-            predictionsLoaded={predictionsLoaded}/>}
+          {user&&<div style={{display:screen===SCREENS.HOME?'flex':'none',flex:1,flexDirection:'column',overflow:'hidden',minHeight:0}}>
+            <HomeScreen
+              onPredict={(boardId)=>{ setActiveBoardId(boardId); setShowFirstAction(false); setScreen(SCREENS.INSTANT_PICK); }}
+              onPredictKo={(boardId)=>{ setActiveBoardId(boardId); setShowFirstAction(false); setScreen(SCREENS.INSTANT_PICK); }}
+              onLeaderboard={()=>setScreen(SCREENS.LEADERBOARD)}
+              onBoards={(tab)=>{ setBoardsInitialTab(tab||"my"); setScreen(SCREENS.BOARDS); }}
+              onOpenGroups={(week)=>{ setGroupsInitialWeek(week||null); setScreen(SCREENS.GROUPS_SCHEDULE); }}
+              onCopyExactScores={async (targetBoardId)=>{
+                if(!user||!exactScores) return;
+                const todaySim = simDay ?? getRealTournamentDay();
+                const wStart = todaySim<=14?8:todaySim<=21?15:todaySim<=28?22:29;
+                const days = Array.from({length:7},(_,i)=>wStart+i).filter(d=>d>=1&&d<=50);
+                const mm={};
+                CALENDAR_EVENTS.forEach(e=>{mm[e.day]=e.matches;});
+                for(const d of days){
+                  const matches=mm[d]||[];
+                  for(let i=0;i<matches.length;i++){
+                    const sc=exactScores[`${d}-${i}`];
+                    if(sc) await saveExactScore(user.id,targetBoardId,`${d}-${i}`,sc.home,sc.away);
+                  }
+                }
+                showToast("Scores copied!","⚽");
+              }}
+              onCopyPredictions={async (targetBoardId)=>{
+                if(!user||!instantPickState) return;
+                await savePredictions(user.id, targetBoardId, instantPickState);
+                setAllInstantPickDone(p=>({...p,[targetBoardId]:true}));
+                setPredictionsComplete(p=>({...p,[targetBoardId]:true}));
+                setAllInstantPickStates(p=>({...p,[targetBoardId]:instantPickState}));
+                showToast("Predictions copied!","✅");
+              }}
+              myBoards={myBoards}
+              predictionsComplete={predictionsComplete}
+              instantPickDone={instantPickDone}
+              koPickDone={koPickDone}
+              koUnlocked={koUnlocked}
+              exactScores={exactScores}
+              simDay={simDay} simHour={simHour} simMin={simMin}
+              activeBoardId={activeBoardId}
+              setActiveBoardId={setActiveBoardId}
+              tournamentStarted={tournamentStarted}
+              createdBoards={createdBoards}
+              showFirstAction={showFirstAction}
+              leaderboardData={leaderboardData}
+              boardsLoading={boardsLoading}
+              predictionsLoaded={predictionsLoaded}/>
+          </div>}
           {screen===SCREENS.BOARDS&&<BoardsScreen
             initialTab={boardsInitialTab}
             onBack={()=>setScreen(SCREENS.HOME)}
@@ -7555,18 +7860,24 @@ function App() {
               if (!user) return null;
               const { data, error } = await joinBoardByCode(user.id, code);
               if (error) { showToast(error, "❌"); return null; }
-              setMyBoards(prev => [...prev, { ...data, isMember: true }]);
+              setMyBoards(prev => [...prev, { ...data, isMember: true, members: (data.members || 0) + 1 }]);
               setAvailableBoards(prev => prev.filter(b => b.id !== data.id));
               return data;
             }}
             onJoin={(boardId)=>{ setActiveBoardId(boardId); setScreen(SCREENS.HOME); }}
             onJoinBoard={async (boardId) => {
               if (!user) return;
+              await removeParticipation(boardId, user.id);
               const { data, error } = await joinBoardById(user.id, boardId);
               if (error) { showToast(error, "❌"); return; }
+              setAllInstantPickStates(prev => { const n = {...prev}; delete n[boardId]; return n; });
+              setAllInstantPickDone(prev => { const n = {...prev}; delete n[boardId]; return n; });
+              setExactScoresByBoard(prev => { const n = {...prev}; delete n[boardId]; return n; });
+              setPredictionsComplete(prev => { const n = {...prev}; delete n[boardId]; return n; });
+              setPredictionsLoaded(prev => ({ ...prev, [boardId]: true }));
               const board = availableBoards.find(b => b.id === boardId) || createdBoards.find(b => b.id === boardId);
               if (board) {
-                setMyBoards(prev => prev.some(b => b.id === boardId) ? prev : [...prev, { ...board, isMember: true }]);
+                setMyBoards(prev => prev.some(b => b.id === boardId) ? prev : [...prev, { ...board, isMember: true, members: (board.members || 0) + 1 }]);
                 setAvailableBoards(prev => prev.filter(b => b.id !== boardId));
               }
             }}
@@ -7583,10 +7894,17 @@ function App() {
             onRemoveMember={async (boardId, memberId) => {
               await removeBoardMember(boardId, memberId);
               if (memberId === user?.id) {
-                setMyBoards(prev => prev.filter(b => b.id !== boardId));
+                await removeParticipation(boardId, memberId);
+                setMyBoards(prev => {
+                  const updated = prev.filter(b => b.id !== boardId);
+                  try { localStorage.setItem('myBoards', JSON.stringify(updated)); } catch {}
+                  return updated;
+                });
                 setAllInstantPickStates(prev => { const n = {...prev}; delete n[boardId]; return n; });
                 setAllInstantPickDone(prev => { const n = {...prev}; delete n[boardId]; return n; });
                 setExactScoresByBoard(prev => { const n = {...prev}; delete n[boardId]; return n; });
+                setPredictionsComplete(prev => { const n = {...prev}; delete n[boardId]; return n; });
+                setPredictionsLoaded(prev => { const n = {...prev}; delete n[boardId]; return n; });
                 if (activeBoardId === boardId) setActiveBoardId('global');
               }
             }}/>}
@@ -7609,13 +7927,29 @@ function App() {
               ];
             })()}/>}
           {screen===SCREENS.INSTANT_PICK&&<InstantPickScreen
-            savedState={instantPickDone
-              ? {...instantPickState, stage:"groups", groupIdx:0, showIntro:false, showFinalSummary:false, koShowIntro:false}
-              : instantPickState}
-            viewMode={instantPickDone}
+            savedState={shouldStartAtKo
+              ? {...(instantPickState||{}), stage:"ko", koRound:"R32", koIdx:0, showIntro:false, showFinalSummary:false, koShowIntro:true}
+              : instantPickDone
+                ? {...instantPickState, stage:"groups", groupIdx:0, showIntro:false, showFinalSummary:false, koShowIntro:false}
+                : instantPickState}
+            viewMode={(instantPickDone && !shouldStartAtKo) && task1DeadlinePassed}
+            startAtKo={shouldStartAtKo}
             onStateChange={setInstantPickState}
             tournamentStarted={tournamentStarted}
-            onBack={()=>setScreen(SCREENS.HOME)}
+            koUnlocked={koUnlocked}
+            onBack={async ()=>{
+              if (!shouldStartAtKo && !task1DeadlinePassed) {
+                const state = instantPickState;
+                const best3Complete = (state?.best3?.length || 0) >= 8;
+                if (best3Complete) {
+                  setInstantPickDone(true);
+                  if (user && state) await savePredictions(user.id, activeBoardId, state);
+                } else {
+                  setInstantPickDone(false);
+                }
+              }
+              setScreen(SCREENS.HOME);
+            }}
             onModify={()=>setInstantPickDone(false)}
             onComplete={async ()=>{
               setInstantPickDone(true);
@@ -7623,10 +7957,19 @@ function App() {
                 await savePredictions(user.id, activeBoardId, instantPickState);
               }
               setScreen(SCREENS.HOME);
+            }}
+            onKoComplete={async ()=>{
+              setKoPickDone(true);
+              if (user && instantPickState) {
+                await savePredictions(user.id, activeBoardId, instantPickState);
+              }
+              setScreen(SCREENS.HOME);
             }}/>}
 
           {screen===SCREENS.STATS&&<StatsScreen/>}
-          {screen===SCREENS.RULES&&<RulesScreen onBack={()=>setScreen(SCREENS.HOME)}/>}
+          {user&&<div style={{display:screen===SCREENS.RULES?'flex':'none',flex:1,flexDirection:'column',overflow:'hidden',minHeight:0}}>
+            <RulesScreen onBack={()=>setScreen(SCREENS.HOME)}/>
+          </div>}
           {screen===SCREENS.GROUPS_SCHEDULE&&<GroupsScheduleScreen scores={exactScores} setScores={async (newScores)=>{
               const oldScores = exactScores;
               setExactScores(newScores);
@@ -7644,7 +7987,9 @@ function App() {
                 showToast("Score saved!", "⚽");
               }
             }} simDay={simDay} simHour={simHour} simMin={simMin} initialWeek={groupsInitialWeek} onBack={()=>{ setGroupsInitialWeek(null); setScreen(SCREENS.HOME); }}/>}
-          {screen===SCREENS.ACCOUNT&&<AccountScreen setLang={setLang} onBoards={()=>setScreen(SCREENS.BOARDS)} onSignOut={()=>setScreen(SCREENS.SPLASH)} onShowGuide={()=>{ setShowOnboarding(true); setScreen(SCREENS.HOME); }} user={user}/>}
+          {user&&<div style={{display:screen===SCREENS.ACCOUNT?'flex':'none',flex:1,flexDirection:'column',overflow:'hidden',minHeight:0}}>
+            <AccountScreen setLang={setLang} onBoards={()=>{ setBoardsInitialTab("my"); setScreen(SCREENS.BOARDS); }} onSignOut={()=>setScreen(SCREENS.SPLASH)} onShowGuide={()=>{ setShowOnboarding(true); setScreen(SCREENS.HOME); }} user={user}/>
+          </div>}
         </div>
         <Toast message={toast.message} emoji={toast.emoji} visible={toast.visible}/>
         {showFooter&&<Footer active={footerActive} onNavigate={setScreen} lang={lang}/>}

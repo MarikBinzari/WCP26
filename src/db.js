@@ -102,15 +102,18 @@ export async function checkDbHealth() {
 // Returns boards with isAdmin=true (created_by) and/or isMember=true (board_members)
 export async function loadUserBoards(userId) {
   const [memberships, created] = await Promise.all([
-    supabase.from('board_members').select('boards(*)').eq('user_id', userId),
+    supabase.from('board_members').select('role, boards(*)').eq('user_id', userId),
     supabase.from('boards').select('*').eq('created_by', userId),
   ])
   const map = new Map()
+  // Creatorul vede mereu boardul său (indiferent de board_members)
   ;(created.data || []).forEach(b => {
     map.set(b.id, { ...b, label: b.emoji || '⚽', isGlobal: false, code: b.invite_code, max: b.max_players, isAdmin: true, isMember: false })
   })
+  // Membrii (inclusiv cu rol admin) din board_members
   ;(memberships.data || []).forEach(row => {
     const b = row.boards
+    if (!b) return
     const existing = map.get(b.id)
     if (existing) {
       map.set(b.id, { ...existing, isMember: true })
@@ -122,16 +125,12 @@ export async function loadUserBoards(userId) {
 }
 
 export async function loadAvailableBoards(userId) {
-  const [allRes, memberRes, adminRes] = await Promise.all([
+  const [allRes, memberRes] = await Promise.all([
     supabase.from('boards').select('*'),
     supabase.from('board_members').select('board_id').eq('user_id', userId),
-    supabase.from('boards').select('id').eq('created_by', userId),
   ])
   if (allRes.error) { console.error('loadAvailableBoards:', allRes.error); return [] }
-  const excludeSet = new Set([
-    ...(memberRes.data || []).map(r => r.board_id),
-    ...(adminRes.data || []).map(r => r.id),
-  ])
+  const excludeSet = new Set((memberRes.data || []).map(r => r.board_id))
   return (allRes.data || [])
     .filter(b => !excludeSet.has(b.id))
     .map(b => ({ ...b, label: b.emoji || '⚽', isGlobal: false, code: b.invite_code, max: b.max_players }))
@@ -147,7 +146,9 @@ export async function createBoard(userId, { name, emoji, type, password, max_pla
     .select()
     .single()
   if (error) { console.error('createBoard:', error); return { error } }
-  return { data: { ...data, label: data.emoji || '⚽', isGlobal: false, code: data.invite_code, isAdmin: true, isMember: false } }
+  // Add creator to board_members so membership is tracked uniformly
+  await supabase.from('board_members').upsert({ board_id: data.id, user_id: userId, role: 'admin' }, { onConflict: 'board_id,user_id' })
+  return { data: { ...data, label: data.emoji || '⚽', isGlobal: false, code: data.invite_code, isAdmin: true, isMember: true } }
 }
 
 export async function joinBoardByCode(userId, code) {
@@ -192,29 +193,34 @@ export async function joinBoardById(userId, boardId) {
 }
 
 export async function removeBoardMember(boardId, userId) {
-  await Promise.all([
+  const [memberRes, predRes, scoreRes] = await Promise.all([
     supabase.from('board_members').delete().eq('board_id', boardId).eq('user_id', userId),
     supabase.from('predictions').delete().eq('board_id', boardId).eq('user_id', userId),
     supabase.from('exact_scores').delete().eq('board_id', boardId).eq('user_id', userId),
   ])
+  if (memberRes.error) console.error('removeBoardMember board_members:', memberRes.error)
+  if (predRes.error) console.error('removeBoardMember predictions:', predRes.error)
+  if (scoreRes.error) console.error('removeBoardMember exact_scores:', scoreRes.error)
 }
 
 export async function removeParticipation(boardId, userId) {
-  await Promise.all([
+  const [predRes, scoreRes] = await Promise.all([
     supabase.from('predictions').delete().eq('board_id', boardId).eq('user_id', userId),
     supabase.from('exact_scores').delete().eq('board_id', boardId).eq('user_id', userId),
   ])
+  if (predRes.error) console.error('removeParticipation predictions:', predRes.error)
+  if (scoreRes.error) console.error('removeParticipation exact_scores:', scoreRes.error)
 }
 
 export async function deleteBoard(boardId) {
+  const { error } = await supabase.from('boards').delete().eq('id', boardId)
+  if (error) { console.error('deleteBoard:', error); return { error }; }
   await Promise.all([
     supabase.from('exact_scores').delete().eq('board_id', boardId),
     supabase.from('predictions').delete().eq('board_id', boardId),
     supabase.from('board_members').delete().eq('board_id', boardId),
   ])
-  const { error } = await supabase.from('boards').delete().eq('id', boardId)
-  if (error) console.error('deleteBoard:', error)
-  return { error }
+  return { error: null }
 }
 
 // ─── MEMBER COUNTS ───────────────────────────────────────────────────────────
