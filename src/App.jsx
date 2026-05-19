@@ -2857,7 +2857,6 @@ function InstantPickScreen({ onBack, onComplete, onKoComplete, onModify, savedSt
 
   const sharedHeader = (
     <div style={{background:"rgba(0,32,91,0.88)", paddingBottom:0, flexShrink:0, position:"relative", zIndex:1, overflow:"hidden"}}>
-      <img src={varBg} alt="" style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover",objectPosition:"center 30%",opacity:0.28,pointerEvents:"none"}}/>
       {/* Top row */}
       <div style={{display:"flex", alignItems:"center", gap:10, padding:"10px 20px 6px"}}>
         <button onClick={headerBack} style={{background:"rgba(255,255,255,0.12)",border:"none",borderRadius:10,width:34,height:34,color:"#fff",fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>‹</button>
@@ -3778,12 +3777,12 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
   const [copyDone, setCopyDone] = useState(null);
   const activeId = activeBoardId;
   const setActiveId = setActiveBoardId;
-  const allSliderItems = [...myBoards, {id:'__add__', isAdd:true}];
-  const [sliderPos, setSliderPos] = useState(()=>Math.max(0,myBoards.findIndex(b=>b.id===activeBoardId)));
+  const allSliderItems = [{id:'__remove__', isRemove:true}, ...myBoards, {id:'__add__', isAdd:true}];
+  const [sliderPos, setSliderPos] = useState(()=>Math.max(1,myBoards.findIndex(b=>b.id===activeBoardId)+1));
   const sliderTouchRef = useRef(null);
   useEffect(()=>{
     const idx = myBoards.findIndex(b=>b.id===activeId);
-    if(idx>=0) setSliderPos(idx);
+    if(idx>=0) setSliderPos(idx+1);
   },[activeId]);
   const handleSliderTouchStart = (e)=>{ sliderTouchRef.current = e.touches[0].clientX; };
   const handleSliderTouchEnd = (e)=>{
@@ -3791,12 +3790,12 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
     const dx = e.changedTouches[0].clientX - sliderTouchRef.current;
     sliderTouchRef.current = null;
     if(Math.abs(dx)<28) return;
-    if(dx<0 && sliderPos<myBoards.length-1){
+    if(dx<0 && sliderPos<allSliderItems.length-1){
       const np=sliderPos+1; setSliderPos(np);
-      setActiveId(allSliderItems[np].id);
+      if(!allSliderItems[np]?.isAdd && !allSliderItems[np]?.isRemove) setActiveId(allSliderItems[np].id);
     } else if(dx>0 && sliderPos>0){
       const np=sliderPos-1; setSliderPos(np);
-      if(!allSliderItems[np]?.isAdd) setActiveId(allSliderItems[np].id);
+      if(!allSliderItems[np]?.isAdd && !allSliderItems[np]?.isRemove) setActiveId(allSliderItems[np].id);
     }
   };
   const [cdUnitIdx, setCdUnitIdx] = useState(0);
@@ -3838,7 +3837,7 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:"transparent",overflow:"hidden",position:"relative"}}>
       <div style={{padding:"10px 14px 0",flexShrink:0,position:"relative",zIndex:2}}>
-      <div style={{background:"rgba(255,255,255,0.32)",backdropFilter:"blur(28px)",WebkitBackdropFilter:"blur(28px)",borderRadius:26,boxShadow:"0 8px 32px rgba(10,46,138,0.12), inset 0 1px 0 rgba(255,255,255,0.95)",border:"1px solid rgba(255,255,255,0.55)",padding:"12px 20px 0",WebkitMaskImage:"linear-gradient(to bottom, black 0%, black 78%, transparent 100%)",maskImage:"linear-gradient(to bottom, black 0%, black 78%, transparent 100%)",position:"relative"}}>
+      <div style={{background:"rgba(255,255,255,0.32)",backdropFilter:"blur(28px)",WebkitBackdropFilter:"blur(28px)",borderRadius:26,boxShadow:"0 8px 32px rgba(10,46,138,0.12), inset 0 1px 0 rgba(255,255,255,0.95)",border:"1px solid rgba(255,255,255,0.55)",padding:"12px 14px 0",WebkitMaskImage:"linear-gradient(to bottom, black 0%, black 78%, transparent 100%)",maskImage:"linear-gradient(to bottom, black 0%, black 78%, transparent 100%)",position:"relative"}}>
         {/* Gloss overlay */}
         <div style={{position:"absolute",inset:0,borderRadius:26,background:"linear-gradient(135deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.08) 40%, transparent 65%)",pointerEvents:"none",zIndex:0}}/>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",position:"relative",zIndex:1}}>
@@ -3876,6 +3875,18 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
               if(item.isAdd){ onBoards("available"); return; }
               if(!isCenter){ const np=sliderPos+pos; setSliderPos(np); setActiveId(item.id); }
             };
+            if(item.isRemove) return (
+              <div style={{flex:1,display:"flex",justifyContent:"center",alignItems:"flex-end",paddingBottom:0}}>
+                <div onClick={()=>onBoards("my")} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4,cursor:"pointer",WebkitTapHighlightColor:"transparent",transform:`scale(${scale})`,transformOrigin:"center bottom",opacity}}>
+                  <div style={{width:42,height:42,borderRadius:"50%",background:"transparent",border:"1.5px dashed rgba(0,0,0,0.25)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                    <svg width="18" height="20" viewBox="0 0 18 20" fill="none">
+                      <path d="M1 4.5h16M6 4.5V3a1 1 0 011-1h4a1 1 0 011 1v1.5M7 9v6M11 9v6M2.5 4.5l1 11a1.5 1.5 0 001.5 1.5h8a1.5 1.5 0 001.5-1.5l1-11" stroke="rgba(0,0,0,0.35)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </div>
+                  <span style={{fontSize:9,color:"rgba(0,0,0,0.55)",fontWeight:600,maxWidth:50,textAlign:"center",lineHeight:1.2}}>remove</span>
+                </div>
+              </div>
+            );
             if(item.isAdd) return (
               <div style={{flex:1,display:"flex",justifyContent:"center",alignItems:"flex-end",paddingBottom:0}}>
                 <div onClick={()=>onBoards("available")} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4,cursor:"pointer",WebkitTapHighlightColor:"transparent",transform:`scale(${scale})`,transformOrigin:"center bottom",opacity}}>
@@ -3898,7 +3909,7 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
           return (
             <div style={{position:"relative"}}>
               <div style={{height:10}}/>
-              {sliderPos>0&&(
+              {sliderPos>1&&(
                 <div style={{position:"absolute",left:0,top:"50%",transform:"translateY(-50%)",zIndex:5,pointerEvents:"none"}}>
                   <span style={{fontSize:18,color:"rgba(0,0,0,0.45)",fontWeight:700,lineHeight:1}}>‹</span>
                 </div>
@@ -3909,7 +3920,7 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
                 </div>
               )}
               <div onTouchStart={handleSliderTouchStart} onTouchEnd={handleSliderTouchEnd}
-                style={{display:"flex",alignItems:"center",padding:"10px 0 22px",overflow:"visible",userSelect:"none"}}>
+                style={{display:"flex",alignItems:"center",padding:"10px 0 6px",overflow:"visible",userSelect:"none"}}>
                 {renderItem(leftItem,-1)}
                 {renderItem(centerItem,0)}
                 {renderItem(rightItem,1)}
@@ -3919,10 +3930,18 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
         })()}
       </div>
       <div onClick={()=>onLeaderboard&&onLeaderboard()} style={{position:"relative",cursor:"pointer",WebkitTapHighlightColor:"transparent",marginTop:2}}>
-        {/* linie continuă pe toate 3 rânduri */}
-        <div style={{position:"absolute",left:"50%",top:0,bottom:0,width:2,transform:"translateX(-50%)",background:"linear-gradient(to bottom,transparent,#d0d0d0 35%,#d0d0d0 65%,transparent)",borderRadius:2,pointerEvents:"none"}}/>
-        {/* rând 1 — gol */}
-        <div style={{height:10}}/>
+        {/* rând 1 — dots boards */}
+        <div style={{display:"flex",justifyContent:"center",alignItems:"center",gap:5,height:16,marginBottom:6}}>
+          {(()=>{
+            const realBoards = allSliderItems.filter(b=>!b.isAdd && !b.isRemove);
+            const realPos = sliderPos - 1; // offset for remove item at index 0
+            return realBoards.map((_,i)=>(
+              <div key={i} style={{height:3,borderRadius:2,transition:"all 0.25s",
+                width:i===realPos?44:14,
+                background:i===realPos?"rgba(10,46,138,0.3)":"rgba(100,116,139,0.2)"}}/>
+            ));
+          })()}
+        </div>
         {/* rând 2 — conținut */}
         <div style={{position:"relative",display:"flex",justifyContent:"center",alignItems:"center",height:28}}>
           <span style={{position:"absolute",left:0,fontSize:11,fontWeight:600,color:"#6B7280"}}>Hey {displayName.split(" ")[0]} 👋</span>
@@ -3942,15 +3961,11 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
           </div>
         </div>
         {/* rând 3 — gol */}
-        <div style={{height:10}}/>
-        {/* rând 4 — linie orizontală centrată */}
-        <div style={{display:"flex",justifyContent:"center",paddingBottom:6}}>
-          <div style={{width:24,height:1.5,background:"linear-gradient(to right,transparent,#d0d0d0,transparent)",borderRadius:1}}/>
-        </div>
+        <div style={{height:4}}/>
       </div>
       </div>
-      <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",padding:"0 16px 90px",display:"flex",flexDirection:"column"}}>
-        <div style={{position:"relative",borderRadius:18,padding:"14px 14px 14px",flex:1}}>
+      <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",padding:"0 14px 90px",display:"flex",flexDirection:"column"}}>
+        <div style={{position:"relative",borderRadius:18,padding:"14px 0 14px",flex:1}}>
           <div style={{position:"absolute",inset:0,borderRadius:18,background:"rgba(255,255,255,0.15)",WebkitMaskImage:"linear-gradient(to bottom,black 0%,black 55%,transparent 100%)",maskImage:"linear-gradient(to bottom,black 0%,black 55%,transparent 100%)",pointerEvents:"none"}}/>
           <div style={{position:"relative",zIndex:1}}>
         {/* Card 1 — Predictions + path to trophy */}
@@ -3967,28 +3982,33 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
           const showBadge = koAvailable || (!boardDone && !deadlinePassed && predictionsLoaded[activeId]);
           const boardLabel = activeBoard?.isGlobal?"🌍 Global":(activeBoard?.name||"");
           const predPath = [
-            { label:"Groups + Best Third", due:T[lang].dueJun11, done:boardDone, locked:false, active:!boardDone&&!deadlinePassed&&!!predictionsLoaded[activeId] },
-            { label:"Knockout Phase", due:koAvailable?"Available now":T[lang].koDueJun27, done:koPickDone, locked:!koUnlocked||!boardDone, active:!!koAvailable },
-            { label:"Trophy", isFinal:true },
+            { label:"Jun 11", stage:"Groups + Best Third", due:T[lang].dueJun11, done:boardDone, locked:false, active:!boardDone&&!deadlinePassed&&!!predictionsLoaded[activeId] },
+            { label:"Jun 27", stage:"Knockout Phase", due:koAvailable?"Available now":T[lang].koDueJun27, done:koPickDone, locked:!koUnlocked||!boardDone, active:!!koAvailable },
+            { label:"Jul 19", stage:"Final", isFinal:true },
           ];
           return (<>
             <div style={{margin:"0 2px 6px"}}>
               <p style={{fontSize:12,fontWeight:600,color:isLocked?"#C0C8D8":"#9CA3AF",margin:0,textTransform:"uppercase",letterSpacing:1,textAlign:"center"}}>{T[lang].predictions}</p>
             </div>
-            <div onClick={handleClick} style={{background:"#fff",borderRadius:16,
+            <div style={{background:"#fff",borderRadius:16,
               boxShadow:"0 2px 14px rgba(0,0,0,0.07)",
               border:"1.5px solid transparent",
-              padding:"14px 14px 12px",cursor:isLocked?"default":"pointer",
+              padding:"14px 14px 12px",
               opacity:isLocked?0.6:1,position:"relative",
               ...(showFirstAction&&!boardDone&&!deadlinePassed?{animation:"pulse 1.5s ease-in-out 3"}:{})}}>
 
               {predPath.map((step,i)=>{
                 const nodeColor = step.isFinal?"#F0A020":step.done?GREEN:step.active?NAVY:"#ddd";
                 const isLast = i===predPath.length-1;
+                const stepClick = step.isFinal||step.locked?undefined:()=>{
+                  if(i===0&&!deadlinePassed) onPredict(activeId);
+                  else if(i===1&&koAvailable) onPredictKo&&onPredictKo(activeId);
+                };
                 return (
-                  <div key={i} style={{display:"flex",gap:10,borderRadius:10,
+                  <div key={i} onClick={stepClick} style={{display:"flex",gap:10,borderRadius:10,
                     background:step.isFinal?"linear-gradient(90deg,rgba(240,160,32,0.08),transparent)":step.locked?"rgba(0,0,0,0.025)":"transparent",
-                    padding:"4px 6px 4px 4px",margin:"0 -6px 0 -4px"}}>
+                    padding:"4px 6px 4px 4px",margin:"0 -6px 0 -4px",
+                    cursor:stepClick?"pointer":"default"}}>
                     <div style={{display:"flex",flexDirection:"column",alignItems:"center",width:18,flexShrink:0}}>
                       <div style={{width:18,height:18,borderRadius:"50%",background:nodeColor,display:"flex",alignItems:"center",justifyContent:"center",
                         boxShadow:step.isFinal?"0 0 0 3px rgba(240,160,32,0.25), 0 2px 8px rgba(240,160,32,0.4)":step.done?`0 0 0 3px ${GREEN}33`:step.active?`0 0 0 3px ${NAVY}22`:"none",flexShrink:0}}>
@@ -3998,8 +4018,11 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
                     </div>
                     <div style={{flex:1,paddingBottom:isLast?0:4}}>
                       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                        <span style={{fontSize:13,fontWeight:step.isFinal?700:step.active?700:step.done?600:500,
-                          color:step.isFinal?"#D4820A":step.locked?"#C0C8D8":DARK,opacity:step.locked?0.5:1}}>{step.label}</span>
+                        <div>
+                          <span style={{fontSize:13,fontWeight:step.isFinal?700:step.active?700:step.done?600:500,
+                            color:step.isFinal?"#D4820A":step.locked?"#C0C8D8":DARK,opacity:step.locked?0.5:1}}>{step.label}</span>
+                          <span style={{fontSize:10,color:step.isFinal?"rgba(212,130,10,0.6)":"#9CA3AF",marginLeft:5,fontWeight:400,opacity:step.locked?0.5:0.7}}>{step.stage}</span>
+                        </div>
                         <div style={{display:"flex",alignItems:"center",gap:5}}>
                           <span style={{fontSize:11,fontWeight:step.active?600:400,
                             color:step.isFinal?"#D4820A":step.locked?"#C0C8D8":step.done?GREEN:"#9CA3AF",opacity:step.locked?0.5:0.8}}>
@@ -4018,7 +4041,7 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
 
         {/* Connector */}
         <div style={{display:"flex",justifyContent:"center",margin:"6px 0 10px"}}>
-          <div style={{width:2,height:48,background:"linear-gradient(to bottom,transparent,#d0d0d0,transparent)",borderRadius:1}}/>
+          <div style={{width:2,height:24,background:"linear-gradient(to bottom,transparent,#d0d0d0,transparent)",borderRadius:1}}/>
         </div>
 
         {/* Card 2 — Exact Score + path to trophy */}
@@ -4104,17 +4127,22 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
 
           </div>
         </div>
-        <div style={{marginBottom:80}}/>
+
+        {/* Footer teaser */}
+        <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:6,marginTop:4,paddingBottom:16}}>
+          <div style={{width:2,height:20,background:"linear-gradient(to bottom,#d0d0d0,transparent)",borderRadius:1}}/>
+          <span style={{fontSize:11,fontWeight:600,color:"#C0C8D8",letterSpacing:2,textTransform:"uppercase"}}>· more to come ·</span>
+        </div>
 
       </div>
 
     {/* Copy predictions sheet */}
     {showCopySheet&&(
-      <div style={{position:"fixed",inset:0,zIndex:200,display:"flex",flexDirection:"column",justifyContent:"flex-end"}}
+      <div style={{position:"fixed",inset:0,zIndex:1100,display:"flex",flexDirection:"column",justifyContent:"flex-end"}}
         onClick={()=>setShowCopySheet(false)}>
         <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.5)"}}/>
         <div onClick={e=>e.stopPropagation()}
-          style={{position:"relative",background:"#1C1C1E",borderRadius:"20px 20px 0 0",padding:"0 0 34px",maxHeight:"70vh",display:"flex",flexDirection:"column"}}>
+          style={{position:"relative",background:"#1C1C1E",borderRadius:"20px 20px 0 0",padding:"0 0 calc(env(safe-area-inset-bottom, 10px) + 90px)",maxHeight:"70vh",display:"flex",flexDirection:"column"}}>
           {/* Handle */}
           <div style={{display:"flex",justifyContent:"center",padding:"10px 0 4px"}}>
             <div style={{width:36,height:4,borderRadius:2,background:"rgba(255,255,255,0.2)"}}/>
@@ -5363,7 +5391,7 @@ function OnboardingSheet({ onDone }) {
   const isLast = slide === slides.length - 1;
 
   return (
-    <div style={{position:"absolute",inset:0,zIndex:300,display:"flex",flexDirection:"column",
+    <div style={{position:"fixed",inset:0,zIndex:1100,display:"flex",flexDirection:"column",
       justifyContent:"flex-end",touchAction:"none",overflow:"hidden"}}
       onWheel={e=>e.stopPropagation()}>
       {/* Backdrop — click to close */}
