@@ -9,7 +9,7 @@ import { loadPredictions, savePredictions, loadExactScores, saveExactScore, load
 
 const TEAM_CODE = {"Mexico":"MEX","South Africa":"RSA","South Korea":"KOR","Czechia":"CZE","Canada":"CAN","Switzerland":"SUI","Qatar":"QAT","Bosnia-Herzegovina":"BIH","Brazil":"BRA","Morocco":"MAR","Scotland":"SCO","Haiti":"HAI","USA":"USA","Paraguay":"PAR","Australia":"AUS","Turkiye":"TUR","Germany":"GER","Ecuador":"ECU","Ivory Coast":"CIV","Curacao":"CUW","Netherlands":"NED","Japan":"JPN","Tunisia":"TUN","Sweden":"SWE","Belgium":"BEL","Iran":"IRI","Egypt":"EGY","New Zealand":"NZL","Spain":"ESP","Uruguay":"URU","Saudi Arabia":"KSA","Cape Verde":"CPV","France":"FRA","Senegal":"SEN","Norway":"NOR","Iraq":"IRQ","Argentina":"ARG","Austria":"AUT","Algeria":"ALG","Jordan":"JOR","Portugal":"POR","Colombia":"COL","Uzbekistan":"UZB","DR Congo":"COD","England":"ENG","Croatia":"CRO","Panama":"PAN","Ghana":"GHA"};
 
-const BG = "#F8F8F8";
+const BG = "#EEF2FF";
 const SHADOW_OUT = "4px 4px 12px rgba(0,0,0,0.08), -3px -3px 8px #ffffff";
 const SHADOW_IN = "inset 3px 3px 8px rgba(0,0,0,0.08), inset -2px -2px 6px #ffffff";
 const DARK = "#3D3D3D";
@@ -3734,39 +3734,35 @@ function GroupRankingScreen({ group, teams, existingRanking, onConfirm, onAutoSa
 }
 
 // ── CIRCLE TAB ────────────────────────────────────────────────────────────────
-function CircleTab({ label, name, isActive, onClick, lightBg=false }) {
+function CircleTab({ label, name, isActive, onClick, lightBg=false, distance=0, rank, members }) {
+  const scale = isActive ? 1.1 : Math.max(0.58, 1 - distance * 0.2);
+  const opacity = isActive ? 1 : Math.max(0.32, 1 - distance * 0.28);
   return (
-    <div onClick={onClick} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:5,cursor:"pointer",flexShrink:0,WebkitTapHighlightColor:"transparent"}}>
-      {isActive ? (
-        <div style={{
-          width:52, height:52,
-          borderRadius:"50%",
-          background:"#fff",
-          display:"flex",alignItems:"center",justifyContent:"center",
-          fontSize:24,
-          boxShadow:"0 4px 14px rgba(0,0,0,0.15)",
-          transition:"all 0.2s",
-        }}>
-          {label}
-        </div>
-      ) : (
-        <div style={{
-          width:44, height:44,
-          borderRadius:"50%",
-          background:lightBg?"rgba(0,0,0,0.04)":"rgba(255,255,255,0.08)",
-          border:lightBg?"1px solid rgba(0,0,0,0.10)":"1px solid rgba(255,255,255,0.12)",
-          display:"flex",alignItems:"center",justifyContent:"center",
-          fontSize:22,
-          transition:"all 0.2s",
-        }}>
-          {label}
-        </div>
-      )}
+    <div onClick={onClick} style={{
+      display:"flex",flexDirection:"column",alignItems:"center",gap:5,
+      cursor:"pointer",flexShrink:0,WebkitTapHighlightColor:"transparent",
+      transform:`scale(${scale})`,opacity,
+      transition:"transform 0.28s, opacity 0.28s",
+      transformOrigin:"center bottom",
+    }}>
+      <div style={{
+        width:44, height:44,
+        borderRadius:"50%",
+        background:isActive?"#fff":lightBg?"rgba(0,0,0,0.05)":"rgba(255,255,255,0.1)",
+        border:isActive?`2px solid ${NAVY}`:"1px solid rgba(0,0,0,0.10)",
+        display:"flex",alignItems:"center",justifyContent:"center",
+        fontSize:22,
+        boxShadow:isActive?`0 0 0 4px ${NAVY}18, 0 4px 14px rgba(10,46,138,0.18)`:"none",
+        transition:"all 0.25s",
+      }}>
+        {label}
+      </div>
       <span style={{
         fontSize:isActive?10:9,
-        color:isActive?(lightBg?DARK:"#fff"):(lightBg?"rgba(0,0,0,0.72)":"rgba(255,255,255,0.62)"),
         fontWeight:isActive?800:600,
-        maxWidth:56,textAlign:"center",lineHeight:1.2,
+        color:isActive?NAVY:lightBg?"rgba(0,0,0,0.55)":"rgba(255,255,255,0.6)",
+        maxWidth:52,textAlign:"center",lineHeight:1.2,
+        transition:"all 0.25s",
       }}>{name}</span>
     </div>
   );
@@ -3774,7 +3770,7 @@ function CircleTab({ label, name, isActive, onClick, lightBg=false }) {
 
 
 // ── HOME ────────────────────────────────────────────────────────────────────
-function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateBoard, onOpenGroups, onCopyPredictions, onCopyExactScores, myBoards, predictionsComplete, instantPickDone, koPickDone, koUnlocked, exactScores, activeBoardId, setActiveBoardId, tournamentStarted, simDay, simHour, simMin, createdBoards=[], showFirstAction, leaderboardData={}, boardsLoading=false, predictionsLoaded={} }) {
+function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateBoard, onOpenGroups, onCopyPredictions, onCopyExactScores, onAccount, myBoards, predictionsComplete, instantPickDone, koPickDone, koUnlocked, exactScores, activeBoardId, setActiveBoardId, tournamentStarted, simDay, simHour, simMin, createdBoards=[], showFirstAction, leaderboardData={}, boardsLoading=false, predictionsLoaded={} }) {
   const lang = useLang();
   const displayName = useDisplayName();
   const initials = useInitials();
@@ -3782,6 +3778,32 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
   const [copyDone, setCopyDone] = useState(null);
   const activeId = activeBoardId;
   const setActiveId = setActiveBoardId;
+  const allSliderItems = [...myBoards, {id:'__add__', isAdd:true}];
+  const [sliderPos, setSliderPos] = useState(()=>Math.max(0,myBoards.findIndex(b=>b.id===activeBoardId)));
+  const sliderTouchRef = useRef(null);
+  useEffect(()=>{
+    const idx = myBoards.findIndex(b=>b.id===activeId);
+    if(idx>=0) setSliderPos(idx);
+  },[activeId]);
+  const handleSliderTouchStart = (e)=>{ sliderTouchRef.current = e.touches[0].clientX; };
+  const handleSliderTouchEnd = (e)=>{
+    if(sliderTouchRef.current===null) return;
+    const dx = e.changedTouches[0].clientX - sliderTouchRef.current;
+    sliderTouchRef.current = null;
+    if(Math.abs(dx)<28) return;
+    if(dx<0 && sliderPos<myBoards.length-1){
+      const np=sliderPos+1; setSliderPos(np);
+      setActiveId(allSliderItems[np].id);
+    } else if(dx>0 && sliderPos>0){
+      const np=sliderPos-1; setSliderPos(np);
+      if(!allSliderItems[np]?.isAdd) setActiveId(allSliderItems[np].id);
+    }
+  };
+  const [cdUnitIdx, setCdUnitIdx] = useState(0);
+  useEffect(()=>{
+    const t = setInterval(()=>setCdUnitIdx(p=>(p+1)%3), 2200);
+    return ()=>clearInterval(t);
+  },[]);
   const activeBoard = myBoards.find(b=>b.id===activeId)||myBoards[0];
   const membersLabel = activeBoard?.members>999?`${(activeBoard.members/1000).toFixed(0)}k`:activeBoard?.members;
   // Get leaders for active board — prefer real DB data, fall back to placeholder
@@ -3803,314 +3825,287 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
   const topCount = Math.max(3, prizeSlots || 3);
   const top3 = leaders.slice(0, topCount);
   const me = leaders.find(u=>u.isMe);
+  const {d:cdD,h:cdH,m:cdM,s:cdS}=useCountdown();
+  const cdTarget=new Date("2026-06-11T19:00:00");
+  const cdSimNow=simDay?new Date(2026,5,simDay,simHour,simMin,0):new Date();
+  const cdDiff=cdTarget-cdSimNow;
+  const cdDays=simDay?Math.max(0,Math.floor(cdDiff/86400000)):cdD;
+  const cdHours=simDay?Math.max(0,Math.floor((cdDiff%86400000)/3600000)):cdH;
+  const cdMins=simDay?Math.max(0,Math.floor((cdDiff%3600000)/60000)):cdM;
+  const cdSecs=simDay?Math.max(0,Math.floor((cdDiff%60000)/1000)):cdS;
+  const tournamentOver = cdDiff<=0;
   const meInTop3 = top3.some(u=>u.isMe);
   return (
-    <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",position:"relative"}}>
-      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.055,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
-      <div style={{background:"linear-gradient(180deg,#CCDAFF 0%,#E2EBFF 40%,#F8F8F8 100%)",padding:"12px 20px 4px",flexShrink:0,position:"relative",zIndex:1}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-          <div style={{width:44}}/>
+    <div style={{flex:1,display:"flex",flexDirection:"column",background:"transparent",overflow:"hidden",position:"relative"}}>
+      <div style={{padding:"10px 14px 0",flexShrink:0,position:"relative",zIndex:2}}>
+      <div style={{background:"rgba(255,255,255,0.32)",backdropFilter:"blur(28px)",WebkitBackdropFilter:"blur(28px)",borderRadius:26,boxShadow:"0 8px 32px rgba(10,46,138,0.12), inset 0 1px 0 rgba(255,255,255,0.95)",border:"1px solid rgba(255,255,255,0.55)",padding:"12px 20px 0",WebkitMaskImage:"linear-gradient(to bottom, black 0%, black 78%, transparent 100%)",maskImage:"linear-gradient(to bottom, black 0%, black 78%, transparent 100%)",position:"relative"}}>
+        {/* Gloss overlay */}
+        <div style={{position:"absolute",inset:0,borderRadius:26,background:"linear-gradient(135deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.08) 40%, transparent 65%)",pointerEvents:"none",zIndex:0}}/>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",position:"relative",zIndex:1}}>
+          <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,flexShrink:0,paddingTop:10}}>
+            <button onClick={onAccount} style={{width:44,height:44,background:"none",border:"none",padding:0,cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:3,WebkitTapHighlightColor:"transparent"}}>
+              <svg width="22" height="16" viewBox="0 0 22 16" fill="none">
+                <rect x="0" y="0" width="22" height="2.5" rx="1.25" fill="#374151"/>
+                <rect x="0" y="6.75" width="22" height="2.5" rx="1.25" fill="#374151"/>
+                <rect x="0" y="13.5" width="22" height="2.5" rx="1.25" fill="#374151"/>
+              </svg>
+            </button>
+            <p style={{fontSize:11,color:"transparent",margin:0,userSelect:"none"}}> </p>
+          </div>
           <div style={{textAlign:"center"}}>
             <img src={predictoLogo} alt="Predicto" decoding="sync" style={{height:36,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
-            <h1 style={{fontSize:18,fontWeight:900,margin:"2px 0 0",letterSpacing:2,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
+            <h1 style={{fontSize:10,fontWeight:700,margin:"2px 0 0",letterSpacing:2.5,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
             <p style={{fontSize:11,color:"#6B7280",margin:"3px 0 0"}}>{T[lang].location}</p>
           </div>
-          <img src={bellIcon} alt="Notifications" style={{width:44,height:44,flexShrink:0}}/>
-        </div>
-        <div style={{overflowX:"auto",overflowY:"visible",scrollbarWidth:"none",margin:"0 -20px"}}>
-        <div style={{display:"flex",alignItems:"flex-start",gap:10,padding:"10px 20px 16px"}}>
-          {boardsLoading
-            ? <div style={{height:52,display:"flex",alignItems:"center"}}><span style={{width:44,height:44,borderRadius:"50%",background:"rgba(0,0,0,0.06)",display:"inline-block"}}/></div>
-            : myBoards.map(b=><CircleTab key={b.id} label={b.label} name={b.isGlobal?"Global":b.name.split(" ")[0]} isActive={activeId===b.id} onClick={()=>setActiveId(b.id)} lightBg/>)}
-          <div onClick={()=>onBoards("available")} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:5,cursor:"pointer",flexShrink:0,WebkitTapHighlightColor:"transparent"}}>
-            <div style={{width:44,height:44,borderRadius:"50%",background:"transparent",border:"2px dashed rgba(0,0,0,0.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:19,color:"rgba(0,0,0,0.3)"}}>+</div>
-            <span style={{fontSize:9,color:"rgba(0,0,0,0.45)",fontWeight:500,maxWidth:56,textAlign:"center",lineHeight:1.2}}>{T[lang].add}</span>
+          <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,flexShrink:0,paddingTop:10}}>
+            <img src={bellIcon} alt="Notifications" style={{width:44,height:44}}/>
+            <p style={{fontSize:11,color:"transparent",margin:0,userSelect:"none"}}> </p>
           </div>
         </div>
+        {(()=>{
+          const leftItem  = allSliderItems[sliderPos-1] ?? null;
+          const centerItem= allSliderItems[sliderPos];
+          const rightItem = allSliderItems[sliderPos+1] ?? null;
+          const renderItem = (item, pos) => {
+            if(!item) return <div style={{flex:1}}/>;
+            const isCenter = pos===0;
+            const dist = Math.abs(pos);
+            const scale = isCenter?1:Math.max(0.58,1-dist*0.2);
+            const opacity = isCenter?1:Math.max(0.32,1-dist*0.28);
+            const handleTap = ()=>{
+              if(item.isAdd){ onBoards("available"); return; }
+              if(!isCenter){ const np=sliderPos+pos; setSliderPos(np); setActiveId(item.id); }
+            };
+            if(item.isAdd) return (
+              <div style={{flex:1,display:"flex",justifyContent:"center",alignItems:"flex-end",paddingBottom:0}}>
+                <div onClick={()=>onBoards("available")} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4,cursor:"pointer",WebkitTapHighlightColor:"transparent",transform:`scale(${scale})`,transformOrigin:"center bottom",opacity}}>
+                  <div style={{width:42,height:42,borderRadius:"50%",background:"transparent",border:"1.5px dashed rgba(0,0,0,0.25)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,color:"rgba(0,0,0,0.35)"}}>+</div>
+                  <span style={{fontSize:9,color:"rgba(0,0,0,0.55)",fontWeight:600,maxWidth:50,textAlign:"center",lineHeight:1.2}}>{T[lang].add}</span>
+                </div>
+              </div>
+            );
+            const boardLeaders = leaderboardData[item.id];
+            const myRank = boardLeaders?.find(u=>u.isMe)?.rank;
+            const memberCount = item.members;
+            return (
+              <div style={{flex:1,display:"flex",justifyContent:"center",alignItems:"flex-end"}}>
+                <CircleTab label={item.label} name={item.isGlobal?"Global":item.name.split(" ")[0]}
+                  isActive={isCenter} onClick={handleTap} lightBg distance={dist}
+                  rank={isCenter?myRank:undefined} members={isCenter?memberCount:undefined}/>
+              </div>
+            );
+          };
+          return (
+            <div style={{position:"relative"}}>
+              <div style={{height:10}}/>
+              {sliderPos>0&&(
+                <div style={{position:"absolute",left:0,top:"50%",transform:"translateY(-50%)",zIndex:5,pointerEvents:"none"}}>
+                  <span style={{fontSize:18,color:"rgba(0,0,0,0.45)",fontWeight:700,lineHeight:1}}>‹</span>
+                </div>
+              )}
+              {sliderPos<allSliderItems.length-1&&(
+                <div style={{position:"absolute",right:0,top:"50%",transform:"translateY(-50%)",zIndex:5,pointerEvents:"none"}}>
+                  <span style={{fontSize:18,color:"rgba(0,0,0,0.45)",fontWeight:700,lineHeight:1}}>›</span>
+                </div>
+              )}
+              <div onTouchStart={handleSliderTouchStart} onTouchEnd={handleSliderTouchEnd}
+                style={{display:"flex",alignItems:"center",padding:"10px 0 22px",overflow:"visible",userSelect:"none"}}>
+                {renderItem(leftItem,-1)}
+                {renderItem(centerItem,0)}
+                {renderItem(rightItem,1)}
+              </div>
+            </div>
+          );
+        })()}
+      </div>
+      <div onClick={()=>onLeaderboard&&onLeaderboard()} style={{position:"relative",cursor:"pointer",WebkitTapHighlightColor:"transparent",marginTop:2}}>
+        {/* linie continuă pe toate 3 rânduri */}
+        <div style={{position:"absolute",left:"50%",top:0,bottom:0,width:2,transform:"translateX(-50%)",background:"linear-gradient(to bottom,transparent,#d0d0d0 35%,#d0d0d0 65%,transparent)",borderRadius:2,pointerEvents:"none"}}/>
+        {/* rând 1 — gol */}
+        <div style={{height:10}}/>
+        {/* rând 2 — conținut */}
+        <div style={{position:"relative",display:"flex",justifyContent:"center",alignItems:"center",height:28}}>
+          <span style={{position:"absolute",left:0,fontSize:11,fontWeight:600,color:"#6B7280"}}>Hey {displayName.split(" ")[0]} 👋</span>
+          <span style={{position:"absolute",right:"calc(50% + 6px)",fontSize:14,fontWeight:800,color:NAVY,opacity:0.35}}>{me?.rank?`${me.rank}${[,'st','nd','rd'][me.rank]||'th'}`:"—"}</span>
+          {me&&<span style={{position:"absolute",left:"calc(50% + 4px)",fontSize:14,fontWeight:800,color:"#D4820A",opacity:0.35}}>{me.pts??0} pts</span>}
+          <div style={{position:"absolute",right:0,width:100,overflow:"hidden",WebkitMaskImage:"linear-gradient(to right,transparent 0%,black 18%,black 82%,transparent 100%)",maskImage:"linear-gradient(to right,transparent 0%,black 18%,black 82%,transparent 100%)"}}>
+            {tournamentOver
+              ? <span style={{fontSize:11,fontWeight:600,color:"#6B7280",whiteSpace:"nowrap"}}>🏆 start is here</span>
+              : (()=>{
+                  const txt=`⚽ Kickoff in ${cdDays}d ${String(cdHours).padStart(2,"0")}h ${String(cdMins).padStart(2,"0")}m · make your picks · `;
+                  return <div style={{display:"inline-flex",animation:"cdTicker 16s linear infinite",whiteSpace:"nowrap"}}>
+                    <span style={{fontSize:11,fontWeight:600,color:"#6B7280",paddingRight:0}}>{txt}</span>
+                    <span style={{fontSize:11,fontWeight:600,color:"#6B7280",paddingRight:0}}>{txt}</span>
+                  </div>;
+                })()
+            }
+          </div>
+        </div>
+        {/* rând 3 — gol */}
+        <div style={{height:10}}/>
+        {/* rând 4 — linie orizontală centrată */}
+        <div style={{display:"flex",justifyContent:"center",paddingBottom:6}}>
+          <div style={{width:24,height:1.5,background:"linear-gradient(to right,transparent,#d0d0d0,transparent)",borderRadius:1}}/>
         </div>
       </div>
-      <div style={{flex:1,position:"relative",zIndex:1,minHeight:0}}>
-      <div style={{position:"absolute",top:0,left:0,right:0,height:16,background:`linear-gradient(to top, transparent, ${BG})`,pointerEvents:"none",zIndex:2}}/>
-      <div style={{position:"absolute",bottom:0,left:0,right:0,height:52,background:`linear-gradient(to bottom, transparent, rgba(248,248,248,0.88))`,pointerEvents:"none",zIndex:2}}/>
-      <div style={{height:"100%",overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",padding:"10px 16px 0"}}>
+      </div>
+      <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",padding:"0 16px 90px",display:"flex",flexDirection:"column"}}>
+        <div style={{position:"relative",borderRadius:18,padding:"14px 14px 14px",flex:1}}>
+          <div style={{position:"absolute",inset:0,borderRadius:18,background:"rgba(255,255,255,0.15)",WebkitMaskImage:"linear-gradient(to bottom,black 0%,black 55%,transparent 100%)",maskImage:"linear-gradient(to bottom,black 0%,black 55%,transparent 100%)",pointerEvents:"none"}}/>
+          <div style={{position:"relative",zIndex:1}}>
+        {/* Card 1 — Predictions + path to trophy */}
+        {(()=>{
+          const deadlinePassed = simDay ? (simDay > 11 || (simDay === 11 && (simHour||0) >= 19)) : new Date() >= new Date(2026,5,11,19,0,0);
+          const boardDone = deadlinePassed ? (instantPickDone || predictionsComplete[activeId]) : instantPickDone;
+          const isLocked = deadlinePassed && !boardDone;
+          const koAvailable = koUnlocked && boardDone && !koPickDone;
+          const allDone = boardDone && koPickDone;
+          const handleClick = () => {
+            if (koAvailable) { onPredictKo&&onPredictKo(activeId); return; }
+            if (!deadlinePassed || boardDone) onPredict(activeId);
+          };
+          const showBadge = koAvailable || (!boardDone && !deadlinePassed && predictionsLoaded[activeId]);
+          const boardLabel = activeBoard?.isGlobal?"🌍 Global":(activeBoard?.name||"");
+          const predPath = [
+            { label:"Groups + Best Third", due:T[lang].dueJun11, done:boardDone, locked:false, active:!boardDone&&!deadlinePassed&&!!predictionsLoaded[activeId] },
+            { label:"Knockout Phase", due:koAvailable?"Available now":T[lang].koDueJun27, done:koPickDone, locked:!koUnlocked||!boardDone, active:!!koAvailable },
+            { label:"Trophy", isFinal:true },
+          ];
+          return (<>
+            <div style={{margin:"0 2px 6px"}}>
+              <p style={{fontSize:12,fontWeight:600,color:isLocked?"#C0C8D8":"#9CA3AF",margin:0,textTransform:"uppercase",letterSpacing:1,textAlign:"center"}}>{T[lang].predictions}</p>
+            </div>
+            <div onClick={handleClick} style={{background:"#fff",borderRadius:16,
+              boxShadow:"0 2px 14px rgba(0,0,0,0.07)",
+              border:"1.5px solid transparent",
+              padding:"14px 14px 12px",cursor:isLocked?"default":"pointer",
+              opacity:isLocked?0.6:1,position:"relative",
+              ...(showFirstAction&&!boardDone&&!deadlinePassed?{animation:"pulse 1.5s ease-in-out 3"}:{})}}>
 
-        {/* User stats card */}
-        <div style={{background:"#fff",borderRadius:16,boxShadow:"0 8px 22px rgba(0,0,0,0.07)",padding:"10px 14px",marginBottom:10}}>
-          <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:10}}>
-            <div style={{width:44,height:44,borderRadius:"50%",background:"linear-gradient(135deg,rgba(10,46,138,0.65),rgba(0,24,64,0.65))",
-              display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:16,fontWeight:800,flexShrink:0}}>
-              {initials}
-            </div>
-            <div style={{flex:1,minWidth:0,textAlign:"left"}}>
-              <div style={{fontSize:15,fontWeight:800,color:DARK,lineHeight:1.2}}>{displayName}</div>
-              <div style={{fontSize:12,color:"#6B7280",marginTop:3}}>{tournamentStarted?`${me?.pts||0} ${T[lang].ptsTotal}`:T[lang].tournamentStarts}</div>
-            </div>
-          </div>
-          {/* Ranking across boards — horizontal scroll with fade indicator */}
-          <div style={{display:"flex",alignItems:"flex-end",margin:"0 -14px"}}>
-          <div style={{flex:1,position:"relative",overflow:"hidden"}}>
-            <div style={{display:"flex",gap:8,overflowX:"auto",scrollbarWidth:"none",
-              WebkitOverflowScrolling:"touch",padding:"0 14px 2px"}}>
-              {myBoards.map(b=>{
-                const bLeaders = leaderboardData[b.id] || [];
-                const myRank = bLeaders.find(u=>u.isMe)?.rank || 1;
-                const totalMembers = b.members || bLeaders.length || 1;
-                const isActive = activeId===b.id;
+              {predPath.map((step,i)=>{
+                const nodeColor = step.isFinal?"#F0A020":step.done?GREEN:step.active?NAVY:"#ddd";
+                const isLast = i===predPath.length-1;
                 return (
-                  <div key={b.id} onClick={()=>setActiveId(b.id)}
-                    style={{flexShrink:0,minWidth:84,
-                      background:isActive?`${NAVY}12`:BG,borderRadius:10,padding:"7px 10px",
-                      border:isActive?`1.5px solid ${NAVY}`:"1.5px solid rgba(0,0,0,0.07)",
-                      cursor:"pointer",transition:"all 0.2s"}}>
-                    <p style={{fontSize:10,color:isActive?NAVY:"#888",margin:0,
-                      textTransform:"uppercase",letterSpacing:0.5,fontWeight:700,whiteSpace:"nowrap",
-                      overflow:"hidden",textOverflow:"ellipsis",maxWidth:70}}>
-                      {b.isGlobal?"🌍 Global":`${b.label} ${b.name.split(" ")[0]}`}
-                    </p>
-                    <p style={{fontSize:15,fontWeight:800,color:isActive?NAVY:DARK,margin:"2px 0 0"}}>{myRank}{totalMembers?<span style={{fontSize:10,fontWeight:500,color:isActive?NAVY:"#aaa"}}> of {totalMembers>999?`${Math.round(totalMembers/1000)}k`:totalMembers}</span>:null}</p>
+                  <div key={i} style={{display:"flex",gap:10,borderRadius:10,
+                    background:step.isFinal?"linear-gradient(90deg,rgba(240,160,32,0.08),transparent)":step.locked?"rgba(0,0,0,0.025)":"transparent",
+                    padding:"4px 6px 4px 4px",margin:"0 -6px 0 -4px"}}>
+                    <div style={{display:"flex",flexDirection:"column",alignItems:"center",width:18,flexShrink:0}}>
+                      <div style={{width:18,height:18,borderRadius:"50%",background:nodeColor,display:"flex",alignItems:"center",justifyContent:"center",
+                        boxShadow:step.isFinal?"0 0 0 3px rgba(240,160,32,0.25), 0 2px 8px rgba(240,160,32,0.4)":step.done?`0 0 0 3px ${GREEN}33`:step.active?`0 0 0 3px ${NAVY}22`:"none",flexShrink:0}}>
+                        {step.isFinal?<span style={{fontSize:9}}>★</span>:step.done?<div style={{width:5,height:5,borderRadius:"50%",background:"#fff"}}/>:step.locked?<span style={{fontSize:8}}>🔒</span>:step.active?<div style={{width:5,height:5,borderRadius:"50%",background:"#fff"}}/>:null}
+                      </div>
+                      {!isLast&&<div style={{width:2,flex:1,minHeight:22,marginTop:2,background:step.done?GREEN:"#e8e8e8",borderRadius:1}}/>}
+                    </div>
+                    <div style={{flex:1,paddingBottom:isLast?0:4}}>
+                      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                        <span style={{fontSize:13,fontWeight:step.isFinal?700:step.active?700:step.done?600:500,
+                          color:step.isFinal?"#D4820A":step.locked?"#C0C8D8":DARK,opacity:step.locked?0.5:1}}>{step.label}</span>
+                        <div style={{display:"flex",alignItems:"center",gap:5}}>
+                          <span style={{fontSize:11,fontWeight:step.active?600:400,
+                            color:step.isFinal?"#D4820A":step.locked?"#C0C8D8":step.done?GREEN:"#9CA3AF",opacity:step.locked?0.5:0.8}}>
+                            {step.isFinal?"Trophy":step.locked?T[lang].locked:step.done?"Done":step.due}
+                          </span>
+                          <div onClick={e=>{if(!step.done||step.isFinal)return;e.stopPropagation();setCopyDone(null);setShowCopySheet("predictions");}} style={{cursor:step.done&&!step.isFinal?"pointer":"default",opacity:step.done&&!step.isFinal?0.55:0,pointerEvents:step.done&&!step.isFinal?"auto":"none",width:9,height:9,flexShrink:0,display:"flex",alignItems:"center"}}><svg width="9" height="9" viewBox="0 0 14 14" fill="none"><rect x="4" y="4" width="8" height="8" rx="1.5" stroke={DARK} strokeWidth="1.8"/><path d="M2 10V2h8" stroke={DARK} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg></div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 );
               })}
-              {/* Extra padding for fade */}
-              <div style={{flexShrink:0,width:8}}/>
             </div>
-            {/* Fade — wide enough to cover the overlap with View all */}
-            <div style={{position:"absolute",right:0,top:0,bottom:0,width:52,
-              background:"linear-gradient(to right, transparent, #fff)",
-              pointerEvents:"none"}}/>
-          </div>
-          <div style={{flexShrink:0,paddingRight:14,paddingLeft:4,marginLeft:-32,position:"relative",zIndex:2}}>
-            <span onClick={onLeaderboard} style={{fontSize:12,color:NAVY,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap"}}>{T[lang].viewAll}</span>
-          </div>
-          </div>
+          </>);
+        })()}
+
+        {/* Connector */}
+        <div style={{display:"flex",justifyContent:"center",margin:"6px 0 10px"}}>
+          <div style={{width:2,height:48,background:"linear-gradient(to bottom,transparent,#d0d0d0,transparent)",borderRadius:1}}/>
         </div>
 
-        {/* Tasks */}
-        <p style={{fontSize:11,fontWeight:700,color:"#6B7280",textTransform:"uppercase",letterSpacing:0.8,margin:"0 0 6px"}}>{T[lang].yourTasks}</p>
-        <div style={{display:"flex",gap:8,marginBottom:10}}>
-          {/* Predictions task */}
-          {(()=>{
-            // Deadline: June 11 19:00 (tournament kickoff)
-            const deadlinePassed = simDay ? (simDay > 11 || (simDay === 11 && (simHour||0) >= 19)) : new Date() >= new Date(2026,5,11,19,0,0);
-            // Before deadline: trust only in-memory state (allows edit→incomplete→back to show not-done)
-            const boardDone = deadlinePassed ? (instantPickDone || predictionsComplete[activeId]) : instantPickDone;
-            const isLocked = deadlinePassed && !boardDone;
-            // KO task state
-            const koAvailable = koUnlocked && boardDone && !koPickDone;
-            const allDone = boardDone && koPickDone;
-            const handleClick = () => {
-              if (koAvailable) { onPredictKo&&onPredictKo(activeId); return; }
-              if (!deadlinePassed || boardDone) onPredict(activeId);
-            };
-            const icon = isLocked?"🔒":koAvailable?"⚡":allDone?"🏆":"🎯";
-            const subtitleColor = allDone?GREEN:koAvailable?RED:boardDone?GREEN:isLocked?"#9CA3AF":"#6B7280";
-            const subtitle = !predictionsLoaded[activeId]?"…"
-              : allDone ? "Phase 1 completed"
-              : koAvailable ? T[lang].koDueJun27
-              : boardDone ? "Phase 1 completed"
-              : isLocked ? T[lang].deadlinePassed
-              : T[lang].dueJun11;
-            const showBadge = koAvailable || (!boardDone && !deadlinePassed && predictionsLoaded[activeId]);
-            return (
-              <div onClick={handleClick}
-                style={{flex:1,background:"#fff",borderRadius:14,
-                  boxShadow:(koAvailable||(!boardDone&&!deadlinePassed&&predictionsLoaded[activeId]))
-                    ?"0 4px 16px rgba(0,0,0,0.15)"
-                    :"0 8px 22px rgba(0,0,0,0.07)",
-                  border:koAvailable?"1.5px solid rgba(220,38,38,0.2)":"1.5px solid transparent",
-                  padding:"10px 12px",cursor:(isLocked)?"default":"pointer",position:"relative",
-                  opacity:isLocked?0.6:1,
-                  ...(showFirstAction&&!boardDone&&!deadlinePassed?{animation:"pulse 1.5s ease-in-out 3"}:{})}}>
-                {showBadge&&(
-                  <div style={{position:"absolute",top:2,right:2,
-                    background:RED,borderRadius:"50%",minWidth:18,height:18,
-                    display:"flex",alignItems:"center",justifyContent:"center",
-                    boxShadow:"0 1px 4px rgba(0,0,0,0.3)",padding:"0 5px"}}>
-                    <span style={{fontSize:10,fontWeight:800,color:"#fff"}}>{koAvailable?"KO":"1"}</span>
-                  </div>
-                )}
-                {boardDone&&(
-                  <div onClick={e=>{e.stopPropagation();setCopyDone(null);setShowCopySheet("predictions");}}
-                    style={{position:"absolute",bottom:6,right:6,width:20,height:20,borderRadius:5,
-                      border:`1.5px solid ${GREEN}66`,background:"rgba(255,255,255,0.8)",
-                      display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",zIndex:2}}>
-                    <svg width="10" height="10" viewBox="0 0 14 14" fill="none">
-                      <rect x="4" y="4" width="8" height="8" rx="1.5" stroke={GREEN} strokeWidth="1.8"/>
-                      <path d="M2 10V2h8" stroke={GREEN} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </div>
-                )}
-                <div style={{fontSize:28,marginBottom:4}}>{icon}</div>
-                <p style={{fontSize:13,fontWeight:800,color:isLocked?"#9CA3AF":DARK,margin:0}}>{T[lang].predictions}</p>
-                <p style={{fontSize:11,margin:"2px 0 0",fontWeight:600,color:subtitleColor}}>{subtitle}</p>
-              </div>
-            );
-          })()}
-          {/* Exact Score task */}
-          {(()=>{
-            // Count this week's missing scores
-            const todaySim = simDay ?? getRealTournamentDay();
-            const weekStart = todaySim<=14?8:todaySim<=21?15:todaySim<=28?22:29;
-            const days = Array.from({length:7},(_,i)=>weekStart+i).filter(d=>d>=1&&d<=50);
-            const mm = {};
-            CALENDAR_EVENTS.forEach(e=>{ mm[e.day]=e.matches; });
-            const total = days.reduce((s,d)=>s+(mm[d]||[]).length,0);
-            const scored = days.reduce((s,d)=>s+(mm[d]||[]).filter((_,i)=>(exactScores||{})[`${d}-${i}`]).length,0);
-            const missing = total - scored;
-            const weekNum = weekStart===8?1:weekStart===15?2:weekStart===22?3:4;
-            const scoreSubtitle = missing===0?`Week ${weekNum} completed`:`${missing} ${T[lang].thisWeek}`;
-            return (
-              <div onClick={()=>onOpenGroups&&onOpenGroups()}
-                style={{flex:1,background:"#fff",borderRadius:14,
-                  boxShadow:missing>0
-                    ?"0 4px 18px rgba(10,46,138,0.14)"
-                    :"0 8px 22px rgba(0,0,0,0.07)",
-                  border:missing>0?"1.5px solid rgba(10,46,138,0.13)":"1.5px solid transparent",
-                  padding:"10px 12px",cursor:"pointer",position:"relative"}}>
-                {missing>0&&(
-                  <div style={{position:"absolute",top:2,right:2,
-                    background:RED,borderRadius:"50%",minWidth:18,height:18,
-                    display:"flex",alignItems:"center",justifyContent:"center",
-                    boxShadow:"0 1px 4px rgba(0,0,0,0.3)",padding:"0 5px"}}>
-                    <span style={{fontSize:10,fontWeight:800,color:"#fff"}}>{missing}</span>
-                  </div>
-                )}
-                {scored>0&&(
-                  <div onClick={e=>{e.stopPropagation();setCopyDone(null);setShowCopySheet("scores");}}
-                    style={{position:"absolute",bottom:6,right:6,width:20,height:20,borderRadius:5,
-                      border:`1.5px solid ${GREEN}66`,background:"rgba(255,255,255,0.8)",
-                      display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",zIndex:2}}>
-                    <svg width="10" height="10" viewBox="0 0 14 14" fill="none">
-                      <rect x="4" y="4" width="8" height="8" rx="1.5" stroke={GREEN} strokeWidth="1.8"/>
-                      <path d="M2 10V2h8" stroke={GREEN} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </div>
-                )}
-                <div style={{fontSize:28,marginBottom:4,colorScheme:"light",filter:"saturate(0) contrast(3) brightness(1.1)"}}>⚽</div>
-                <p style={{fontSize:13,fontWeight:800,color:DARK,margin:0}}>{T[lang].exactScores}</p>
-                <p style={{fontSize:11,color:missing===0?GREEN:"#6B7280",margin:"2px 0 0",fontWeight:600}}>{scoreSubtitle}</p>
-              </div>
-            );
-          })()}
-        </div>
-
-        {/* Path to Trophy timeline */}
+        {/* Card 2 — Exact Score + path to trophy */}
         {(()=>{
+          const todaySim = simDay ?? getRealTournamentDay();
           const simNowDate = simDay ? new Date(2026,5,simDay,simHour||12,simMin||0,0) : new Date();
           const june = (d) => new Date(2026,5,d,8,0,0);
           const w1Open = true;
           const w2Open = simNowDate >= june(14);
           const w3Open = simNowDate >= june(21);
           const w4Open = simNowDate >= june(28);
-          const todaySim = simDay ?? getRealTournamentDay();
           const weekDays = (start) => Array.from({length:7},(_,i)=>start+i).filter(d=>d>=1&&d<=50);
           const weekMatchMap = () => { const mm={}; CALENDAR_EVENTS.forEach(e=>{mm[e.day]=e.matches;}); return mm; };
-          const totalRawInWeek = (start) => {
-            const mm = weekMatchMap();
-            return weekDays(start).reduce((s,d)=>s+(mm[d]||[]).length,0);
-          };
-          const matchesInWeek = (start) => {
-            const mm = weekMatchMap();
-            return weekDays(start).reduce((s,d)=>s+(mm[d]||[]).filter((m,i)=>
-              (exactScores||{})[`${d}-${i}`] || !isMatchPast(d, m.time, simDay, simHour)
-            ).length,0);
-          };
-          const scoredInWeek = (start) => {
-            const mm = weekMatchMap();
-            return weekDays(start).reduce((s,d)=>s+(mm[d]||[]).filter((_,i)=>(exactScores||{})[`${d}-${i}`]).length,0);
-          };
-          const missedInWeek = (start) => {
-            const mm = weekMatchMap();
-            return weekDays(start).reduce((s,d)=>s+(mm[d]||[]).filter((m,i)=>
-              isMatchPast(d, m.time, simDay, simHour) && !(exactScores||{})[`${d}-${i}`]
-            ).length,0);
-          };
+          const totalRawInWeek = (start) => { const mm=weekMatchMap(); return weekDays(start).reduce((s,d)=>s+(mm[d]||[]).length,0); };
+          const scoredInWeek  = (start) => { const mm=weekMatchMap(); return weekDays(start).reduce((s,d)=>s+(mm[d]||[]).filter((_,i)=>(exactScores||{})[`${d}-${i}`]).length,0); };
+          const missedInWeek  = (start) => { const mm=weekMatchMap(); return weekDays(start).reduce((s,d)=>s+(mm[d]||[]).filter((m,i)=>isMatchPast(d,m.time,simDay,simHour)&&!(exactScores||{})[`${d}-${i}`]).length,0); };
+          const matchesInWeek = (start) => { const mm=weekMatchMap(); return weekDays(start).reduce((s,d)=>s+(mm[d]||[]).filter((m,i)=>(exactScores||{})[`${d}-${i}`]||!isMatchPast(d,m.time,simDay,simHour)).length,0); };
+          const weekStart = todaySim<=14?8:todaySim<=21?15:todaySim<=28?22:29;
+          const missing = totalRawInWeek(weekStart) - scoredInWeek(weekStart);
+          const scored  = scoredInWeek(weekStart);
+          const weekNum = weekStart===8?1:weekStart===15?2:weekStart===22?3:4;
+          const scoreSubtitle = missing===0?`Week ${weekNum} completed`:`${missing} ${T[lang].thisWeek}`;
           const steps = [
             { label:"Jun 8-14",  stage:`${T[lang].groupStage} · ${T[lang].week} 1`, locked:!w1Open, total:matchesInWeek(8),  scored:scoredInWeek(8),  missed:missedInWeek(8),  totalRaw:totalRawInWeek(8),  past:todaySim>14, weekStart:8  },
             { label:"Jun 15-21", stage:`${T[lang].groupStage} · ${T[lang].week} 2`, locked:!w2Open, total:matchesInWeek(15), scored:scoredInWeek(15), missed:missedInWeek(15), totalRaw:totalRawInWeek(15), past:todaySim>21, weekStart:15 },
             { label:"Jun 22-28", stage:`${T[lang].groupStage} · ${T[lang].week} 3`, locked:!w3Open, total:matchesInWeek(22), scored:scoredInWeek(22), missed:missedInWeek(22), totalRaw:totalRawInWeek(22), past:todaySim>28, weekStart:22 },
-            { label:"Jun 29+",   stage:T[lang].roundOf16QF, locked:!w4Open, total:matchesInWeek(29), scored:scoredInWeek(29), missed:missedInWeek(29), totalRaw:totalRawInWeek(29), past:false,       weekStart:29 },
+            { label:"Jun 29+",   stage:T[lang].roundOf16QF, locked:!w4Open, total:matchesInWeek(29), scored:scoredInWeek(29), missed:missedInWeek(29), totalRaw:totalRawInWeek(29), past:false, weekStart:29 },
             { label:"Jul 19",    stage:T[lang].final, locked:true, total:1, scored:0, missed:0, totalRaw:1, isFinal:true },
           ];
-
-          return (
-            <div style={{marginBottom:10}}>
-              {/* Header */}
-              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
-                <p style={{fontSize:11,fontWeight:700,color:"#6B7280",textTransform:"uppercase",letterSpacing:0.8,margin:0}}>{T[lang].pathToTrophy}</p>
-                <span style={{fontSize:10,color:"#6B7280",fontWeight:600}}>{T[lang].unlocksEvery}</span>
-              </div>
-              <div style={{background:"#fff",borderRadius:14,boxShadow:"0 8px 22px rgba(0,0,0,0.07)",padding:"12px 14px"}}>
-                {steps.map((w,i)=>{
-                  const pct = w.total?Math.round((w.scored/w.total)*100):0;
-                  const done = !w.locked && pct===100;
-                  const isPast = w.past && !w.locked;
-                  const active = !w.locked && !done && !isPast;
-                  const nodeColor = w.isFinal?"#FFD700":done?GREEN:isPast?"#aaa":active?NAVY:"#ddd";
-                  const isLast = i===steps.length-1;
-                  return (
-                    <div key={i} style={{display:"flex",gap:12,cursor:(w.locked&&!isPast)?"default":"pointer",
-                      opacity:(isPast&&!done)?0.6:1}}
-                      onClick={()=>(!w.locked||isPast)&&!w.isFinal&&onOpenGroups&&onOpenGroups(w.weekStart)}>
-                      {/* Timeline column */}
-                      <div style={{display:"flex",flexDirection:"column",alignItems:"center",width:20,flexShrink:0}}>
-                        {/* Node */}
-                        <div style={{width:20,height:20,borderRadius:"50%",flexShrink:0,
-                          background:nodeColor,
-                          border:`2px solid ${nodeColor}`,
-                          display:"flex",alignItems:"center",justifyContent:"center",
-                          boxShadow:active?`0 0 0 3px ${NAVY}22`:"none"}}>
-                          {w.isFinal
-                            ? <span style={{fontSize:10}}>🏆</span>
-                            : done
-                              ? <span style={{fontSize:9,color:"#fff",fontWeight:900}}>✓</span>
-                              : active
-                                ? <div style={{width:6,height:6,borderRadius:"50%",background:"#fff"}}/>
-                                : null}
-                        </div>
-                        {/* Line to next */}
-                        {!isLast&&(
-                          <div style={{width:2,flex:1,minHeight:24,marginTop:2,
-                            background:done||isPast?GREEN:"#e8e8e8",borderRadius:1}}/>
-                        )}
+          return (<>
+            <div style={{margin:"0 2px 6px"}}>
+              <p style={{fontSize:12,fontWeight:600,color:"#9CA3AF",margin:0,textTransform:"uppercase",letterSpacing:1,textAlign:"center"}}>{T[lang].exactScores}</p>
+            </div>
+            <div onClick={()=>onOpenGroups&&onOpenGroups()} style={{background:"#fff",borderRadius:16,
+              boxShadow:"0 2px 14px rgba(0,0,0,0.07)",
+              border:"1.5px solid transparent",
+              padding:"14px 14px 12px",cursor:"pointer",position:"relative",marginBottom:10}}>
+              {steps.map((w,i)=>{
+                const pct = w.total?Math.round((w.scored/w.total)*100):0;
+                const done = !w.locked && pct===100;
+                const isPast = w.past && !w.locked;
+                const active = !w.locked && !done && !isPast;
+                const nodeColor = w.isFinal?"#F0A020":done?GREEN:isPast?"#aaa":active?NAVY:"#ddd";
+                const isLast = i===steps.length-1;
+                return (
+                  <div key={i} style={{display:"flex",gap:10,cursor:(w.locked&&!isPast)?"default":"pointer",
+                    borderRadius:10,
+                    background:w.isFinal?"linear-gradient(90deg,rgba(240,160,32,0.08),transparent)":w.locked&&!isPast?"rgba(0,0,0,0.025)":"transparent",
+                    padding:"4px 6px 4px 4px",margin:"0 -6px 0 -4px",
+                    opacity:(isPast&&!done)?0.6:1}}
+                    onClick={e=>{e.stopPropagation();(!w.locked||isPast)&&!w.isFinal&&onOpenGroups&&onOpenGroups(w.weekStart);}}>
+                    <div style={{display:"flex",flexDirection:"column",alignItems:"center",width:18,flexShrink:0}}>
+                      <div style={{width:18,height:18,borderRadius:"50%",background:nodeColor,display:"flex",alignItems:"center",justifyContent:"center",
+                        boxShadow:w.isFinal?"0 0 0 3px rgba(240,160,32,0.25), 0 2px 8px rgba(240,160,32,0.4)":done?`0 0 0 3px ${GREEN}33`:active?`0 0 0 3px ${NAVY}22`:"none",flexShrink:0}}>
+                        {w.isFinal?<span style={{fontSize:9}}>★</span>:done?<div style={{width:5,height:5,borderRadius:"50%",background:"#fff"}}/>:w.locked&&!isPast?<span style={{fontSize:8}}>🔒</span>:active?<div style={{width:5,height:5,borderRadius:"50%",background:"#fff"}}/>:null}
                       </div>
-                      {/* Content */}
-                      <div style={{flex:1,paddingBottom:isLast?0:14}}>
-                        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:w.isFinal||w.locked?0:4}}>
-                          <div>
-                            <span style={{fontSize:13,fontWeight:700,
-                              color:w.locked&&!w.isFinal&&!isPast?"#9CA3AF":w.isFinal?"#B8860B":isPast?"#9CA3AF":DARK}}>
-                              {w.label}
-                            </span>
-                            <span style={{fontSize:10,color:w.locked&&!w.isFinal?"#9CA3AF":"#6B7280",
-                              marginLeft:6,fontWeight:500}}>{w.stage}</span>
-                          </div>
-                          <span style={{fontSize:11,fontWeight:700,
-                            color:w.locked&&!isPast?"#9CA3AF":done?GREEN:isPast?"#9CA3AF":active?NAVY:"#9CA3AF"}}>
-                            {w.isFinal?T[lang].final:w.locked&&!isPast?T[lang].locked:done?T[lang].weekComplete:isPast?`${w.scored}/${w.total} · ${T[lang].past}`:`${w.scored}/${w.total}`}
-                          </span>
+                      {!isLast&&<div style={{width:2,flex:1,minHeight:16,marginTop:2,borderRadius:1,background:"#e8e8e8",position:"relative",overflow:"hidden"}}>
+                        <div style={{position:"absolute",top:0,left:0,right:0,height:`${w.locked?0:pct}%`,background:done?GREEN:active?NAVY+"99":"#bbb",borderRadius:1,transition:"height 0.4s"}}/>
+                      </div>}
+                    </div>
+                    <div style={{flex:1,paddingBottom:isLast?0:6}}>
+                      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                        <div>
+                          <span style={{fontSize:12,fontWeight:w.isFinal?700:active?700:done?600:500,
+                            color:w.isFinal?"#D4820A":w.locked&&!w.isFinal?"#C0C8D8":DARK,opacity:w.locked&&!w.isFinal?0.5:1}}>{w.label}</span>
+                          <span style={{fontSize:10,color:w.isFinal?"rgba(212,130,10,0.6)":"#9CA3AF",marginLeft:5,fontWeight:400,opacity:w.locked&&!w.isFinal?0.5:0.7}}>{w.stage}</span>
                         </div>
-                        {/* Progress bar */}
-                        {!w.locked&&!w.isFinal&&(
-                          <div style={{height:4,background:"rgba(0,0,0,0.12)",borderRadius:2,overflow:"hidden",display:"flex"}}>
-                            <div style={{height:"100%",width:`${w.totalRaw?Math.round((w.missed/w.totalRaw)*100):0}%`,
-                              background:"#b0a0a0",transition:"width 0.3s",flexShrink:0}}/>
-                            <div style={{height:"100%",width:`${w.totalRaw?Math.round((w.scored/w.totalRaw)*100):0}%`,
-                              background:GREEN,transition:"width 0.3s",flexShrink:0}}/>
-                          </div>
-                        )}
+                        <div style={{display:"flex",alignItems:"center",gap:5}}>
+                          <span style={{fontSize:11,fontWeight:active?600:400,
+                            color:w.isFinal?"#D4820A":w.locked&&!isPast?"#C0C8D8":done?GREEN:"#9CA3AF",opacity:w.locked&&!isPast?0.5:0.8}}>
+                            {w.isFinal?"Trophy":w.locked&&!isPast?T[lang].locked:done?T[lang].weekComplete:isPast?`${w.scored}/${w.total}`:`${w.scored}/${w.total}`}
+                          </span>
+                          <div onClick={e=>{if(!done||w.isFinal)return;e.stopPropagation();setCopyDone(null);setShowCopySheet("scores");}} style={{cursor:done&&!w.isFinal?"pointer":"default",opacity:done&&!w.isFinal?0.55:0,pointerEvents:done&&!w.isFinal?"auto":"none",width:9,height:9,flexShrink:0,display:"flex",alignItems:"center"}}><svg width="9" height="9" viewBox="0 0 14 14" fill="none"><rect x="4" y="4" width="8" height="8" rx="1.5" stroke={DARK} strokeWidth="1.8"/><path d="M2 10V2h8" stroke={DARK} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg></div>
+                        </div>
                       </div>
                     </div>
-                  );
-                })}
-              </div>
+                  </div>
+                );
+              })}
             </div>
-          );
+          </>);
         })()}
 
+          </div>
+        </div>
         <div style={{marginBottom:80}}/>
 
-      </div>
       </div>
 
     {/* Copy predictions sheet */}
@@ -4237,6 +4232,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
       setAvailBoards(p=>p.map(c=>c.id===b.id?{...c,members:(c.members||0)+1}:c));
       if(onJoinBoard) onJoinBoard(b.id);
       if(showToast) showToast(`Joined "${b.name}"!`, "🏆");
+      if(onJoin) onJoin(b.id);
     }
   };
 
@@ -4326,7 +4322,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
           <div onClick={()=>setView("main")} style={{width:36,height:36,borderRadius:10,background:"rgba(10,46,138,0.08)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:DARK}}>&#8249;</div>
           <div style={{textAlign:"center"}}>
             <img src={predictoLogo} alt="Predicto" decoding="sync" style={{height:36,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
-            <h1 style={{fontSize:18,fontWeight:900,margin:"2px 0 0",letterSpacing:2,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
+            <h1 style={{fontSize:10,fontWeight:700,margin:"2px 0 0",letterSpacing:2.5,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
             <p style={{fontSize:11,color:"#6B7280",margin:"3px 0 0"}}>{T[lang].location}</p>
           </div>
           <div style={{width:36}}/>
@@ -4484,7 +4480,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
           <div onClick={onBack} style={{width:36,height:36,borderRadius:10,background:"rgba(10,46,138,0.08)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:DARK,flexShrink:0}}>&#8249;</div>
           <div style={{textAlign:"center"}}>
             <img src={predictoLogo} alt="Predicto" decoding="sync" style={{height:36,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
-            <h1 style={{fontSize:18,fontWeight:900,margin:"2px 0 0",letterSpacing:2,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
+            <h1 style={{fontSize:10,fontWeight:700,margin:"2px 0 0",letterSpacing:2.5,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
             <p style={{fontSize:11,color:"#6B7280",margin:"3px 0 0"}}>{T[lang].location}</p>
           </div>
           <div style={{width:36}}/>
@@ -4535,7 +4531,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
           </div>
         </div>
       )}
-      <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",padding:"16px 20px 80px",position:"relative",zIndex:1}}>
+      <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",padding:"16px 20px 100px",position:"relative",zIndex:1}}>
 
         {/* Leave board confirmation popup */}
         {leaveConfirmBoard && (
@@ -4689,34 +4685,90 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
 }
 
 // ── FOOTER ────────────────────────────────────────────────────────────────────
+const _footerIcons = {
+  [SCREENS.HOME]: (c,a) => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={a?"2":"1.6"} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 10.5L12 3l9 7.5V20a1 1 0 01-1 1H15v-5h-6v5H4a1 1 0 01-1-1V10.5z" fill={a?c+"22":"none"}/>
+    </svg>
+  ),
+  [SCREENS.RULES]: (c,a) => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={a?"2":"1.6"} strokeLinecap="round" strokeLinejoin="round">
+      <rect x="5" y="2" width="14" height="20" rx="2" fill={a?c+"22":"none"}/>
+      <line x1="9" y1="8" x2="15" y2="8"/>
+      <line x1="9" y1="12" x2="15" y2="12"/>
+      <line x1="9" y1="16" x2="13" y2="16"/>
+    </svg>
+  ),
+  [SCREENS.LEADERBOARD]: (c,a) => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="12" width="5" height="9" rx="1.5" stroke={c} strokeWidth={a?"2":"1.6"} fill={a?c+"22":"none"}/>
+      <rect x="9.5" y="7" width="5" height="14" rx="1.5" stroke={c} strokeWidth={a?"2":"1.6"} fill={a?c+"22":"none"}/>
+      <rect x="17" y="3" width="5" height="18" rx="1.5" stroke={c} strokeWidth={a?"2":"1.6"} fill={a?c+"22":"none"}/>
+    </svg>
+  ),
+  [SCREENS.ACCOUNT]: (c,a) => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={a?"2":"1.6"} strokeLinecap="round" strokeLinejoin="round">
+      <line x1="5" y1="8.5" x2="19" y2="8.5"/>
+      <polyline points="14.5,4.5 19,8.5 14.5,12.5"/>
+      <line x1="19" y1="15.5" x2="5" y2="15.5"/>
+      <polyline points="9.5,11.5 5,15.5 9.5,19.5"/>
+    </svg>
+  ),
+  [SCREENS.BOARDS]: (c,a) => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="2" width="9" height="9" rx="2.5" stroke={c} strokeWidth={a?"2":"1.6"} fill={a?c+"22":"none"}/>
+      <rect x="13" y="2" width="9" height="9" rx="2.5" stroke={c} strokeWidth={a?"2":"1.6"} fill={a?c+"22":"none"}/>
+      <rect x="2" y="13" width="9" height="9" rx="2.5" stroke={c} strokeWidth={a?"2":"1.6"} fill={a?c+"22":"none"}/>
+      <rect x="13" y="13" width="9" height="9" rx="2.5" stroke={c} strokeWidth={a?"2":"1.6"} fill={a?c+"22":"none"}/>
+    </svg>
+  ),
+};
 function Footer({ active, onNavigate, lang }) {
   const tabs = [
-    {key:SCREENS.HOME,   icon:"🏟️", label:"Home"},
-    {key:SCREENS.RULES,  icon:"📖", label:"Rules"},
-    {key:SCREENS.ACCOUNT,icon:"👤", label:"Account"},
+    {key:SCREENS.HOME,        label:"Home"},
+    {key:SCREENS.RULES,       label:"Rules"},
+    {key:SCREENS.LEADERBOARD, label:"Ranking"},
+    {key:SCREENS.BOARDS,      label:"Boards"},
   ];
   return (
-    <div style={{flexShrink:0,background:"#fff",borderTop:"1px solid rgba(0,0,0,0.06)",display:"flex",alignItems:"stretch",height:"calc(64px + env(safe-area-inset-bottom, 0px))",paddingBottom:"env(safe-area-inset-bottom, 4px)"}}>
-      {tabs.map(tab=>{
-        const isActive=active===tab.key;
-        return (
-          <button key={tab.key} onClick={()=>onNavigate(tab.key)}
-            style={{flex:1,background:"transparent",border:"none",cursor:"pointer",
-              display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4,padding:0}}>
-            <div style={{
-              width:36,height:36,borderRadius:12,
-              background:isActive?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:"transparent",
-              boxShadow:isActive?"0 4px 12px rgba(0,32,91,0.3)":"none",
-              display:"flex",alignItems:"center",justifyContent:"center",
-              fontSize:18,transition:"all 0.2s"}}>
-              {tab.icon}
-            </div>
-            <span style={{fontSize:11,fontWeight:isActive?700:500,color:isActive?NAVY:"#777",transition:"all 0.2s"}}>
-              {tab.label}
-            </span>
-          </button>
-        );
-      })}
+    <div style={{position:"fixed",bottom:0,left:0,right:0,padding:"0 14px",paddingBottom:"env(safe-area-inset-bottom, 10px)",zIndex:1000}}>
+      <div style={{
+        background:"rgba(255,255,255,0.45)",
+        backdropFilter:"blur(24px)",
+        WebkitBackdropFilter:"blur(24px)",
+        borderRadius:26,
+        boxShadow:"0 8px 32px rgba(10,46,138,0.16), inset 0 -1px 0 rgba(0,0,0,0.03)",
+        border:"1px solid rgba(255,255,255,0.72)",
+        display:"flex",
+        alignItems:"stretch",
+        height:62,
+        margin:"10px 0 0",
+      }}>
+        {tabs.map(tab=>{
+          const isActive=active===tab.key;
+          const iconColor = isActive ? NAVY : "#6B7280";
+          return (
+            <button key={tab.key} onClick={()=>onNavigate(tab.key)}
+              style={{flex:1,background:"transparent",border:"none",cursor:"pointer",WebkitTapHighlightColor:"transparent",
+                display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:3,padding:0,position:"relative",
+                opacity:isActive?1:0.6,transition:"opacity 0.18s"}}>
+              <div style={{
+                width:40,height:36,borderRadius:13,
+                background:isActive?`rgba(10,46,138,0.08)`:"transparent",
+                boxShadow:isActive?`0 2px 10px rgba(10,46,138,0.14)`:"none",
+                display:"flex",alignItems:"center",justifyContent:"center",
+                animation:isActive?"tabPop 0.3s cubic-bezier(0.175,0.885,0.32,1.275) forwards":"none",
+                transition:"background 0.2s, box-shadow 0.2s",
+              }}>
+                {_footerIcons[tab.key]?.(iconColor, isActive)}
+              </div>
+              <span style={{fontSize:10,fontWeight:isActive?700:500,color:isActive?NAVY:"#6B7280",transition:"all 0.18s",letterSpacing:0.2}}>
+                {tab.label}
+              </span>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -5227,7 +5279,7 @@ function SplashScreen({ onNext, lang, setLang, simDay, simHour=12, simMin=0, tou
         <div style={{width:44}}/>
         <div style={{textAlign:"center"}}>
           <img src={predictoLogo} alt="Predicto" decoding="sync" style={{height:36,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
-          <h1 style={{fontSize:18,fontWeight:900,margin:"2px 0 0",letterSpacing:2,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
+          <h1 style={{fontSize:10,fontWeight:700,margin:"2px 0 0",letterSpacing:2.5,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
           <p style={{fontSize:11,color:"#6B7280",margin:"3px 0 0"}}>{T[lang].location}</p>
         </div>
         <LangSelector lang={lang} setLang={setLang}/>
@@ -5581,7 +5633,7 @@ function LoginScreen({ onNext }) {
   const header = (icon, title) => (
     <div style={{position:"relative",zIndex:1,background:"linear-gradient(180deg,#CCDAFF 0%,#E2EBFF 40%,#F8F8F8 100%)",padding:"12px 28px 16px",display:"flex",flexDirection:"column",alignItems:"center"}}>
       <img src={predictoLogo} alt="Predicto" decoding="sync" style={{height:36,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
-      <h1 style={{fontSize:18,fontWeight:900,margin:"2px 0 0",letterSpacing:2,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
+      <h1 style={{fontSize:10,fontWeight:700,margin:"2px 0 0",letterSpacing:2.5,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
       <h2 style={{fontSize:20,fontWeight:800,color:DARK,margin:"10px 0 0",textAlign:"center"}}>{title}</h2>
     </div>
   );
@@ -5937,7 +5989,7 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
           <div onClick={onBack} style={{width:36,height:36,borderRadius:10,background:"rgba(10,46,138,0.08)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:DARK}}>&#8249;</div>
           <div style={{textAlign:"center"}}>
             <img src={predictoLogo} alt="Predicto" decoding="sync" style={{height:36,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
-            <h1 style={{fontSize:18,fontWeight:900,margin:"2px 0 0",letterSpacing:2,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
+            <h1 style={{fontSize:10,fontWeight:700,margin:"2px 0 0",letterSpacing:2.5,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
             <p style={{fontSize:11,color:"#6B7280",margin:"3px 0 0"}}>{T[lang].location}</p>
           </div>
           <div style={{width:36}}/>
@@ -5969,7 +6021,7 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
           <p style={{fontSize:13,color:"#aaa",lineHeight:1.5,margin:0}}>{T[lang].leaderboardMsg}</p>
         </div>
       ) : (
-        <div style={{flex:1,overflowY:"auto",padding:"12px 20px"}}>
+        <div style={{flex:1,overflowY:"auto",padding:"12px 20px 100px"}}>
           {filtered.length===0?(
             <div style={{textAlign:"center",padding:"40px 0",color:"#aaa",fontSize:13}}>
               {T[lang].noPlayerFound} "{search}"
@@ -6300,7 +6352,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
         </div>
       </div>
 
-      <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",padding:"14px 20px",position:"relative",zIndex:1}}>
+      <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",padding:"14px 20px 100px",position:"relative",zIndex:1}}>
         {/* Weekly Calendar with clickable matches */}
         <WeeklyCalendar weekStart={weekStart} setWeekStart={handleWeekChange} weeks={weeks} weekIdx={weekIdx}
           selDay={selDay} onDaySelect={handleDaySelect} scores={scores} scoresVersion={_v}
@@ -7277,7 +7329,7 @@ function AccountScreen({ setLang, onBoards, onSignOut, onShowGuide, user }) {
       <div style={{background:"linear-gradient(180deg,#CCDAFF 0%,#E2EBFF 40%,#F8F8F8 100%)",padding:"12px 20px 10px",flexShrink:0,position:"relative",zIndex:1,boxSizing:"border-box"}}>
         <div style={{textAlign:"center",marginBottom:8}}>
           <img src={predictoLogo} alt="Predicto" decoding="sync" style={{height:36,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
-          <h1 style={{fontSize:18,fontWeight:900,margin:"2px 0 0",letterSpacing:2,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
+          <h1 style={{fontSize:10,fontWeight:700,margin:"2px 0 0",letterSpacing:2.5,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
           <p style={{fontSize:11,color:"#6B7280",margin:"3px 0 0"}}>{T[lang].location}</p>
         </div>
         <div style={{borderTop:"2px solid rgba(0,0,0,0.06)",marginTop:10}}/>
@@ -7294,7 +7346,7 @@ function AccountScreen({ setLang, onBoards, onSignOut, onShowGuide, user }) {
         <div style={{borderTop:"2px solid rgba(0,0,0,0.06)",marginTop:10}}/>
       </div>
       <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",position:"relative",zIndex:1}}>
-        <div style={{padding:"12px 20px"}}>
+        <div style={{padding:"12px 20px 100px"}}>
           {[{icon:"🏆",label:T[lang].myBoards,sub:T[lang].activeBoards,action:onBoards},{icon:"📖",label:T[lang].appGuide,sub:T[lang].howItWorks,action:onShowGuide},{icon:"🔔",label:T[lang].notifications,sub:T[lang].matchAlertsOn},{icon:"🌍",label:T[lang].language,sub:LANGS.find(l=>l.code===lang)?.name||"English",isLang:true},{icon:"⭐",label:T[lang].upgradePremium,sub:T[lang].removeAds,highlight:true},{icon:"🚪",label:T[lang].signOut,sub:"",action:handleSignOut}].map(item=>(
             <div key={item.label} onClick={item.isLang?undefined:item.action||undefined} style={{display:"flex",alignItems:"center",gap:14,background:item.highlight?"#E8F0FF":BG,borderRadius:14,boxShadow:item.highlight?`0 0 0 2px ${NAVY},${SHADOW_OUT}`:SHADOW_OUT,padding:"13px 16px",marginBottom:10,cursor:item.isLang?"default":"pointer"}}>
               <span style={{fontSize:20}}>{item.icon}</span>
@@ -7368,27 +7420,44 @@ function RulesScreen({ onBack }) {
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",position:"relative"}}>
       <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.055,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
-      <div style={{position:"relative",zIndex:1,background:"linear-gradient(180deg,#CCDAFF 0%,#E2EBFF 40%,#F8F8F8 100%)",padding:"12px 20px 0",flexShrink:0,boxSizing:"border-box",textAlign:"center"}}>
-        <img src={predictoLogo} alt="Predicto" decoding="sync" style={{height:36,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
-        <h1 style={{fontSize:18,fontWeight:900,margin:"2px 0 0",letterSpacing:2,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
-        <p style={{fontSize:11,color:"#6B7280",margin:"3px 0 0"}}>{T[lang].location}</p>
-        <div style={{display:"flex",gap:0,borderBottom:`2px solid rgba(0,0,0,0.06)`,marginTop:10}}>
-          {[{id:"predictions",label:"🎯 Predictions"},{id:"exact",label:<><span>⚽</span>{" Exact Score"}</>}].map(t=>(
-            <button key={t.id} onClick={()=>setTab(t.id)}
-              style={{flex:1,background:"transparent",border:"none",cursor:"pointer",padding:"12px 0",
-                fontSize:12,fontWeight:700,color:tab===t.id?NAVY:"#aaa",
-                borderBottom:tab===t.id?`3px solid ${RED}`:"3px solid transparent",
-                transition:"all 0.2s"}}>
-              {t.label}
-            </button>
-          ))}
+      <div style={{padding:"10px 14px 0",flexShrink:0,position:"relative",zIndex:2}}>
+        <div style={{background:"rgba(255,255,255,0.32)",backdropFilter:"blur(28px)",WebkitBackdropFilter:"blur(28px)",borderRadius:26,boxShadow:"0 8px 32px rgba(10,46,138,0.12), inset 0 1px 0 rgba(255,255,255,0.95)",border:"1px solid rgba(255,255,255,0.55)",padding:"12px 20px 0",position:"relative",WebkitMaskImage:"linear-gradient(to bottom,black 0%,black 78%,transparent 100%)",maskImage:"linear-gradient(to bottom,black 0%,black 78%,transparent 100%)"}}>
+          <div style={{position:"absolute",inset:0,borderRadius:26,background:"linear-gradient(135deg,rgba(255,255,255,0.3) 0%,rgba(255,255,255,0.08) 40%,transparent 65%)",pointerEvents:"none",zIndex:0}}/>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",position:"relative",zIndex:1}}>
+            <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,flexShrink:0,paddingTop:10}}>
+              <button onClick={onBack} style={{width:44,height:44,background:"none",border:"none",padding:0,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",WebkitTapHighlightColor:"transparent"}}>
+                <span style={{fontSize:22,color:"#374151",lineHeight:1}}>‹</span>
+              </button>
+              <p style={{fontSize:11,color:"transparent",margin:0,userSelect:"none"}}> </p>
+            </div>
+            <div style={{textAlign:"center"}}>
+              <img src={predictoLogo} alt="Predicto" decoding="sync" style={{height:36,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
+              <h1 style={{fontSize:10,fontWeight:700,margin:"2px 0 0",letterSpacing:2.5,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
+              <p style={{fontSize:11,color:"#6B7280",margin:"3px 0 0"}}>{T[lang].location}</p>
+            </div>
+            <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,flexShrink:0,paddingTop:10}}>
+              <img src={bellIcon} alt="Notifications" style={{width:44,height:44}}/>
+              <p style={{fontSize:11,color:"transparent",margin:0,userSelect:"none"}}> </p>
+            </div>
+          </div>
+          <div style={{display:"flex",gap:0,borderTop:`1px solid rgba(0,0,0,0.06)`,marginTop:10}}>
+            {[{id:"predictions",label:"🎯 Predictions"},{id:"exact",label:"⚽ Exact Score"}].map(t=>(
+              <button key={t.id} onClick={()=>setTab(t.id)}
+                style={{flex:1,background:"transparent",border:"none",cursor:"pointer",padding:"12px 0",
+                  fontSize:12,fontWeight:700,color:tab===t.id?NAVY:"#aaa",
+                  borderBottom:tab===t.id?`3px solid ${RED}`:"3px solid transparent",
+                  transition:"all 0.2s"}}>
+                {t.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
-      <div style={{flex:1,overflowY:"auto",overscrollBehavior:"contain",padding:"0 20px 16px",position:"relative",zIndex:1}}>
+      <div style={{flex:1,overflowY:"auto",overscrollBehavior:"contain",padding:"10px 14px 100px",position:"relative",zIndex:1}}>
 
         {/* Description */}
-        <div style={{background:BG,borderRadius:14,boxShadow:SHADOW_OUT,padding:"14px 16px",marginBottom:16}}>
+        <div style={{background:"rgba(255,255,255,0.32)",backdropFilter:"blur(28px)",WebkitBackdropFilter:"blur(28px)",borderRadius:20,boxShadow:"0 8px 32px rgba(10,46,138,0.08), inset 0 1px 0 rgba(255,255,255,0.95)",border:"1px solid rgba(255,255,255,0.55)",padding:"14px 16px",marginBottom:12}}>
           <p style={{fontSize:13,fontWeight:700,color:DARK,margin:"0 0 4px"}}>
             {tab==="predictions" ? T[lang].howPredictionsWork : T[lang].howExactScoreWork}
           </p>
@@ -7402,13 +7471,13 @@ function RulesScreen({ onBack }) {
         {tab==="predictions" ? (()=>{
           const SectionHeader = ({label,due,color})=>(
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",
-              background:"#f0f2f8",padding:"7px 16px",borderBottom:"1px solid rgba(0,0,0,0.06)"}}>
+              background:"rgba(255,255,255,0.4)",padding:"7px 16px",borderBottom:"1px solid rgba(0,0,0,0.06)"}}>
               <span style={{fontSize:10,fontWeight:800,color,letterSpacing:1.2,textTransform:"uppercase"}}>{label}</span>
               <span style={{fontSize:10,fontWeight:700,color:"#9CA3AF"}}>{due}</span>
             </div>
           );
           const Row = ({r,i,last})=>(
-            <div style={{display:"flex",alignItems:"center",padding:"12px 16px",background:"#fff",borderBottom:last?"none":"1px solid rgba(0,0,0,0.05)",gap:12}}>
+            <div style={{display:"flex",alignItems:"center",padding:"12px 16px",background:"rgba(255,255,255,0.25)",borderBottom:last?"none":"1px solid rgba(0,0,0,0.05)",gap:12}}>
               <div style={{flex:1}}>
                 <p style={{fontSize:13,fontWeight:700,color:DARK,margin:"0 0 2px"}}>
                   {r.phase.split("⚽").flatMap((p,j)=>j===0?[p]:[<span key={j} style={{colorScheme:"light",filter:"saturate(0) contrast(3) brightness(1.1)"}}>⚽</span>,p])}
@@ -7423,7 +7492,7 @@ function RulesScreen({ onBack }) {
           const task1 = predRules.slice(0,4);
           const task2 = predRules.slice(4);
           return (
-            <div style={{background:BG,borderRadius:14,boxShadow:SHADOW_OUT,overflow:"hidden",marginBottom:16}}>
+            <div style={{background:"rgba(255,255,255,0.32)",backdropFilter:"blur(28px)",WebkitBackdropFilter:"blur(28px)",borderRadius:20,boxShadow:"0 8px 32px rgba(10,46,138,0.08), inset 0 1px 0 rgba(255,255,255,0.95)",border:"1px solid rgba(255,255,255,0.55)",overflow:"hidden",marginBottom:12}}>
               <SectionHeader label={T[lang].rulesTask1Header} due={T[lang].rulesTask1Due} color={NAVY}/>
               {task1.map((r,i)=><Row key={i} r={r} last={false}/>)}
               <SectionHeader label={T[lang].rulesTask2Header} due={T[lang].rulesTask2Due} color={RED}/>
@@ -7431,9 +7500,9 @@ function RulesScreen({ onBack }) {
             </div>
           );
         })() : (
-          <div style={{background:BG,borderRadius:14,boxShadow:SHADOW_OUT,overflow:"hidden",marginBottom:16}}>
+          <div style={{background:"rgba(255,255,255,0.32)",backdropFilter:"blur(28px)",WebkitBackdropFilter:"blur(28px)",borderRadius:20,boxShadow:"0 8px 32px rgba(10,46,138,0.08), inset 0 1px 0 rgba(255,255,255,0.95)",border:"1px solid rgba(255,255,255,0.55)",overflow:"hidden",marginBottom:12}}>
             {exactRules.map((r,i)=>(
-              <div key={i} style={{display:"flex",alignItems:"center",padding:"12px 16px",background:"#fff",borderBottom:i<exactRules.length-1?"1px solid rgba(0,0,0,0.05)":"none",gap:12}}>
+              <div key={i} style={{display:"flex",alignItems:"center",padding:"12px 16px",background:"rgba(255,255,255,0.25)",borderBottom:i<exactRules.length-1?"1px solid rgba(0,0,0,0.05)":"none",gap:12}}>
                 <div style={{flex:1}}>
                   <p style={{fontSize:13,fontWeight:700,color:DARK,margin:"0 0 2px"}}>
                     {r.phase.split("⚽").flatMap((p,j)=>j===0?[p]:[<span key={j} style={{colorScheme:"light",filter:"saturate(0) contrast(3) brightness(1.1)"}}>⚽</span>,p])}
@@ -7504,6 +7573,9 @@ function App() {
     style.textContent = `
       @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
       @keyframes pulse { 0%,100%{transform:scale(1);box-shadow:0 4px 20px rgba(200,16,46,0.25)} 50%{transform:scale(1.025);box-shadow:0 12px 40px rgba(200,16,46,0.7)} }
+      @keyframes tabPop { 0%{transform:scale(1)} 40%{transform:scale(1.22)} 70%{transform:scale(0.95)} 100%{transform:scale(1)} }
+      @keyframes cdSlideIn { 0%{opacity:0;transform:translateY(6px)} 100%{opacity:1;transform:translateY(0)} }
+      @keyframes cdTicker { from{transform:translateX(0)} to{transform:translateX(-50%)} }
       input, textarea, select { font-size: 16px !important; }
     `;
     document.head.appendChild(style);
@@ -7759,7 +7831,7 @@ function App() {
   const showFooter = !noFooter.includes(screen);
   const _nonSaveable = [SCREENS.SPLASH, SCREENS.LOGIN, SCREENS.RESET_PASSWORD, SCREENS.SET_PASSWORD];
   if (!_nonSaveable.includes(screen)) { try { sessionStorage.setItem('lastScreen', screen); } catch {} }
-  const footerActive = screen===SCREENS.RULES?SCREENS.RULES:screen===SCREENS.ACCOUNT?SCREENS.ACCOUNT:SCREENS.HOME;
+  const footerActive = screen===SCREENS.RULES?SCREENS.RULES:screen===SCREENS.LEADERBOARD?SCREENS.LEADERBOARD:screen===SCREENS.BOARDS?SCREENS.BOARDS:SCREENS.HOME;
 
   if (authLoading || (user && boardsLoading)) return <div style={{width:"100%",height:"100%",background:BG}}/>;
 
@@ -7767,6 +7839,7 @@ function App() {
     <UserCtx.Provider value={user}>
     <LangCtx.Provider value={lang}>
     <div style={{width:"100%",height:"100%",background:BG,display:"flex",flexDirection:"column",position:"relative",fontFamily:"-apple-system,'SF Pro Display',sans-serif"}}>
+        {screen===SCREENS.HOME&&<img src={trophy} alt="" style={{position:"fixed",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.09,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>}
         <div style={{flex:1,overflow:"hidden",display:"flex",flexDirection:"column"}}>
           {screen==="dev"&&<DevPanel
             onAutoPick={(state)=>{
@@ -7825,6 +7898,7 @@ function App() {
                 setAllInstantPickStates(p=>({...p,[targetBoardId]:instantPickState}));
                 showToast("Predictions copied!","✅");
               }}
+              onAccount={()=>setScreen(SCREENS.ACCOUNT)}
               myBoards={myBoards}
               predictionsComplete={predictionsComplete}
               instantPickDone={instantPickDone}
@@ -7992,7 +8066,7 @@ function App() {
           </div>}
         </div>
         <Toast message={toast.message} emoji={toast.emoji} visible={toast.visible}/>
-        {showFooter&&<Footer active={footerActive} onNavigate={setScreen} lang={lang}/>}
+        {showFooter&&<Footer active={footerActive} onNavigate={key=>{ if(key===SCREENS.BOARDS) setBoardsInitialTab("my"); setScreen(key); }} lang={lang} activeBoardId={activeBoardId} myBoards={myBoards} leaderboardData={leaderboardData} tournamentStarted={tournamentStarted}/>}
         <AdminBugPanel
           user={user}
           allInstantPickStates={allInstantPickStates}
