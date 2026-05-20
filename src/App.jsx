@@ -7626,7 +7626,7 @@ function RulesScreen({ onBack }) {
                 </p>
                 <p style={{fontSize:11,color:"#aaa",margin:0}}>{r.desc}</p>
               </div>
-              <div style={{background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,borderRadius:10,padding:"5px 12px",flexShrink:0}}>
+              <div style={{background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,borderRadius:10,padding:"5px 0",flexShrink:0,width:56,textAlign:"center"}}>
                 <span style={{fontSize:13,fontWeight:900,color:"#fff"}}>+{r.pts}</span>
               </div>
             </div>
@@ -7651,7 +7651,7 @@ function RulesScreen({ onBack }) {
                   </p>
                   <p style={{fontSize:11,color:"#aaa",margin:0}}>{r.desc}</p>
                 </div>
-                <div style={{background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,borderRadius:10,padding:"5px 12px",flexShrink:0}}>
+                <div style={{background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,borderRadius:10,padding:"5px 0",flexShrink:0,width:56,textAlign:"center"}}>
                   <span style={{fontSize:13,fontWeight:900,color:"#fff"}}>+{r.pts}</span>
                 </div>
               </div>
