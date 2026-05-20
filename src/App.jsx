@@ -4637,7 +4637,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
                         <p style={{fontSize:13,fontWeight:700,color:DARK,margin:0}}>{latest.name}</p>
                         <p style={{fontSize:11,color:"#aaa",margin:"2px 0 0"}}>👥 {latest.members}{latest.max?"/"+latest.max:""} members</p>
                       </div>
-                      <div style={{background:"#E8F0FF",borderRadius:9,padding:"7px 12px",fontSize:11,fontWeight:700,color:NAVY,flexShrink:0}}>✓ Joined</div>
+                      <span style={{fontSize:11,fontWeight:600,color:GREEN,flexShrink:0}}>✓ Joined</span>
                       {!b.isGlobal&&<button onClick={e=>{e.stopPropagation();setLeaveConfirmBoard(b);}} style={{background:"rgba(200,16,46,0.08)",border:"none",borderRadius:9,padding:"7px 10px",fontSize:13,color:RED,cursor:"pointer",flexShrink:0}}>🗑️</button>}
                     </div>
                     {bi<arr.length-1&&<div style={{height:1,background:"rgba(0,0,0,0.05)",margin:"0 14px"}}/>}
