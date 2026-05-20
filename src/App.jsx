@@ -4097,7 +4097,8 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
             <div onClick={()=>onOpenGroups&&onOpenGroups()} style={{background:"#fff",borderRadius:16,
               boxShadow:"0 2px 14px rgba(0,0,0,0.07)",
               border:"1.5px solid transparent",
-              padding:"14px 14px 12px",cursor:"pointer",position:"relative",marginBottom:10}}>
+              padding:"14px 14px 12px",cursor:"pointer",position:"relative",marginBottom:10,overflow:"hidden"}}>
+              <img src={varBg} alt="" style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover",objectPosition:"center 30%",opacity:0.10,pointerEvents:"none",zIndex:0,borderRadius:16}}/>
               {steps.map((w,i)=>{
                 const pct = w.total?Math.round((w.scored/w.total)*100):0;
                 const done = !w.locked && pct===100;
