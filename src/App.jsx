@@ -7866,7 +7866,7 @@ function App() {
     return () => { supabase.removeChannel(boardChannel); };
   }, [user]);
 
-  const isLocalhost = import.meta.env.DEV || window.location.hostname === 'localhost';
+  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
   const inRecoveryRef = useRef(false);
   const [screen, setScreen] = useState(SCREENS.SPLASH);
   const [boardsInitialTab, setBoardsInitialTab] = useState("my");
