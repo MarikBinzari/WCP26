@@ -3794,12 +3794,12 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
   const [copyDone, setCopyDone] = useState(null);
   const activeId = activeBoardId;
   const setActiveId = setActiveBoardId;
-  const allSliderItems = [{id:'__remove__', isRemove:true}, ...myBoards, {id:'__add__', isAdd:true}];
-  const [sliderPos, setSliderPos] = useState(()=>Math.max(1,myBoards.findIndex(b=>b.id===activeBoardId)+1));
+  const allSliderItems = myBoards;
+  const [sliderPos, setSliderPos] = useState(()=>Math.max(0,myBoards.findIndex(b=>b.id===activeBoardId)));
   const sliderTouchRef = useRef(null);
   useEffect(()=>{
     const idx = myBoards.findIndex(b=>b.id===activeId);
-    if(idx>=0) setSliderPos(idx+1);
+    if(idx>=0) setSliderPos(idx);
   },[activeId]);
   const handleSliderTouchStart = (e)=>{ sliderTouchRef.current = e.touches[0].clientX; };
   const handleSliderTouchEnd = (e)=>{
@@ -3808,11 +3808,9 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
     sliderTouchRef.current = null;
     if(Math.abs(dx)<28) return;
     if(dx<0 && sliderPos<allSliderItems.length-1){
-      const np=sliderPos+1; setSliderPos(np);
-      if(!allSliderItems[np]?.isAdd && !allSliderItems[np]?.isRemove) setActiveId(allSliderItems[np].id);
+      const np=sliderPos+1; setSliderPos(np); setActiveId(allSliderItems[np].id);
     } else if(dx>0 && sliderPos>0){
-      const np=sliderPos-1; setSliderPos(np);
-      if(!allSliderItems[np]?.isAdd && !allSliderItems[np]?.isRemove) setActiveId(allSliderItems[np].id);
+      const np=sliderPos-1; setSliderPos(np); setActiveId(allSliderItems[np].id);
     }
   };
   const [cdUnitIdx, setCdUnitIdx] = useState(0);
@@ -3885,32 +3883,9 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
             if(!item) return <div style={{flex:1}}/>;
             const isCenter = pos===0;
             const dist = Math.abs(pos);
-            const scale = isCenter?1:Math.max(0.58,1-dist*0.2);
-            const opacity = isCenter?1:Math.max(0.32,1-dist*0.28);
             const handleTap = ()=>{
-              if(item.isAdd){ onBoards("available"); return; }
               if(!isCenter){ const np=sliderPos+pos; setSliderPos(np); setActiveId(item.id); }
             };
-            if(item.isRemove) return (
-              <div style={{flex:1,display:"flex",justifyContent:"center",alignItems:"flex-end",paddingBottom:0}}>
-                <div onClick={()=>onBoards("my")} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4,cursor:"pointer",WebkitTapHighlightColor:"transparent",transform:`scale(${scale})`,transformOrigin:"center bottom",opacity}}>
-                  <div style={{width:42,height:42,borderRadius:"50%",background:"transparent",border:"1.5px dashed rgba(0,0,0,0.25)",display:"flex",alignItems:"center",justifyContent:"center"}}>
-                    <svg width="18" height="20" viewBox="0 0 18 20" fill="none">
-                      <path d="M1 4.5h16M6 4.5V3a1 1 0 011-1h4a1 1 0 011 1v1.5M7 9v6M11 9v6M2.5 4.5l1 11a1.5 1.5 0 001.5 1.5h8a1.5 1.5 0 001.5-1.5l1-11" stroke="rgba(0,0,0,0.35)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </div>
-                  <span style={{fontSize:9,color:"rgba(0,0,0,0.55)",fontWeight:600,maxWidth:50,textAlign:"center",lineHeight:1.2}}>remove</span>
-                </div>
-              </div>
-            );
-            if(item.isAdd) return (
-              <div style={{flex:1,display:"flex",justifyContent:"center",alignItems:"flex-end",paddingBottom:0}}>
-                <div onClick={()=>onBoards("available")} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4,cursor:"pointer",WebkitTapHighlightColor:"transparent",transform:`scale(${scale})`,transformOrigin:"center bottom",opacity}}>
-                  <div style={{width:42,height:42,borderRadius:"50%",background:"transparent",border:"1.5px dashed rgba(0,0,0,0.25)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,color:"rgba(0,0,0,0.35)"}}>+</div>
-                  <span style={{fontSize:9,color:"rgba(0,0,0,0.55)",fontWeight:600,maxWidth:50,textAlign:"center",lineHeight:1.2}}>{T[lang].add}</span>
-                </div>
-              </div>
-            );
             const boardLeaders = leaderboardData[item.id];
             const myRank = boardLeaders?.find(u=>u.isMe)?.rank;
             const memberCount = item.members;
@@ -3925,13 +3900,13 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
           return (
             <div style={{position:"relative"}}>
               <div style={{height:10}}/>
-              {sliderPos>1&&(
-                <div onClick={()=>{ const np=sliderPos-1; setSliderPos(np); if(!allSliderItems[np]?.isAdd&&!allSliderItems[np]?.isRemove) setActiveId(allSliderItems[np].id); }} style={{position:"absolute",left:0,top:"50%",transform:"translateY(-50%)",zIndex:5,cursor:"pointer",WebkitTapHighlightColor:"transparent"}}>
+              {sliderPos>0&&(
+                <div onClick={()=>{ const np=sliderPos-1; setSliderPos(np); setActiveId(allSliderItems[np].id); }} style={{position:"absolute",left:0,top:"50%",transform:"translateY(-50%)",zIndex:5,cursor:"pointer",WebkitTapHighlightColor:"transparent"}}>
                   <span style={{fontSize:18,color:"rgba(0,0,0,0.45)",fontWeight:700,lineHeight:1}}>‹</span>
                 </div>
               )}
-              {sliderPos<allSliderItems.length-2&&(
-                <div onClick={()=>{ const np=sliderPos+1; setSliderPos(np); if(!allSliderItems[np]?.isAdd&&!allSliderItems[np]?.isRemove) setActiveId(allSliderItems[np].id); }} style={{position:"absolute",right:0,top:"50%",transform:"translateY(-50%)",zIndex:5,cursor:"pointer",WebkitTapHighlightColor:"transparent"}}>
+              {sliderPos<allSliderItems.length-1&&(
+                <div onClick={()=>{ const np=sliderPos+1; setSliderPos(np); setActiveId(allSliderItems[np].id); }} style={{position:"absolute",right:0,top:"50%",transform:"translateY(-50%)",zIndex:5,cursor:"pointer",WebkitTapHighlightColor:"transparent"}}>
                   <span style={{fontSize:18,color:"rgba(0,0,0,0.45)",fontWeight:700,lineHeight:1}}>›</span>
                 </div>
               )}
@@ -3946,18 +3921,22 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
         })()}
       </div>
       <div onClick={()=>onLeaderboard&&onLeaderboard()} style={{position:"relative",cursor:"pointer",WebkitTapHighlightColor:"transparent",marginTop:2}}>
-        {/* rând 1 — dots boards */}
-        <div style={{display:"flex",justifyContent:"center",alignItems:"center",gap:5,height:16,marginBottom:6}}>
-          {(()=>{
-            const realBoards = allSliderItems.filter(b=>!b.isAdd && !b.isRemove);
-            const realPos = sliderPos - 1; // offset for remove item at index 0
-            return realBoards.map((_,i)=>(
-              <div key={i} onClick={e=>{ e.stopPropagation(); const np=i+1; setSliderPos(np); setActiveId(allSliderItems[np].id); }}
+        {/* rând 1 — dots boards + delete/add */}
+        <div style={{display:"flex",justifyContent:"center",alignItems:"center",gap:8,height:24,marginBottom:6,padding:"0 16px"}}>
+          <div onClick={e=>{e.stopPropagation();onBoards("my");}} style={{display:"flex",alignItems:"center",justifyContent:"center",width:24,height:24,borderRadius:7,background:"rgba(200,16,46,0.08)",cursor:"pointer",flexShrink:0}}>
+            <svg width="13" height="14" viewBox="0 0 18 20" fill="none"><path d="M1 4.5h16M6 4.5V3a1 1 0 011-1h4a1 1 0 011 1v1.5M7 9v6M11 9v6M2.5 4.5l1 11a1.5 1.5 0 001.5 1.5h8a1.5 1.5 0 001.5-1.5l1-11" stroke={RED} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          </div>
+          <div style={{display:"flex",alignItems:"center",gap:5,flex:1,justifyContent:"center"}}>
+            {allSliderItems.map((_,i)=>(
+              <div key={i} onClick={e=>{ e.stopPropagation(); setSliderPos(i); setActiveId(allSliderItems[i].id); }}
                 style={{height:3,borderRadius:2,transition:"all 0.25s",cursor:"pointer",
-                  width:i===realPos?44:14,
-                  background:i===realPos?"rgba(10,46,138,0.3)":"rgba(100,116,139,0.2)"}}/>
-            ));
-          })()}
+                  width:i===sliderPos?44:14,
+                  background:i===sliderPos?"rgba(10,46,138,0.3)":"rgba(100,116,139,0.2)"}}/>
+            ))}
+          </div>
+          <div onClick={e=>{e.stopPropagation();onBoards("available");}} style={{display:"flex",alignItems:"center",justifyContent:"center",width:24,height:24,borderRadius:7,background:"rgba(0,32,91,0.08)",cursor:"pointer",flexShrink:0}}>
+            <span style={{fontSize:16,color:NAVY,lineHeight:1,fontWeight:300}}>+</span>
+          </div>
         </div>
         {/* rând 2 — rank & pts */}
         <div style={{position:"relative",display:"flex",justifyContent:"center",alignItems:"center",height:28}}>
