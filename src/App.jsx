@@ -539,7 +539,7 @@ function CalendarSlider() {
 
       {/* Match popup — fixed bottom sheet */}
       {sm&&(
-        <div style={{position:"absolute",inset:0,zIndex:50,display:"flex",flexDirection:"column",justifyContent:"flex-end"}}
+        <div style={{position:"fixed",inset:0,zIndex:2000,display:"flex",flexDirection:"column",justifyContent:"flex-end"}}
           onClick={()=>setSelDay(null)}>
           <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.4)"}}/>
           <div onClick={e=>e.stopPropagation()}
@@ -3910,12 +3910,12 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
             <div style={{position:"relative"}}>
               <div style={{height:10}}/>
               {sliderPos>1&&(
-                <div style={{position:"absolute",left:0,top:"50%",transform:"translateY(-50%)",zIndex:5,pointerEvents:"none"}}>
+                <div onClick={()=>{ const np=sliderPos-1; setSliderPos(np); if(!allSliderItems[np]?.isAdd&&!allSliderItems[np]?.isRemove) setActiveId(allSliderItems[np].id); }} style={{position:"absolute",left:0,top:"50%",transform:"translateY(-50%)",zIndex:5,cursor:"pointer",WebkitTapHighlightColor:"transparent"}}>
                   <span style={{fontSize:18,color:"rgba(0,0,0,0.45)",fontWeight:700,lineHeight:1}}>‹</span>
                 </div>
               )}
-              {sliderPos<allSliderItems.length-1&&(
-                <div style={{position:"absolute",right:0,top:"50%",transform:"translateY(-50%)",zIndex:5,pointerEvents:"none"}}>
+              {sliderPos<allSliderItems.length-2&&(
+                <div onClick={()=>{ const np=sliderPos+1; setSliderPos(np); if(!allSliderItems[np]?.isAdd&&!allSliderItems[np]?.isRemove) setActiveId(allSliderItems[np].id); }} style={{position:"absolute",right:0,top:"50%",transform:"translateY(-50%)",zIndex:5,cursor:"pointer",WebkitTapHighlightColor:"transparent"}}>
                   <span style={{fontSize:18,color:"rgba(0,0,0,0.45)",fontWeight:700,lineHeight:1}}>›</span>
                 </div>
               )}
@@ -3936,9 +3936,10 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
             const realBoards = allSliderItems.filter(b=>!b.isAdd && !b.isRemove);
             const realPos = sliderPos - 1; // offset for remove item at index 0
             return realBoards.map((_,i)=>(
-              <div key={i} style={{height:3,borderRadius:2,transition:"all 0.25s",
-                width:i===realPos?44:14,
-                background:i===realPos?"rgba(10,46,138,0.3)":"rgba(100,116,139,0.2)"}}/>
+              <div key={i} onClick={e=>{ e.stopPropagation(); const np=i+1; setSliderPos(np); setActiveId(allSliderItems[np].id); }}
+                style={{height:3,borderRadius:2,transition:"all 0.25s",cursor:"pointer",
+                  width:i===realPos?44:14,
+                  background:i===realPos?"rgba(10,46,138,0.3)":"rgba(100,116,139,0.2)"}}/>
             ));
           })()}
         </div>
@@ -4210,10 +4211,11 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
 
 
 // ── BOARDS ────────────────────────────────────────────────────────────────────
-function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: createdBoardsProp, setCreatedBoards: setCreatedBoardsProp, availableBoards: availableBoardsProp, setAvailableBoards: setAvailableBoardsProp, showToast, user, onCreateBoard, onJoinByCode, onJoinBoard, onDeleteBoard, onRemoveMember, leaderboardData={}, initialTab="my" }) {
+function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: createdBoardsProp, setCreatedBoards: setCreatedBoardsProp, availableBoards: availableBoardsProp, setAvailableBoards: setAvailableBoardsProp, showToast, user, onCreateBoard, onJoinByCode, onJoinBoard, onDeleteBoard, onRemoveMember, leaderboardData={}, initialTab="my", onViewChange }) {
   const displayName = useDisplayName();
   const lang = useLang();
   const [view, setView] = useState("main"); // main | join | create
+  const changeView = (v) => { setView(v); onViewChange?.(v); };
   const [activeTab, setActiveTab] = useState(initialTab); // my | available | admin
   const [showCodeInfo, setShowCodeInfo] = useState(false);
   const [boardSearch, setBoardSearch] = useState("");
@@ -4309,7 +4311,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
       if(data) {
         if(showToast) showToast(`"${cName}" created!`, "🎉");
         setCName(""); setCEmoji(""); setCPassword(""); setShowEmojiPicker(false);
-        setEditBoard(null); setView("main");
+        setEditBoard(null); changeView("main");
       }
       return;
     }
@@ -4337,7 +4339,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
       if(showToast) showToast(`"${cName}" created!`, "🎉");
       if(onJoin) onJoin(newBoard.id);
     }
-    setEditBoard(null); setCEmoji(""); setShowEmojiPicker(false); setView("main");
+    setEditBoard(null); setCEmoji(""); setShowEmojiPicker(false); changeView("main");
   };
 
   const isJoined = id => myBoards.some(b=>b.id===id);
@@ -4345,15 +4347,26 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
   if(view==="create") return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,position:"relative",overflow:"hidden"}}>
       <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.055,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
-      <div style={{position:"relative",zIndex:1,background:"linear-gradient(180deg,#CCDAFF 0%,#E2EBFF 40%,#F8F8F8 100%)",padding:"12px 20px 10px",flexShrink:0}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-          <div onClick={()=>setView("main")} style={{width:36,height:36,borderRadius:10,background:"rgba(10,46,138,0.08)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:DARK}}>&#8249;</div>
-          <div style={{textAlign:"center"}}>
-            <img src={predictoLogo} alt="Predicto" decoding="sync" style={{height:36,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
-            <h1 style={{fontSize:10,fontWeight:700,margin:"2px 0 0",letterSpacing:2.5,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
-            <p style={{fontSize:11,color:"#6B7280",margin:"3px 0 0"}}>{T[lang].location}</p>
+      <div style={{padding:"10px 14px 0",flexShrink:0,position:"relative",zIndex:2}}>
+        <div style={{background:"rgba(255,255,255,0.32)",backdropFilter:"blur(28px)",WebkitBackdropFilter:"blur(28px)",borderRadius:26,boxShadow:"0 8px 32px rgba(10,46,138,0.12), inset 0 1px 0 rgba(255,255,255,0.95)",border:"1px solid rgba(255,255,255,0.55)",padding:"12px 14px 4px",position:"relative",WebkitMaskImage:"linear-gradient(to bottom,black 0%,black 78%,transparent 100%)",maskImage:"linear-gradient(to bottom,black 0%,black 78%,transparent 100%)"}}>
+          <div style={{position:"absolute",inset:0,borderRadius:26,background:"linear-gradient(135deg,rgba(255,255,255,0.3) 0%,rgba(255,255,255,0.08) 40%,transparent 65%)",pointerEvents:"none",zIndex:0}}/>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",position:"relative",zIndex:1}}>
+            <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,flexShrink:0,paddingTop:10}}>
+              <button onClick={()=>changeView("main")} style={{width:44,height:44,background:"none",border:"none",padding:0,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",WebkitTapHighlightColor:"transparent"}}>
+                <span style={{fontSize:22,color:"#374151",lineHeight:1}}>‹</span>
+              </button>
+              <p style={{fontSize:11,color:"transparent",margin:0,userSelect:"none"}}> </p>
+            </div>
+            <div style={{textAlign:"center"}}>
+              <img src={predictoLogo} alt="Predicto" decoding="sync" style={{height:36,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
+              <h1 style={{fontSize:10,fontWeight:700,margin:"2px 0 0",letterSpacing:2.5,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
+              <p style={{fontSize:11,color:"#6B7280",margin:"3px 0 0"}}>{T[lang].location}</p>
+            </div>
+            <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,flexShrink:0,paddingTop:10}}>
+              <img src={bellIcon} alt="Notifications" style={{width:44,height:44}}/>
+              <p style={{fontSize:11,color:"transparent",margin:0,userSelect:"none"}}> </p>
+            </div>
           </div>
-          <div style={{width:36}}/>
         </div>
       </div>
       <div style={{flex:1,overflowY:"auto",padding:"16px 20px 24px",position:"relative",zIndex:1}}>
@@ -4501,33 +4514,44 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
   );
 
   return (
-    <div style={{flex:1,display:"flex",flexDirection:"column",background:"transparent",position:"relative",overflow:"hidden"}}>
+    <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,position:"relative",overflow:"hidden"}}>
       <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.055,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
-      <div style={{position:"relative",zIndex:1,background:"linear-gradient(180deg,#CCDAFF 0%,#E2EBFF 40%,#F8F8F8 100%)",padding:"12px 20px 10px",flexShrink:0}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-          <div onClick={onBack} style={{width:36,height:36,borderRadius:10,background:"rgba(10,46,138,0.08)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:DARK,flexShrink:0}}>&#8249;</div>
-          <div style={{textAlign:"center"}}>
-            <img src={predictoLogo} alt="Predicto" decoding="sync" style={{height:36,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
-            <h1 style={{fontSize:10,fontWeight:700,margin:"2px 0 0",letterSpacing:2.5,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
-            <p style={{fontSize:11,color:"#6B7280",margin:"3px 0 0"}}>{T[lang].location}</p>
-          </div>
-          <div style={{width:36}}/>
-        </div>
-        {/* Tabs */}
-        <div style={{display:"flex",gap:0,borderBottom:"2px solid rgba(0,0,0,0.06)",marginTop:10}}>
-          {[{key:"my",label:"My Boards"},{key:"available",label:"Available"},{key:"admin",label:"Admin"}].map(t=>(
-            <div key={t.key} onClick={()=>setActiveTab(t.key)}
-              style={{flex:1,textAlign:"center",padding:"8px 0 10px",fontSize:12,fontWeight:activeTab===t.key?800:500,
-                color:activeTab===t.key?NAVY:"#aaa",cursor:"pointer",position:"relative"}}>
-              {t.label}
-              {activeTab===t.key&&<div style={{position:"absolute",bottom:-2,left:"20%",right:"20%",height:2,background:NAVY,borderRadius:2}}/>}
+      <div style={{padding:"10px 14px 0",flexShrink:0,position:"relative",zIndex:2}}>
+        <div style={{background:"rgba(255,255,255,0.32)",backdropFilter:"blur(28px)",WebkitBackdropFilter:"blur(28px)",borderRadius:26,boxShadow:"0 8px 32px rgba(10,46,138,0.12), inset 0 1px 0 rgba(255,255,255,0.95)",border:"1px solid rgba(255,255,255,0.55)",padding:"12px 14px 0",position:"relative",WebkitMaskImage:"linear-gradient(to bottom,black 0%,black 78%,transparent 100%)",maskImage:"linear-gradient(to bottom,black 0%,black 78%,transparent 100%)"}}>
+          <div style={{position:"absolute",inset:0,borderRadius:26,background:"linear-gradient(135deg,rgba(255,255,255,0.3) 0%,rgba(255,255,255,0.08) 40%,transparent 65%)",pointerEvents:"none",zIndex:0}}/>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",position:"relative",zIndex:1}}>
+            <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,flexShrink:0,paddingTop:10}}>
+              <button onClick={onBack} style={{width:44,height:44,background:"none",border:"none",padding:0,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",WebkitTapHighlightColor:"transparent"}}>
+                <span style={{fontSize:22,color:"#374151",lineHeight:1}}>‹</span>
+              </button>
+              <p style={{fontSize:11,color:"transparent",margin:0,userSelect:"none"}}> </p>
             </div>
-          ))}
+            <div style={{textAlign:"center"}}>
+              <img src={predictoLogo} alt="Predicto" decoding="sync" style={{height:36,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
+              <h1 style={{fontSize:10,fontWeight:700,margin:"2px 0 0",letterSpacing:2.5,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
+              <p style={{fontSize:11,color:"#6B7280",margin:"3px 0 0"}}>{T[lang].location}</p>
+            </div>
+            <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,flexShrink:0,paddingTop:10}}>
+              <img src={bellIcon} alt="Notifications" style={{width:44,height:44}}/>
+              <p style={{fontSize:11,color:"transparent",margin:0,userSelect:"none"}}> </p>
+            </div>
+          </div>
+          <div style={{display:"flex",gap:0,borderTop:"1px solid rgba(0,0,0,0.06)",marginTop:10,position:"relative",zIndex:1}}>
+            {[{key:"my",label:"My Boards"},{key:"available",label:"Available"},{key:"admin",label:"Admin"}].map(t=>(
+              <button key={t.key} onClick={()=>setActiveTab(t.key)}
+                style={{flex:1,background:"transparent",border:"none",cursor:"pointer",padding:"12px 0",
+                  fontSize:12,fontWeight:700,color:activeTab===t.key?NAVY:"#aaa",
+                  borderBottom:activeTab===t.key?`3px solid ${RED}`:"3px solid transparent",
+                  transition:"all 0.2s"}}>
+                {t.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
       {/* Password modal */}
       {joinPrompt&&(
-        <div style={{position:"absolute",inset:0,zIndex:200,display:"flex",alignItems:"flex-end",background:"rgba(0,0,0,0.5)"}}>
+        <div style={{position:"fixed",inset:0,zIndex:2000,display:"flex",alignItems:"flex-end",background:"rgba(0,0,0,0.5)"}}>
           <div style={{background:"#fff",borderRadius:"20px 20px 0 0",padding:"24px 20px 40px",width:"100%"}}>
             <div style={{width:36,height:4,borderRadius:2,background:"#e0e0e0",margin:"0 auto 20px"}}/>
             <h3 style={{fontSize:17,fontWeight:800,color:DARK,margin:"0 0 4px",textAlign:"center"}}>{joinPrompt.name}</h3>
@@ -4559,30 +4583,28 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
           </div>
         </div>
       )}
-      <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",padding:"16px 20px 100px",position:"relative",zIndex:1}}>
-
-        {/* Leave board confirmation popup */}
-        {leaveConfirmBoard && (
-          <div style={{position:"fixed",inset:0,zIndex:9999,background:"rgba(0,0,0,0.55)",display:"flex",alignItems:"flex-end"}} onClick={()=>setLeaveConfirmBoard(null)}>
-            <div style={{width:"100%",background:"#fff",borderRadius:"20px 20px 0 0",padding:"28px 24px 40px"}} onClick={e=>e.stopPropagation()}>
-              <div style={{fontSize:40,textAlign:"center",marginBottom:12}}>⚠️</div>
-              <h3 style={{fontSize:17,fontWeight:800,color:DARK,textAlign:"center",margin:"0 0 10px"}}>Ești sigur?</h3>
-              <p style={{fontSize:13,color:"#888",textAlign:"center",lineHeight:1.6,margin:"0 0 24px"}}>
-                Toate punctele și înregistrările tale vor fi șterse din boardul <strong style={{color:DARK}}>{leaveConfirmBoard.name}</strong>.
-              </p>
-              <button onClick={async()=>{
-                if(onRemoveMember) await onRemoveMember(leaveConfirmBoard.id, user?.id);
-                setLeaveConfirmBoard(null);
-              }} style={{width:"100%",background:RED,color:"#fff",border:"none",borderRadius:14,padding:"14px 0",fontSize:15,fontWeight:700,cursor:"pointer",marginBottom:10}}>
-                Da, ieși din board
-              </button>
-              <button onClick={()=>setLeaveConfirmBoard(null)}
-                style={{width:"100%",background:"transparent",color:"#aaa",border:"1px solid #ddd",borderRadius:14,padding:"12px 0",fontSize:14,fontWeight:600,cursor:"pointer"}}>
-                Anulează
-              </button>
-            </div>
+      {leaveConfirmBoard && (
+        <div style={{position:"fixed",inset:0,zIndex:2000,background:"rgba(0,0,0,0.55)",display:"flex",alignItems:"flex-end"}} onClick={()=>setLeaveConfirmBoard(null)}>
+          <div style={{width:"100%",background:"#fff",borderRadius:"20px 20px 0 0",padding:"28px 24px 40px"}} onClick={e=>e.stopPropagation()}>
+            <div style={{fontSize:40,textAlign:"center",marginBottom:12}}>⚠️</div>
+            <h3 style={{fontSize:17,fontWeight:800,color:DARK,textAlign:"center",margin:"0 0 10px"}}>Ești sigur?</h3>
+            <p style={{fontSize:13,color:"#888",textAlign:"center",lineHeight:1.6,margin:"0 0 24px"}}>
+              Toate punctele și înregistrările tale vor fi șterse din boardul <strong style={{color:DARK}}>{leaveConfirmBoard.name}</strong>.
+            </p>
+            <button onClick={async()=>{
+              if(onRemoveMember) await onRemoveMember(leaveConfirmBoard.id, user?.id);
+              setLeaveConfirmBoard(null);
+            }} style={{width:"100%",background:RED,color:"#fff",border:"none",borderRadius:14,padding:"14px 0",fontSize:15,fontWeight:700,cursor:"pointer",marginBottom:10}}>
+              Da, ieși din board
+            </button>
+            <button onClick={()=>setLeaveConfirmBoard(null)}
+              style={{width:"100%",background:"transparent",color:"#aaa",border:"1px solid #ddd",borderRadius:14,padding:"12px 0",fontSize:14,fontWeight:600,cursor:"pointer"}}>
+              Anulează
+            </button>
           </div>
-        )}
+        </div>
+      )}
+      <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",padding:"16px 20px 100px",position:"relative",zIndex:1}}>
 
         {/* Tab: My Boards */}
         {activeTab==="my"&&(()=>{
@@ -4623,7 +4645,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
             <div style={{background:"#fff",borderRadius:14,boxShadow:"0 2px 12px rgba(0,0,0,0.10)",marginBottom:12,overflow:"hidden"}}>
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 14px 8px"}}>
                 <span style={{fontSize:11,color:"#bbb"}}>{allAvail.length} boards</span>
-                <button onClick={()=>{ setEditBoard(null); setCName(""); setCPassword(""); setCEmoji(""); setCMaxPlayers(10); setCSlots(3); setCPrizes(["","",""]); setView("create"); }}
+                <button onClick={()=>{ setEditBoard(null); setCName(""); setCPassword(""); setCEmoji(""); setCMaxPlayers(10); setCSlots(3); setCPrizes(["","",""]); changeView("create"); }}
                   style={{background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,border:"none",borderRadius:8,padding:"5px 10px",color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer"}}>
                   + {T[lang].createBoard}
                 </button>
@@ -4678,7 +4700,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
                     </div>
                     <div style={{display:"flex",gap:6}}>
                       <button onClick={()=>openMembers(b.id)} style={{background:"rgba(0,32,91,0.08)",border:"none",borderRadius:9,padding:"7px 10px",fontSize:11,fontWeight:700,color:NAVY,cursor:"pointer"}}>👥</button>
-                      <button onClick={()=>{ setEditBoard(b); setCName(b.name); setCPassword(b.password||""); setCMaxPlayers(b.max||10); setCSlots(b.prizes?.length||3); setCPrizes(b.prizes?.length?[...b.prizes,...Array(5).fill("")]:["",...Array(4).fill("")]); setView("create"); }} style={{background:"rgba(0,32,91,0.08)",border:"none",borderRadius:9,padding:"7px 10px",fontSize:11,fontWeight:700,color:NAVY,cursor:"pointer"}}>✏️</button>
+                      <button onClick={()=>{ setEditBoard(b); setCName(b.name); setCPassword(b.password||""); setCMaxPlayers(b.max||10); setCSlots(b.prizes?.length||3); setCPrizes(b.prizes?.length?[...b.prizes,...Array(5).fill("")]:["",...Array(4).fill("")]); changeView("create"); }} style={{background:"rgba(0,32,91,0.08)",border:"none",borderRadius:9,padding:"7px 10px",fontSize:11,fontWeight:700,color:NAVY,cursor:"pointer"}}>✏️</button>
                       <button onClick={async()=>{ if(!window.confirm(`Ștergi "${b.name}"?`)) return; if(onDeleteBoard) await onDeleteBoard(b.id); }} style={{background:"rgba(200,16,46,0.08)",border:"none",borderRadius:9,padding:"7px 10px",fontSize:11,fontWeight:700,color:RED,cursor:"pointer"}}>🗑️</button>
                     </div>
                   </div>
@@ -4754,8 +4776,8 @@ const _footerIcons = {
 function Footer({ active, onNavigate, lang }) {
   const tabs = [
     {key:SCREENS.HOME,        label:"Home"},
-    {key:SCREENS.RULES,       label:"Rules"},
     {key:SCREENS.LEADERBOARD, label:"Ranking"},
+    {key:SCREENS.RULES,       label:"Rules"},
     {key:SCREENS.BOARDS,      label:"Boards"},
   ];
   return (
@@ -5995,6 +6017,28 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
   const [searchResults, setSearchResults] = useState(null);
   const [searching, setSearching] = useState(false);
 
+  const sliderItems = myBoards;
+  const [sliderPos, setSliderPos] = useState(()=>Math.max(0,myBoards.findIndex(b=>b.id===activeBoardId)));
+  const sliderTouchRef = useRef(null);
+  useEffect(()=>{
+    const idx = myBoards.findIndex(b=>b.id===activeBoardId);
+    if(idx>=0) setSliderPos(idx);
+  },[activeBoardId]);
+  const handleSliderTouchStart = (e)=>{ sliderTouchRef.current = e.touches[0].clientX; };
+  const handleSliderTouchEnd = (e)=>{
+    if(sliderTouchRef.current===null) return;
+    const dx = e.changedTouches[0].clientX - sliderTouchRef.current;
+    sliderTouchRef.current = null;
+    if(Math.abs(dx)<28) return;
+    if(dx<0 && sliderPos<sliderItems.length-1){
+      const np=sliderPos+1; setSliderPos(np);
+      setActiveBoardId&&setActiveBoardId(sliderItems[np].id);
+    } else if(dx>0 && sliderPos>0){
+      const np=sliderPos-1; setSliderPos(np);
+      setActiveBoardId&&setActiveBoardId(sliderItems[np].id);
+    }
+  };
+
   useEffect(() => {
     if (!search.trim()) { setSearchResults(null); return; }
     const timer = setTimeout(async () => {
@@ -6012,21 +6056,77 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,position:"relative",overflow:"hidden"}}>
       <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.055,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
-      <div style={{position:"relative",zIndex:1,background:"linear-gradient(180deg,#CCDAFF 0%,#E2EBFF 40%,#F8F8F8 100%)",padding:"12px 20px 0",flexShrink:0}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:myBoards.length>1?0:8}}>
-          <div onClick={onBack} style={{width:36,height:36,borderRadius:10,background:"rgba(10,46,138,0.08)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:DARK}}>&#8249;</div>
-          <div style={{textAlign:"center"}}>
-            <img src={predictoLogo} alt="Predicto" decoding="sync" style={{height:36,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
-            <h1 style={{fontSize:10,fontWeight:700,margin:"2px 0 0",letterSpacing:2.5,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
-            <p style={{fontSize:11,color:"#6B7280",margin:"3px 0 0"}}>{T[lang].location}</p>
+      <div style={{padding:"10px 14px 0",flexShrink:0,position:"relative",zIndex:2}}>
+        <div style={{background:"rgba(255,255,255,0.32)",backdropFilter:"blur(28px)",WebkitBackdropFilter:"blur(28px)",borderRadius:26,boxShadow:"0 8px 32px rgba(10,46,138,0.12), inset 0 1px 0 rgba(255,255,255,0.95)",border:"1px solid rgba(255,255,255,0.55)",padding:"12px 14px 4px",position:"relative",WebkitMaskImage:"linear-gradient(to bottom,black 0%,black 72%,transparent 100%)",maskImage:"linear-gradient(to bottom,black 0%,black 72%,transparent 100%)"}}>
+          <div style={{position:"absolute",inset:0,borderRadius:26,background:"linear-gradient(135deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.08) 40%, transparent 65%)",pointerEvents:"none",zIndex:0}}/>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",position:"relative",zIndex:1}}>
+            <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,flexShrink:0,paddingTop:10}}>
+              <button onClick={onBack} style={{width:44,height:44,background:"none",border:"none",padding:0,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",WebkitTapHighlightColor:"transparent"}}>
+                <span style={{fontSize:22,color:"#374151",lineHeight:1}}>‹</span>
+              </button>
+              <p style={{fontSize:11,color:"transparent",margin:0,userSelect:"none"}}> </p>
+            </div>
+            <div style={{textAlign:"center"}}>
+              <img src={predictoLogo} alt="Predicto" decoding="sync" style={{height:36,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
+              <h1 style={{fontSize:10,fontWeight:700,margin:"2px 0 0",letterSpacing:2.5,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
+              <p style={{fontSize:11,color:"#6B7280",margin:"3px 0 0"}}>{T[lang].location}</p>
+            </div>
+            <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,flexShrink:0,paddingTop:10}}>
+              <img src={bellIcon} alt="Notifications" style={{width:44,height:44}}/>
+              <p style={{fontSize:11,color:"transparent",margin:0,userSelect:"none"}}> </p>
+            </div>
           </div>
-          <div style={{width:36}}/>
         </div>
-        {myBoards.length>0&&(
-          <div style={{display:"flex",alignItems:"flex-start",gap:10,overflowX:"auto",scrollbarWidth:"none",padding:"10px 0 2px"}}>
-            {myBoards.map(b=><CircleTab key={b.id} label={b.label} name={b.isGlobal?"Global":b.name.split(" ")[0]} isActive={activeBoardId===b.id} onClick={()=>setActiveBoardId&&setActiveBoardId(b.id)} lightBg/>)}
-          </div>
-        )}
+        {myBoards.length>0&&(()=>{
+          const leftItem  = sliderItems[sliderPos-1] ?? null;
+          const centerItem= sliderItems[sliderPos];
+          const rightItem = sliderItems[sliderPos+1] ?? null;
+          const myRank = leaders.find(u=>u.isMe)?.rank;
+          const renderItem = (item, pos) => {
+            if(!item) return <div key={pos} style={{flex:1}}/>;
+            const isCenter = pos===0;
+            const dist = Math.abs(pos);
+            const handleTap = ()=>{
+              if(!isCenter){ const np=sliderPos+pos; setSliderPos(np); setActiveBoardId&&setActiveBoardId(item.id); }
+            };
+            return (
+              <div key={item.id} style={{flex:1,display:"flex",justifyContent:"center",alignItems:"flex-end"}}>
+                <CircleTab label={item.label} name={item.isGlobal?"Global":item.name.split(" ")[0]}
+                  isActive={isCenter} onClick={handleTap} lightBg distance={dist}
+                  rank={isCenter?myRank:undefined} members={isCenter?item.members:undefined}/>
+              </div>
+            );
+          };
+          return (
+            <div style={{position:"relative"}}>
+              <div style={{height:10}}/>
+              {sliderPos>0&&(
+                <div onClick={()=>{ const np=sliderPos-1; setSliderPos(np); setActiveBoardId&&setActiveBoardId(sliderItems[np].id); }} style={{position:"absolute",left:0,top:"50%",transform:"translateY(-50%)",zIndex:5,cursor:"pointer",WebkitTapHighlightColor:"transparent"}}>
+                  <span style={{fontSize:18,color:"rgba(0,0,0,0.45)",fontWeight:700,lineHeight:1}}>‹</span>
+                </div>
+              )}
+              {sliderPos<sliderItems.length-1&&(
+                <div onClick={()=>{ const np=sliderPos+1; setSliderPos(np); setActiveBoardId&&setActiveBoardId(sliderItems[np].id); }} style={{position:"absolute",right:0,top:"50%",transform:"translateY(-50%)",zIndex:5,cursor:"pointer",WebkitTapHighlightColor:"transparent"}}>
+                  <span style={{fontSize:18,color:"rgba(0,0,0,0.45)",fontWeight:700,lineHeight:1}}>›</span>
+                </div>
+              )}
+              <div onTouchStart={handleSliderTouchStart} onTouchEnd={handleSliderTouchEnd}
+                style={{display:"flex",alignItems:"center",padding:"10px 0 6px",overflow:"visible",userSelect:"none"}}>
+                {renderItem(leftItem,-1)}
+                {renderItem(centerItem,0)}
+                {renderItem(rightItem,1)}
+              </div>
+              <div style={{display:"flex",justifyContent:"center",alignItems:"center",gap:5,height:14,marginBottom:4}}>
+                {sliderItems.map((_,i)=>(
+                  <div key={i} onClick={()=>{ setSliderPos(i); setActiveBoardId&&setActiveBoardId(sliderItems[i].id); }}
+                    style={{height:3,borderRadius:2,transition:"all 0.25s",cursor:"pointer",
+                      width:i===sliderPos?44:14,
+                      background:i===sliderPos?"rgba(10,46,138,0.3)":"rgba(100,116,139,0.2)"}}/>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
       </div>
       {/* Search bar on white background */}
       <div style={{padding:"12px 20px 4px",background:BG}}>
@@ -6597,7 +6697,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
 
       {/* Score Picker Modal */}
       {scorePick&&(
-        <div style={{position:"absolute",inset:0,zIndex:100,display:"flex",flexDirection:"column",justifyContent:"flex-end",touchAction:"none",overscrollBehavior:"none"}}
+        <div style={{position:"fixed",inset:0,zIndex:2000,display:"flex",flexDirection:"column",justifyContent:"flex-end",touchAction:"none",overscrollBehavior:"none"}}
           onClick={()=>setScorePick(null)}
           onWheel={e=>e.stopPropagation()}
           onTouchMove={e=>e.stopPropagation()}>
@@ -7748,6 +7848,7 @@ function App() {
   const inRecoveryRef = useRef(false);
   const [screen, setScreen] = useState(SCREENS.SPLASH);
   const [boardsInitialTab, setBoardsInitialTab] = useState("my");
+  const [boardsSubView, setBoardsSubView] = useState("main");
   const [showDevOverlay, setShowDevOverlay] = useState(false);
   const [simDay, setSimDay] = useState(null);
   const [simHour, setSimHour] = useState(12);
@@ -7856,7 +7957,7 @@ function App() {
   const tournamentStarted = simDate ? simDate >= new Date(2026,5,11,19,0,0) : new Date() >= new Date("2026-06-11T19:00:00");
 
   const noFooter = [SCREENS.SPLASH, SCREENS.LOGIN, SCREENS.INSTANT_PICK, SCREENS.GROUPS_SCHEDULE];
-  const showFooter = !noFooter.includes(screen);
+  const showFooter = !noFooter.includes(screen) && !(screen===SCREENS.BOARDS && boardsSubView==="create");
   const _nonSaveable = [SCREENS.SPLASH, SCREENS.LOGIN, SCREENS.RESET_PASSWORD, SCREENS.SET_PASSWORD];
   if (!_nonSaveable.includes(screen)) { try { sessionStorage.setItem('lastScreen', screen); } catch {} }
   const footerActive = screen===SCREENS.RULES?SCREENS.RULES:screen===SCREENS.LEADERBOARD?SCREENS.LEADERBOARD:screen===SCREENS.BOARDS?SCREENS.BOARDS:SCREENS.HOME;
@@ -7945,7 +8046,8 @@ function App() {
           </div>}
           {screen===SCREENS.BOARDS&&<BoardsScreen
             initialTab={boardsInitialTab}
-            onBack={()=>setScreen(SCREENS.HOME)}
+            onViewChange={setBoardsSubView}
+            onBack={()=>{ setBoardsSubView("main"); setScreen(SCREENS.HOME); }}
             myBoards={myBoards} setMyBoards={setMyBoards}
             createdBoards={createdBoards} setCreatedBoards={setCreatedBoards}
             availableBoards={availableBoards} setAvailableBoards={setAvailableBoards}
