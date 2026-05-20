@@ -3770,28 +3770,8 @@ function CircleTab({ label, name, isActive, onClick, lightBg=false, distance=0, 
 
 // ── PULSE NODE ───────────────────────────────────────────────────────────────
 function PulseNode({ color=NAVY, children }) {
-  const [burstKey, setBurstKey] = useState(0);
-  const firing = useRef(false);
-  const fire = useCallback(() => {
-    if (firing.current) return;
-    firing.current = true;
-    setBurstKey(k => k + 1);
-    setTimeout(() => { firing.current = false; }, 2300);
-  }, []);
-  useEffect(() => {
-    const id = setInterval(fire, 6000);
-    return () => clearInterval(id);
-  }, [fire]);
   return (
-    <div style={{position:"relative",width:18,height:18,flexShrink:0}} onClick={fire}>
-      {[0,1,2].map(i => (
-        <div key={`${burstKey}-${i}`} style={{
-          position:"absolute", top:"50%", left:"50%",
-          width:10, height:2.5, marginTop:-1.25, marginLeft:-5,
-          borderRadius:2, background:color,
-          animation: burstKey>0 ? `arcBurst${i} 2.2s cubic-bezier(0.22,1,0.36,1) forwards` : "none",
-        }}/>
-      ))}
+    <div style={{position:"relative",width:18,height:18,flexShrink:0}}>
       <div style={{
         position:"absolute", inset:0, borderRadius:"50%", background:color,
         display:"flex", alignItems:"center", justifyContent:"center",
