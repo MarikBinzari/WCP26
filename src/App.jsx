@@ -6042,8 +6042,6 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
   const lang = useLang();
   const leaders = leadersProp || BOARD_LEADERS.global;
   const [search, setSearch] = useState("");
-  const [searchResults, setSearchResults] = useState(null);
-  const [searching, setSearching] = useState(false);
 
   const sliderItems = myBoards;
   const [sliderPos, setSliderPos] = useState(()=>Math.max(0,myBoards.findIndex(b=>b.id===activeBoardId)));
@@ -6067,18 +6065,9 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
     }
   };
 
-  useEffect(() => {
-    if (!search.trim()) { setSearchResults(null); return; }
-    const timer = setTimeout(async () => {
-      setSearching(true);
-      const results = await loadLeaderboard(activeBoardId, search.trim(), userId);
-      setSearchResults(results);
-      setSearching(false);
-    }, 350);
-    return () => clearTimeout(timer);
-  }, [search, activeBoardId]);
-
-  const filtered = search.trim() ? (searchResults || []) : leaders;
+  const filtered = search.trim()
+    ? leaders.filter(u => u.name?.toLowerCase().includes(search.trim().toLowerCase()))
+    : leaders;
   const me = leaders.find(u=>u.isMe);
 
   return (
@@ -6162,8 +6151,7 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
             placeholder={T[lang].searchPlayer}
             style={{flex:1,background:"transparent",border:"none",outline:"none",
               fontSize:13,color:DARK,fontWeight:500}}/>
-          {searching && <span style={{fontSize:12,color:"#bbb"}}>...</span>}
-          {search&&!searching&&<span onClick={()=>{setSearch("");setSearchResults(null);}} style={{fontSize:14,color:"#bbb",cursor:"pointer"}}>✕</span>}
+          {search&&<span onClick={()=>setSearch("")} style={{fontSize:14,color:"#bbb",cursor:"pointer"}}>✕</span>}
         </div>
       </div>
 
