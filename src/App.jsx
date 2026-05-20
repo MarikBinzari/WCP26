@@ -3004,7 +3004,7 @@ function InstantPickScreen({ onBack, onComplete, onKoComplete, onModify, savedSt
         </div>
 
         {/* ── AVAILABLE TEAMS — same row style as GroupRankingScreen ── */}
-        <div style={{flex:1,overflowY:"auto",background:BG,padding:"8px 14px",
+        <div style={{flex:1,minHeight:0,overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",background:BG,padding:"8px 14px",
           display:"flex",flexDirection:"column",gap:6}}>
           {available.map(team=>{
             const grp=GROUPS.find(g=>(allGroupStandings[g]||[])[2]===team)||"?";
