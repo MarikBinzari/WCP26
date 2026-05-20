@@ -3776,7 +3776,6 @@ function PulseNode({ color=NAVY, children }) {
         position:"absolute", inset:0, borderRadius:"50%", background:color,
         display:"flex", alignItems:"center", justifyContent:"center",
         animation:"nodeBreath 3s ease-in-out infinite",
-        boxShadow:`0 0 0 3px ${color}22`,
       }}>
         {children}
       </div>
