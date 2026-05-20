@@ -7479,24 +7479,26 @@ function AccountScreen({ setLang, onBoards, onSignOut, onShowGuide, user }) {
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,position:"relative",overflow:"hidden"}}>
       <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.055,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
-      <div style={{background:"linear-gradient(180deg,#CCDAFF 0%,#E2EBFF 40%,#F8F8F8 100%)",padding:"12px 20px 10px",flexShrink:0,position:"relative",zIndex:1,boxSizing:"border-box"}}>
-        <div style={{textAlign:"center",marginBottom:8}}>
-          <img src={predictoLogo} alt="Predicto" decoding="sync" style={{height:36,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
-          <h1 style={{fontSize:10,fontWeight:700,margin:"2px 0 0",letterSpacing:2.5,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
-          <p style={{fontSize:11,color:"#6B7280",margin:"3px 0 0"}}>{T[lang].location}</p>
-        </div>
-        <div style={{borderTop:"2px solid rgba(0,0,0,0.06)",marginTop:10}}/>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:12,paddingTop:10}}>
-          <div style={{position:"relative",flexShrink:0}}>
-            <div style={{width:52,height:52,borderRadius:"50%",background:"rgba(0,0,0,0.05)",border:"2px dashed rgba(0,0,0,0.15)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,cursor:"pointer"}}>👤</div>
-            <div style={{position:"absolute",bottom:0,right:0,width:18,height:18,borderRadius:"50%",background:NAVY,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:"#fff",fontWeight:700,lineHeight:1}}>+</div>
+      <div style={{padding:"10px 14px 0",flexShrink:0,position:"relative",zIndex:2}}>
+        <div style={{background:"rgba(255,255,255,0.32)",backdropFilter:"blur(28px)",WebkitBackdropFilter:"blur(28px)",borderRadius:26,boxShadow:"0 8px 32px rgba(10,46,138,0.12), inset 0 1px 0 rgba(255,255,255,0.95)",border:"1px solid rgba(255,255,255,0.55)",padding:"12px 20px 14px",position:"relative",WebkitMaskImage:"linear-gradient(to bottom,black 0%,black 85%,transparent 100%)",maskImage:"linear-gradient(to bottom,black 0%,black 85%,transparent 100%)"}}>
+          <div style={{position:"absolute",inset:0,borderRadius:26,background:"linear-gradient(135deg,rgba(255,255,255,0.3) 0%,rgba(255,255,255,0.08) 40%,transparent 65%)",pointerEvents:"none",zIndex:0}}/>
+          <div style={{textAlign:"center",position:"relative",zIndex:1}}>
+            <img src={predictoLogo} alt="Predicto" decoding="sync" style={{height:36,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
+            <h1 style={{fontSize:10,fontWeight:700,margin:"2px 0 0",letterSpacing:2.5,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
+            <p style={{fontSize:11,color:"#6B7280",margin:"3px 0 0"}}>{T[lang].location}</p>
           </div>
-          <div>
-            <p style={{fontSize:13,color:"#888",margin:0}}>{user?.email}</p>
-            {memberSince && <p style={{fontSize:11,color:"#aaa",margin:"2px 0 0"}}>Membru din {memberSince}</p>}
+          <div style={{borderTop:"1px solid rgba(0,0,0,0.06)",marginTop:10,position:"relative",zIndex:1}}/>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:12,paddingTop:10,position:"relative",zIndex:1}}>
+            <div style={{position:"relative",flexShrink:0}}>
+              <div style={{width:52,height:52,borderRadius:"50%",background:"rgba(0,0,0,0.05)",border:"2px dashed rgba(0,0,0,0.15)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,cursor:"pointer"}}>👤</div>
+              <div style={{position:"absolute",bottom:0,right:0,width:18,height:18,borderRadius:"50%",background:NAVY,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:"#fff",fontWeight:700,lineHeight:1}}>+</div>
+            </div>
+            <div>
+              <p style={{fontSize:13,color:"#888",margin:0}}>{user?.email}</p>
+              {memberSince && <p style={{fontSize:11,color:"#aaa",margin:"2px 0 0"}}>Membru din {memberSince}</p>}
+            </div>
           </div>
         </div>
-        <div style={{borderTop:"2px solid rgba(0,0,0,0.06)",marginTop:10}}/>
       </div>
       <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",position:"relative",zIndex:1}}>
         <div style={{padding:"12px 20px 100px"}}>
