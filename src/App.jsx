@@ -6474,16 +6474,23 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
   });
   standing.sort((a,b)=>b.pts-a.pts||b.gd-a.gd||b.gf-a.gf);
 
+  const wDaysHeader = Array.from({length:7},(_,i)=>weekStart+i).filter(d=>d>=1&&d<=50);
+  const weekTotal = wDaysHeader.reduce((s,d)=>s+(mm0[d]||[]).length,0);
+  const weekScored = wDaysHeader.reduce((s,d)=>s+(mm0[d]||[]).filter((_,i)=>scores[`${d}-${i}`]).length,0);
+  const weekRemaining = weekTotal - weekScored;
+
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",position:"relative"}}>
       <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.055,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
-      <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"10px 20px 12px",flexShrink:0,overflow:"hidden"}}>
-        <div style={{position:"relative"}}>
-          <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:14}}>
-            <div onClick={onBack} style={{width:36,height:36,borderRadius:10,background:"rgba(255,255,255,0.12)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:"#fff"}}>&#8249;</div>
-            <div>
-              <h2 style={{fontSize:18,fontWeight:800,color:"#fff",margin:0}}>{T[lang].groupsSchedule}</h2>
-            </div>
+      <div style={{background:"rgba(0,32,91,0.88)",flexShrink:0,position:"relative",zIndex:1,overflow:"hidden"}}>
+        <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px 10px"}}>
+          <button onClick={onBack} style={{background:"rgba(255,255,255,0.12)",border:"none",borderRadius:10,width:34,height:34,color:"#fff",fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>‹</button>
+          <div style={{flex:1,textAlign:"center"}}>
+            <div style={{fontSize:18,fontWeight:800,color:"#fff"}}>{T[lang].exactScores}</div>
+          </div>
+          <div style={{textAlign:"right",flexShrink:0,minWidth:34}}>
+            <div style={{fontSize:13,fontWeight:700,color:"#fff"}}>{weekScored}/{weekTotal}</div>
+            <div style={{fontSize:10,color:"rgba(255,255,255,0.45)"}}>{weekRemaining===0?"complete":`${weekRemaining} left`}</div>
           </div>
         </div>
       </div>
