@@ -8220,7 +8220,7 @@ function App() {
           </div>}
         </div>
         <Toast message={toast.message} emoji={toast.emoji} visible={toast.visible}/>
-        {showFooter&&<Footer active={footerActive} onNavigate={key=>{ if(key===SCREENS.BOARDS) setBoardsInitialTab("my"); setScreen(key); }} lang={lang} user={user} activeBoardId={activeBoardId} myBoards={myBoards} leaderboardData={leaderboardData} tournamentStarted={tournamentStarted}/>}
+        {showFooter&&<Footer active={footerActive} onNavigate={key=>{ if(key===SCREENS.BOARDS) setBoardsInitialTab("available"); setScreen(key); }} lang={lang} user={user} activeBoardId={activeBoardId} myBoards={myBoards} leaderboardData={leaderboardData} tournamentStarted={tournamentStarted}/>}
         <AdminBugPanel
           user={user}
           allInstantPickStates={allInstantPickStates}
