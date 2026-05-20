@@ -3786,8 +3786,10 @@ function PulseNode({ color=NAVY, children }) {
 // ── HOME ────────────────────────────────────────────────────────────────────
 function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateBoard, onOpenGroups, onCopyPredictions, onCopyExactScores, onAccount, myBoards, predictionsComplete, instantPickDone, koPickDone, koUnlocked, exactScores, activeBoardId, setActiveBoardId, tournamentStarted, simDay, simHour, simMin, createdBoards=[], showFirstAction, leaderboardData={}, boardsLoading=false, predictionsLoaded={} }) {
   const lang = useLang();
+  const user = useUser();
   const displayName = useDisplayName();
   const initials = useInitials();
+  const avatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
   const [showCopySheet, setShowCopySheet] = useState(null); // "predictions" | "scores" | null
   const [copyDone, setCopyDone] = useState(null);
   const activeId = activeBoardId;
@@ -3857,14 +3859,13 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
         <div style={{position:"absolute",inset:0,borderRadius:26,background:"linear-gradient(135deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.08) 40%, transparent 65%)",pointerEvents:"none",zIndex:0}}/>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",position:"relative",zIndex:1}}>
           <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,flexShrink:0,paddingTop:10}}>
-            <button onClick={onAccount} style={{width:44,height:44,background:"none",border:"none",padding:0,cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:3,WebkitTapHighlightColor:"transparent"}}>
-              <svg width="22" height="16" viewBox="0 0 22 16" fill="none">
-                <rect x="0" y="0" width="22" height="2.5" rx="1.25" fill="#374151"/>
-                <rect x="0" y="6.75" width="22" height="2.5" rx="1.25" fill="#374151"/>
-                <rect x="0" y="13.5" width="22" height="2.5" rx="1.25" fill="#374151"/>
-              </svg>
+            <button onClick={onAccount} style={{background:"none",border:"none",padding:0,cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:2,WebkitTapHighlightColor:"transparent"}}>
+              {avatarUrl
+                ? <img src={avatarUrl} style={{width:36,height:36,borderRadius:"50%",objectFit:"cover",border:`2px solid ${NAVY}`}} alt=""/>
+                : <div style={{width:36,height:36,borderRadius:"50%",background:NAVY,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,color:"#fff",fontWeight:700}}>{initials}</div>
+              }
+              <p style={{fontSize:10,color:"#374151",margin:0,fontWeight:600,maxWidth:52,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{displayName.split(" ")[0]}</p>
             </button>
-            <p style={{fontSize:11,color:"transparent",margin:0,userSelect:"none"}}> </p>
           </div>
           <div style={{textAlign:"center"}}>
             <img src={predictoLogo} alt="Predicto" decoding="sync" style={{height:36,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
@@ -4790,13 +4791,17 @@ const _footerIcons = {
     </svg>
   ),
 };
-function Footer({ active, onNavigate, lang }) {
+function Footer({ active, onNavigate, lang, user }) {
   const tabs = [
     {key:SCREENS.HOME,        label:"Home"},
     {key:SCREENS.LEADERBOARD, label:"Ranking"},
     {key:SCREENS.RULES,       label:"Rules"},
     {key:SCREENS.BOARDS,      label:"Boards"},
+    {key:SCREENS.ACCOUNT,     label:"Cont"},
   ];
+  const avatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
+  const displayName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "—";
+  const initials = displayName.split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2);
   return (
     <div style={{position:"fixed",bottom:0,left:0,right:0,padding:"0 14px",paddingBottom:"env(safe-area-inset-bottom, 10px)",zIndex:1000}}>
       <div style={{
@@ -4814,6 +4819,7 @@ function Footer({ active, onNavigate, lang }) {
         {tabs.map(tab=>{
           const isActive=active===tab.key;
           const iconColor = isActive ? NAVY : "#6B7280";
+          const isAccount = tab.key === SCREENS.ACCOUNT;
           return (
             <button key={tab.key} onClick={()=>onNavigate(tab.key)}
               style={{flex:1,background:"transparent",border:"none",cursor:"pointer",WebkitTapHighlightColor:"transparent",
@@ -4827,7 +4833,13 @@ function Footer({ active, onNavigate, lang }) {
                 animation:isActive?"tabPop 0.3s cubic-bezier(0.175,0.885,0.32,1.275) forwards":"none",
                 transition:"background 0.2s, box-shadow 0.2s",
               }}>
-                {_footerIcons[tab.key]?.(iconColor, isActive)}
+                {isAccount
+                  ? (avatarUrl
+                      ? <img src={avatarUrl} style={{width:26,height:26,borderRadius:"50%",objectFit:"cover",border:isActive?`2px solid ${NAVY}`:"2px solid #9CA3AF"}} alt=""/>
+                      : <div style={{width:26,height:26,borderRadius:"50%",background:isActive?NAVY:"#9CA3AF",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,color:"#fff",fontWeight:700}}>{initials}</div>
+                    )
+                  : _footerIcons[tab.key]?.(iconColor, isActive)
+                }
               </div>
               <span style={{fontSize:10,fontWeight:isActive?700:500,color:isActive?NAVY:"#6B7280",transition:"all 0.18s",letterSpacing:0.2}}>
                 {tab.label}
@@ -7971,7 +7983,7 @@ function App() {
   const showFooter = !noFooter.includes(screen) && !(screen===SCREENS.BOARDS && boardsSubView==="create");
   const _nonSaveable = [SCREENS.SPLASH, SCREENS.LOGIN, SCREENS.RESET_PASSWORD, SCREENS.SET_PASSWORD];
   if (!_nonSaveable.includes(screen)) { try { sessionStorage.setItem('lastScreen', screen); } catch {} }
-  const footerActive = screen===SCREENS.RULES?SCREENS.RULES:screen===SCREENS.LEADERBOARD?SCREENS.LEADERBOARD:screen===SCREENS.BOARDS?SCREENS.BOARDS:SCREENS.HOME;
+  const footerActive = screen===SCREENS.RULES?SCREENS.RULES:screen===SCREENS.LEADERBOARD?SCREENS.LEADERBOARD:screen===SCREENS.BOARDS?SCREENS.BOARDS:screen===SCREENS.ACCOUNT?SCREENS.ACCOUNT:SCREENS.HOME;
 
   if (authLoading || (user && boardsLoading)) return <div style={{width:"100%",height:"100%",background:BG}}/>;
 
@@ -8207,7 +8219,7 @@ function App() {
           </div>}
         </div>
         <Toast message={toast.message} emoji={toast.emoji} visible={toast.visible}/>
-        {showFooter&&<Footer active={footerActive} onNavigate={key=>{ if(key===SCREENS.BOARDS) setBoardsInitialTab("my"); setScreen(key); }} lang={lang} activeBoardId={activeBoardId} myBoards={myBoards} leaderboardData={leaderboardData} tournamentStarted={tournamentStarted}/>}
+        {showFooter&&<Footer active={footerActive} onNavigate={key=>{ if(key===SCREENS.BOARDS) setBoardsInitialTab("my"); setScreen(key); }} lang={lang} user={user} activeBoardId={activeBoardId} myBoards={myBoards} leaderboardData={leaderboardData} tournamentStarted={tournamentStarted}/>}
         <AdminBugPanel
           user={user}
           allInstantPickStates={allInstantPickStates}
