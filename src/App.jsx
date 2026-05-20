@@ -2965,7 +2965,7 @@ function InstantPickScreen({ onBack, onComplete, onKoComplete, onModify, savedSt
       "Portugal":"POR","Colombia":"COL","Uzbekistan":"UZB","DR Congo":"COD",
       "England":"ENG","Croatia":"CRO","Panama":"PAN","Ghana":"GHA"};
     return (
-      <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,userSelect:"none"}}>
+      <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,userSelect:"none",position:"relative",overflow:"hidden"}}>
 
         {sharedHeader}
         {/* Progress bar */}
