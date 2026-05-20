@@ -3858,21 +3858,21 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
         {/* Gloss overlay */}
         <div style={{position:"absolute",inset:0,borderRadius:26,background:"linear-gradient(135deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.08) 40%, transparent 65%)",pointerEvents:"none",zIndex:0}}/>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",position:"relative",zIndex:1}}>
-          <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,flexShrink:0,paddingTop:10}}>
-            <button onClick={onAccount} style={{background:"none",border:"none",padding:0,cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:2,WebkitTapHighlightColor:"transparent"}}>
+          <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,flexShrink:0,paddingTop:20}}>
+            <button onClick={onAccount} style={{background:"none",border:"none",padding:0,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",WebkitTapHighlightColor:"transparent"}}>
               {avatarUrl
                 ? <img src={avatarUrl} style={{width:36,height:36,borderRadius:"50%",objectFit:"cover",border:`2px solid ${NAVY}`}} alt=""/>
                 : <div style={{width:36,height:36,borderRadius:"50%",background:NAVY,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,color:"#fff",fontWeight:700}}>{initials}</div>
               }
-              <p style={{fontSize:10,color:"#374151",margin:0,fontWeight:600,maxWidth:52,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{displayName.split(" ")[0]}</p>
             </button>
+            <p style={{fontSize:11,fontWeight:600,color:"#6B7280",margin:"4px 0 0",textAlign:"center",lineHeight:1.3}}>Hey {displayName.split(" ")[0]} 👋</p>
           </div>
           <div style={{textAlign:"center"}}>
             <img src={predictoLogo} alt="Predicto" decoding="sync" style={{height:36,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
             <h1 style={{fontSize:10,fontWeight:700,margin:"2px 0 0",letterSpacing:2.5,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
             <p style={{fontSize:11,color:"#6B7280",margin:"3px 0 0"}}>{T[lang].location}</p>
           </div>
-          <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,flexShrink:0,paddingTop:10}}>
+          <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,flexShrink:0,paddingTop:20}}>
             <img src={bellIcon} alt="Notifications" style={{width:44,height:44}}/>
             <p style={{fontSize:11,color:"transparent",margin:0,userSelect:"none"}}> </p>
           </div>
@@ -3959,26 +3959,24 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
             ));
           })()}
         </div>
-        {/* rând 2 — conținut */}
+        {/* rând 2 — rank & pts */}
         <div style={{position:"relative",display:"flex",justifyContent:"center",alignItems:"center",height:28}}>
-          <span style={{position:"absolute",left:0,fontSize:11,fontWeight:600,color:"#6B7280"}}>Hey {displayName.split(" ")[0]} 👋</span>
           <span style={{position:"absolute",right:"calc(50% + 6px)",fontSize:14,fontWeight:800,color:NAVY,opacity:0.35}}>{me?.rank?`${me.rank}${[,'st','nd','rd'][me.rank]||'th'}`:"—"}</span>
           {me&&<span style={{position:"absolute",left:"calc(50% + 4px)",fontSize:14,fontWeight:800,color:"#D4820A",opacity:0.35}}>{me.pts??0} pts</span>}
-          <div style={{position:"absolute",right:0,width:100,overflow:"hidden",WebkitMaskImage:"linear-gradient(to right,transparent 0%,black 18%,black 82%,transparent 100%)",maskImage:"linear-gradient(to right,transparent 0%,black 18%,black 82%,transparent 100%)"}}>
-            {tournamentOver
-              ? <span style={{fontSize:11,fontWeight:600,color:"#6B7280",whiteSpace:"nowrap"}}>🏆 start is here</span>
-              : (()=>{
-                  const txt=`⚽ Kickoff in ${cdDays}d ${String(cdHours).padStart(2,"0")}h ${String(cdMins).padStart(2,"0")}m · make your picks · `;
-                  return <div style={{display:"inline-flex",animation:"cdTicker 16s linear infinite",whiteSpace:"nowrap"}}>
-                    <span style={{fontSize:11,fontWeight:600,color:"#6B7280",paddingRight:0}}>{txt}</span>
-                    <span style={{fontSize:11,fontWeight:600,color:"#6B7280",paddingRight:0}}>{txt}</span>
-                  </div>;
-                })()
-            }
-          </div>
         </div>
-        {/* rând 3 — gol */}
-        <div style={{height:4}}/>
+        {/* rând 3 — ticker */}
+        <div style={{overflow:"hidden",WebkitMaskImage:"linear-gradient(to right,transparent 0%,black 28%,black 72%,transparent 100%)",maskImage:"linear-gradient(to right,transparent 0%,black 28%,black 72%,transparent 100%)",height:20,marginBottom:4}}>
+          {tournamentOver
+            ? <span style={{fontSize:11,fontWeight:600,color:"#6B7280",whiteSpace:"nowrap"}}>🏆 start is here</span>
+            : (()=>{
+                const txt=`⚽ Kickoff in ${cdDays}d ${String(cdHours).padStart(2,"0")}h ${String(cdMins).padStart(2,"0")}m · make your picks · `;
+                return <div style={{display:"inline-flex",animation:"cdTicker 16s linear infinite",whiteSpace:"nowrap"}}>
+                  <span style={{fontSize:11,fontWeight:600,color:"#6B7280"}}>{txt}</span>
+                  <span style={{fontSize:11,fontWeight:600,color:"#6B7280"}}>{txt}</span>
+                </div>;
+              })()
+          }
+        </div>
       </div>
       </div>
       <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",padding:"0 14px 90px",display:"flex",flexDirection:"column"}}>
@@ -4797,7 +4795,7 @@ function Footer({ active, onNavigate, lang, user }) {
     {key:SCREENS.LEADERBOARD, label:"Ranking"},
     {key:SCREENS.RULES,       label:"Rules"},
     {key:SCREENS.BOARDS,      label:"Boards"},
-    {key:SCREENS.ACCOUNT,     label:"Cont"},
+    {key:SCREENS.ACCOUNT,     label:"More"},
   ];
   const avatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
   const displayName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "—";
@@ -4834,10 +4832,11 @@ function Footer({ active, onNavigate, lang, user }) {
                 transition:"background 0.2s, box-shadow 0.2s",
               }}>
                 {isAccount
-                  ? (avatarUrl
-                      ? <img src={avatarUrl} style={{width:26,height:26,borderRadius:"50%",objectFit:"cover",border:isActive?`2px solid ${NAVY}`:"2px solid #9CA3AF"}} alt=""/>
-                      : <div style={{width:26,height:26,borderRadius:"50%",background:isActive?NAVY:"#9CA3AF",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,color:"#fff",fontWeight:700}}>{initials}</div>
-                    )
+                  ? <svg width="22" height="6" viewBox="0 0 22 6" fill="none">
+                      <circle cx="3" cy="3" r="2.5" fill={iconColor}/>
+                      <circle cx="11" cy="3" r="2.5" fill={iconColor}/>
+                      <circle cx="19" cy="3" r="2.5" fill={iconColor}/>
+                    </svg>
                   : _footerIcons[tab.key]?.(iconColor, isActive)
                 }
               </div>
@@ -7518,7 +7517,7 @@ function AccountScreen({ setLang, onBoards, onSignOut, onShowGuide, user }) {
 
           {deleteMode && (
             <div style={{position:"fixed",inset:0,zIndex:9999,background:"rgba(0,0,0,0.6)",display:"flex",alignItems:"flex-end"}}>
-              <div style={{width:"100%",background:"#fff",borderRadius:"20px 20px 0 0",padding:"28px 24px 40px"}}>
+              <div style={{width:"100%",background:"#fff",borderRadius:"20px 20px 0 0",padding:"28px 24px",paddingBottom:"calc(env(safe-area-inset-bottom, 0px) + 32px)"}}>
                 <div style={{fontSize:40,textAlign:"center",marginBottom:12}}>⚠️</div>
                 <h3 style={{fontSize:18,fontWeight:800,color:DARK,textAlign:"center",margin:"0 0 8px"}}>Șterge contul</h3>
                 <p style={{fontSize:13,color:"#888",textAlign:"center",margin:"0 0 20px",lineHeight:1.5}}>
@@ -7867,7 +7866,7 @@ function App() {
     return () => { supabase.removeChannel(boardChannel); };
   }, [user]);
 
-  const isLocalhost = import.meta.env.DEV;
+  const isLocalhost = import.meta.env.DEV || window.location.hostname === 'localhost';
   const inRecoveryRef = useRef(false);
   const [screen, setScreen] = useState(SCREENS.SPLASH);
   const [boardsInitialTab, setBoardsInitialTab] = useState("my");
@@ -8238,7 +8237,7 @@ function App() {
             boxShadow:"0 4px 14px rgba(0,0,0,0.5)"
           }}>DEV</button>
         )}
-        {showDevOverlay && (
+        {isLocalhost && showDevOverlay && (
           <div style={{position:"fixed",inset:0,zIndex:9998,display:"flex",flexDirection:"column"}}>
             <button onClick={()=>setShowDevOverlay(false)} style={{
               position:"absolute",top:14,right:16,zIndex:1,

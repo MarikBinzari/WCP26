@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 44 44" fill="none">
+  <defs>
+    <linearGradient id="bg2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#CCDAFF"/>
+      <stop offset="50%"  stop-color="#DDE8FF"/>
+      <stop offset="100%" stop-color="#EEF2FF"/>
+    </linearGradient>
+    <filter id="sh2" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3.5" flood-color="#0A2E8A" flood-opacity="0.18"/>
+    </filter>
+  </defs>
+
+  <rect x="2" y="2" width="40" height="40" rx="11" fill="url(#bg2)" filter="url(#sh2)"/>
+
+  <!-- bare grafic: stânga (loc 2), centru (loc 1 - cea mai înaltă), dreapta (loc 3) -->
+  <rect x="9"  y="21" width="7" height="11" rx="2" fill="#0A2E8A" opacity="0.72"/>
+  <rect x="18" y="13" width="8" height="19" rx="2" fill="#0A2E8A" opacity="0.92"/>
+  <rect x="28" y="25" width="7" height="7"  rx="2" fill="#0A2E8A" opacity="0.55"/>
+
+  <!-- linie baza -->
+  <line x1="7" y1="32.5" x2="37" y2="32.5" stroke="#0A2E8A" stroke-width="1.6" stroke-linecap="round" opacity="0.35"/>
+</svg>
