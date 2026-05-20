@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import trophy from "./assets/hands-trophy.png";
 import varBg from "./assets/var-bg.jpg";
 import predictoLogo from "./assets/predicto-logo.png";
@@ -3768,6 +3768,42 @@ function CircleTab({ label, name, isActive, onClick, lightBg=false, distance=0, 
 }
 
 
+// ── PULSE NODE ───────────────────────────────────────────────────────────────
+function PulseNode({ color=NAVY, children }) {
+  const [burstKey, setBurstKey] = useState(0);
+  const firing = useRef(false);
+  const fire = useCallback(() => {
+    if (firing.current) return;
+    firing.current = true;
+    setBurstKey(k => k + 1);
+    setTimeout(() => { firing.current = false; }, 2300);
+  }, []);
+  useEffect(() => {
+    const id = setInterval(fire, 6000);
+    return () => clearInterval(id);
+  }, [fire]);
+  return (
+    <div style={{position:"relative",width:18,height:18,flexShrink:0}} onClick={fire}>
+      {[0,1,2].map(i => (
+        <div key={`${burstKey}-${i}`} style={{
+          position:"absolute", top:"50%", left:"50%",
+          width:10, height:2.5, marginTop:-1.25, marginLeft:-5,
+          borderRadius:2, background:color,
+          animation: burstKey>0 ? `arcBurst${i} 2.2s cubic-bezier(0.22,1,0.36,1) forwards` : "none",
+        }}/>
+      ))}
+      <div style={{
+        position:"absolute", inset:0, borderRadius:"50%", background:color,
+        display:"flex", alignItems:"center", justifyContent:"center",
+        animation:"nodeBreath 3s ease-in-out infinite",
+        boxShadow:`0 0 0 3px ${color}22`,
+      }}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
 // ── HOME ────────────────────────────────────────────────────────────────────
 function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateBoard, onOpenGroups, onCopyPredictions, onCopyExactScores, onAccount, myBoards, predictionsComplete, instantPickDone, koPickDone, koUnlocked, exactScores, activeBoardId, setActiveBoardId, tournamentStarted, simDay, simHour, simMin, createdBoards=[], showFirstAction, leaderboardData={}, boardsLoading=false, predictionsLoaded={} }) {
   const lang = useLang();
@@ -4011,10 +4047,14 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
                     padding:"4px 6px 4px 4px",margin:"0 -6px 0 -4px",
                     cursor:stepClick?"pointer":"default"}}>
                     <div style={{display:"flex",flexDirection:"column",alignItems:"center",width:18,flexShrink:0}}>
-                      <div style={{width:18,height:18,borderRadius:"50%",background:nodeColor,display:"flex",alignItems:"center",justifyContent:"center",
-                        boxShadow:step.isFinal?"0 0 0 3px rgba(240,160,32,0.25), 0 2px 8px rgba(240,160,32,0.4)":step.done?`0 0 0 3px ${GREEN}33`:step.active?`0 0 0 3px ${NAVY}22`:"none",flexShrink:0}}>
-                        {step.isFinal?<span style={{fontSize:9}}>★</span>:step.done?<div style={{width:5,height:5,borderRadius:"50%",background:"#fff"}}/>:step.locked?<span style={{fontSize:8}}>🔒</span>:step.active?<div style={{width:5,height:5,borderRadius:"50%",background:"#fff"}}/>:null}
-                      </div>
+                      {step.active ? (
+                        <PulseNode color={NAVY}><div style={{width:5,height:5,borderRadius:"50%",background:"#fff"}}/></PulseNode>
+                      ) : (
+                        <div style={{width:18,height:18,borderRadius:"50%",background:nodeColor,display:"flex",alignItems:"center",justifyContent:"center",
+                          boxShadow:step.isFinal?"0 0 0 3px rgba(240,160,32,0.25), 0 2px 8px rgba(240,160,32,0.4)":step.done?`0 0 0 3px ${GREEN}33`:"none",flexShrink:0}}>
+                          {step.isFinal?<span style={{fontSize:9}}>★</span>:step.done?<div style={{width:5,height:5,borderRadius:"50%",background:"#fff"}}/>:step.locked?<span style={{fontSize:8}}>🔒</span>:null}
+                        </div>
+                      )}
                       {!isLast&&<div style={{width:2,flex:1,minHeight:22,marginTop:2,background:step.done?GREEN:"#e8e8e8",borderRadius:1}}/>}
                     </div>
                     <div style={{flex:1,paddingBottom:isLast?0:4}}>
@@ -4095,10 +4135,14 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
                     opacity:(isPast&&!done)?0.6:1}}
                     onClick={e=>{e.stopPropagation();(!w.locked||isPast)&&!w.isFinal&&onOpenGroups&&onOpenGroups(w.weekStart);}}>
                     <div style={{display:"flex",flexDirection:"column",alignItems:"center",width:18,flexShrink:0}}>
-                      <div style={{width:18,height:18,borderRadius:"50%",background:nodeColor,display:"flex",alignItems:"center",justifyContent:"center",
-                        boxShadow:w.isFinal?"0 0 0 3px rgba(240,160,32,0.25), 0 2px 8px rgba(240,160,32,0.4)":done?`0 0 0 3px ${GREEN}33`:active?`0 0 0 3px ${NAVY}22`:"none",flexShrink:0}}>
-                        {w.isFinal?<span style={{fontSize:9}}>★</span>:done?<div style={{width:5,height:5,borderRadius:"50%",background:"#fff"}}/>:w.locked&&!isPast?<span style={{fontSize:8}}>🔒</span>:active?<div style={{width:5,height:5,borderRadius:"50%",background:"#fff"}}/>:null}
-                      </div>
+                      {active ? (
+                        <PulseNode color={NAVY}><div style={{width:5,height:5,borderRadius:"50%",background:"#fff"}}/></PulseNode>
+                      ) : (
+                        <div style={{width:18,height:18,borderRadius:"50%",background:nodeColor,display:"flex",alignItems:"center",justifyContent:"center",
+                          boxShadow:w.isFinal?"0 0 0 3px rgba(240,160,32,0.25), 0 2px 8px rgba(240,160,32,0.4)":done?`0 0 0 3px ${GREEN}33`:"none",flexShrink:0}}>
+                          {w.isFinal?<span style={{fontSize:9}}>★</span>:done?<div style={{width:5,height:5,borderRadius:"50%",background:"#fff"}}/>:w.locked&&!isPast?<span style={{fontSize:8}}>🔒</span>:null}
+                        </div>
+                      )}
                       {!isLast&&<div style={{width:2,flex:1,minHeight:16,marginTop:2,borderRadius:1,background:"#e8e8e8",position:"relative",overflow:"hidden"}}>
                         <div style={{position:"absolute",top:0,left:0,right:0,height:`${w.locked?0:pct}%`,background:done?GREEN:active?NAVY+"99":"#bbb",borderRadius:1,transition:"height 0.4s"}}/>
                       </div>}
@@ -4362,10 +4406,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
               <h1 style={{fontSize:10,fontWeight:700,margin:"2px 0 0",letterSpacing:2.5,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
               <p style={{fontSize:11,color:"#6B7280",margin:"3px 0 0"}}>{T[lang].location}</p>
             </div>
-            <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,flexShrink:0,paddingTop:10}}>
-              <img src={bellIcon} alt="Notifications" style={{width:44,height:44}}/>
-              <p style={{fontSize:11,color:"transparent",margin:0,userSelect:"none"}}> </p>
-            </div>
+            <div style={{width:44,paddingTop:10}}/>
           </div>
         </div>
       </div>
@@ -4531,10 +4572,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
               <h1 style={{fontSize:10,fontWeight:700,margin:"2px 0 0",letterSpacing:2.5,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
               <p style={{fontSize:11,color:"#6B7280",margin:"3px 0 0"}}>{T[lang].location}</p>
             </div>
-            <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,flexShrink:0,paddingTop:10}}>
-              <img src={bellIcon} alt="Notifications" style={{width:44,height:44}}/>
-              <p style={{fontSize:11,color:"transparent",margin:0,userSelect:"none"}}> </p>
-            </div>
+            <div style={{width:44,paddingTop:10}}/>
           </div>
           <div style={{display:"flex",gap:0,borderTop:"1px solid rgba(0,0,0,0.06)",marginTop:10,position:"relative",zIndex:1}}>
             {[{key:"my",label:"My Boards"},{key:"available",label:"Available"},{key:"admin",label:"Admin"}].map(t=>(
@@ -6071,10 +6109,7 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
               <h1 style={{fontSize:10,fontWeight:700,margin:"2px 0 0",letterSpacing:2.5,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
               <p style={{fontSize:11,color:"#6B7280",margin:"3px 0 0"}}>{T[lang].location}</p>
             </div>
-            <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,flexShrink:0,paddingTop:10}}>
-              <img src={bellIcon} alt="Notifications" style={{width:44,height:44}}/>
-              <p style={{fontSize:11,color:"transparent",margin:0,userSelect:"none"}}> </p>
-            </div>
+            <div style={{width:44,paddingTop:10}}/>
           </div>
         </div>
         {myBoards.length>0&&(()=>{
@@ -7563,10 +7598,7 @@ function RulesScreen({ onBack }) {
               <h1 style={{fontSize:10,fontWeight:700,margin:"2px 0 0",letterSpacing:2.5,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
               <p style={{fontSize:11,color:"#6B7280",margin:"3px 0 0"}}>{T[lang].location}</p>
             </div>
-            <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,flexShrink:0,paddingTop:10}}>
-              <img src={bellIcon} alt="Notifications" style={{width:44,height:44}}/>
-              <p style={{fontSize:11,color:"transparent",margin:0,userSelect:"none"}}> </p>
-            </div>
+            <div style={{width:44,paddingTop:10}}/>
           </div>
           <div style={{display:"flex",gap:0,borderTop:`1px solid rgba(0,0,0,0.06)`,marginTop:10}}>
             {[{id:"predictions",label:"🎯 Predictions"},{id:"exact",label:"⚽ Exact Score"}].map(t=>(

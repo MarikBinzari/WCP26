@@ -50,6 +50,32 @@
   }
 }
 
+@keyframes nodeBreath {
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(1.13); }
+}
+@keyframes arcBurst0 {
+  0%   { transform: rotate(0deg)   translateY(-13px); opacity: 0; }
+  14%  { transform: rotate(0deg)   translateY(-14px); opacity: 1; }
+  55%  { transform: rotate(-28deg) translateY(-21px); opacity: 0.82; }
+  84%  { transform: rotate(-28deg) translateY(-20px); opacity: 0.12; }
+  100% { transform: rotate(0deg)   translateY(-13px); opacity: 0; }
+}
+@keyframes arcBurst1 {
+  0%   { transform: rotate(120deg)  translateY(-13px); opacity: 0; }
+  14%  { transform: rotate(120deg)  translateY(-14px); opacity: 1; }
+  55%  { transform: rotate(148deg)  translateY(-21px); opacity: 0.82; }
+  84%  { transform: rotate(148deg)  translateY(-20px); opacity: 0.12; }
+  100% { transform: rotate(120deg)  translateY(-13px); opacity: 0; }
+}
+@keyframes arcBurst2 {
+  0%   { transform: rotate(240deg)  translateY(-13px); opacity: 0; }
+  14%  { transform: rotate(240deg)  translateY(-14px); opacity: 1; }
+  55%  { transform: rotate(212deg)  translateY(-21px); opacity: 0.82; }
+  84%  { transform: rotate(212deg)  translateY(-20px); opacity: 0.12; }
+  100% { transform: rotate(240deg)  translateY(-13px); opacity: 0; }
+}
+
 html {
   height: 100%;
   overflow: hidden;
