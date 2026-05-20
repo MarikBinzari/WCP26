@@ -6490,11 +6490,6 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",position:"relative"}}>
       <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.055,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
       <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"10px 20px 12px",flexShrink:0,overflow:"hidden"}}>
-        <img src={varBg} alt="" style={{
-          position:"absolute",inset:0,width:"100%",height:"100%",
-          objectFit:"cover",objectPosition:"center 30%",
-          opacity:0.28,pointerEvents:"none",
-        }}/>
         <div style={{position:"relative"}}>
           <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:14}}>
             <div onClick={onBack} style={{width:36,height:36,borderRadius:10,background:"rgba(255,255,255,0.12)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:"#fff"}}>&#8249;</div>
