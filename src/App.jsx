@@ -4094,51 +4094,50 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
             <div style={{margin:"0 2px 6px"}}>
               <p style={{fontSize:12,fontWeight:600,color:"#9CA3AF",margin:0,textTransform:"uppercase",letterSpacing:1,textAlign:"center"}}>{T[lang].exactScores}</p>
             </div>
-            <div onClick={()=>onOpenGroups&&onOpenGroups()} style={{background:"rgba(0,32,91,0.88)",borderRadius:16,
-              boxShadow:"0 2px 14px rgba(0,0,0,0.18)",
-              border:"1.5px solid rgba(255,255,255,0.08)",
-              padding:"14px 14px 12px",cursor:"pointer",position:"relative",marginBottom:10,overflow:"hidden"}}>
-              <img src={varBg} alt="" style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover",objectPosition:"center 30%",opacity:0.15,pointerEvents:"none",zIndex:0,borderRadius:16}}/>
+            <div onClick={()=>onOpenGroups&&onOpenGroups()} style={{background:"#fff",borderRadius:16,
+              boxShadow:"0 2px 14px rgba(0,0,0,0.07)",
+              border:"1.5px solid transparent",
+              padding:"14px 14px 12px",cursor:"pointer",position:"relative",marginBottom:10}}>
               {steps.map((w,i)=>{
                 const pct = w.total?Math.round((w.scored/w.total)*100):0;
                 const done = !w.locked && pct===100;
                 const isPast = w.past && !w.locked;
                 const active = !w.locked && !done && !isPast;
-                const nodeColor = w.isFinal?"#F0A020":done?GREEN:isPast?"rgba(255,255,255,0.35)":active?"#fff":"rgba(255,255,255,0.15)";
+                const nodeColor = w.isFinal?"#F0A020":done?GREEN:isPast?"#aaa":active?NAVY:"#ddd";
                 const isLast = i===steps.length-1;
                 return (
                   <div key={i} style={{display:"flex",gap:10,cursor:(w.locked&&!isPast)?"default":"pointer",
                     borderRadius:10,
-                    background:w.isFinal?"linear-gradient(90deg,rgba(240,160,32,0.12),transparent)":w.locked&&!isPast?"rgba(255,255,255,0.04)":"transparent",
+                    background:w.isFinal?"linear-gradient(90deg,rgba(240,160,32,0.08),transparent)":w.locked&&!isPast?"rgba(0,0,0,0.025)":"transparent",
                     padding:"4px 6px 4px 4px",margin:"0 -6px 0 -4px",
                     opacity:(isPast&&!done)?0.6:1}}
                     onClick={e=>{e.stopPropagation();(!w.locked||isPast)&&!w.isFinal&&onOpenGroups&&onOpenGroups(w.weekStart);}}>
                     <div style={{display:"flex",flexDirection:"column",alignItems:"center",width:18,flexShrink:0}}>
                       {active ? (
-                        <PulseNode color="#fff"><div style={{width:5,height:5,borderRadius:"50%",background:"rgba(0,32,91,0.9)"}}/></PulseNode>
+                        <PulseNode color={NAVY}><div style={{width:5,height:5,borderRadius:"50%",background:"#fff"}}/></PulseNode>
                       ) : (
                         <div style={{width:18,height:18,borderRadius:"50%",background:nodeColor,display:"flex",alignItems:"center",justifyContent:"center",
-                          boxShadow:w.isFinal?"0 0 0 3px rgba(240,160,32,0.25), 0 2px 8px rgba(240,160,32,0.4)":done?`0 0 0 3px ${GREEN}55`:"none",flexShrink:0}}>
+                          boxShadow:w.isFinal?"0 0 0 3px rgba(240,160,32,0.25), 0 2px 8px rgba(240,160,32,0.4)":done?`0 0 0 3px ${GREEN}33`:"none",flexShrink:0}}>
                           {w.isFinal?<span style={{fontSize:9}}>★</span>:done?<div style={{width:5,height:5,borderRadius:"50%",background:"#fff"}}/>:w.locked&&!isPast?<span style={{fontSize:8}}>🔒</span>:null}
                         </div>
                       )}
-                      {!isLast&&<div style={{width:2,flex:1,minHeight:16,marginTop:2,borderRadius:1,background:"rgba(255,255,255,0.12)",position:"relative",overflow:"hidden"}}>
-                        <div style={{position:"absolute",top:0,left:0,right:0,height:`${w.locked?0:pct}%`,background:done?GREEN:active?"rgba(255,255,255,0.7)":"rgba(255,255,255,0.3)",borderRadius:1,transition:"height 0.4s"}}/>
+                      {!isLast&&<div style={{width:2,flex:1,minHeight:16,marginTop:2,borderRadius:1,background:"#e8e8e8",position:"relative",overflow:"hidden"}}>
+                        <div style={{position:"absolute",top:0,left:0,right:0,height:`${w.locked?0:pct}%`,background:done?GREEN:active?NAVY+"99":"#bbb",borderRadius:1,transition:"height 0.4s"}}/>
                       </div>}
                     </div>
                     <div style={{flex:1,paddingBottom:isLast?0:6}}>
                       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                         <div>
                           <span style={{fontSize:12,fontWeight:w.isFinal?700:active?700:done?600:500,
-                            color:w.isFinal?"#F0A020":"#fff",opacity:w.locked&&!w.isFinal?0.45:1}}>{w.label}</span>
-                          <span style={{fontSize:10,color:w.isFinal?"rgba(240,160,32,0.7)":"rgba(255,255,255,0.5)",marginLeft:5,fontWeight:400,opacity:w.locked&&!w.isFinal?0.5:0.8}}>{w.stage}</span>
+                            color:w.isFinal?"#D4820A":w.locked&&!w.isFinal?"#C0C8D8":DARK,opacity:w.locked&&!w.isFinal?0.5:1}}>{w.label}</span>
+                          <span style={{fontSize:10,color:w.isFinal?"rgba(212,130,10,0.6)":"#9CA3AF",marginLeft:5,fontWeight:400,opacity:w.locked&&!w.isFinal?0.5:0.7}}>{w.stage}</span>
                         </div>
                         <div style={{display:"flex",alignItems:"center",gap:5}}>
                           <span style={{fontSize:11,fontWeight:active?600:400,
-                            color:w.isFinal?"#F0A020":done?GREEN:"rgba(255,255,255,0.5)",opacity:w.locked&&!isPast?0.45:0.9}}>
+                            color:w.isFinal?"#D4820A":w.locked&&!isPast?"#C0C8D8":done?GREEN:"#9CA3AF",opacity:w.locked&&!isPast?0.5:0.8}}>
                             {w.isFinal?"Trophy":w.locked&&!isPast?T[lang].locked:done?T[lang].weekComplete:isPast?`${w.scored}/${w.total}`:`${w.scored}/${w.total}`}
                           </span>
-                          <div onClick={e=>{if(!done||w.isFinal)return;e.stopPropagation();setCopyDone(null);setShowCopySheet("scores");}} style={{cursor:done&&!w.isFinal?"pointer":"default",opacity:done&&!w.isFinal?0.55:0,pointerEvents:done&&!w.isFinal?"auto":"none",width:9,height:9,flexShrink:0,display:"flex",alignItems:"center"}}><svg width="9" height="9" viewBox="0 0 14 14" fill="none"><rect x="4" y="4" width="8" height="8" rx="1.5" stroke="#fff" strokeWidth="1.8"/><path d="M2 10V2h8" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg></div>
+                          <div onClick={e=>{if(!done||w.isFinal)return;e.stopPropagation();setCopyDone(null);setShowCopySheet("scores");}} style={{cursor:done&&!w.isFinal?"pointer":"default",opacity:done&&!w.isFinal?0.55:0,pointerEvents:done&&!w.isFinal?"auto":"none",width:9,height:9,flexShrink:0,display:"flex",alignItems:"center"}}><svg width="9" height="9" viewBox="0 0 14 14" fill="none"><rect x="4" y="4" width="8" height="8" rx="1.5" stroke={DARK} strokeWidth="1.8"/><path d="M2 10V2h8" stroke={DARK} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg></div>
                         </div>
                       </div>
                     </div>
