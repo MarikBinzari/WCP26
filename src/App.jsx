@@ -26,6 +26,8 @@ const SCREENS = {
   RULES:"rules",
   RESET_PASSWORD:"reset_password",
   SET_PASSWORD:"set_password",
+  NOTIFICATIONS:"notifications",
+  PREMIUM:"premium",
 };
 
 const INITIAL_BOARDS = [{ id:"global", label:"🌍", name:"Global Board", members:48291, isGlobal:true }];
@@ -3783,8 +3785,78 @@ function PulseNode({ color=NAVY, children }) {
   );
 }
 
+// ── PREMIUM ──────────────────────────────────────────────────────────────────
+function PremiumScreen({ onBack }) {
+  const lang = useLang();
+  return (
+    <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",position:"relative"}}>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.09,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
+      <div style={{padding:"10px 14px 0",flexShrink:0,position:"relative",zIndex:2}}>
+        <div style={{background:"rgba(255,255,255,0.32)",backdropFilter:"blur(28px)",WebkitBackdropFilter:"blur(28px)",borderRadius:26,boxShadow:"0 8px 32px rgba(10,46,138,0.12), inset 0 1px 0 rgba(255,255,255,0.95)",border:"1px solid rgba(255,255,255,0.55)",padding:"12px 20px 0",position:"relative",WebkitMaskImage:"linear-gradient(to bottom,black 0%,black 78%,transparent 100%)",maskImage:"linear-gradient(to bottom,black 0%,black 78%,transparent 100%)"}}>
+          <div style={{position:"absolute",inset:0,borderRadius:26,background:"linear-gradient(135deg,rgba(255,255,255,0.3) 0%,rgba(255,255,255,0.08) 40%,transparent 65%)",pointerEvents:"none",zIndex:0}}/>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",position:"relative",zIndex:1}}>
+            <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,flexShrink:0,paddingTop:10}}>
+              <button onClick={onBack} style={{width:44,height:44,background:"none",border:"none",padding:0,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",WebkitTapHighlightColor:"transparent"}}>
+                <span style={{fontSize:22,color:"#374151",lineHeight:1}}>‹</span>
+              </button>
+              <p style={{fontSize:11,color:"transparent",margin:0,userSelect:"none"}}> </p>
+            </div>
+            <div style={{textAlign:"center"}}>
+              <img src={predictoLogo} alt="Predicto" decoding="sync" style={{height:36,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
+              <h1 style={{fontSize:10,fontWeight:700,margin:"2px 0 0",letterSpacing:2.5,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
+              <p style={{fontSize:11,color:"#6B7280",margin:"3px 0 0"}}>{T[lang].location}</p>
+            </div>
+            <div style={{width:44,paddingTop:10}}/>
+          </div>
+        </div>
+      </div>
+      <div style={{flex:1,display:"flex",flexDirection:"column",padding:"16px 14px",overflow:"hidden",position:"relative",zIndex:1}}>
+        <div style={{background:"#fff",borderRadius:20,boxShadow:"0 2px 16px rgba(10,46,138,0.07)",flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:12,padding:"32px 24px"}}>
+          <span style={{fontSize:48}}>⭐</span>
+          <p style={{fontSize:18,fontWeight:800,color:NAVY,margin:0,textAlign:"center"}}>You're already Premium for us</p>
+          <p style={{fontSize:13,color:"#888",margin:0,textAlign:"center",lineHeight:1.6}}>Thank you for being part of Predicto.<br/>You get the full experience, on us.</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── NOTIFICATIONS ────────────────────────────────────────────────────────────
+function NotificationsScreen({ onBack }) {
+  const lang = useLang();
+  return (
+    <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",position:"relative"}}>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.09,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
+      <div style={{padding:"10px 14px 0",flexShrink:0,position:"relative",zIndex:2}}>
+        <div style={{background:"rgba(255,255,255,0.32)",backdropFilter:"blur(28px)",WebkitBackdropFilter:"blur(28px)",borderRadius:26,boxShadow:"0 8px 32px rgba(10,46,138,0.12), inset 0 1px 0 rgba(255,255,255,0.95)",border:"1px solid rgba(255,255,255,0.55)",padding:"12px 20px 0",position:"relative",WebkitMaskImage:"linear-gradient(to bottom,black 0%,black 78%,transparent 100%)",maskImage:"linear-gradient(to bottom,black 0%,black 78%,transparent 100%)"}}>
+          <div style={{position:"absolute",inset:0,borderRadius:26,background:"linear-gradient(135deg,rgba(255,255,255,0.3) 0%,rgba(255,255,255,0.08) 40%,transparent 65%)",pointerEvents:"none",zIndex:0}}/>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",position:"relative",zIndex:1}}>
+            <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,flexShrink:0,paddingTop:10}}>
+              <button onClick={onBack} style={{width:44,height:44,background:"none",border:"none",padding:0,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",WebkitTapHighlightColor:"transparent"}}>
+                <span style={{fontSize:22,color:"#374151",lineHeight:1}}>‹</span>
+              </button>
+              <p style={{fontSize:11,color:"transparent",margin:0,userSelect:"none"}}> </p>
+            </div>
+            <div style={{textAlign:"center"}}>
+              <img src={predictoLogo} alt="Predicto" decoding="sync" style={{height:36,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
+              <h1 style={{fontSize:10,fontWeight:700,margin:"2px 0 0",letterSpacing:2.5,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
+              <p style={{fontSize:11,color:"#6B7280",margin:"3px 0 0"}}>{T[lang].location}</p>
+            </div>
+            <div style={{width:44,paddingTop:10}}/>
+          </div>
+        </div>
+      </div>
+      <div style={{flex:1,display:"flex",flexDirection:"column",padding:"16px 14px",overflow:"hidden"}}>
+        <div style={{background:"#fff",borderRadius:20,boxShadow:"0 2px 16px rgba(10,46,138,0.07)",flex:1,display:"flex",alignItems:"center",justifyContent:"center"}}>
+          <p style={{fontSize:13,color:"rgba(0,0,0,0.3)",fontWeight:500}}>No notifications yet</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── HOME ────────────────────────────────────────────────────────────────────
-function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateBoard, onOpenGroups, onCopyPredictions, onCopyExactScores, onAccount, myBoards, predictionsComplete, instantPickDone, koPickDone, koUnlocked, exactScores, activeBoardId, setActiveBoardId, tournamentStarted, simDay, simHour, simMin, createdBoards=[], showFirstAction, leaderboardData={}, boardsLoading=false, predictionsLoaded={} }) {
+function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateBoard, onOpenGroups, onCopyPredictions, onCopyExactScores, onAccount, onNotifications, myBoards, predictionsComplete, instantPickDone, koPickDone, koUnlocked, exactScores, activeBoardId, setActiveBoardId, tournamentStarted, simDay, simHour, simMin, createdBoards=[], showFirstAction, leaderboardData={}, boardsLoading=false, predictionsLoaded={} }) {
   const lang = useLang();
   const user = useUser();
   const displayName = useDisplayName();
@@ -3794,12 +3866,12 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
   const [copyDone, setCopyDone] = useState(null);
   const activeId = activeBoardId;
   const setActiveId = setActiveBoardId;
-  const allSliderItems = [{id:'__remove__', isRemove:true}, ...myBoards, {id:'__add__', isAdd:true}];
-  const [sliderPos, setSliderPos] = useState(()=>Math.max(1,myBoards.findIndex(b=>b.id===activeBoardId)+1));
+  const allSliderItems = myBoards;
+  const [sliderPos, setSliderPos] = useState(()=>Math.max(0,myBoards.findIndex(b=>b.id===activeBoardId)));
   const sliderTouchRef = useRef(null);
   useEffect(()=>{
     const idx = myBoards.findIndex(b=>b.id===activeId);
-    if(idx>=0) setSliderPos(idx+1);
+    if(idx>=0) setSliderPos(idx);
   },[activeId]);
   const handleSliderTouchStart = (e)=>{ sliderTouchRef.current = e.touches[0].clientX; };
   const handleSliderTouchEnd = (e)=>{
@@ -3808,11 +3880,9 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
     sliderTouchRef.current = null;
     if(Math.abs(dx)<28) return;
     if(dx<0 && sliderPos<allSliderItems.length-1){
-      const np=sliderPos+1; setSliderPos(np);
-      if(!allSliderItems[np]?.isAdd && !allSliderItems[np]?.isRemove) setActiveId(allSliderItems[np].id);
+      const np=sliderPos+1; setSliderPos(np); setActiveId(allSliderItems[np].id);
     } else if(dx>0 && sliderPos>0){
-      const np=sliderPos-1; setSliderPos(np);
-      if(!allSliderItems[np]?.isAdd && !allSliderItems[np]?.isRemove) setActiveId(allSliderItems[np].id);
+      const np=sliderPos-1; setSliderPos(np); setActiveId(allSliderItems[np].id);
     }
   };
   const [cdUnitIdx, setCdUnitIdx] = useState(0);
@@ -3873,7 +3943,9 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
             <p style={{fontSize:11,color:"#6B7280",margin:"3px 0 0"}}>{T[lang].location}</p>
           </div>
           <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,flexShrink:0,paddingTop:20}}>
-            <img src={bellIcon} alt="Notifications" style={{width:44,height:44}}/>
+            <button onClick={onNotifications} style={{background:"none",border:"none",padding:0,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",WebkitTapHighlightColor:"transparent"}}>
+              <img src={bellIcon} alt="Notifications" style={{width:44,height:44}}/>
+            </button>
             <p style={{fontSize:11,color:"transparent",margin:0,userSelect:"none"}}> </p>
           </div>
         </div>
@@ -3885,32 +3957,9 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
             if(!item) return <div style={{flex:1}}/>;
             const isCenter = pos===0;
             const dist = Math.abs(pos);
-            const scale = isCenter?1:Math.max(0.58,1-dist*0.2);
-            const opacity = isCenter?1:Math.max(0.32,1-dist*0.28);
             const handleTap = ()=>{
-              if(item.isAdd){ onBoards("available"); return; }
               if(!isCenter){ const np=sliderPos+pos; setSliderPos(np); setActiveId(item.id); }
             };
-            if(item.isRemove) return (
-              <div style={{flex:1,display:"flex",justifyContent:"center",alignItems:"flex-end",paddingBottom:0}}>
-                <div onClick={()=>onBoards("my")} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4,cursor:"pointer",WebkitTapHighlightColor:"transparent",transform:`scale(${scale})`,transformOrigin:"center bottom",opacity}}>
-                  <div style={{width:42,height:42,borderRadius:"50%",background:"transparent",border:"1.5px dashed rgba(0,0,0,0.25)",display:"flex",alignItems:"center",justifyContent:"center"}}>
-                    <svg width="18" height="20" viewBox="0 0 18 20" fill="none">
-                      <path d="M1 4.5h16M6 4.5V3a1 1 0 011-1h4a1 1 0 011 1v1.5M7 9v6M11 9v6M2.5 4.5l1 11a1.5 1.5 0 001.5 1.5h8a1.5 1.5 0 001.5-1.5l1-11" stroke="rgba(0,0,0,0.35)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </div>
-                  <span style={{fontSize:9,color:"rgba(0,0,0,0.55)",fontWeight:600,maxWidth:50,textAlign:"center",lineHeight:1.2}}>remove</span>
-                </div>
-              </div>
-            );
-            if(item.isAdd) return (
-              <div style={{flex:1,display:"flex",justifyContent:"center",alignItems:"flex-end",paddingBottom:0}}>
-                <div onClick={()=>onBoards("available")} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4,cursor:"pointer",WebkitTapHighlightColor:"transparent",transform:`scale(${scale})`,transformOrigin:"center bottom",opacity}}>
-                  <div style={{width:42,height:42,borderRadius:"50%",background:"transparent",border:"1.5px dashed rgba(0,0,0,0.25)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,color:"rgba(0,0,0,0.35)"}}>+</div>
-                  <span style={{fontSize:9,color:"rgba(0,0,0,0.55)",fontWeight:600,maxWidth:50,textAlign:"center",lineHeight:1.2}}>{T[lang].add}</span>
-                </div>
-              </div>
-            );
             const boardLeaders = leaderboardData[item.id];
             const myRank = boardLeaders?.find(u=>u.isMe)?.rank;
             const memberCount = item.members;
@@ -3925,13 +3974,13 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
           return (
             <div style={{position:"relative"}}>
               <div style={{height:10}}/>
-              {sliderPos>1&&(
-                <div onClick={()=>{ const np=sliderPos-1; setSliderPos(np); if(!allSliderItems[np]?.isAdd&&!allSliderItems[np]?.isRemove) setActiveId(allSliderItems[np].id); }} style={{position:"absolute",left:0,top:"50%",transform:"translateY(-50%)",zIndex:5,cursor:"pointer",WebkitTapHighlightColor:"transparent"}}>
+              {(allSliderItems.length>2||sliderPos<allSliderItems.length-1)&&(
+                <div onClick={()=>{ const np=sliderPos+1; if(np<allSliderItems.length){setSliderPos(np);setActiveId(allSliderItems[np].id);} }} style={{position:"absolute",left:0,top:"50%",transform:"translateY(-50%)",zIndex:5,cursor:sliderPos<allSliderItems.length-1?"pointer":"default",WebkitTapHighlightColor:"transparent",opacity:allSliderItems.length>2&&sliderPos===allSliderItems.length-1?0.2:1}}>
                   <span style={{fontSize:18,color:"rgba(0,0,0,0.45)",fontWeight:700,lineHeight:1}}>‹</span>
                 </div>
               )}
-              {sliderPos<allSliderItems.length-2&&(
-                <div onClick={()=>{ const np=sliderPos+1; setSliderPos(np); if(!allSliderItems[np]?.isAdd&&!allSliderItems[np]?.isRemove) setActiveId(allSliderItems[np].id); }} style={{position:"absolute",right:0,top:"50%",transform:"translateY(-50%)",zIndex:5,cursor:"pointer",WebkitTapHighlightColor:"transparent"}}>
+              {(allSliderItems.length>2||sliderPos>0)&&(
+                <div onClick={()=>{ const np=sliderPos-1; if(np>=0){setSliderPos(np);setActiveId(allSliderItems[np].id);} }} style={{position:"absolute",right:0,top:"50%",transform:"translateY(-50%)",zIndex:5,cursor:sliderPos>0?"pointer":"default",WebkitTapHighlightColor:"transparent",opacity:allSliderItems.length>2&&sliderPos===0?0.2:1}}>
                   <span style={{fontSize:18,color:"rgba(0,0,0,0.45)",fontWeight:700,lineHeight:1}}>›</span>
                 </div>
               )}
@@ -3946,18 +3995,22 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
         })()}
       </div>
       <div onClick={()=>onLeaderboard&&onLeaderboard()} style={{position:"relative",cursor:"pointer",WebkitTapHighlightColor:"transparent",marginTop:2}}>
-        {/* rând 1 — dots boards */}
-        <div style={{display:"flex",justifyContent:"center",alignItems:"center",gap:5,height:16,marginBottom:6}}>
-          {(()=>{
-            const realBoards = allSliderItems.filter(b=>!b.isAdd && !b.isRemove);
-            const realPos = sliderPos - 1; // offset for remove item at index 0
-            return realBoards.map((_,i)=>(
-              <div key={i} onClick={e=>{ e.stopPropagation(); const np=i+1; setSliderPos(np); setActiveId(allSliderItems[np].id); }}
+        {/* rând 1 — dots boards + delete/add */}
+        <div style={{display:"flex",justifyContent:"center",alignItems:"center",gap:8,height:24,marginBottom:6,padding:"0 16px"}}>
+          <div onClick={e=>{e.stopPropagation();onBoards("my");}} style={{display:"flex",alignItems:"center",justifyContent:"center",width:24,height:24,borderRadius:"50%",background:"transparent",border:"1.5px dashed rgba(200,16,46,0.18)",cursor:"pointer",flexShrink:0}}>
+            <svg width="12" height="13" viewBox="0 0 18 20" fill="none"><path d="M1 4.5h16M6 4.5V3a1 1 0 011-1h4a1 1 0 011 1v1.5M7 9v6M11 9v6M2.5 4.5l1 11a1.5 1.5 0 001.5 1.5h8a1.5 1.5 0 001.5-1.5l1-11" stroke="rgba(200,16,46,0.4)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          </div>
+          <div style={{display:"flex",alignItems:"center",gap:5,flex:1,justifyContent:"center"}}>
+            {allSliderItems.map((_,i)=>(
+              <div key={i} onClick={e=>{ e.stopPropagation(); setSliderPos(i); setActiveId(allSliderItems[i].id); }}
                 style={{height:3,borderRadius:2,transition:"all 0.25s",cursor:"pointer",
-                  width:i===realPos?44:14,
-                  background:i===realPos?"rgba(10,46,138,0.3)":"rgba(100,116,139,0.2)"}}/>
-            ));
-          })()}
+                  width:i===sliderPos?44:14,
+                  background:i===sliderPos?"rgba(10,46,138,0.3)":"rgba(100,116,139,0.2)"}}/>
+            ))}
+          </div>
+          <div onClick={e=>{e.stopPropagation();onBoards("available");}} style={{display:"flex",alignItems:"center",justifyContent:"center",width:24,height:24,borderRadius:"50%",background:"transparent",border:"1.5px dashed rgba(0,32,91,0.18)",cursor:"pointer",flexShrink:0}}>
+            <span style={{fontSize:16,color:"rgba(0,32,91,0.4)",lineHeight:1,fontWeight:300}}>+</span>
+          </div>
         </div>
         {/* rând 2 — rank & pts */}
         <div style={{position:"relative",display:"flex",justifyContent:"center",alignItems:"center",height:28}}>
@@ -7431,7 +7484,7 @@ function StatsScreen() {
   );
 }
 
-function AccountScreen({ setLang, onBoards, onSignOut, onShowGuide, user }) {
+function AccountScreen({ setLang, onBoards, onSignOut, onShowGuide, onPremium, user }) {
   const lang = useLang();
   const displayName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "—";
   const memberSince = user?.created_at
@@ -7492,7 +7545,7 @@ function AccountScreen({ setLang, onBoards, onSignOut, onShowGuide, user }) {
       </div>
       <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",position:"relative",zIndex:1}}>
         <div style={{padding:"12px 20px 100px"}}>
-          {[{icon:"🏆",label:T[lang].myBoards,sub:T[lang].activeBoards,action:onBoards},{icon:"📖",label:T[lang].appGuide,sub:T[lang].howItWorks,action:onShowGuide},{icon:"🔔",label:T[lang].notifications,sub:T[lang].matchAlertsOn},{icon:"🌍",label:T[lang].language,sub:LANGS.find(l=>l.code===lang)?.name||"English",isLang:true},{icon:"⭐",label:T[lang].upgradePremium,sub:T[lang].removeAds,highlight:true},{icon:"🚪",label:T[lang].signOut,sub:"",action:handleSignOut}].map(item=>(
+          {[{icon:"🏆",label:T[lang].myBoards,sub:T[lang].activeBoards,action:onBoards},{icon:"📖",label:T[lang].appGuide,sub:T[lang].howItWorks,action:onShowGuide},{icon:"🔔",label:T[lang].notifications,sub:T[lang].matchAlertsOn},{icon:"🌍",label:T[lang].language,sub:LANGS.find(l=>l.code===lang)?.name||"English",isLang:true},{icon:"⭐",label:T[lang].upgradePremium,sub:T[lang].removeAds,highlight:true,action:onPremium},{icon:"🚪",label:T[lang].signOut,sub:"",action:handleSignOut}].map(item=>(
             <div key={item.label} onClick={item.isLang?undefined:item.action||undefined} style={{display:"flex",alignItems:"center",gap:14,background:item.highlight?"#E8F0FF":BG,borderRadius:14,boxShadow:item.highlight?`0 0 0 2px ${NAVY},${SHADOW_OUT}`:SHADOW_OUT,padding:"13px 16px",marginBottom:10,cursor:item.isLang?"default":"pointer"}}>
               <span style={{fontSize:20}}>{item.icon}</span>
               <div style={{flex:1}}>
@@ -8042,6 +8095,7 @@ function App() {
                 showToast("Predictions copied!","✅");
               }}
               onAccount={()=>setScreen(SCREENS.ACCOUNT)}
+              onNotifications={()=>setScreen(SCREENS.NOTIFICATIONS)}
               myBoards={myBoards}
               predictionsComplete={predictionsComplete}
               instantPickDone={instantPickDone}
@@ -8058,6 +8112,8 @@ function App() {
               boardsLoading={boardsLoading}
               predictionsLoaded={predictionsLoaded}/>
           </div>}
+          {screen===SCREENS.NOTIFICATIONS&&<NotificationsScreen onBack={()=>setScreen(SCREENS.HOME)}/>}
+          {screen===SCREENS.PREMIUM&&<PremiumScreen onBack={()=>setScreen(SCREENS.ACCOUNT)}/>}
           {screen===SCREENS.BOARDS&&<BoardsScreen
             initialTab={boardsInitialTab}
             onViewChange={setBoardsSubView}
@@ -8206,7 +8262,7 @@ function App() {
               }
             }} simDay={simDay} simHour={simHour} simMin={simMin} initialWeek={groupsInitialWeek} onBack={()=>{ setGroupsInitialWeek(null); setScreen(SCREENS.HOME); }}/>}
           {user&&<div style={{display:screen===SCREENS.ACCOUNT?'flex':'none',flex:1,flexDirection:'column',overflow:'hidden',minHeight:0}}>
-            <AccountScreen setLang={setLang} onBoards={()=>{ setBoardsInitialTab("my"); setScreen(SCREENS.BOARDS); }} onSignOut={()=>setScreen(SCREENS.SPLASH)} onShowGuide={()=>{ setShowOnboarding(true); setScreen(SCREENS.HOME); }} user={user}/>
+            <AccountScreen setLang={setLang} onBoards={()=>{ setBoardsInitialTab("my"); setScreen(SCREENS.BOARDS); }} onSignOut={()=>setScreen(SCREENS.SPLASH)} onShowGuide={()=>{ setShowOnboarding(true); setScreen(SCREENS.HOME); }} onPremium={()=>setScreen(SCREENS.PREMIUM)} user={user}/>
           </div>}
         </div>
         <Toast message={toast.message} emoji={toast.emoji} visible={toast.visible}/>
