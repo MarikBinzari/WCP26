@@ -90,11 +90,16 @@ export async function checkDbHealth() {
     ? { ok: false, error: matchErr.message }
     : { ok: true, count: matches?.length, sample: matches?.map(m => m.match_key) }
   // Check total match count
-  const { count } = await supabase.from('matches').select('id', { count: 'exact', head: true })
-  results.matchesTotal = count ?? 0
+  const { count: matchCount } = await supabase.from('matches').select('id', { count: 'exact', head: true })
+  results.matchesTotal = matchCount ?? 0
   // Check exact_scores table accessible
   const { error: scErr } = await supabase.from('exact_scores').select('id').limit(1)
   results.exactScoresTable = scErr ? { ok: false, error: scErr.message } : { ok: true }
+  // Check players table
+  const { error: plErr } = await supabase.from('players').select('id').limit(1)
+  results.playersTable = plErr ? { ok: false, error: plErr.message } : { ok: true }
+  const { count: playerCount } = await supabase.from('players').select('id', { count: 'exact', head: true })
+  results.playersTotal = playerCount ?? 0
   return results
 }
 
@@ -254,6 +259,58 @@ export async function checkEmailExists(email) {
     if (error) return null;
     return data === true;
   } catch { return null; }
+}
+
+// ─── PLAYERS ─────────────────────────────────────────────────────────────────
+// Returns { [teamName]: [{name, position, number, photo, nationality}, ...] }
+// Sorted by shirt number ascending (nulls last).
+export async function loadPlayers() {
+  const { data, error } = await supabase
+    .from('players')
+    .select('team_name, player_name, position, shirt_number, photo_url, nationality')
+    .order('shirt_number', { ascending: true, nullsFirst: false })
+  if (error) { console.error('loadPlayers:', error); return {} }
+  const result = {}
+  ;(data || []).forEach(row => {
+    if (!result[row.team_name]) result[row.team_name] = []
+    result[row.team_name].push({
+      name:        row.player_name,
+      position:    row.position,
+      number:      row.shirt_number,
+      photo:       row.photo_url,
+      nationality: row.nationality,
+    })
+  })
+  return result
+}
+
+// Seed players via Edge Function (admin only — called once)
+export async function seedPlayersFromApi() {
+  const { data, error } = await supabase.functions.invoke('seed-players')
+  if (error) { console.error('seedPlayersFromApi:', error); return { error: error.message } }
+  return data
+}
+
+// ─── LIVE SCORES ──────────────────────────────────────────────────────────────
+export async function loadLiveScores() {
+  const { data } = await supabase.from('live_scores').select('*')
+  const result = {}
+  ;(data || []).forEach(row => {
+    result[row.match_key] = {
+      status: row.status,
+      home:   row.home_score,
+      away:   row.away_score,
+      min:    row.live_min,
+    }
+  })
+  return result
+}
+
+export function subscribeLiveScores(onChange) {
+  return supabase
+    .channel('live_scores_realtime')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'live_scores' }, onChange)
+    .subscribe()
 }
 
 // ─── LEADERBOARD ──────────────────────────────────────────────────────────────

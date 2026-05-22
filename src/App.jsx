@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import confetti from "canvas-confetti";
 import trophy from "./assets/hands-trophy.png";
 import varBg from "./assets/var-bg.jpg";
 import predictoLogo from "./assets/predicto-logo.png";
 import bellIcon from "./assets/bell-icon.svg";
-import { ALL_GROUPS_DATA, FLAGS, TEAM_COLORS, CALENDAR_EVENTS } from "./data/worldcup2026.js";
+import { ALL_GROUPS_DATA, FLAGS, TEAM_COLORS, CALENDAR_EVENTS, TEAM_PLAYERS } from "./data/worldcup2026.js";
 import { supabase } from "./supabase.js";
-import { loadPredictions, savePredictions, loadExactScores, saveExactScore, loadUserBoards, loadAvailableBoards, createBoard, joinBoardByCode, joinBoardById, loadLeaderboard, fetchScoringRules, fetchMemberCounts, removeBoardMember, removeParticipation, deleteBoard, loadBoardMembers, checkDbHealth, checkEmailExists } from "./db.js";
+import { loadPredictions, savePredictions, loadExactScores, saveExactScore, loadUserBoards, loadAvailableBoards, createBoard, joinBoardByCode, joinBoardById, loadLeaderboard, fetchScoringRules, fetchMemberCounts, removeBoardMember, removeParticipation, deleteBoard, loadBoardMembers, checkDbHealth, checkEmailExists, loadLiveScores, subscribeLiveScores, loadPlayers, seedPlayersFromApi } from "./db.js";
 
 const TEAM_CODE = {"Mexico":"MEX","South Africa":"RSA","South Korea":"KOR","Czechia":"CZE","Canada":"CAN","Switzerland":"SUI","Qatar":"QAT","Bosnia-Herzegovina":"BIH","Brazil":"BRA","Morocco":"MAR","Scotland":"SCO","Haiti":"HAI","USA":"USA","Paraguay":"PAR","Australia":"AUS","Turkiye":"TUR","Germany":"GER","Ecuador":"ECU","Ivory Coast":"CIV","Curacao":"CUW","Netherlands":"NED","Japan":"JPN","Tunisia":"TUN","Sweden":"SWE","Belgium":"BEL","Iran":"IRI","Egypt":"EGY","New Zealand":"NZL","Spain":"ESP","Uruguay":"URU","Saudi Arabia":"KSA","Cape Verde":"CPV","France":"FRA","Senegal":"SEN","Norway":"NOR","Iraq":"IRQ","Argentina":"ARG","Austria":"AUT","Algeria":"ALG","Jordan":"JOR","Portugal":"POR","Colombia":"COL","Uzbekistan":"UZB","DR Congo":"COD","England":"ENG","Croatia":"CRO","Panama":"PAN","Ghana":"GHA"};
 
@@ -28,6 +29,7 @@ const SCREENS = {
   SET_PASSWORD:"set_password",
   NOTIFICATIONS:"notifications",
   PREMIUM:"premium",
+  CHAMPION:"champion",
 };
 
 const INITIAL_BOARDS = [{ id:"global", label:"🌍", name:"Global Board", members:48291, isGlobal:true }];
@@ -430,6 +432,37 @@ const computeLiveScores = (simDay=null, simHour=12, simMin=0) => {
 };
 const LIVE_SCORES_DEFAULT = computeLiveScores();
 let LIVE_SCORES = LIVE_SCORES_DEFAULT;
+
+// Hook: merge scoruri reale din Supabase peste scoruri simulate.
+// DB suprascrie simularea; dacă DB e gol (înainte de turneu), simularea rămâne.
+function useLiveScores(simDay, simHour, simMin) {
+  const [dbScores, setDbScores] = useState({});
+
+  useEffect(() => {
+    loadLiveScores().then(scores => {
+      if (Object.keys(scores).length > 0) setDbScores(scores);
+    });
+
+    const channel = subscribeLiveScores((payload) => {
+      const row = payload.new;
+      if (!row) return;
+      setDbScores(prev => ({
+        ...prev,
+        [row.match_key]: {
+          status: row.status,
+          home:   row.home_score,
+          away:   row.away_score,
+          min:    row.live_min,
+        },
+      }));
+    });
+
+    return () => { channel.unsubscribe(); };
+  }, []);
+
+  const computed = computeLiveScores(simDay, simHour, simMin);
+  return { ...computed, ...dbScores };
+}
 
 const toLabel = (d) => d > 30 ? `${d-30} July` : `${d} June`;
 
@@ -3855,8 +3888,339 @@ function NotificationsScreen({ onBack }) {
   );
 }
 
+// ── CHAMPION & TOP SCORE ────────────────────────────────────────────────────
+const POS_LABEL = { Goalkeeper:'GK', Defence:'DEF', Midfield:'MID', Offence:'FWD' };
+
+function PaniniCard({ player, teamName, isSelected, onClick }) {
+  const [primary, secondary] = TEAM_COLORS[teamName] || ['#1a3a6b','#c8102e'];
+  const flag  = FLAGS[teamName] || '🏳';
+  const code  = TEAM_CODE[teamName] || teamName?.slice(0,3).toUpperCase() || '???';
+  const p     = typeof player === 'string' ? { name:player, position:null, number:null, photo:null } : player;
+  const posLbl = POS_LABEL[p.position] || '';
+  const lastName = p.name.split(' ').slice(-1)[0];
+
+  return (
+    <div onClick={onClick} style={{
+      position:'relative', width:'100%', paddingBottom:'132%',
+      borderRadius:10, overflow:'hidden', cursor:'pointer',
+      border: isSelected ? '2.5px solid #FFD700' : '2px solid rgba(255,255,255,0.55)',
+      boxShadow: isSelected
+        ? '0 0 0 2px #FFD700, 0 8px 24px rgba(255,215,0,0.45)'
+        : '0 3px 10px rgba(0,0,0,0.18)',
+      transform: isSelected ? 'scale(1.06) translateY(-3px)' : 'scale(1)',
+      transition:'all 0.16s cubic-bezier(0.34,1.56,0.64,1)',
+    }}>
+      <div style={{position:'absolute',inset:0}}>
+
+        {/* Sky-blue gradient background */}
+        <div style={{position:'absolute',inset:0,background:'linear-gradient(168deg,#cce4f7 0%,#90bfe0 50%,#6aa8d2 100%)'}}/>
+
+        {/* Team color stripe top */}
+        <div style={{position:'absolute',top:0,left:0,right:0,height:4,background:`linear-gradient(90deg,${primary},${secondary})`}}/>
+
+        {/* "26" watermark */}
+        <div style={{
+          position:'absolute',top:'-2%',left:'-1%',
+          fontSize:62,fontWeight:900,fontStyle:'italic',
+          color:primary,opacity:0.17,lineHeight:1,
+          userSelect:'none',pointerEvents:'none',letterSpacing:-2,
+        }}>26</div>
+
+        {/* Shirt number top-left */}
+        {p.number!=null&&(
+          <div style={{position:'absolute',top:7,left:6,zIndex:3,fontSize:9,fontWeight:900,color:'#fff',textShadow:'0 1px 3px rgba(0,0,0,0.7)',lineHeight:1}}>
+            {p.number}
+          </div>
+        )}
+
+        {/* Flag + FIFA code top-right */}
+        <div style={{position:'absolute',top:5,right:5,zIndex:3,display:'flex',flexDirection:'column',alignItems:'center',gap:1}}>
+          <span style={{fontSize:14,lineHeight:1}}>{flag}</span>
+          <span style={{fontSize:6.5,fontWeight:800,color:'#fff',textShadow:'0 1px 2px rgba(0,0,0,0.6)',letterSpacing:0.3}}>{code}</span>
+        </div>
+
+        {/* Player photo */}
+        {p.photo ? (
+          <img src={p.photo} alt={p.name}
+            style={{position:'absolute',bottom:22,left:'50%',transform:'translateX(-50%)',height:'67%',width:'auto',maxWidth:'95%',objectFit:'cover',objectPosition:'top center',zIndex:2,filter:'drop-shadow(0 4px 10px rgba(0,0,0,0.28))'}}
+            onError={e=>{e.currentTarget.style.display='none'}}/>
+        ):(
+          <div style={{position:'absolute',bottom:22,left:'50%',transform:'translateX(-50%)',fontSize:40,lineHeight:1,zIndex:2,opacity:0.25}}>👤</div>
+        )}
+
+        {/* Bottom name bar */}
+        <div style={{position:'absolute',bottom:0,left:0,right:0,zIndex:4,background:primary,padding:'4px 3px 3px',minHeight:22}}>
+          <div style={{fontSize:8,fontWeight:900,color:'#fff',textAlign:'center',textTransform:'uppercase',letterSpacing:0.4,lineHeight:1.2,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>
+            {lastName}
+          </div>
+          {posLbl&&(
+            <div style={{fontSize:6.5,color:secondary&&secondary!=='#FFFFFF'?secondary:'rgba(255,255,255,0.75)',textAlign:'center',fontWeight:700,letterSpacing:0.8,textTransform:'uppercase',lineHeight:1.2}}>
+              {posLbl}
+            </div>
+          )}
+        </div>
+
+        {/* Gold shimmer overlay when selected */}
+        {isSelected&&(
+          <div style={{position:'absolute',inset:0,zIndex:5,background:'rgba(255,215,0,0.1)',pointerEvents:'none'}}/>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ChampionScreen({ onBack, championPick, topScorerPick, setChampionPick, setTopScorerPick }) {
+  const allTeams = Object.values(ALL_GROUPS_DATA).flat();
+  const tCode = (t) => TEAM_CODE[t]||t.slice(0,3).toUpperCase();
+  const [tsTeam, setTsTeam] = useState(topScorerPick?.team||null);
+  const [champPopup, setChampPopup] = useState(false);
+  const [tsPopup, setTsPopup] = useState(false);
+  const [dbPlayers, setDbPlayers] = useState({});
+  const [playersLoading, setPlayersLoading] = useState(true);
+
+  useEffect(() => {
+    loadPlayers().then(p => { setDbPlayers(p); setPlayersLoading(false); });
+  }, []);
+
+  const confettiCanvasRef = useRef(null);
+  const confettiInstanceRef = useRef(null);
+
+  useEffect(()=>{
+    if(!champPopup) { confettiInstanceRef.current = null; return; }
+    const colors = ["#FFD700","#ffffff","#0A2E8A","#CE1126","#009A44","#FF6B35","#a855f7"];
+    const tryStart = () => {
+      if(!confettiCanvasRef.current) return;
+      const instance = confetti.create(confettiCanvasRef.current, { resize:true, useWorker:false });
+      confettiInstanceRef.current = instance;
+      const interval = setInterval(()=>{
+        instance({ particleCount:2, spread:160, startVelocity:6, gravity:0.25, ticks:300, origin:{x:Math.random(), y:Math.random()*0.4}, colors, scalar:0.7, drift:0 });
+      }, 300);
+      return ()=>{ clearInterval(interval); instance.reset(); };
+    };
+    const cleanup = tryStart();
+    return ()=>{ if(cleanup) cleanup(); };
+  },[champPopup]);
+
+  return (
+    <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",position:"relative"}}>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.055,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
+
+      {/* Navy header */}
+      <div style={{background:"rgba(0,32,91,0.88)",flexShrink:0,position:"relative",zIndex:1,overflow:"hidden"}}>
+        {/* trophy image watermark inside header */}
+        <img src={trophy} alt="" style={{position:"absolute",right:-10,top:-18,height:130,opacity:0.13,pointerEvents:"none",filter:"grayscale(0.3) contrast(1.2)"}}/>
+        <div style={{position:"relative",zIndex:1}}>
+          <div style={{display:"flex",alignItems:"center",gap:10,padding:"28px 14px 28px"}}>
+            <button onClick={onBack} style={{background:"rgba(255,255,255,0.12)",border:"none",borderRadius:10,width:34,height:34,color:"#fff",fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>‹</button>
+            <div style={{flex:1,textAlign:"center"}}>
+              <div style={{fontSize:18,fontWeight:800,color:"#fff"}}>Chose your Champions</div>
+            </div>
+            <div style={{width:34,flexShrink:0}}/>
+          </div>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",padding:"24px 18px 100px",position:"relative",zIndex:1}}>
+
+        {/* Champion card */}
+        <div style={{background:"#fff",borderRadius:16,boxShadow:"0 2px 14px rgba(0,0,0,0.07)",padding:"20px 18px 22px",marginBottom:20}}>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,marginBottom:12}}>
+            <span style={{fontSize:18}}>🏆</span>
+            <span style={{fontSize:14,fontWeight:700,color:DARK}}>Champion</span>
+            {championPick&&<span style={{fontSize:10,fontWeight:700,color:GREEN}}>✓</span>}
+          </div>
+          <div onClick={()=>setChampPopup(true)}
+            style={{display:"flex",alignItems:"center",justifyContent:"center",
+              background:championPick?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:"#F3F4F6",
+              borderRadius:12,padding:"14px",cursor:"pointer",
+              border:`1.5px solid ${championPick?NAVY:"#E5E7EB"}`}}>
+            {championPick?(
+              <div style={{display:"flex",alignItems:"center",gap:12,justifyContent:"center"}}>
+                <span style={{fontSize:32,lineHeight:1}}>{FLAGS[championPick]||"🏳"}</span>
+                <div style={{textAlign:"center"}}>
+                  <div style={{fontSize:15,fontWeight:800,color:"#fff"}}>{championPick}</div>
+                  <div style={{fontSize:11,color:"rgba(255,255,255,0.5)",fontWeight:600}}>{tCode(championPick)}</div>
+                </div>
+              </div>
+            ):(
+              <span style={{fontSize:13,color:"#9CA3AF",fontWeight:500}}>Pick the champion...</span>
+            )}
+          </div>
+        </div>
+
+        {/* Top Scorer card */}
+        <div style={{background:"#fff",borderRadius:16,boxShadow:"0 2px 14px rgba(0,0,0,0.07)",padding:"20px 18px 24px"}}>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,marginBottom:18}}>
+            <span style={{fontSize:18}}>👕</span>
+            <span style={{fontSize:14,fontWeight:700,color:DARK}}>Top Scorer</span>
+            {topScorerPick?.player&&<span style={{fontSize:10,fontWeight:700,color:GREEN}}>✓</span>}
+          </div>
+
+          {/* shirt button — opens team picker */}
+          <div onClick={()=>setTsPopup(true)}
+            style={{display:"flex",flexDirection:"column",alignItems:"center",gap:8,cursor:"pointer",padding:"8px 0"}}>
+            <span style={{fontSize:80,lineHeight:1}}>👕</span>
+            {tsTeam?(
+              <div style={{textAlign:"center"}}>
+                <div style={{fontSize:13,fontWeight:700,color:DARK}}>{FLAGS[tsTeam]||"🏳"} {tsTeam}</div>
+                <div style={{fontSize:11,color:"#9CA3AF",fontWeight:600}}>{tCode(tsTeam)}</div>
+              </div>
+            ):(
+              <span style={{fontSize:12,color:"#9CA3AF",fontWeight:500}}>Pick a team...</span>
+            )}
+          </div>
+
+          {/* Players — Panini card grid */}
+          {tsTeam&&(
+            <div style={{marginTop:16}}>
+              <div style={{fontSize:11,fontWeight:600,color:"#9CA3AF",marginBottom:14,textAlign:"center",letterSpacing:0.3}}>
+                {FLAGS[tsTeam]||"🏳"} {tsTeam} — pick the top scorer
+              </div>
+              {playersLoading ? (
+                <div style={{textAlign:"center",padding:"24px 0",fontSize:12,color:"#9CA3AF"}}>Loading players…</div>
+              ) : (()=>{
+                const dbList  = dbPlayers[tsTeam] || [];
+                const players = dbList.length > 0
+                  ? dbList
+                  : (TEAM_PLAYERS[tsTeam]||[]).map(n=>({name:n,position:null,number:null,photo:null}));
+                return (
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
+                    {players.map(player=>{
+                      const name = typeof player==='string' ? player : player.name;
+                      const isSel = topScorerPick?.player===name&&topScorerPick?.team===tsTeam;
+                      return (
+                        <PaniniCard
+                          key={name}
+                          player={player}
+                          teamName={tsTeam}
+                          isSelected={isSel}
+                          onClick={()=>setTopScorerPick(isSel?null:{team:tsTeam,player:name})}
+                        />
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Champion pick popup — bottom sheet with team list */}
+      {champPopup&&(
+        <div style={{position:"fixed",inset:0,zIndex:2000,display:"flex",flexDirection:"column",justifyContent:"flex-end",touchAction:"none",overscrollBehavior:"none"}}
+          onClick={()=>setChampPopup(false)}
+          onWheel={e=>e.stopPropagation()}>
+          <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.55)"}}/>
+          <div onClick={e=>e.stopPropagation()}
+            style={{position:"relative",background:"#1C1C1E",borderRadius:"20px 20px 0 0",zIndex:1,
+              display:"flex",flexDirection:"column",maxHeight:"75vh"}}>
+            {/* confetti canvas — covers popup background */}
+            <canvas ref={confettiCanvasRef} style={{position:"absolute",inset:0,width:"100%",height:"100%",borderRadius:"20px 20px 0 0",pointerEvents:"none",zIndex:0,opacity:0.45}}/>
+            {/* drag handle */}
+            <div style={{display:"flex",justifyContent:"center",padding:"10px 0 4px",flexShrink:0,touchAction:"none",position:"relative",zIndex:1}}
+              onTouchStart={e=>{ e.currentTarget._y0=e.touches[0].clientY; }}
+              onTouchMove={e=>{
+                const dy=e.touches[0].clientY-e.currentTarget._y0;
+                if(dy>0){ const s=e.currentTarget.parentElement; s.style.transform=`translateY(${dy}px)`; s.style.transition="none"; }
+              }}
+              onTouchEnd={e=>{
+                const dy=e.changedTouches[0].clientY-e.currentTarget._y0;
+                const s=e.currentTarget.parentElement;
+                s.style.transition="transform 0.3s"; s.style.transform="";
+                if(dy>80) setChampPopup(false);
+              }}>
+              <div style={{width:36,height:4,borderRadius:2,background:"rgba(255,255,255,0.35)"}}/>
+            </div>
+            {/* header */}
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 20px 12px",flexShrink:0,borderBottom:"1px solid rgba(255,255,255,0.07)",position:"relative",zIndex:1}}>
+              <span style={{fontSize:15,fontWeight:800,color:"#fff"}}>🏆 Pick Champion</span>
+              <button onClick={()=>setChampPopup(false)}
+                style={{background:"rgba(255,255,255,0.1)",border:"none",borderRadius:8,padding:"5px 14px",color:"rgba(255,255,255,0.6)",fontSize:13,cursor:"pointer"}}>
+                Close
+              </button>
+            </div>
+            {/* scrollable team list */}
+            <div style={{overflowY:"auto",WebkitOverflowScrolling:"touch",flex:1,padding:"8px 0 40px",position:"relative",zIndex:1}}>
+              {allTeams.map(team=>{
+                const isSel = championPick===team;
+                return (
+                  <div key={team} onClick={()=>{ setChampionPick(isSel?null:team); setChampPopup(false); }}
+                    style={{display:"flex",alignItems:"center",gap:14,padding:"12px 20px",
+                      background:isSel?"rgba(10,46,138,0.35)":"transparent",
+                      borderBottom:"1px solid rgba(255,255,255,0.05)",cursor:"pointer"}}>
+                    <span style={{fontSize:28,lineHeight:1,flexShrink:0}}>{FLAGS[team]||"🏳"}</span>
+                    <div style={{flex:1}}>
+                      <div style={{fontSize:14,fontWeight:isSel?700:500,color:isSel?"#fff":"rgba(255,255,255,0.85)"}}>{team}</div>
+                      <div style={{fontSize:11,color:"rgba(255,255,255,0.35)",fontWeight:600,letterSpacing:0.5}}>{tCode(team)}</div>
+                    </div>
+                    {isSel&&<span style={{fontSize:16,color:GREEN,fontWeight:800}}>✓</span>}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Top Scorer team popup — bottom sheet */}
+      {tsPopup&&(
+        <div style={{position:"fixed",inset:0,zIndex:2000,display:"flex",flexDirection:"column",justifyContent:"flex-end",touchAction:"none",overscrollBehavior:"none"}}
+          onClick={()=>setTsPopup(false)}
+          onWheel={e=>e.stopPropagation()}>
+          <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.55)"}}/>
+          <div onClick={e=>e.stopPropagation()}
+            style={{position:"relative",background:"#1C1C1E",borderRadius:"20px 20px 0 0",zIndex:1,
+              display:"flex",flexDirection:"column",maxHeight:"75vh"}}>
+            <div style={{display:"flex",justifyContent:"center",padding:"10px 0 4px",flexShrink:0,touchAction:"none"}}
+              onTouchStart={e=>{ e.currentTarget._y0=e.touches[0].clientY; }}
+              onTouchMove={e=>{
+                const dy=e.touches[0].clientY-e.currentTarget._y0;
+                if(dy>0){ const s=e.currentTarget.parentElement; s.style.transform=`translateY(${dy}px)`; s.style.transition="none"; }
+              }}
+              onTouchEnd={e=>{
+                const dy=e.changedTouches[0].clientY-e.currentTarget._y0;
+                const s=e.currentTarget.parentElement;
+                s.style.transition="transform 0.3s"; s.style.transform="";
+                if(dy>80) setTsPopup(false);
+              }}>
+              <div style={{width:36,height:4,borderRadius:2,background:"rgba(255,255,255,0.35)"}}/>
+            </div>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 20px 12px",flexShrink:0,borderBottom:"1px solid rgba(255,255,255,0.07)"}}>
+              <span style={{fontSize:15,fontWeight:800,color:"#fff"}}>👕 Pick Team</span>
+              <button onClick={()=>setTsPopup(false)}
+                style={{background:"rgba(255,255,255,0.1)",border:"none",borderRadius:8,padding:"5px 14px",color:"rgba(255,255,255,0.6)",fontSize:13,cursor:"pointer"}}>
+                Close
+              </button>
+            </div>
+            <div style={{overflowY:"auto",WebkitOverflowScrolling:"touch",flex:1,padding:"8px 0 40px"}}>
+              {allTeams.map(team=>{
+                const isSel = tsTeam===team;
+                return (
+                  <div key={team} onClick={()=>{ setTsTeam(team); setTsPopup(false); }}
+                    style={{display:"flex",alignItems:"center",gap:14,padding:"12px 20px",
+                      background:isSel?"rgba(10,46,138,0.35)":"transparent",
+                      borderBottom:"1px solid rgba(255,255,255,0.05)",cursor:"pointer"}}>
+                    <span style={{fontSize:28,lineHeight:1,flexShrink:0}}>{FLAGS[team]||"🏳"}</span>
+                    <div style={{flex:1}}>
+                      <div style={{fontSize:14,fontWeight:isSel?700:500,color:isSel?"#fff":"rgba(255,255,255,0.85)"}}>{team}</div>
+                      <div style={{fontSize:11,color:"rgba(255,255,255,0.35)",fontWeight:600,letterSpacing:0.5}}>{tCode(team)}</div>
+                    </div>
+                    {isSel&&<span style={{fontSize:16,color:GREEN,fontWeight:800}}>✓</span>}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── HOME ────────────────────────────────────────────────────────────────────
-function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateBoard, onOpenGroups, onCopyPredictions, onCopyExactScores, onAccount, onNotifications, myBoards, predictionsComplete, instantPickDone, koPickDone, koUnlocked, exactScores, activeBoardId, setActiveBoardId, tournamentStarted, simDay, simHour, simMin, createdBoards=[], showFirstAction, leaderboardData={}, boardsLoading=false, predictionsLoaded={} }) {
+function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateBoard, onOpenGroups, onCopyPredictions, onCopyExactScores, onAccount, onNotifications, onChampion, myBoards, predictionsComplete, instantPickDone, koPickDone, koUnlocked, exactScores, activeBoardId, setActiveBoardId, tournamentStarted, simDay, simHour, simMin, createdBoards=[], showFirstAction, leaderboardData={}, boardsLoading=false, predictionsLoaded={}, championPick=null, topScorerPick=null, setChampionPick=()=>{}, setTopScorerPick=()=>{} }) {
   const lang = useLang();
   const user = useUser();
   const displayName = useDisplayName();
@@ -4036,6 +4400,47 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
         <div style={{position:"relative",borderRadius:18,padding:"14px 0 14px",flex:1}}>
           <div style={{position:"absolute",inset:0,borderRadius:18,background:"rgba(255,255,255,0.15)",WebkitMaskImage:"linear-gradient(to bottom,black 0%,black 55%,transparent 100%)",maskImage:"linear-gradient(to bottom,black 0%,black 55%,transparent 100%)",pointerEvents:"none"}}/>
           <div style={{position:"relative",zIndex:1}}>
+        {/* Card 0 — Champion & Top Score (teaser) */}
+        {(()=>{
+          const champDone = !!championPick;
+          const tsDone = !!(topScorerPick?.player);
+          const tCode = (t) => TEAM_CODE[t]||t.slice(0,3).toUpperCase();
+          const allDone = champDone && tsDone;
+          return (<>
+            <div style={{margin:"0 2px 6px"}}>
+              <p style={{fontSize:12,fontWeight:600,color:"#9CA3AF",margin:0,textTransform:"uppercase",letterSpacing:1,textAlign:"center"}}>Champion & Top Score</p>
+            </div>
+            <div onClick={onChampion}
+              style={{background:"#fff",borderRadius:16,boxShadow:"0 2px 14px rgba(0,0,0,0.07)",
+                border:`1.5px solid ${allDone?GREEN+"44":"transparent"}`,
+                padding:"16px",cursor:"pointer",position:"relative",marginBottom:6}}>
+              <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:8}}>
+                <div style={{width:44,height:44,borderRadius:12,background:allDone?`linear-gradient(135deg,${GREEN},#007A36)`:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                  <span style={{fontSize:22}}>{allDone?"✓":"🏆"}</span>
+                </div>
+                <div style={{textAlign:"center"}}>
+                  <div style={{fontSize:13,fontWeight:700,color:DARK}}>Champion & Top Scorer</div>
+                  {allDone?(
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,marginTop:3}}>
+                      <span style={{fontSize:11,color:GREEN,fontWeight:600}}>{FLAGS[championPick]||"🏳"} {tCode(championPick)}</span>
+                      <span style={{fontSize:10,color:"#C0C8D8"}}>·</span>
+                      <span style={{fontSize:11,color:GREEN,fontWeight:600}}>{FLAGS[topScorerPick.team]||"🏳"} {topScorerPick.player}</span>
+                    </div>
+                  ):(
+                    <div style={{fontSize:11,color:"#9CA3AF",marginTop:3}}>Choose your team and favorite player</div>
+                  )}
+                </div>
+                <span style={{fontSize:12,color:"#C0C8D8",fontWeight:600,letterSpacing:0.5}}>TAP TO SELECT ›</span>
+              </div>
+            </div>
+          </>);
+        })()}
+
+        {/* Connector */}
+        <div style={{display:"flex",justifyContent:"center",margin:"4px 0 10px"}}>
+          <div style={{width:2,height:24,background:"linear-gradient(to bottom,transparent,#d0d0d0,transparent)",borderRadius:1}}/>
+        </div>
+
         {/* Card 1 — Predictions + path to trophy */}
         {(()=>{
           const deadlinePassed = simDay ? (simDay > 11 || (simDay === 11 && (simHour||0) >= 19)) : new Date() >= new Date(2026,5,11,19,0,0);
@@ -4200,6 +4605,7 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
             </div>
           </>);
         })()}
+
 
           </div>
         </div>
@@ -4927,6 +5333,31 @@ function LangSelector({ lang, setLang }) {
 
 const ADMIN_EMAIL = "admin@wcp2026.com";
 
+function SeedPlayersButton() {
+  const [state, setState] = useState('idle'); // idle | loading | ok | error
+  const [msg, setMsg] = useState('');
+  const run = async () => {
+    setState('loading');
+    const res = await seedPlayersFromApi();
+    if (res?.error) { setState('error'); setMsg(res.error); }
+    else if (res?.warning) { setState('error'); setMsg(res.warning); }
+    else { setState('ok'); setMsg(`✓ ${res.players} players from ${res.teams} teams saved`); }
+  };
+  return (
+    <div>
+      <button onClick={run} disabled={state==='loading'} style={{
+        width:"100%",padding:"9px",borderRadius:9,border:"none",
+        background:state==='ok'?GREEN:state==='error'?"#fee2e2":state==='loading'?"rgba(0,0,0,0.08)":"#0A2E8A",
+        color:state==='error'?RED:state==='loading'?"rgba(0,0,0,0.3)":"#fff",
+        fontSize:12,fontWeight:800,cursor:state==='loading'?"default":"pointer",
+      }}>
+        {state==='loading'?"Fetching from football-data.org…":"🔄 Seed Players from API"}
+      </button>
+      {msg&&<div style={{fontSize:11,marginTop:5,color:state==='ok'?GREEN:RED,fontWeight:600}}>{msg}</div>}
+    </div>
+  );
+}
+
 function AdminBugPanel({ user, allInstantPickStates, allInstantPickDone, exactScoresByBoard, myBoards, bugLog, simDay, simHour, simMin }) {
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState("errors");
@@ -5189,6 +5620,22 @@ function AdminBugPanel({ user, allInstantPickStates, allInstantPickDone, exactSc
                           <span style={{fontSize:11,fontWeight:700,color:dbHealth.exactScoresTable?.ok?GREEN:RED}}>{dbHealth.exactScoresTable?.ok?"✓ Accessible":"✗ Error"}</span>
                         </div>
                         {!dbHealth.exactScoresTable?.ok&&<div style={{fontSize:11,color:RED,fontWeight:700,marginTop:4}}>{dbHealth.exactScoresTable?.error}</div>}
+                      </div>
+
+                      {/* players table */}
+                      <div style={{background:"#fff",borderRadius:12,padding:"12px",border:`1.5px solid ${dbHealth.playersTable?.ok?"rgba(0,0,0,0.08)":"#fee2e2"}`}}>
+                        <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
+                          <span style={{fontSize:12,fontWeight:800,color:NAVY}}>players table</span>
+                          <span style={{fontSize:11,fontWeight:700,color:dbHealth.playersTable?.ok?GREEN:RED}}>{dbHealth.playersTable?.ok?"✓ Accessible":"✗ Error"}</span>
+                        </div>
+                        {dbHealth.playersTable?.ok && (
+                          <div style={{fontSize:11,color:"rgba(0,0,0,0.55)",marginBottom:8}}>
+                            Players in DB: <strong>{dbHealth.playersTotal||0}</strong>
+                            {(dbHealth.playersTotal||0)===0&&<span style={{color:"#F59E0B",fontWeight:700}}> ← Click "Seed Players" to import</span>}
+                          </div>
+                        )}
+                        {!dbHealth.playersTable?.ok&&<div style={{fontSize:11,color:RED,fontWeight:700,marginBottom:8}}>{dbHealth.playersTable?.error}</div>}
+                        <SeedPlayersButton />
                       </div>
                     </>
                   )}
@@ -6371,7 +6818,7 @@ const scA = (sc) => Array.isArray(sc) ? sc[1] : (sc?.away ?? 0);
 
 function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScoresProp, simDay, simHour=12, simMin=0, initialWeek }) {
   const lang = useLang();
-  const LIVE_SCORES = computeLiveScores(simDay, simHour, simMin);
+  const LIVE_SCORES = useLiveScores(simDay, simHour, simMin);
   // Build GROUPS_DATA dynamically from CALENDAR_EVENTS
   const GROUPS_DATA = (() => {
     const gMap = {};
@@ -6536,7 +6983,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",position:"relative"}}>
       <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.055,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
       <div style={{background:"rgba(0,32,91,0.88)",flexShrink:0,position:"relative",zIndex:1,overflow:"hidden"}}>
-        <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px 10px"}}>
+        <div style={{display:"flex",alignItems:"center",gap:10,padding:"28px 14px 28px"}}>
           <button onClick={onBack} style={{background:"rgba(255,255,255,0.12)",border:"none",borderRadius:10,width:34,height:34,color:"#fff",fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>‹</button>
           <div style={{flex:1,textAlign:"center"}}>
             <div style={{fontSize:18,fontWeight:800,color:"#fff"}}>{T[lang].exactScores}</div>
@@ -7973,6 +8420,8 @@ function App() {
   };
   const [allInstantPickDone, setAllInstantPickDone] = useState({});
   const [allKoPickDone, setAllKoPickDone] = useState({});
+  const [allChampionPicks, setAllChampionPicks] = useState({});
+  const [allTopScorerPicks, setAllTopScorerPicks] = useState({});
   const [bugLog, setBugLog] = useState([]);
   useEffect(()=>{
     const fmt = ()=>new Date().toLocaleTimeString("ro-RO",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
@@ -7993,6 +8442,10 @@ function App() {
   const setInstantPickState = (s) => setAllInstantPickStates(p=>({...p,[activeBoardId]:s}));
   const setInstantPickDone = (v) => setAllInstantPickDone(p=>({...p,[activeBoardId]:v}));
   const setKoPickDone = (v) => setAllKoPickDone(p=>({...p,[activeBoardId]:v}));
+  const championPick = allChampionPicks[activeBoardId]||null;
+  const topScorerPick = allTopScorerPicks[activeBoardId]||null;
+  const setChampionPick = (v) => setAllChampionPicks(p=>({...p,[activeBoardId]:v}));
+  const setTopScorerPick = (v) => setAllTopScorerPicks(p=>({...p,[activeBoardId]:v}));
   const koUnlocked = simDay ? (simDay > 27 || (simDay === 27 && (simHour||0) >= 21)) : new Date() >= new Date(2026,5,27,21,0,0);
   const task1DeadlinePassed = simDay ? (simDay > 11 || (simDay === 11 && (simHour||0) >= 19)) : new Date() >= new Date(2026,5,11,19,0,0);
   const shouldStartAtKo = koUnlocked && instantPickDone && !koPickDone;
@@ -8023,7 +8476,7 @@ function App() {
   // Tournament starts June 11 2026
   const tournamentStarted = simDate ? simDate >= new Date(2026,5,11,19,0,0) : new Date() >= new Date("2026-06-11T19:00:00");
 
-  const noFooter = [SCREENS.SPLASH, SCREENS.LOGIN, SCREENS.INSTANT_PICK, SCREENS.GROUPS_SCHEDULE];
+  const noFooter = [SCREENS.SPLASH, SCREENS.LOGIN, SCREENS.INSTANT_PICK, SCREENS.GROUPS_SCHEDULE, SCREENS.CHAMPION];
   const showFooter = !noFooter.includes(screen) && !(screen===SCREENS.BOARDS && boardsSubView==="create");
   const _nonSaveable = [SCREENS.SPLASH, SCREENS.LOGIN, SCREENS.RESET_PASSWORD, SCREENS.SET_PASSWORD];
   if (!_nonSaveable.includes(screen)) { try { sessionStorage.setItem('lastScreen', screen); } catch {} }
@@ -8096,6 +8549,7 @@ function App() {
               }}
               onAccount={()=>setScreen(SCREENS.ACCOUNT)}
               onNotifications={()=>setScreen(SCREENS.NOTIFICATIONS)}
+              onChampion={()=>setScreen(SCREENS.CHAMPION)}
               myBoards={myBoards}
               predictionsComplete={predictionsComplete}
               instantPickDone={instantPickDone}
@@ -8110,10 +8564,20 @@ function App() {
               showFirstAction={showFirstAction}
               leaderboardData={leaderboardData}
               boardsLoading={boardsLoading}
-              predictionsLoaded={predictionsLoaded}/>
+              predictionsLoaded={predictionsLoaded}
+              championPick={championPick}
+              topScorerPick={topScorerPick}
+              setChampionPick={setChampionPick}
+              setTopScorerPick={setTopScorerPick}/>
           </div>}
           {screen===SCREENS.NOTIFICATIONS&&<NotificationsScreen onBack={()=>setScreen(SCREENS.HOME)}/>}
           {screen===SCREENS.PREMIUM&&<PremiumScreen onBack={()=>setScreen(SCREENS.ACCOUNT)}/>}
+          {screen===SCREENS.CHAMPION&&<ChampionScreen
+            onBack={()=>setScreen(SCREENS.HOME)}
+            championPick={championPick}
+            topScorerPick={topScorerPick}
+            setChampionPick={setChampionPick}
+            setTopScorerPick={setTopScorerPick}/>}
           {screen===SCREENS.BOARDS&&<BoardsScreen
             initialTab={boardsInitialTab}
             onViewChange={setBoardsSubView}
