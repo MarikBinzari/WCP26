@@ -4,7 +4,7 @@ import trophy from "./assets/hands-trophy.png";
 import varBg from "./assets/var-bg.jpg";
 import predictoLogo from "./assets/predicto-logo.png";
 import bellIcon from "./assets/bell-icon.svg";
-import { ALL_GROUPS_DATA, FLAGS, TEAM_COLORS, CALENDAR_EVENTS, TEAM_PLAYERS } from "./data/worldcup2026.js";
+import { ALL_GROUPS_DATA, FLAGS, TEAM_COLORS, CALENDAR_EVENTS } from "./data/worldcup2026.js";
 import { supabase } from "./supabase.js";
 import { loadPredictions, savePredictions, loadExactScores, saveExactScore, loadUserBoards, loadAvailableBoards, createBoard, joinBoardByCode, joinBoardById, loadLeaderboard, fetchScoringRules, fetchMemberCounts, removeBoardMember, removeParticipation, deleteBoard, loadBoardMembers, checkDbHealth, checkEmailExists, loadLiveScores, subscribeLiveScores, loadPlayers, seedPlayersFromApi } from "./db.js";
 
@@ -3970,6 +3970,28 @@ function PaniniCard({ player, teamName, isSelected, onClick }) {
 }
 
 function ChampionScreen({ onBack, championPick, topScorerPick, setChampionPick, setTopScorerPick }) {
+  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  if (!isLocalhost) {
+    return (
+      <div style={{flex:1,display:"flex",flexDirection:"column",background:BG}}>
+        <div style={{background:"rgba(0,32,91,0.88)",flexShrink:0}}>
+          <div style={{display:"flex",alignItems:"center",gap:10,padding:"28px 14px"}}>
+            <button onClick={onBack} style={{background:"rgba(255,255,255,0.12)",border:"none",borderRadius:10,width:34,height:34,color:"#fff",fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>‹</button>
+            <div style={{flex:1,textAlign:"center"}}>
+              <div style={{fontSize:17,fontWeight:900,color:"#fff",letterSpacing:0.3}}>Champion & Top Score</div>
+            </div>
+            <div style={{width:34}}/>
+          </div>
+        </div>
+        <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:16,padding:32}}>
+          <div style={{fontSize:52}}>🚧</div>
+          <div style={{fontSize:20,fontWeight:900,color:NAVY,textAlign:"center"}}>Work in Progress</div>
+          <div style={{fontSize:14,color:"#6B7280",textAlign:"center",lineHeight:1.6,maxWidth:260}}>Această secțiune va fi disponibilă în curând. Revino după startul turneului!</div>
+        </div>
+      </div>
+    );
+  }
+
   const allTeams = Object.values(ALL_GROUPS_DATA).flat();
   const tCode = (t) => TEAM_CODE[t]||t.slice(0,3).toUpperCase();
   const [tsTeam, setTsTeam] = useState(topScorerPick?.team||null);
@@ -4083,7 +4105,7 @@ function ChampionScreen({ onBack, championPick, topScorerPick, setChampionPick, 
                 const dbList  = dbPlayers[tsTeam] || [];
                 const players = dbList.length > 0
                   ? dbList
-                  : (TEAM_PLAYERS[tsTeam]||[]).map(n=>({name:n,position:null,number:null,photo:null}));
+                  : [];
                 return (
                   <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
                     {players.map(player=>{
@@ -5358,6 +5380,7 @@ function SeedPlayersButton() {
   );
 }
 
+
 function AdminBugPanel({ user, allInstantPickStates, allInstantPickDone, exactScoresByBoard, myBoards, bugLog, simDay, simHour, simMin }) {
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState("errors");
@@ -5635,7 +5658,9 @@ function AdminBugPanel({ user, allInstantPickStates, allInstantPickDone, exactSc
                           </div>
                         )}
                         {!dbHealth.playersTable?.ok&&<div style={{fontSize:11,color:RED,fontWeight:700,marginBottom:8}}>{dbHealth.playersTable?.error}</div>}
-                        <SeedPlayersButton />
+                        <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                          <SeedPlayersButton />
+                        </div>
                       </div>
                     </>
                   )}

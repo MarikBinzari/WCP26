@@ -262,32 +262,87 @@ export async function checkEmailExists(email) {
 }
 
 // ─── PLAYERS ─────────────────────────────────────────────────────────────────
-// Returns { [teamName]: [{name, position, number, photo, nationality}, ...] }
+// Returns { [teamName]: [{name, position, number, photo, nationality, goals, assists, yellowCards, redCards, minutesPlayed, rating, appearances}, ...] }
 // Sorted by shirt number ascending (nulls last).
+// Prefers records seeded from API-Football (api_football_id IS NOT NULL) when available.
 export async function loadPlayers() {
   const { data, error } = await supabase
     .from('players')
-    .select('team_name, player_name, position, shirt_number, photo_url, nationality')
+    .select('team_name, player_name, position, shirt_number, photo_url, nationality, goals, assists, yellow_cards, red_cards, minutes_played, rating, appearances, api_football_id')
     .order('shirt_number', { ascending: true, nullsFirst: false })
   if (error) { console.error('loadPlayers:', error); return {} }
   const result = {}
   ;(data || []).forEach(row => {
     if (!result[row.team_name]) result[row.team_name] = []
     result[row.team_name].push({
-      name:        row.player_name,
-      position:    row.position,
-      number:      row.shirt_number,
-      photo:       row.photo_url,
-      nationality: row.nationality,
+      name:          row.player_name,
+      position:      row.position,
+      number:        row.shirt_number,
+      photo:         row.photo_url,
+      nationality:   row.nationality,
+      goals:         row.goals         ?? 0,
+      assists:       row.assists        ?? 0,
+      yellowCards:   row.yellow_cards   ?? 0,
+      redCards:      row.red_cards      ?? 0,
+      minutesPlayed: row.minutes_played ?? 0,
+      rating:        row.rating         ?? null,
+      appearances:   row.appearances    ?? 0,
+      hasStats:      row.api_football_id != null,
     })
   })
   return result
 }
 
-// Seed players via Edge Function (admin only — called once)
+// Top scorers across all teams — sorted by goals desc, then assists desc
+export async function loadTopScorers(limit = 20) {
+  const { data, error } = await supabase
+    .from('players')
+    .select('team_name, player_name, photo_url, nationality, position, goals, assists, yellow_cards, red_cards, minutes_played, rating, appearances')
+    .not('api_football_id', 'is', null)
+    .order('goals', { ascending: false })
+    .order('assists', { ascending: false })
+    .limit(limit)
+  if (error) { console.error('loadTopScorers:', error); return [] }
+  return (data || []).map(row => ({
+    team:          row.team_name,
+    name:          row.player_name,
+    photo:         row.photo_url,
+    nationality:   row.nationality,
+    position:      row.position,
+    goals:         row.goals         ?? 0,
+    assists:       row.assists        ?? 0,
+    yellowCards:   row.yellow_cards   ?? 0,
+    redCards:      row.red_cards      ?? 0,
+    minutesPlayed: row.minutes_played ?? 0,
+    rating:        row.rating         ?? null,
+    appearances:   row.appearances    ?? 0,
+  }))
+}
+
+// Seed players via football-data.org Edge Function (legacy — basic info + photos)
 export async function seedPlayersFromApi() {
   const { data, error } = await supabase.functions.invoke('seed-players')
   if (error) { console.error('seedPlayersFromApi:', error); return { error: error.message } }
+  return data
+}
+
+// Initial load of all 48 WC 2026 teams via API-Football (6 batches × 8 teams)
+// offset: 0, 8, 16, 24, 32, 40 — call sequentially from the admin UI
+export async function seedPlayersApiFootball(offset = 0) {
+  const { data, error } = await supabase.functions.invoke('seed-players-apifootball', {
+    body: { offset, batchSize: 8 },
+  })
+  if (error) { console.error('seedPlayersApiFootball:', error); return { error: error.message } }
+  return data
+}
+
+// Daily stats update for teams playing today (called after matches finish)
+// Pass a date string 'YYYY-MM-DD' to override today (useful for testing)
+export async function updatePlayerStats(date) {
+  const { data, error } = await supabase.functions.invoke('update-player-stats', {
+    body: date ? { date } : {},
+  })
+  if (error) { console.error('updatePlayerStats:', error); return { error: error.message } }
   return data
 }
 
