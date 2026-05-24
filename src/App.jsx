@@ -8791,9 +8791,8 @@ function App() {
         loadUserBoards(uid),
         loadAvailableBoards(uid),
       ]);
-      const removedBoardIds = getRemovedBoardIds();
-      const visibleBoards = boards.filter(b => b.isAdmin || !removedBoardIds.has(b.id));
-      const visibleAvail = avail.filter(b => !removedBoardIds.has(b.id));
+      const visibleBoards = boards;
+      const visibleAvail = avail;
       // adminBoards = boards where user is creator (isAdmin=true)
       const adminBoards = visibleBoards.filter(b => b.isAdmin);
       // participantBoards = boards where user is member (isMember=true)
@@ -8868,21 +8867,8 @@ function App() {
   const _cachedActiveBoardId = (() => { try { return localStorage.getItem('activeBoardId') || "global"; } catch { return "global"; } })();
   const [activeBoardId, setActiveBoardId] = useState(_cachedActiveBoardId);
   const activeBoardIdRef = useRef(_cachedActiveBoardId);
-  const removedBoardsKey = user?.id ? `removedBoards:${user.id}` : "removedBoards";
-  const getRemovedBoardIds = () => {
-    try { return new Set(JSON.parse(localStorage.getItem(removedBoardsKey) || "[]")); }
-    catch { return new Set(); }
-  };
-  const rememberRemovedBoard = (boardId) => {
-    const ids = getRemovedBoardIds();
-    ids.add(boardId);
-    try { localStorage.setItem(removedBoardsKey, JSON.stringify([...ids])); } catch {}
-  };
-  const forgetRemovedBoard = (boardId) => {
-    const ids = getRemovedBoardIds();
-    if (!ids.delete(boardId)) return;
-    try { localStorage.setItem(removedBoardsKey, JSON.stringify([...ids])); } catch {}
-  };
+  const forgetRemovedBoard = () => {};
+  const rememberRemovedBoard = () => {};
 
   useEffect(() => {
     activeBoardIdRef.current = activeBoardId;
