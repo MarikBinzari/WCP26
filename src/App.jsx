@@ -4525,9 +4525,9 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
           const specialPhase2Open   = simNowHome >= new Date(2026,5,27,21,0,0);
           const specialLocked = specialPhase1Locked && !specialPhase2Open;
           const taskRow = ({ icon, title, value, meta, done, mode }) => (
-            <button onClick={()=>onChampion(mode)}
+            <button onClick={e=>{e.stopPropagation();onChampion(mode);}}
               style={{width:"100%",border:"none",background:"transparent",padding:"8px 0",display:"flex",alignItems:"center",gap:10,cursor:"pointer",WebkitTapHighlightColor:"transparent",textAlign:"left"}}>
-              <span style={{width:22,height:22,display:"flex",alignItems:"center",justifyContent:"center",fontSize:17,lineHeight:1,flexShrink:0}}>{icon}</span>
+              <span style={{width:18,height:18,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,lineHeight:1,flexShrink:0}}>{icon}</span>
               <div style={{flex:1,minWidth:0}}>
                 <div style={{display:"flex",alignItems:"center",gap:6}}>
                   <span style={{fontSize:12,fontWeight:700,color:specialLocked?"#9CA3AF":DARK,whiteSpace:"nowrap"}}>{title}</span>
@@ -4545,9 +4545,9 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
             <div style={{margin:"0 2px 6px"}}>
               <p style={{fontSize:12,fontWeight:600,color:"#9CA3AF",margin:0,textTransform:"uppercase",letterSpacing:1,textAlign:"center"}}>Special Pick</p>
             </div>
-            <div style={{background:"#fff",borderRadius:16,boxShadow:"0 2px 14px rgba(0,0,0,0.07)",
+            <div onClick={()=>onChampion(!champDone?"champion":!tsDone?"scorer":"champion")} style={{background:"#fff",borderRadius:16,boxShadow:"0 2px 14px rgba(0,0,0,0.07)",
               border:"1.5px solid transparent",
-              padding:"14px 14px 8px",position:"relative",marginBottom:6,overflow:"hidden"}}>
+              padding:"14px 14px 10px",position:"relative",marginBottom:6,overflow:"hidden",cursor:"pointer",WebkitTapHighlightColor:"transparent"}}>
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,marginBottom:6}}>
                 <div style={{display:"flex",flexDirection:"column",alignItems:"flex-start",minWidth:0,position:"relative",zIndex:1}}>
                   <div style={{fontSize:13,fontWeight:700,color:DARK,textAlign:"left"}}>Winner & Top Scorer</div>
@@ -4559,9 +4559,17 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
                     {specialLocked ? "🔒 Reopens Jun 27 · Knockout phase" : specialPhase2Open ? "Knockout picks open" : "Pick deadline · Jun 11"}
                   </div>
                 </div>
-                <div style={{width:36,height:36,borderRadius:"50%",border:`1.5px solid ${NAVY}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,background:allDone?`${GREEN}12`:"rgba(10,46,138,0.06)",position:"relative",zIndex:1}}>
-                  <span style={{fontSize:11,fontWeight:700,color:NAVY}}>{doneCount}/2</span>
-                </div>
+                {doneCount===0 ? (
+                  <div style={{position:"relative",width:36,height:36,flexShrink:0,zIndex:1}}>
+                    <div style={{position:"absolute",inset:0,borderRadius:"50%",background:"#fff",border:`1.5px solid ${NAVY}`,display:"flex",alignItems:"center",justifyContent:"center",animation:"nodeBreath 3s ease-in-out infinite"}}>
+                      <span style={{fontSize:11,fontWeight:700,color:NAVY}}>0/2</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{width:36,height:36,borderRadius:"50%",border:`1.5px solid ${allDone?GREEN:NAVY}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,background:allDone?`${GREEN}22`:"rgba(10,46,138,0.06)",position:"relative",zIndex:1}}>
+                    <span style={{fontSize:11,fontWeight:700,color:allDone?GREEN:NAVY}}>{doneCount}/2</span>
+                  </div>
+                )}
               </div>
               {taskRow({
                 icon:"🏆",
@@ -4580,6 +4588,16 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
                 done:tsDone,
                 mode:"scorer",
               })}
+              {!allDone&&<div style={{height:3,background:"#F1F3F7",borderRadius:2,marginTop:8,overflow:"hidden"}}>
+                <div style={{
+                  height:"100%",
+                  width:`${(doneCount/2)*100}%`,
+                  background:`linear-gradient(90deg,${NAVY},#4A7AFF)`,
+                  borderRadius:2,
+                  transition:"width 0.5s ease",
+                  animation:doneCount===0?"barPulse 2s ease-in-out infinite":undefined,
+                }}/>
+              </div>}
             </div>
             <div onClick={onChampion}
               style={{display:"none",background:"#fff",borderRadius:16,boxShadow:"0 2px 14px rgba(0,0,0,0.07)",
@@ -8393,6 +8411,8 @@ function App() {
       @keyframes tabPop { 0%{transform:scale(1)} 40%{transform:scale(1.22)} 70%{transform:scale(0.95)} 100%{transform:scale(1)} }
       @keyframes cdSlideIn { 0%{opacity:0;transform:translateY(6px)} 100%{opacity:1;transform:translateY(0)} }
       @keyframes cdTicker { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+      @keyframes barPulse { 0%,100%{opacity:1;width:8%} 50%{opacity:0.5;width:14%} }
+      @keyframes nodeBreath { 0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(10,46,138,0.4)} 50%{transform:scale(1.12);box-shadow:0 0 0 7px rgba(10,46,138,0)} }
       input, textarea, select { font-size: 16px !important; }
     `;
     document.head.appendChild(style);
