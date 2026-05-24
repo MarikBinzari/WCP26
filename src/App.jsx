@@ -7,7 +7,7 @@ import specialPickBadge from "./assets/special-pick-badge.png";
 import bellIcon from "./assets/bell-icon.svg";
 import { ALL_GROUPS_DATA, FLAGS, TEAM_COLORS, CALENDAR_EVENTS } from "./data/worldcup2026.js";
 import { supabase } from "./supabase.js";
-import { loadPredictions, savePredictions, loadExactScores, saveExactScore, loadUserBoards, loadAvailableBoards, createBoard, joinBoardByCode, joinBoardById, loadLeaderboard, fetchScoringRules, fetchMemberCounts, removeBoardMember, removeParticipation, deleteBoard, loadBoardMembers, checkDbHealth, checkEmailExists, loadLiveScores, subscribeLiveScores, loadPlayers, loadPlayersByTeam, seedPlayersFromApi, loadSpecialPick, saveSpecialPick, uploadAvatar } from "./db.js";
+import { loadPredictions, savePredictions, loadExactScores, saveExactScore, loadUserBoards, loadAvailableBoards, createBoard, joinBoardByCode, joinBoardById, loadLeaderboard, fetchScoringRules, fetchMemberCounts, removeBoardMember, removeParticipation, deleteBoard, loadBoardMembers, checkDbHealth, checkEmailExists, loadLiveScores, subscribeLiveScores, loadPlayers, loadPlayersByTeam, seedPlayersFromApi, loadSpecialPick, saveSpecialPick, uploadAvatar, uploadBoardImage } from "./db.js";
 
 const TEAM_CODE = {"Mexico":"MEX","South Africa":"RSA","South Korea":"KOR","Czechia":"CZE","Canada":"CAN","Switzerland":"SUI","Qatar":"QAT","Bosnia-Herzegovina":"BIH","Brazil":"BRA","Morocco":"MAR","Scotland":"SCO","Haiti":"HAI","USA":"USA","Paraguay":"PAR","Australia":"AUS","Turkiye":"TUR","Germany":"GER","Ecuador":"ECU","Ivory Coast":"CIV","Curacao":"CUW","Netherlands":"NED","Japan":"JPN","Tunisia":"TUN","Sweden":"SWE","Belgium":"BEL","Iran":"IRI","Egypt":"EGY","New Zealand":"NZL","Spain":"ESP","Uruguay":"URU","Saudi Arabia":"KSA","Cape Verde":"CPV","France":"FRA","Senegal":"SEN","Norway":"NOR","Iraq":"IRQ","Argentina":"ARG","Austria":"AUT","Algeria":"ALG","Jordan":"JOR","Portugal":"POR","Colombia":"COL","Uzbekistan":"UZB","DR Congo":"COD","England":"ENG","Croatia":"CRO","Panama":"PAN","Ghana":"GHA"};
 
@@ -3933,7 +3933,7 @@ function GroupRankingScreen({ group, teams, existingRanking, onConfirm, onAutoSa
 }
 
 // ── CIRCLE TAB ────────────────────────────────────────────────────────────────
-function CircleTab({ label, name, isActive, onClick, lightBg=false, distance=0, rank, members }) {
+function CircleTab({ label, imageUrl, name, isActive, onClick, lightBg=false, distance=0, rank, members }) {
   const scale = isActive ? 1.1 : Math.max(0.58, 1 - distance * 0.2);
   const opacity = isActive ? 1 : Math.max(0.32, 1 - distance * 0.28);
   return (
@@ -3950,11 +3950,13 @@ function CircleTab({ label, name, isActive, onClick, lightBg=false, distance=0, 
         background:isActive?"#fff":lightBg?"rgba(0,0,0,0.05)":"rgba(255,255,255,0.1)",
         border:isActive?`2px solid ${NAVY}`:"1px solid rgba(0,0,0,0.10)",
         display:"flex",alignItems:"center",justifyContent:"center",
-        fontSize:22,
+        fontSize:22, overflow:"hidden",
         boxShadow:isActive?`0 0 0 4px ${NAVY}18, 0 4px 14px rgba(10,46,138,0.18)`:"none",
         transition:"all 0.25s",
       }}>
-        {label}
+        {imageUrl
+          ? <img src={imageUrl} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+          : label}
       </div>
       <span style={{
         fontSize:isActive?10:9,
@@ -4612,7 +4614,7 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
             const memberCount = item.members;
             return (
               <div style={{flex:1,display:"flex",justifyContent:"center",alignItems:"flex-end"}}>
-                <CircleTab label={item.label} name={item.isGlobal?"Global":item.name.split(" ")[0]}
+                <CircleTab label={item.label} imageUrl={item.image_url||undefined} name={item.isGlobal?"Global":item.name.split(" ")[0]}
                   isActive={isCenter} onClick={handleTap} lightBg distance={dist}
                   rank={isCenter?myRank:undefined} members={isCenter?memberCount:undefined}/>
               </div>
@@ -5054,6 +5056,9 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
   // Create form state
   const [cName, setCName] = useState("");
   const [cEmoji, setCEmoji] = useState("");
+  const [cImageFile, setCImageFile] = useState(null);
+  const [cImagePreview, setCImagePreview] = useState(null);
+  const boardImageInputRef = useRef(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [cPassword, setCPassword] = useState("");
   const [cMaxPlayers, setCMaxPlayers] = useState(10);
@@ -5151,10 +5156,12 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
         password: cPassword,
         max_players: cMaxPlayers,
         prizes: cPrizes.slice(0, cSlots).filter(p=>p.trim()),
+        imageFile: cImageFile || null,
       });
       if(data) {
         if(showToast) showToast(`"${cName}" league created`, "🏆");
         setCName(""); setCEmoji(""); setCPassword(""); setShowEmojiPicker(false);
+        setCImageFile(null); setCImagePreview(null);
         setEditBoard(null); changeView("main");
       }
       return;
@@ -5213,15 +5220,32 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
         <Card style={createPanelStyle}>
           <p style={UI.formLabel}>{T[lang].boardName}</p>
           <div style={{display:"flex",gap:10,alignItems:"center"}}>
-            {/* Avatar emoji picker */}
-            <div onClick={()=>setShowEmojiPicker(p=>!p)}
-              style={{width:52,height:52,borderRadius:14,flexShrink:0,cursor:"pointer",
-                background:cEmoji?"#F8FAFC":`linear-gradient(135deg,${NAVY}cc,#001840cc)`,
-                display:"flex",alignItems:"center",justifyContent:"center",
-                border:showEmojiPicker?`2px solid ${NAVY}`:"1px solid rgba(10,46,138,0.07)"}}>
-              {cEmoji
-                ? <span style={{fontSize:28}}>{cEmoji}</span>
-                : <span style={{fontSize:22,color:"rgba(255,255,255,0.8)"}}>+</span>}
+            {/* Avatar emoji/photo picker */}
+            <input ref={boardImageInputRef} type="file" accept="image/*" style={{display:"none"}}
+              onChange={e=>{
+                const f=e.target.files?.[0]; if(!f) return;
+                setCImageFile(f); setCImagePreview(URL.createObjectURL(f));
+                setCEmoji(""); setShowEmojiPicker(false);
+                e.target.value="";
+              }}/>
+            <div style={{position:"relative",flexShrink:0}}>
+              <div onClick={()=>!cImagePreview&&setShowEmojiPicker(p=>!p)}
+                style={{width:52,height:52,borderRadius:14,cursor:"pointer",overflow:"hidden",
+                  background:cEmoji||cImagePreview?"#F8FAFC":`linear-gradient(135deg,${NAVY}cc,#001840cc)`,
+                  display:"flex",alignItems:"center",justifyContent:"center",
+                  border:showEmojiPicker?`2px solid ${NAVY}`:"1px solid rgba(10,46,138,0.07)"}}>
+                {cImagePreview
+                  ? <img src={cImagePreview} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                  : cEmoji
+                    ? <span style={{fontSize:28}}>{cEmoji}</span>
+                    : <span style={{fontSize:22,color:"rgba(255,255,255,0.8)"}}>+</span>}
+              </div>
+              <div onClick={()=>{ if(cImagePreview){setCImageFile(null);setCImagePreview(null);} else boardImageInputRef.current?.click(); }}
+                style={{position:"absolute",bottom:-4,right:-4,width:18,height:18,borderRadius:"50%",
+                  background:cImagePreview?"#FF3B30":NAVY,display:"flex",alignItems:"center",
+                  justifyContent:"center",fontSize:10,color:"#fff",fontWeight:700,cursor:"pointer"}}>
+                {cImagePreview?"✕":"📷"}
+              </div>
             </div>
             <InputPanel style={{...createInputStyle,flex:1}}>
               <input value={cName} onChange={e=>setCName(e.target.value)} placeholder={boardCopy.namePlaceholder}
@@ -5437,7 +5461,9 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
                 return (
                   <div key={b.id}>
                     <div style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",cursor:"pointer"}} onClick={()=>onJoin&&onJoin(b.id)}>
-                      <div style={{width:44,height:44,borderRadius:"50%",background:b.isGlobal?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:`linear-gradient(135deg,#5856D6,#3634A3)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>{latest.label}</div>
+                      <div style={{width:44,height:44,borderRadius:"50%",background:b.isGlobal?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:`linear-gradient(135deg,#5856D6,#3634A3)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0,overflow:"hidden"}}>
+                        {latest.image_url ? <img src={latest.image_url} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/> : latest.label}
+                      </div>
                       <div style={{flex:1,minWidth:0}}>
                         <p style={{fontSize:13,fontWeight:700,color:DARK,margin:0}}>{latest.name}</p>
                         <p style={{fontSize:11,color:"#aaa",margin:"2px 0 0"}}>👥 {latest.members}{latest.max?"/"+latest.max:""} members</p>
@@ -6955,7 +6981,7 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
             };
             return (
               <div key={item.id} style={{flex:1,display:"flex",justifyContent:"center",alignItems:"flex-end"}}>
-                <CircleTab label={item.label} name={item.isGlobal?"Global":item.name.split(" ")[0]}
+                <CircleTab label={item.label} imageUrl={item.image_url||undefined} name={item.isGlobal?"Global":item.name.split(" ")[0]}
                   isActive={isCenter} onClick={handleTap} lightBg distance={dist}
                   rank={isCenter?myRank:undefined} members={isCenter?item.members:undefined}/>
               </div>
@@ -9058,6 +9084,10 @@ function App() {
               if (!user) return;
               const { data, error } = await createBoard(user.id, boardData);
               if (error) { showToast("Eroare la creare", "❌"); return null; }
+              if (boardData.imageFile) {
+                const imageUrl = await uploadBoardImage(user.id, data.id, boardData.imageFile);
+                if (imageUrl) data.image_url = imageUrl;
+              }
               setCreatedBoards(prev => [...prev, data]);
               forgetRemovedBoard(data.id);
               setMyBoards(prev => appendJoinedBoard(prev, { ...data, isMember: true, members: (data.members || 0) + 1 }));

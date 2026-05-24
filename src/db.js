@@ -168,7 +168,7 @@ export async function loadUserBoards(userId) {
   const map = new Map()
   // Creatorul vede mereu boardul său (indiferent de board_members)
   ;(created.data || []).forEach(b => {
-    map.set(b.id, { ...b, label: b.emoji || '⚽', isGlobal: false, code: b.invite_code, max: b.max_players, isAdmin: true, isMember: false })
+    map.set(b.id, { ...b, label: b.emoji || '⚽', image_url: b.image_url || null, isGlobal: false, code: b.invite_code, max: b.max_players, isAdmin: true, isMember: false })
   })
   ;(created.data || []).forEach(b => {
     if (b?.id && map.has(b.id)) map.set(b.id, { ...map.get(b.id), isMember: true })
@@ -183,7 +183,7 @@ export async function loadUserBoards(userId) {
       map.set(b.id, { ...existing, joined_at, isMember: true })
     } else {
       b.joined_at = joined_at
-      map.set(b.id, { ...b, label: b.emoji || '⚽', isGlobal: false, code: b.invite_code, max: b.max_players, isAdmin: false, isMember: true })
+      map.set(b.id, { ...b, label: b.emoji || '⚽', image_url: b.image_url || null, isGlobal: false, code: b.invite_code, max: b.max_players, isAdmin: false, isMember: true })
     }
   })
   return Array.from(map.values())
@@ -198,7 +198,7 @@ export async function loadAvailableBoards(userId) {
   const excludeSet = new Set((memberRes.data || []).map(r => r.board_id))
   return (allRes.data || [])
     .filter(b => !excludeSet.has(b.id))
-    .map(b => ({ ...b, label: b.emoji || '⚽', isGlobal: false, code: b.invite_code, max: b.max_players }))
+    .map(b => ({ ...b, label: b.emoji || '⚽', image_url: b.image_url || null, isGlobal: false, code: b.invite_code, max: b.max_players }))
 }
 
 export async function createBoard(userId, { name, emoji, type, password, max_players, prizes }) {
@@ -213,7 +213,7 @@ export async function createBoard(userId, { name, emoji, type, password, max_pla
   if (error) { console.error('createBoard:', error); return { error } }
   // Add creator to board_members so membership is tracked uniformly
   await supabase.from('board_members').upsert({ board_id: data.id, user_id: userId, role: 'admin' }, { onConflict: 'board_id,user_id' })
-  return { data: { ...data, label: data.emoji || '⚽', isGlobal: false, code: data.invite_code, isAdmin: true, isMember: true } }
+  return { data: { ...data, label: data.emoji || '⚽', image_url: data.image_url || null, isGlobal: false, code: data.invite_code, isAdmin: true, isMember: true } }
 }
 
 export async function joinBoardByCode(userId, code) {
@@ -227,7 +227,7 @@ export async function joinBoardByCode(userId, code) {
     .from('board_members')
     .upsert({ board_id: board.id, user_id: userId, role: 'member' }, { onConflict: 'board_id,user_id' })
   if (joinErr) return { error: joinErr.message }
-  return { data: { ...board, label: board.emoji || '⚽', isGlobal: false } }
+  return { data: { ...board, label: board.emoji || '⚽', image_url: board.image_url || null, isGlobal: false } }
 }
 
 export async function loadBoardMembers(boardId) {
@@ -445,6 +445,23 @@ export function subscribeLiveScores(onChange) {
     .channel('live_scores_realtime')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'live_scores' }, onChange)
     .subscribe()
+}
+
+// ─── BOARD IMAGE ─────────────────────────────────────────────────────────────
+export async function uploadBoardImage(userId, boardId, file) {
+  const ext = file.name.split('.').pop().toLowerCase()
+  const path = `${userId}/${boardId}.${ext}`
+  const { data: existing } = await supabase.storage.from('board-images').list(userId)
+  if (existing?.length) {
+    const old = existing.filter(f => f.name.startsWith(boardId))
+    if (old.length) await supabase.storage.from('board-images').remove(old.map(f => `${userId}/${f.name}`))
+  }
+  const { error } = await supabase.storage.from('board-images').upload(path, file, { contentType: file.type })
+  if (error) { console.error('uploadBoardImage:', error); return null }
+  const { data: { publicUrl } } = supabase.storage.from('board-images').getPublicUrl(path)
+  const urlWithBust = `${publicUrl}?t=${Date.now()}`
+  await supabase.from('boards').update({ image_url: urlWithBust }).eq('id', boardId)
+  return urlWithBust
 }
 
 // ─── AVATAR ───────────────────────────────────────────────────────────────────
