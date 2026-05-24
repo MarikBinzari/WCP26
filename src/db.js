@@ -69,16 +69,15 @@ export async function loadSpecialPick(userId, boardId) {
 }
 
 export async function saveSpecialPick(userId, boardId, { champion, topScorer }) {
+  const fields = { user_id: userId, board_id: boardId, updated_at: new Date().toISOString() };
+  if (champion !== undefined) fields.champion = champion || null;
+  if (topScorer !== undefined) {
+    fields.top_scorer_team   = topScorer?.team   || null;
+    fields.top_scorer_player = topScorer?.player || null;
+  }
   const { error } = await supabase
     .from('special_picks')
-    .upsert({
-      user_id:            userId,
-      board_id:           boardId,
-      champion:           champion || null,
-      top_scorer_team:    topScorer?.team   || null,
-      top_scorer_player:  topScorer?.player || null,
-      updated_at:         new Date().toISOString(),
-    }, { onConflict: 'user_id,board_id' })
+    .upsert(fields, { onConflict: 'user_id,board_id' })
   if (error) console.error('saveSpecialPick:', error)
 }
 
