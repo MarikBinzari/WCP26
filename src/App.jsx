@@ -8367,7 +8367,7 @@ function AccountScreen({ setLang, onBoards, onSignOut, onShowGuide, onPremium, u
           <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:12,paddingTop:10,position:"relative",zIndex:1}}>
             <div style={{position:"relative",flexShrink:0}} onClick={()=>!avatarUploading&&avatarInputRef.current?.click()}>
               <input ref={avatarInputRef} type="file" accept="image/*" style={{display:"none"}} onChange={handleAvatarChange}/>
-              <div style={{width:52,height:52,borderRadius:"50%",background:"rgba(0,0,0,0.05)",border:avatarUrl?"none":"2px dashed rgba(0,0,0,0.15)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,cursor:"pointer",overflow:"hidden"}}>
+              <div style={{width:52,height:52,borderRadius:"50%",background:avatarUrl?"transparent":"rgba(0,0,0,0.05)",border:avatarUrl?"none":"2px dashed rgba(0,0,0,0.15)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,cursor:"pointer",overflow:"hidden"}}>
                 {avatarUploading
                   ? <span style={{fontSize:13,color:"#888"}}>...</span>
                   : avatarUrl
