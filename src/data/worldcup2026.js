@@ -204,22 +204,22 @@ export const CALENDAR_EVENTS = [
   ]},
   // 13 Iunie — Grupa C
   {day:13, matches:[
-    {home:"Brazil",              homeFlag:"🇧🇷", away:"Morocco",               awayFlag:"🇲🇦", time:"16:00", group:"C", venue:"Gillette Stadium"},
-    {home:"Haiti",               homeFlag:"🇭🇹", away:"Scotland",              awayFlag:"🏴󠁧󠁢󠁳󠁣󠁴󠁿", time:"20:00", group:"C", venue:"MetLife Stadium"},
+    {home:"Brazil",              homeFlag:"🇧🇷", away:"Morocco",               awayFlag:"🇲🇦", time:"16:00", group:"C", venue:"MetLife Stadium"},
+    {home:"Haiti",               homeFlag:"🇭🇹", away:"Scotland",              awayFlag:"🏴󠁧󠁢󠁳󠁣󠁴󠁿", time:"20:00", group:"C", venue:"Gillette Stadium"},
   ]},
   // 14 Iunie — Grupele E & F
   {day:14, matches:[
-    {home:"Germany",             homeFlag:"🇩🇪", away:"Curaçao",               awayFlag:"🇨🇼", time:"13:00", group:"E", venue:"Lincoln Financial Field"},
-    {home:"Côte d'Ivoire",       homeFlag:"🇨🇮", away:"Ecuador",               awayFlag:"🇪🇨", time:"16:00", group:"E", venue:"NRG Stadium"},
+    {home:"Germany",             homeFlag:"🇩🇪", away:"Curaçao",               awayFlag:"🇨🇼", time:"13:00", group:"E", venue:"NRG Stadium"},
+    {home:"Côte d'Ivoire",       homeFlag:"🇨🇮", away:"Ecuador",               awayFlag:"🇪🇨", time:"16:00", group:"E", venue:"Lincoln Financial Field"},
     {home:"Netherlands",         homeFlag:"🇳🇱", away:"Japan",                 awayFlag:"🇯🇵", time:"19:00", group:"F", venue:"AT&T Stadium"},
     {home:"Sweden",              homeFlag:"🇸🇪", away:"Tunisia",               awayFlag:"🇹🇳", time:"22:00", group:"F", venue:"Estadio BBVA"},
   ]},
   // 15 Iunie — Grupele G & H
   {day:15, matches:[
-    {home:"Belgium",             homeFlag:"🇧🇪", away:"Egypt",                 awayFlag:"🇪🇬", time:"13:00", group:"G", venue:"SoFi Stadium"},
-    {home:"Iran",                homeFlag:"🇮🇷", away:"New Zealand",           awayFlag:"🇳🇿", time:"16:00", group:"G", venue:"Lumen Field"},
-    {home:"Spain",               homeFlag:"🇪🇸", away:"Cape Verde",            awayFlag:"🇨🇻", time:"19:00", group:"H", venue:"Hard Rock Stadium"},
-    {home:"Saudi Arabia",        homeFlag:"🇸🇦", away:"Uruguay",               awayFlag:"🇺🇾", time:"22:00", group:"H", venue:"Mercedes-Benz Stadium"},
+    {home:"Belgium",             homeFlag:"🇧🇪", away:"Egypt",                 awayFlag:"🇪🇬", time:"13:00", group:"G", venue:"Lumen Field"},
+    {home:"Iran",                homeFlag:"🇮🇷", away:"New Zealand",           awayFlag:"🇳🇿", time:"16:00", group:"G", venue:"SoFi Stadium"},
+    {home:"Spain",               homeFlag:"🇪🇸", away:"Cape Verde",            awayFlag:"🇨🇻", time:"19:00", group:"H", venue:"Mercedes-Benz Stadium"},
+    {home:"Saudi Arabia",        homeFlag:"🇸🇦", away:"Uruguay",               awayFlag:"🇺🇾", time:"22:00", group:"H", venue:"Hard Rock Stadium"},
   ]},
   // 16 Iunie — Grupele I & J
   {day:16, matches:[
@@ -232,8 +232,8 @@ export const CALENDAR_EVENTS = [
   {day:17, matches:[
     {home:"Portugal",            homeFlag:"🇵🇹", away:"DR Congo",              awayFlag:"🇨🇩", time:"13:00", group:"K", venue:"NRG Stadium"},
     {home:"Uzbekistan",          homeFlag:"🇺🇿", away:"Colombia",              awayFlag:"🇨🇴", time:"16:00", group:"K", venue:"Estadio Azteca"},
-    {home:"England",             homeFlag:"🏴󠁧󠁢󠁥󠁧󠁿", away:"Croatia",               awayFlag:"🇭🇷", time:"19:00", group:"L", venue:"BMO Field"},
-    {home:"Ghana",               homeFlag:"🇬🇭", away:"Panama",                awayFlag:"🇵🇦", time:"22:00", group:"L", venue:"AT&T Stadium"},
+    {home:"England",             homeFlag:"🏴󠁧󠁢󠁥󠁧󠁿", away:"Croatia",               awayFlag:"🇭🇷", time:"19:00", group:"L", venue:"AT&T Stadium"},
+    {home:"Ghana",               homeFlag:"🇬🇭", away:"Panama",                awayFlag:"🇵🇦", time:"22:00", group:"L", venue:"BMO Field"},
   ]},
 
   // ── ETAPA 2 ──────────────────────────────────────────────────────────────
@@ -262,13 +262,13 @@ export const CALENDAR_EVENTS = [
   {day:21, matches:[
     {home:"Belgium",             homeFlag:"🇧🇪", away:"Iran",                  awayFlag:"🇮🇷", time:"13:00", group:"G", venue:"SoFi Stadium"},
     {home:"New Zealand",         homeFlag:"🇳🇿", away:"Egypt",                 awayFlag:"🇪🇬", time:"16:00", group:"G", venue:"BC Place"},
-    {home:"Spain",               homeFlag:"🇪🇸", away:"Saudi Arabia",          awayFlag:"🇸🇦", time:"19:00", group:"H", venue:"Hard Rock Stadium"},
-    {home:"Uruguay",             homeFlag:"🇺🇾", away:"Cape Verde",            awayFlag:"🇨🇻", time:"22:00", group:"H", venue:"Mercedes-Benz Stadium"},
+    {home:"Spain",               homeFlag:"🇪🇸", away:"Saudi Arabia",          awayFlag:"🇸🇦", time:"19:00", group:"H", venue:"Mercedes-Benz Stadium"},
+    {home:"Uruguay",             homeFlag:"🇺🇾", away:"Cape Verde",            awayFlag:"🇨🇻", time:"22:00", group:"H", venue:"Hard Rock Stadium"},
   ]},
   // 22 Iunie — Grupele I & J
   {day:22, matches:[
-    {home:"France",              homeFlag:"🇫🇷", away:"Iraq",                  awayFlag:"🇮🇶", time:"13:00", group:"I", venue:"MetLife Stadium"},
-    {home:"Norway",              homeFlag:"🇳🇴", away:"Senegal",               awayFlag:"🇸🇳", time:"16:00", group:"I", venue:"Lincoln Financial Field"},
+    {home:"France",              homeFlag:"🇫🇷", away:"Iraq",                  awayFlag:"🇮🇶", time:"13:00", group:"I", venue:"Lincoln Financial Field"},
+    {home:"Norway",              homeFlag:"🇳🇴", away:"Senegal",               awayFlag:"🇸🇳", time:"16:00", group:"I", venue:"MetLife Stadium"},
     {home:"Argentina",           homeFlag:"🇦🇷", away:"Austria",               awayFlag:"🇦🇹", time:"19:00", group:"J", venue:"AT&T Stadium"},
     {home:"Jordan",              homeFlag:"🇯🇴", away:"Algeria",               awayFlag:"🇩🇿", time:"22:00", group:"J", venue:"Levi's Stadium"},
   ]},
@@ -294,101 +294,105 @@ export const CALENDAR_EVENTS = [
   {day:25, matches:[
     {home:"Turkey",              homeFlag:"🇹🇷", away:"USA",                   awayFlag:"🇺🇸", time:"15:00", group:"D", venue:"SoFi Stadium"},
     {home:"Paraguay",            homeFlag:"🇵🇾", away:"Australia",             awayFlag:"🇦🇺", time:"15:00", group:"D", venue:"Levi's Stadium"},
-    {home:"Ecuador",             homeFlag:"🇪🇨", away:"Germany",               awayFlag:"🇩🇪", time:"15:00", group:"E", venue:"Lincoln Financial Field"},
-    {home:"Curaçao",             homeFlag:"🇨🇼", away:"Côte d'Ivoire",         awayFlag:"🇨🇮", time:"15:00", group:"E", venue:"MetLife Stadium"},
-    {home:"Tunisia",             homeFlag:"🇹🇳", away:"Netherlands",           awayFlag:"🇳🇱", time:"19:00", group:"F", venue:"AT&T Stadium"},
-    {home:"Japan",               homeFlag:"🇯🇵", away:"Sweden",                awayFlag:"🇸🇪", time:"19:00", group:"F", venue:"Arrowhead Stadium"},
-    {home:"New Zealand",         homeFlag:"🇳🇿", away:"Belgium",               awayFlag:"🇧🇪", time:"19:00", group:"G", venue:"Lumen Field"},
-    {home:"Egypt",               homeFlag:"🇪🇬", away:"Iran",                  awayFlag:"🇮🇷", time:"19:00", group:"G", venue:"BC Place"},
-    {home:"Uruguay",             homeFlag:"🇺🇾", away:"Spain",                 awayFlag:"🇪🇸", time:"19:00", group:"H", venue:"NRG Stadium"},
-    {home:"Cape Verde",          homeFlag:"🇨🇻", away:"Saudi Arabia",          awayFlag:"🇸🇦", time:"19:00", group:"H", venue:"Estadio Akron"},
+    {home:"Ecuador",             homeFlag:"🇪🇨", away:"Germany",               awayFlag:"🇩🇪", time:"15:00", group:"E", venue:"MetLife Stadium"},
+    {home:"Curaçao",             homeFlag:"🇨🇼", away:"Côte d'Ivoire",         awayFlag:"🇨🇮", time:"15:00", group:"E", venue:"Lincoln Financial Field"},
+    {home:"Tunisia",             homeFlag:"🇹🇳", away:"Netherlands",           awayFlag:"🇳🇱", time:"19:00", group:"F", venue:"Arrowhead Stadium"},
+    {home:"Japan",               homeFlag:"🇯🇵", away:"Sweden",                awayFlag:"🇸🇪", time:"19:00", group:"F", venue:"AT&T Stadium"},
+    {home:"New Zealand",         homeFlag:"🇳🇿", away:"Belgium",               awayFlag:"🇧🇪", time:"19:00", group:"G", venue:"BC Place"},
+    {home:"Egypt",               homeFlag:"🇪🇬", away:"Iran",                  awayFlag:"🇮🇷", time:"19:00", group:"G", venue:"Lumen Field"},
+    {home:"Uruguay",             homeFlag:"🇺🇾", away:"Spain",                 awayFlag:"🇪🇸", time:"19:00", group:"H", venue:"Estadio Akron"},
+    {home:"Cape Verde",          homeFlag:"🇨🇻", away:"Saudi Arabia",          awayFlag:"🇸🇦", time:"19:00", group:"H", venue:"NRG Stadium"},
   ]},
-  // 26 Iunie — Grupele I, K, L
+  // 26 Iunie — Grupa I
   {day:26, matches:[
     {home:"Norway",              homeFlag:"🇳🇴", away:"France",                awayFlag:"🇫🇷", time:"15:00", group:"I", venue:"Gillette Stadium"},
     {home:"Senegal",             homeFlag:"🇸🇳", away:"Iraq",                  awayFlag:"🇮🇶", time:"15:00", group:"I", venue:"BMO Field"},
+  ]},
+  // 27 Iunie — Grupele J, K, L
+  {day:27, matches:[
+    {home:"Jordan",              homeFlag:"🇯🇴", away:"Argentina",             awayFlag:"🇦🇷", time:"19:00", group:"J", venue:"AT&T Stadium"},
+    {home:"Algeria",             homeFlag:"🇩🇿", away:"Austria",               awayFlag:"🇦🇹", time:"19:00", group:"J", venue:"Arrowhead Stadium"},
     {home:"Colombia",            homeFlag:"🇨🇴", away:"Portugal",              awayFlag:"🇵🇹", time:"19:00", group:"K", venue:"Hard Rock Stadium"},
     {home:"DR Congo",            homeFlag:"🇨🇩", away:"Uzbekistan",            awayFlag:"🇺🇿", time:"19:00", group:"K", venue:"Mercedes-Benz Stadium"},
     {home:"Panama",              homeFlag:"🇵🇦", away:"England",               awayFlag:"🏴󠁧󠁢󠁥󠁧󠁿", time:"19:00", group:"L", venue:"MetLife Stadium"},
     {home:"Croatia",             homeFlag:"🇭🇷", away:"Ghana",                 awayFlag:"🇬🇭", time:"19:00", group:"L", venue:"Lincoln Financial Field"},
   ]},
-  // 27 Iunie — Grupa J
-  {day:27, matches:[
-    {home:"Jordan",              homeFlag:"🇯🇴", away:"Argentina",             awayFlag:"🇦🇷", time:"19:00", group:"J", venue:"Arrowhead Stadium"},
-    {home:"Algeria",             homeFlag:"🇩🇿", away:"Austria",               awayFlag:"🇦🇹", time:"19:00", group:"J", venue:"AT&T Stadium"},
-  ]},
 
-  // ── OPTIMI DE FINALĂ (R16) — 29 Iunie - 4 Iulie ──────────────────────────
+  // ── R32 (OPTIMI DE FINALĂ) — 28 Iunie - 3 Iulie ────────────────────────────
+  {day:28, matches:[
+    {home:"2A",homeFlag:"🏆",away:"2B",awayFlag:"🏆",time:"19:00",group:"R32",venue:"SoFi Stadium"},
+  ]},
   {day:29, matches:[
-    {home:"1A",homeFlag:"🏆",away:"2C",awayFlag:"🏆",time:"15:00",group:"R16"},
-    {home:"1C",homeFlag:"🏆",away:"2A",awayFlag:"🏆",time:"19:00",group:"R16"},
+    {home:"1E",homeFlag:"🏆",away:"3°",awayFlag:"🏆",time:"16:00",group:"R32",venue:"Gillette Stadium"},
+    {home:"1F",homeFlag:"🏆",away:"2C",awayFlag:"🏆",time:"19:00",group:"R32",venue:"Estadio BBVA"},
+    {home:"1C",homeFlag:"🏆",away:"2F",awayFlag:"🏆",time:"17:00",group:"R32",venue:"NRG Stadium"},
   ]},
   {day:30, matches:[
-    {home:"1B",homeFlag:"🏆",away:"2D",awayFlag:"🏆",time:"15:00",group:"R16"},
-    {home:"1D",homeFlag:"🏆",away:"2B",awayFlag:"🏆",time:"19:00",group:"R16"},
+    {home:"1I",homeFlag:"🏆",away:"3°",awayFlag:"🏆",time:"17:00",group:"R32",venue:"MetLife Stadium"},
+    {home:"2E",homeFlag:"🏆",away:"2I",awayFlag:"🏆",time:"17:00",group:"R32",venue:"AT&T Stadium"},
+    {home:"1A",homeFlag:"🏆",away:"3°",awayFlag:"🏆",time:"19:00",group:"R32",venue:"Estadio Azteca"},
   ]},
   {day:31, matches:[
-    {home:"1E",homeFlag:"🏆",away:"2G",awayFlag:"🏆",time:"15:00",group:"R16"},
-    {home:"1G",homeFlag:"🏆",away:"2E",awayFlag:"🏆",time:"19:00",group:"R16"},
+    {home:"1L",homeFlag:"🏆",away:"3°",awayFlag:"🏆",time:"16:00",group:"R32",venue:"Mercedes-Benz Stadium"},
+    {home:"1D",homeFlag:"🏆",away:"3°",awayFlag:"🏆",time:"20:00",group:"R32",venue:"Levi's Stadium"},
+    {home:"1G",homeFlag:"🏆",away:"3°",awayFlag:"🏆",time:"20:00",group:"R32",venue:"Lumen Field"},
   ]},
   {day:32, matches:[
-    {home:"1F",homeFlag:"🏆",away:"2H",awayFlag:"🏆",time:"15:00",group:"R16"},
-    {home:"1H",homeFlag:"🏆",away:"2F",awayFlag:"🏆",time:"19:00",group:"R16"},
+    {home:"2K",homeFlag:"🏆",away:"2L",awayFlag:"🏆",time:"19:00",group:"R32",venue:"BMO Field"},
+    {home:"1H",homeFlag:"🏆",away:"2J",awayFlag:"🏆",time:"19:00",group:"R32",venue:"SoFi Stadium"},
+    {home:"1B",homeFlag:"🏆",away:"3°",awayFlag:"🏆",time:"20:00",group:"R32",venue:"BC Place"},
   ]},
   {day:33, matches:[
-    {home:"1I",homeFlag:"🏆",away:"2K",awayFlag:"🏆",time:"15:00",group:"R16"},
-    {home:"1K",homeFlag:"🏆",away:"2I",awayFlag:"🏆",time:"19:00",group:"R16"},
+    {home:"1J",homeFlag:"🏆",away:"2H",awayFlag:"🏆",time:"18:00",group:"R32",venue:"Hard Rock Stadium"},
+    {home:"1K",homeFlag:"🏆",away:"3°",awayFlag:"🏆",time:"20:30",group:"R32",venue:"Arrowhead Stadium"},
+    {home:"2D",homeFlag:"🏆",away:"2G",awayFlag:"🏆",time:"19:00",group:"R32",venue:"AT&T Stadium"},
   ]},
+
+  // ── R16 (ȘAISPREZECIMI) — 4-7 Iulie ─────────────────────────────────────────
   {day:34, matches:[
-    {home:"1J",homeFlag:"🏆",away:"2L",awayFlag:"🏆",time:"15:00",group:"R16"},
-    {home:"1L",homeFlag:"🏆",away:"2J",awayFlag:"🏆",time:"19:00",group:"R16"},
+    {home:"W74",homeFlag:"🏆",away:"W77",awayFlag:"🏆",time:"17:00",group:"R16",venue:"Lincoln Financial Field"},
+    {home:"W73",homeFlag:"🏆",away:"W75",awayFlag:"🏆",time:"18:00",group:"R16",venue:"NRG Stadium"},
   ]},
-  // R16 cu cele mai bune echipe de pe loc 3 (8 echipe)
   {day:35, matches:[
-    {home:"1best3",homeFlag:"🏆",away:"2best3",awayFlag:"🏆",time:"15:00",group:"R16"},
-    {home:"3best3",homeFlag:"🏆",away:"4best3",awayFlag:"🏆",time:"19:00",group:"R16"},
+    {home:"W76",homeFlag:"🏆",away:"W78",awayFlag:"🏆",time:"16:00",group:"R16",venue:"MetLife Stadium"},
+    {home:"W79",homeFlag:"🏆",away:"W80",awayFlag:"🏆",time:"18:00",group:"R16",venue:"Estadio Azteca"},
   ]},
   {day:36, matches:[
-    {home:"5best3",homeFlag:"🏆",away:"6best3",awayFlag:"🏆",time:"15:00",group:"R16"},
-    {home:"7best3",homeFlag:"🏆",away:"8best3",awayFlag:"🏆",time:"19:00",group:"R16"},
+    {home:"W83",homeFlag:"🏆",away:"W84",awayFlag:"🏆",time:"19:00",group:"R16",venue:"AT&T Stadium"},
+    {home:"W81",homeFlag:"🏆",away:"W82",awayFlag:"🏆",time:"19:00",group:"R16",venue:"Lumen Field"},
+  ]},
+  {day:37, matches:[
+    {home:"W86",homeFlag:"🏆",away:"W88",awayFlag:"🏆",time:"16:00",group:"R16",venue:"Mercedes-Benz Stadium"},
+    {home:"W85",homeFlag:"🏆",away:"W87",awayFlag:"🏆",time:"19:00",group:"R16",venue:"BC Place"},
   ]},
 
-  // ── SFERTURI DE FINALĂ — 8-11 Iulie (days 38-41) ─────────────────────────
-  {day:38, matches:[
-    {home:"W29-1",homeFlag:"🏆",away:"W29-2",awayFlag:"🏆",time:"15:00",group:"QF"},
-    {home:"W30-1",homeFlag:"🏆",away:"W30-2",awayFlag:"🏆",time:"19:00",group:"QF"},
-  ]},
+  // ── SFERTURI DE FINALĂ (QF) — 9-11 Iulie ────────────────────────────────────
   {day:39, matches:[
-    {home:"W31-1",homeFlag:"🏆",away:"W31-2",awayFlag:"🏆",time:"15:00",group:"QF"},
-    {home:"W32-1",homeFlag:"🏆",away:"W32-2",awayFlag:"🏆",time:"19:00",group:"QF"},
+    {home:"W89",homeFlag:"🏆",away:"W90",awayFlag:"🏆",time:"16:00",group:"QF",venue:"Gillette Stadium"},
   ]},
   {day:40, matches:[
-    {home:"W33-1",homeFlag:"🏆",away:"W33-2",awayFlag:"🏆",time:"15:00",group:"QF"},
-    {home:"W34-1",homeFlag:"🏆",away:"W34-2",awayFlag:"🏆",time:"19:00",group:"QF"},
+    {home:"W93",homeFlag:"🏆",away:"W94",awayFlag:"🏆",time:"19:00",group:"QF",venue:"SoFi Stadium"},
   ]},
   {day:41, matches:[
-    {home:"W35-1",homeFlag:"🏆",away:"W35-2",awayFlag:"🏆",time:"15:00",group:"QF"},
-    {home:"W36-1",homeFlag:"🏆",away:"W36-2",awayFlag:"🏆",time:"19:00",group:"QF"},
+    {home:"W91",homeFlag:"🏆",away:"W92",awayFlag:"🏆",time:"17:00",group:"QF",venue:"Hard Rock Stadium"},
+    {home:"W95",homeFlag:"🏆",away:"W96",awayFlag:"🏆",time:"20:00",group:"QF",venue:"Arrowhead Stadium"},
   ]},
 
-  // ── SEMIFINALE — 14-15 Iulie (days 44-45) ────────────────────────────────
+  // ── SEMIFINALE — 14-15 Iulie ─────────────────────────────────────────────────
   {day:44, matches:[
-    {home:"QF1",homeFlag:"🏆",away:"QF2",awayFlag:"🏆",time:"19:00",group:"SF"},
-    {home:"QF3",homeFlag:"🏆",away:"QF4",awayFlag:"🏆",time:"19:00",group:"SF"},
+    {home:"W97",homeFlag:"🏆",away:"W98",awayFlag:"🏆",time:"21:00",group:"SF",venue:"AT&T Stadium"},
   ]},
   {day:45, matches:[
-    {home:"QF5",homeFlag:"🏆",away:"QF6",awayFlag:"🏆",time:"19:00",group:"SF"},
-    {home:"QF7",homeFlag:"🏆",away:"QF8",awayFlag:"🏆",time:"19:00",group:"SF"},
+    {home:"W99",homeFlag:"🏆",away:"W100",awayFlag:"🏆",time:"21:00",group:"SF",venue:"Mercedes-Benz Stadium"},
   ]},
 
-  // ── FINALA MICĂ — 18 Iulie (day 48) ──────────────────────────────────────
+  // ── FINALA MICĂ — 18 Iulie ───────────────────────────────────────────────────
   {day:48, matches:[
-    {home:"SF L1",homeFlag:"🥉",away:"SF L2",awayFlag:"🥉",time:"15:00",group:"3rd"},
-    {home:"SF L3",homeFlag:"🥉",away:"SF L4",awayFlag:"🥉",time:"19:00",group:"3rd"},
+    {home:"L101",homeFlag:"🥉",away:"L102",awayFlag:"🥉",time:"21:00",group:"3rd",venue:"Hard Rock Stadium"},
   ]},
 
-  // ── FINALA — 19 Iulie (day 49) ────────────────────────────────────────────
+  // ── FINALA — 19 Iulie ────────────────────────────────────────────────────────
   {day:49, matches:[
-    {home:"SF W1",homeFlag:"🏆",away:"SF W2",awayFlag:"🏆",time:"19:00",group:"Final"},
+    {home:"W101",homeFlag:"🏆",away:"W102",awayFlag:"🏆",time:"21:00",group:"Final",venue:"MetLife Stadium"},
   ]},
 ];

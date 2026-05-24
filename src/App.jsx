@@ -368,7 +368,7 @@ const isWeekUnlocked = (day, simDay=null, simHour=12, simMin=0) => {
     const simDate = new Date(2026,5,simDay,simHour,simMin,0);
     if(day >= 43) return simDate >= july(12);   // Final week
     if(day >= 36) return simDate >= july(5);    // QF/SF week
-    if(day >= 29) return simDate >= june(28);   // R16 week
+    if(day >= 28) return simDate >= june(28);   // R32 week (starts Jun 28)
     if(day >= 22) return simDate >= june(21);
     if(day >= 15) return simDate >= june(14);
     return true;
@@ -376,7 +376,7 @@ const isWeekUnlocked = (day, simDay=null, simHour=12, simMin=0) => {
   const now2 = new Date();
   if(day >= 43) return now2 >= july(12);
   if(day >= 36) return now2 >= july(5);
-  if(day >= 29) return WEEK_UNLOCKED[29];
+  if(day >= 28) return WEEK_UNLOCKED[29];
   if(day >= 22) return WEEK_UNLOCKED[22];
   if(day >= 15) return WEEK_UNLOCKED[15];
   return WEEK_UNLOCKED[8];
@@ -631,7 +631,7 @@ function CalendarSlider() {
 function KOTeamRow({ team, pick, pairId, setKnockoutPicks }) {
   const flag = FLAGS[team] || "🏳";
   const selected = pick === team;
-  const ph = !team||team.includes("W")||team.includes("L")||team.includes("3rd")||team.includes("Best")||team.includes("SF")||team.includes("QF")||team.includes("R16");
+  const ph = !team||team.includes("W")||team.includes("L")||team.includes("3rd")||team.includes("Best")||team.includes("SF")||team.includes("QF")||team.includes("R16")||team.includes("R32")||team.includes("°");
   const handleSelect = () => {
     if(!ph) setKnockoutPicks(k => ({...k, [pairId]: k[pairId]===team ? null : team}));
   };

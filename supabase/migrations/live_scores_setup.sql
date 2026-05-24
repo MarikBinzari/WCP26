@@ -46,10 +46,10 @@ select cron.schedule(
   '* * * * *',
   $$
   select net.http_post(
-    url     := 'https://YOUR_PROJECT_REF.supabase.co/functions/v1/poll-live-scores',
+    url     := 'https://xpqhrcohzdwmrrolgnlw.supabase.co/functions/v1/poll-live-scores',
     headers := jsonb_build_object(
       'Content-Type',  'application/json',
-      'Authorization', 'Bearer YOUR_ANON_KEY'
+      'Authorization', 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhwcWhyY29oemR3bXJyb2xnbmx3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MjYyOTcsImV4cCI6MjA5MzUwMjI5N30.dBaSLIDIzwDbIxRFx7oM7Kc5hvN5Xd_6DQ17J2sCtcQ'
     ),
     body    := '{}'::jsonb
   );

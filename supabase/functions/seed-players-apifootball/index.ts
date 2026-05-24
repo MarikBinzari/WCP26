@@ -66,7 +66,10 @@ const ALL_TEAMS = Object.entries(TEAM_IDS)
 const BATCH_SIZE = 8
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
 
-Deno.serve(async () => {
+Deno.serve(async (req) => {
+  const url = new URL(req.url)
+  const dryRun = url.searchParams.get('dry') === '1'
+
   const apiKey = Deno.env.get('API_FOOTBALL_KEY')
   if (!apiKey) {
     return new Response(
@@ -75,17 +78,34 @@ Deno.serve(async () => {
     )
   }
 
-  // Find which teams are already seeded
-  const { data: seeded } = await supabase
-    .from('players')
-    .select('team_name')
-    .not('api_football_id', 'is', null)
-
-  const seededNames = new Set((seeded ?? []).map((r: any) => r.team_name))
+  // Paginate through players table — PostgREST server cap is 1000 rows per request
+  const seededNames = new Set<string>()
+  let totalRows = 0
+  for (let from = 0; ; from += 1000) {
+    const { data: page } = await supabase
+      .from('players')
+      .select('team_name')
+      .range(from, from + 999)
+    if (!page || page.length === 0) break
+    totalRows += page.length
+    for (const r of page) seededNames.add(r.team_name)
+    if (page.length < 1000) break
+  }
   const remaining = ALL_TEAMS.filter(([name]) => !seededNames.has(name))
 
+  if (dryRun) {
+    return new Response(
+      JSON.stringify({
+        dryRun: true,
+        totalRows,
+        seededCount: seededNames.size,
+        remainingTeams: remaining.map(([n]) => n),
+      }),
+      { headers: { 'Content-Type': 'application/json' } }
+    )
+  }
+
   if (remaining.length === 0) {
-    // All done — remove the cron job so it never runs again
     await supabase.rpc('unschedule_cron', { job_name: 'seed-players-initial' })
     return new Response(
       JSON.stringify({ ok: true, done: true, message: 'All 48 teams seeded. Cron job removed.' }),
@@ -151,6 +171,7 @@ Deno.serve(async () => {
       done:           teamsRemaining === 0,
       teamsProcessed: batch.length,
       teamsRemaining,
+      remainingTeams: remaining.map(([name]) => name),
       playersUpserted: upserts.length,
       dbError,
       warnings:       warnings.length ? warnings : undefined,
