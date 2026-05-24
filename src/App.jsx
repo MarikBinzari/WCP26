@@ -34,6 +34,16 @@ const SCREENS = {
 };
 
 const INITIAL_BOARDS = [{ id:"global", label:"🌍", name:"Global Board", members:48291, isGlobal:true }];
+const boardOrderKey = (board) => board?.joined_at || board?.created_at || board?.name || board?.id || "";
+const sortJoinedBoards = (boards) =>
+  [...boards].sort((a, b) => String(boardOrderKey(a)).localeCompare(String(boardOrderKey(b))));
+const appendJoinedBoard = (boards, board) => {
+  if (boards.some(b => b.id === board.id)) return boards;
+  const nextBoard = { ...board, joined_at: board.joined_at || new Date().toISOString() };
+  const pinned = boards.filter(b => b.isGlobal);
+  const joined = boards.filter(b => !b.isGlobal);
+  return [...pinned, ...sortJoinedBoards([...joined, nextBoard])];
+};
 const BOARD_LEADERS = {
   global: [
     { rank:1,    name:"Alex M.",      pts:342, prize:"250 lei", emoji:"🥇", accent:"#fff" },
@@ -4349,7 +4359,7 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
   useEffect(()=>{
     const idx = myBoards.findIndex(b=>b.id===activeId);
     if(idx>=0) setSliderPos(idx);
-  },[activeId]);
+  },[activeId,myBoards]);
   const handleSliderTouchStart = (e)=>{ sliderTouchRef.current = e.touches[0].clientX; };
   const handleSliderTouchEnd = (e)=>{
     if(sliderTouchRef.current===null) return;
@@ -4474,8 +4484,8 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
       <div onClick={()=>onLeaderboard&&onLeaderboard()} style={{position:"relative",cursor:"pointer",WebkitTapHighlightColor:"transparent",marginTop:2}}>
         {/* rând 1 — dots boards + delete/add */}
         <div style={{display:"flex",justifyContent:"center",alignItems:"center",gap:8,height:24,marginBottom:6,padding:"0 16px"}}>
-          <div onClick={e=>{e.stopPropagation();onBoards("my");}} style={{display:"flex",alignItems:"center",justifyContent:"center",width:24,height:24,borderRadius:"50%",background:"transparent",border:"1.5px dashed rgba(200,16,46,0.18)",cursor:"pointer",flexShrink:0}}>
-            <svg width="12" height="13" viewBox="0 0 18 20" fill="none"><path d="M1 4.5h16M6 4.5V3a1 1 0 011-1h4a1 1 0 011 1v1.5M7 9v6M11 9v6M2.5 4.5l1 11a1.5 1.5 0 001.5 1.5h8a1.5 1.5 0 001.5-1.5l1-11" stroke="rgba(200,16,46,0.4)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          <div onClick={e=>{e.stopPropagation();onBoards("my");}} style={{display:"flex",alignItems:"center",justifyContent:"center",minWidth:68,height:24,borderRadius:999,background:"rgba(255,255,255,0.34)",border:"1px solid rgba(10,46,138,0.08)",cursor:"pointer",flexShrink:0,padding:"0 9px"}}>
+            <span style={{fontSize:10,fontWeight:650,color:"rgba(10,46,138,0.62)",lineHeight:1}}>Manage</span>
           </div>
           <div style={{display:"flex",alignItems:"center",gap:5,flex:1,justifyContent:"center"}}>
             {allSliderItems.map((_,i)=>(
@@ -4485,14 +4495,17 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
                   background:i===sliderPos?"rgba(10,46,138,0.3)":"rgba(100,116,139,0.2)"}}/>
             ))}
           </div>
-          <div onClick={e=>{e.stopPropagation();onBoards("available");}} style={{display:"flex",alignItems:"center",justifyContent:"center",width:24,height:24,borderRadius:"50%",background:"transparent",border:"1.5px dashed rgba(0,32,91,0.18)",cursor:"pointer",flexShrink:0}}>
-            <span style={{fontSize:16,color:"rgba(0,32,91,0.4)",lineHeight:1,fontWeight:300}}>+</span>
+          <div onClick={e=>{e.stopPropagation();onBoards("available");}} style={{display:"flex",alignItems:"center",justifyContent:"center",minWidth:68,height:24,borderRadius:999,background:"rgba(255,255,255,0.34)",border:"1px solid rgba(10,46,138,0.08)",cursor:"pointer",flexShrink:0,padding:"0 9px"}}>
+            <span style={{fontSize:10,fontWeight:650,color:"rgba(10,46,138,0.62)",lineHeight:1}}>New League</span>
           </div>
         </div>
         {/* rând 2 — rank & pts */}
-        <div style={{position:"relative",display:"flex",justifyContent:"center",alignItems:"center",height:28}}>
-          <span style={{position:"absolute",right:"calc(50% + 6px)",fontSize:14,fontWeight:800,color:NAVY,opacity:0.35}}>{me?.rank?`${me.rank}${[,'st','nd','rd'][me.rank]||'th'}`:"—"}</span>
-          {me&&<span style={{position:"absolute",left:"calc(50% + 4px)",fontSize:14,fontWeight:800,color:"#D4820A",opacity:0.35}}>{me.pts??0} pts</span>}
+        <div style={{position:"relative",display:"flex",justifyContent:"center",alignItems:"center",height:32,marginBottom:2}}>
+          <div style={{background:"#fff",borderRadius:12,boxShadow:"0 2px 10px rgba(0,0,0,0.06)",border:"1px solid rgba(10,46,138,0.06)",padding:"7px 16px",display:"flex",alignItems:"center",gap:8}}>
+            <span style={{fontSize:13,fontWeight:800,color:NAVY}}>{me?.rank?`#${me.rank}`:"-"}</span>
+            <span style={{width:3,height:3,borderRadius:"50%",background:"#C0C8D8"}}/>
+            <span style={{fontSize:13,fontWeight:800,color:"#D4820A"}}>{me?.pts??0} pts</span>
+          </div>
         </div>
         {/* rând 3 — ticker */}
         <div style={{overflow:"hidden",WebkitMaskImage:"linear-gradient(to right,transparent 0%,black 28%,black 72%,transparent 100%)",maskImage:"linear-gradient(to right,transparent 0%,black 28%,black 72%,transparent 100%)",height:20,marginBottom:4}}>
@@ -4547,16 +4560,12 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
             </div>
             <div onClick={()=>onChampion(!champDone?"champion":!tsDone?"scorer":"champion")} style={{background:"#fff",borderRadius:16,boxShadow:"0 2px 14px rgba(0,0,0,0.07)",
               border:"1.5px solid transparent",
-              padding:"14px 14px 10px",position:"relative",marginBottom:6,overflow:"hidden",cursor:"pointer",WebkitTapHighlightColor:"transparent"}}>
-              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,marginBottom:6}}>
+              padding:"13px 14px 10px",position:"relative",marginBottom:6,overflow:"hidden",cursor:"pointer",WebkitTapHighlightColor:"transparent"}}>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,marginBottom:5}}>
                 <div style={{display:"flex",flexDirection:"column",alignItems:"flex-start",minWidth:0,position:"relative",zIndex:1}}>
-                  <div style={{fontSize:13,fontWeight:700,color:DARK,textAlign:"left"}}>Winner & Top Scorer</div>
-                  <div style={{display:"flex",alignItems:"center",gap:5,flexWrap:"wrap",marginTop:4}}>
-                    <span style={{fontSize:9,fontWeight:650,color:NAVY,background:"rgba(10,46,138,0.08)",borderRadius:999,padding:"3px 6px",lineHeight:1}}>Team win +3</span>
-                    <span style={{fontSize:9,fontWeight:650,color:"#D4820A",background:"rgba(240,160,32,0.12)",borderRadius:999,padding:"3px 6px",lineHeight:1}}>Player scored +3</span>
-                  </div>
+                  <div style={{fontSize:13,fontWeight:700,color:DARK,textAlign:"left",lineHeight:1.15}}>Winner & Top Scorer</div>
                   <div style={{fontSize:10,color:specialLocked?"#D4820A":"#C0C8D8",fontWeight:500,marginTop:3,lineHeight:1.2}}>
-                    {specialLocked ? "🔒 Reopens Jun 27 · Knockout phase" : specialPhase2Open ? "Knockout picks open" : "Pick deadline · Jun 11"}
+                    {specialLocked ? "Reopens Jun 27" : "Team win +3 · Player scored +3"}
                   </div>
                 </div>
                 {doneCount===0 ? (
@@ -4588,16 +4597,6 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
                 done:tsDone,
                 mode:"scorer",
               })}
-              {!allDone&&<div style={{height:3,background:"#F1F3F7",borderRadius:2,marginTop:8,overflow:"hidden"}}>
-                <div style={{
-                  height:"100%",
-                  width:`${(doneCount/2)*100}%`,
-                  background:`linear-gradient(90deg,${NAVY},#4A7AFF)`,
-                  borderRadius:2,
-                  transition:"width 0.5s ease",
-                  animation:doneCount===0?"barPulse 2s ease-in-out infinite":undefined,
-                }}/>
-              </div>}
             </div>
             <div onClick={onChampion}
               style={{display:"none",background:"#fff",borderRadius:16,boxShadow:"0 2px 14px rgba(0,0,0,0.07)",
@@ -4928,7 +4927,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
 
   const doJoin = (b) => {
     if(!myBoards.find(x=>x.id===b.id)){
-      setMyBoards(p=>[...p,{...b}]);
+      setMyBoards(p=>appendJoinedBoard(p,{...b}));
       setAvailBoards(p=>p.map(c=>c.id===b.id?{...c,members:(c.members||0)+1}:c));
       if(onJoinBoard) onJoinBoard(b.id);
       if(showToast) showToast(`Joined "${b.name}"!`, "🏆");
@@ -6742,7 +6741,7 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
   useEffect(()=>{
     const idx = myBoards.findIndex(b=>b.id===activeBoardId);
     if(idx>=0) setSliderPos(idx);
-  },[activeBoardId]);
+  },[activeBoardId,myBoards]);
   const handleSliderTouchStart = (e)=>{ sliderTouchRef.current = e.touches[0].clientX; };
   const handleSliderTouchEnd = (e)=>{
     if(sliderTouchRef.current===null) return;
@@ -8136,7 +8135,10 @@ function AccountScreen({ setLang, onBoards, onSignOut, onShowGuide, onPremium, u
   const [deleteError, setDeleteError] = useState("");
 
   const handleSignOut = async () => {
-    try { localStorage.removeItem('myBoards'); } catch {}
+    try {
+      localStorage.removeItem('myBoards');
+      localStorage.removeItem('activeBoardId');
+    } catch {}
     await supabase.auth.signOut();
     onSignOut();
   };
@@ -8437,7 +8439,10 @@ function App() {
           setAvailableBoards([]);
           setMyBoards([]);
           setBoardsLoading(true);
-          try { localStorage.removeItem('myBoards'); } catch {}
+          try {
+            localStorage.removeItem('myBoards');
+            localStorage.removeItem('activeBoardId');
+          } catch {}
         }
         return u;
       });
@@ -8520,24 +8525,30 @@ function App() {
         loadUserBoards(uid),
         loadAvailableBoards(uid),
       ]);
+      const removedBoardIds = getRemovedBoardIds();
+      const visibleBoards = boards.filter(b => !removedBoardIds.has(b.id));
+      const visibleAvail = avail.filter(b => !removedBoardIds.has(b.id));
       // adminBoards = boards where user is creator (isAdmin=true)
-      const adminBoards = boards.filter(b => b.isAdmin);
+      const adminBoards = visibleBoards.filter(b => b.isAdmin);
       // participantBoards = boards where user is member (isMember=true)
-      const participantBoards = boards.filter(b => b.isMember);
-      // allMyBoards = Global + boards where user is actually in board_members (isMember)
-      // adminBoards excluded here if not also isMember (creator who left shouldn't appear)
+      const participantBoards = sortJoinedBoards(visibleBoards.filter(b => b.isMember));
+      // allMyBoards = Global + boards joined by user + boards created by user.
+      // Created boards must stay visible even if board_members is delayed/missing after refresh.
       const seen = new Set(INITIAL_BOARDS.map(b => b.id));
       const allMyBoards = [...INITIAL_BOARDS];
-      for (const b of participantBoards) {
+      for (const b of sortJoinedBoards([...participantBoards, ...adminBoards])) {
         if (!seen.has(b.id)) { seen.add(b.id); allMyBoards.push(b); }
       }
-      const allIds = [...allMyBoards.map(b => b.id), ...adminBoards.map(b => b.id), ...avail.map(b => b.id)];
+      const allIds = [...allMyBoards.map(b => b.id), ...adminBoards.map(b => b.id), ...visibleAvail.map(b => b.id)];
       const counts = await fetchMemberCounts(allIds);
       const freshBoards = allMyBoards.map(b => ({ ...b, members: counts[b.id] ?? b.members }));
       setMyBoards(freshBoards);
+      if (!freshBoards.some(b => b.id === activeBoardIdRef.current)) {
+        setActiveBoardId('global');
+      }
       try { localStorage.setItem('myBoards', JSON.stringify(freshBoards)); } catch {}
       setCreatedBoards(adminBoards.map(b => ({ ...b, members: counts[b.id] ?? 0 })));
-      setAvailableBoards(avail.map(b => ({ ...b, members: counts[b.id] ?? 0 })));
+      setAvailableBoards(visibleAvail.map(b => ({ ...b, members: counts[b.id] ?? 0 })));
       return boards;
     };
     refreshBoards().then(boards => { setBoardsLoading(false); boards.forEach(b => loadForBoard(b.id)); });
@@ -8588,7 +8599,29 @@ function App() {
   // Predictions complete per board id
   const [predictionsComplete, setPredictionsComplete] = useState({});
   const [predictionsLoaded, setPredictionsLoaded] = useState({});
-  const [activeBoardId, setActiveBoardId] = useState("global");
+  const _cachedActiveBoardId = (() => { try { return localStorage.getItem('activeBoardId') || "global"; } catch { return "global"; } })();
+  const [activeBoardId, setActiveBoardId] = useState(_cachedActiveBoardId);
+  const activeBoardIdRef = useRef(_cachedActiveBoardId);
+  const removedBoardsKey = user?.id ? `removedBoards:${user.id}` : "removedBoards";
+  const getRemovedBoardIds = () => {
+    try { return new Set(JSON.parse(localStorage.getItem(removedBoardsKey) || "[]")); }
+    catch { return new Set(); }
+  };
+  const rememberRemovedBoard = (boardId) => {
+    const ids = getRemovedBoardIds();
+    ids.add(boardId);
+    try { localStorage.setItem(removedBoardsKey, JSON.stringify([...ids])); } catch {}
+  };
+  const forgetRemovedBoard = (boardId) => {
+    const ids = getRemovedBoardIds();
+    if (!ids.delete(boardId)) return;
+    try { localStorage.setItem(removedBoardsKey, JSON.stringify([...ids])); } catch {}
+  };
+
+  useEffect(() => {
+    activeBoardIdRef.current = activeBoardId;
+    try { localStorage.setItem('activeBoardId', activeBoardId); } catch {}
+  }, [activeBoardId]);
 
   useEffect(() => {
     if (!user || (screen !== SCREENS.LEADERBOARD && screen !== SCREENS.HOME)) return;
@@ -8808,13 +8841,17 @@ function App() {
               const { data, error } = await createBoard(user.id, boardData);
               if (error) { showToast("Eroare la creare", "❌"); return null; }
               setCreatedBoards(prev => [...prev, data]);
+              forgetRemovedBoard(data.id);
+              setMyBoards(prev => appendJoinedBoard(prev, { ...data, isMember: true, members: (data.members || 0) + 1 }));
+              setActiveBoardId(data.id);
               return data;
             }}
             onJoinByCode={async (code) => {
               if (!user) return null;
               const { data, error } = await joinBoardByCode(user.id, code);
               if (error) { showToast(error, "❌"); return null; }
-              setMyBoards(prev => [...prev, { ...data, isMember: true, members: (data.members || 0) + 1 }]);
+              forgetRemovedBoard(data.id);
+              setMyBoards(prev => appendJoinedBoard(prev, { ...data, isMember: true, members: (data.members || 0) + 1 }));
               setAvailableBoards(prev => prev.filter(b => b.id !== data.id));
               return data;
             }}
@@ -8824,6 +8861,7 @@ function App() {
               await removeParticipation(boardId, user.id);
               const { data, error } = await joinBoardById(user.id, boardId);
               if (error) { showToast(error, "❌"); return; }
+              forgetRemovedBoard(boardId);
               setAllInstantPickStates(prev => { const n = {...prev}; delete n[boardId]; return n; });
               setAllInstantPickDone(prev => { const n = {...prev}; delete n[boardId]; return n; });
               setExactScoresByBoard(prev => { const n = {...prev}; delete n[boardId]; return n; });
@@ -8831,13 +8869,14 @@ function App() {
               setPredictionsLoaded(prev => ({ ...prev, [boardId]: true }));
               const board = availableBoards.find(b => b.id === boardId) || createdBoards.find(b => b.id === boardId);
               if (board) {
-                setMyBoards(prev => prev.some(b => b.id === boardId) ? prev : [...prev, { ...board, isMember: true, members: (board.members || 0) + 1 }]);
+                setMyBoards(prev => appendJoinedBoard(prev, { ...board, isMember: true, members: (board.members || 0) + 1 }));
                 setAvailableBoards(prev => prev.filter(b => b.id !== boardId));
               }
             }}
             onDeleteBoard={async (boardId) => {
               const { error } = await deleteBoard(boardId);
               if (error) { showToast("Eroare la ștergere", "❌"); return; }
+              rememberRemovedBoard(boardId);
               setCreatedBoards(prev => prev.filter(b => b.id !== boardId));
               setMyBoards(prev => prev.filter(b => b.id !== boardId));
               setAvailableBoards(prev => prev.filter(b => b.id !== boardId));
@@ -8848,6 +8887,7 @@ function App() {
             onRemoveMember={async (boardId, memberId) => {
               await removeBoardMember(boardId, memberId);
               if (memberId === user?.id) {
+                rememberRemovedBoard(boardId);
                 await removeParticipation(boardId, memberId);
                 setMyBoards(prev => {
                   const updated = prev.filter(b => b.id !== boardId);

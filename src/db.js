@@ -137,10 +137,13 @@ export async function checkDbHealth() {
 // ─── BOARDS ───────────────────────────────────────────────────────────────────
 // Returns boards with isAdmin=true (created_by) and/or isMember=true (board_members)
 export async function loadUserBoards(userId) {
-  const [memberships, created] = await Promise.all([
-    supabase.from('board_members').select('role, boards(*)').eq('user_id', userId),
+  let [memberships, created] = await Promise.all([
+    supabase.from('board_members').select('role, created_at, boards(*)').eq('user_id', userId),
     supabase.from('boards').select('*').eq('created_by', userId),
   ])
+  if (memberships.error) {
+    memberships = await supabase.from('board_members').select('role, boards(*)').eq('user_id', userId)
+  }
   const map = new Map()
   // Creatorul vede mereu boardul său (indiferent de board_members)
   ;(created.data || []).forEach(b => {
@@ -151,9 +154,11 @@ export async function loadUserBoards(userId) {
     const b = row.boards
     if (!b) return
     const existing = map.get(b.id)
+    const joined_at = row.created_at || b.created_at || existing?.joined_at || null
     if (existing) {
-      map.set(b.id, { ...existing, isMember: true })
+      map.set(b.id, { ...existing, joined_at, isMember: true })
     } else {
+      b.joined_at = joined_at
       map.set(b.id, { ...b, label: b.emoji || '⚽', isGlobal: false, code: b.invite_code, max: b.max_players, isAdmin: false, isMember: true })
     }
   })
@@ -249,13 +254,15 @@ export async function removeParticipation(boardId, userId) {
 }
 
 export async function deleteBoard(boardId) {
-  const { error } = await supabase.from('boards').delete().eq('id', boardId)
-  if (error) { console.error('deleteBoard:', error); return { error }; }
-  await Promise.all([
+  const cleanup = await Promise.all([
     supabase.from('exact_scores').delete().eq('board_id', boardId),
     supabase.from('predictions').delete().eq('board_id', boardId),
     supabase.from('board_members').delete().eq('board_id', boardId),
   ])
+  const cleanupError = cleanup.find(res => res.error)?.error
+  if (cleanupError) { console.error('deleteBoard cleanup:', cleanupError); return { error: cleanupError }; }
+  const { error } = await supabase.from('boards').delete().eq('id', boardId)
+  if (error) { console.error('deleteBoard:', error); return { error }; }
   return { error: null }
 }
 
