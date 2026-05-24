@@ -447,6 +447,21 @@ export function subscribeLiveScores(onChange) {
     .subscribe()
 }
 
+// ─── AVATAR ───────────────────────────────────────────────────────────────────
+export async function uploadAvatar(userId, file) {
+  const ext = file.name.split('.').pop().toLowerCase()
+  const path = `${userId}/avatar.${ext}`
+  const { error: uploadError } = await supabase.storage
+    .from('avatars')
+    .upload(path, file, { upsert: true, contentType: file.type })
+  if (uploadError) { console.error('uploadAvatar:', uploadError); return null }
+  const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path)
+  const urlWithBust = `${publicUrl}?t=${Date.now()}`
+  const { error: updateError } = await supabase.auth.updateUser({ data: { avatar_url: urlWithBust } })
+  if (updateError) { console.error('updateUser avatar_url:', updateError); return null }
+  return urlWithBust
+}
+
 // ─── LEADERBOARD ──────────────────────────────────────────────────────────────
 export async function loadLeaderboard(boardId, search = null, userId = null) {
   const [rpcRes, profileRes] = await Promise.all([
