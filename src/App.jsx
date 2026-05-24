@@ -34,6 +34,70 @@ const SCREENS = {
 };
 
 const INITIAL_BOARDS = [{ id:"global", label:"🌍", name:"Global Board", members:48291, isGlobal:true }];
+const UI = {
+  card: {
+    background: "#fff",
+    borderRadius: 16,
+    boxShadow: "0 2px 14px rgba(0,0,0,0.07)",
+    border: "1px solid rgba(10,46,138,0.06)",
+    overflow: "hidden",
+  },
+  sectionLabel: {
+    fontSize: 11,
+    fontWeight: 700,
+    color: "#9CA3AF",
+    margin: 0,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+  },
+  inputPanel: {
+    background: "#F8FAFC",
+    borderRadius: 12,
+    padding: "10px 12px",
+    display: "flex",
+    gap: 8,
+    alignItems: "center",
+    border: "1px solid rgba(10,46,138,0.06)",
+  },
+  primaryButton: {
+    background: `linear-gradient(135deg,${NAVY}cc,#001840cc)`,
+    color: "#fff",
+    border: "none",
+    borderRadius: 10,
+    padding: "7px 14px",
+    fontSize: 12,
+    fontWeight: 750,
+    cursor: "pointer",
+    flexShrink: 0,
+  },
+  ghostButton: {
+    background: "rgba(10,46,138,0.07)",
+    border: "1px solid rgba(10,46,138,0.08)",
+    borderRadius: 10,
+    padding: "7px 10px",
+    fontSize: 11,
+    fontWeight: 750,
+    color: NAVY,
+    cursor: "pointer",
+  },
+  emptyState: {
+    background: "#fff",
+    borderRadius: 16,
+    boxShadow: "0 2px 14px rgba(0,0,0,0.07)",
+    border: "1px solid rgba(10,46,138,0.06)",
+    padding: "28px 18px",
+    textAlign: "center",
+  },
+};
+function EmptyState({ icon="•", title, body }) {
+  return (
+    <div style={UI.emptyState}>
+      <div style={{fontSize:30,marginBottom:8}}>{icon}</div>
+      <div style={{fontSize:13,fontWeight:750,color:DARK,marginBottom:body?4:0}}>{title}</div>
+      {body&&<div style={{fontSize:12,color:"#9CA3AF",lineHeight:1.45}}>{body}</div>}
+    </div>
+  );
+}
 const boardOrderKey = (board) => board?.joined_at || board?.created_at || board?.name || board?.id || "";
 const sortJoinedBoards = (boards) =>
   [...boards].sort((a, b) => String(boardOrderKey(a)).localeCompare(String(boardOrderKey(b))));
@@ -3987,12 +4051,18 @@ function ChampionScreen({ onBack, initialMode="champion", championPick, topScore
   const isLocked = !isPhase1 && !isPhase2;
   const featuredChampionTeams = ["Argentina","Brazil","France","England","Spain","Portugal"].filter(t=>allTeams.includes(t));
   const otherChampionTeams = allTeams.filter(t=>!featuredChampionTeams.includes(t));
+  const pickCardStyle = UI.card;
+  const pickLabelStyle = UI.sectionLabel;
+  const finishPick = (message, icon) => {
+    showToast&&showToast(message, icon);
+    setTimeout(()=>onBack&&onBack(), 450);
+  };
   const selectChampion = (team) => {
     if (isLocked) return;
     const next = championPick===team ? null : team;
     setChampionPick(next);
-    showToast&&showToast(next ? `${team} selected!` : "Champion cleared", next ? (FLAGS[team]||"🏆") : "↺");
-    if(next) setTimeout(()=>onBack&&onBack(), 450);
+    if(next) finishPick("Winner Team saved", FLAGS[team]||"🏆");
+    else showToast&&showToast("Winner Team cleared", "↺");
   };
   const [tsTeam, setTsTeam] = useState(topScorerPick?.team||null);
   const [champPopup, setChampPopup] = useState(false);
@@ -4005,25 +4075,6 @@ function ChampionScreen({ onBack, initialMode="champion", championPick, topScore
     setPlayersLoading(true);
     loadPlayersByTeam(tsTeam).then(p => { setTeamPlayers(p); setPlayersLoading(false); });
   }, [tsTeam]);
-
-  const confettiCanvasRef = useRef(null);
-  const confettiInstanceRef = useRef(null);
-
-  useEffect(()=>{
-    if(!champPopup) { confettiInstanceRef.current = null; return; }
-    const colors = ["#FFD700","#ffffff","#0A2E8A","#CE1126","#009A44","#FF6B35","#a855f7"];
-    const tryStart = () => {
-      if(!confettiCanvasRef.current) return;
-      const instance = confetti.create(confettiCanvasRef.current, { resize:true, useWorker:false });
-      confettiInstanceRef.current = instance;
-      const interval = setInterval(()=>{
-        instance({ particleCount:2, spread:160, startVelocity:6, gravity:0.25, ticks:300, origin:{x:Math.random(), y:Math.random()*0.4}, colors, scalar:0.7, drift:0 });
-      }, 300);
-      return ()=>{ clearInterval(interval); instance.reset(); };
-    };
-    const cleanup = tryStart();
-    return ()=>{ if(cleanup) cleanup(); };
-  },[champPopup]);
 
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",position:"relative"}}>
@@ -4060,13 +4111,13 @@ function ChampionScreen({ onBack, initialMode="champion", championPick, topScore
 
         {/* Champion card */}
         {showChampion&&<>
-          <div style={{background:"#fff",borderRadius:16,boxShadow:"0 2px 14px rgba(0,0,0,0.07)",padding:"18px",marginBottom:12,overflow:"hidden",position:"relative"}}>
+          <div style={{...pickCardStyle,padding:"18px",marginBottom:12,position:"relative"}}>
             <div style={{display:"flex",alignItems:"center",gap:14}}>
               <div style={{width:76,height:76,borderRadius:"50%",background:"linear-gradient(135deg,#FFF7E1,#F3F4F6)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,border:"1px solid rgba(240,160,32,0.22)"}}>
                 <span style={{fontSize:46,lineHeight:1}}>{championPick ? (FLAGS[championPick]||"🏳") : "🏆"}</span>
               </div>
               <div style={{flex:1,minWidth:0}}>
-                <div style={{fontSize:11,fontWeight:800,color:"#D4820A",letterSpacing:1,textTransform:"uppercase"}}>Champion Pick</div>
+                <div style={{...pickLabelStyle,color:"#D4820A"}}>Champion Pick</div>
                 <div style={{fontSize:22,fontWeight:900,color:DARK,marginTop:4,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
                   {championPick || "Choose your winner"}
                 </div>
@@ -4096,7 +4147,7 @@ function ChampionScreen({ onBack, initialMode="champion", championPick, topScore
             })}
           </div>
 
-          <div style={{fontSize:11,fontWeight:800,color:"#9CA3AF",letterSpacing:0.8,textTransform:"uppercase",margin:"2px 2px 8px"}}>All teams</div>
+          <div style={{...pickLabelStyle,margin:"2px 2px 8px"}}>All teams</div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:8,opacity:isLocked?0.5:1,pointerEvents:isLocked?"none":"auto"}}>
             {otherChampionTeams.map(team=>{
               const isSel = championPick===team;
@@ -4116,25 +4167,33 @@ function ChampionScreen({ onBack, initialMode="champion", championPick, topScore
         </>}
 
         {/* Top Scorer card */}
-        {showScorer&&<div style={{background:"#fff",borderRadius:16,boxShadow:"0 2px 14px rgba(0,0,0,0.07)",padding:"20px 18px 24px",opacity:isLocked?0.7:1}}>
-          <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,marginBottom:18}}>
-            <span style={{fontSize:18}}>👕</span>
-            <span style={{fontSize:14,fontWeight:700,color:DARK}}>Top Scorer</span>
-            {topScorerPick?.player&&<span style={{fontSize:10,fontWeight:700,color:GREEN}}>✓</span>}
+        {showScorer&&<div style={{...pickCardStyle,padding:"18px",opacity:isLocked?0.7:1}}>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,marginBottom:14}}>
+            <div style={{minWidth:0}}>
+              <div style={{...pickLabelStyle,color:"#D4820A"}}>Top Scorer Pick</div>
+              <div style={{fontSize:18,fontWeight:850,color:DARK,marginTop:3,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+                {topScorerPick?.player || "Choose your player"}
+              </div>
+              <div style={{fontSize:11,color:"#9CA3AF",fontWeight:600,marginTop:2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+                {topScorerPick?.team ? `${FLAGS[topScorerPick.team]||"🏳"} ${topScorerPick.team}` : "Start with a team"}
+              </div>
+            </div>
+            {topScorerPick?.player&&<div style={{width:30,height:30,borderRadius:"50%",background:GREEN,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:900,color:"#fff",flexShrink:0}}>✓</div>}
           </div>
 
           {/* shirt button — opens team picker */}
           <div onClick={isLocked ? undefined : ()=>setTsPopup(true)}
-            style={{display:"flex",flexDirection:"column",alignItems:"center",gap:8,cursor:isLocked?"default":"pointer",padding:"8px 0"}}>
-            <span style={{fontSize:80,lineHeight:1}}>👕</span>
+            style={{display:"flex",alignItems:"center",gap:12,cursor:isLocked?"default":"pointer",padding:"12px 14px",borderRadius:14,background:"#F8FAFC",border:"1px solid rgba(10,46,138,0.06)"}}>
+            <span style={{fontSize:38,lineHeight:1,flexShrink:0}}>👕</span>
             {tsTeam?(
-              <div style={{textAlign:"center"}}>
+              <div style={{flex:1,minWidth:0,textAlign:"left"}}>
                 <div style={{fontSize:13,fontWeight:700,color:DARK}}>{FLAGS[tsTeam]||"🏳"} {tsTeam}</div>
                 <div style={{fontSize:11,color:"#9CA3AF",fontWeight:600}}>{tCode(tsTeam)}</div>
               </div>
             ):(
-              <span style={{fontSize:12,color:"#9CA3AF",fontWeight:500}}>Pick a team...</span>
+              <span style={{flex:1,fontSize:12,color:"#9CA3AF",fontWeight:600}}>Pick a team...</span>
             )}
+            <span style={{fontSize:18,color:"#C0C8D8",fontWeight:700,lineHeight:1}}>›</span>
           </div>
 
           {/* Players — grid or selected view */}
@@ -4175,8 +4234,7 @@ function ChampionScreen({ onBack, initialMode="champion", championPick, topScore
                             isSelected={isSel}
                             onClick={isLocked ? undefined : ()=>{
                               setTopScorerPick({team:tsTeam,player:name});
-                              showToast&&showToast(`${name} selected!`, FLAGS[tsTeam]||"👕");
-                              setTimeout(()=>onBack&&onBack(), 450);
+                              finishPick("Top Scorer saved", FLAGS[tsTeam]||"👕");
                             }}
                           />
                         );
@@ -4221,8 +4279,6 @@ function ChampionScreen({ onBack, initialMode="champion", championPick, topScore
           <div onClick={e=>e.stopPropagation()}
             style={{position:"relative",background:"#1C1C1E",borderRadius:"20px 20px 0 0",zIndex:1,
               display:"flex",flexDirection:"column",maxHeight:"75vh"}}>
-            {/* confetti canvas — covers popup background */}
-            <canvas ref={confettiCanvasRef} style={{position:"absolute",inset:0,width:"100%",height:"100%",borderRadius:"20px 20px 0 0",pointerEvents:"none",zIndex:0,opacity:0.45}}/>
             {/* drag handle */}
             <div style={{display:"flex",justifyContent:"center",padding:"10px 0 4px",flexShrink:0,touchAction:"none",position:"relative",zIndex:1}}
               onTouchStart={e=>{ e.currentTarget._y0=e.touches[0].clientY; }}
@@ -4408,6 +4464,19 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
   const cdSecs=simDay?Math.max(0,Math.floor((cdDiff%60000)/1000)):cdS;
   const tournamentOver = cdDiff<=0;
   const meInTop3 = top3.some(u=>u.isMe);
+  const homeSectionLabelStyle = { ...UI.sectionLabel, fontWeight:650, textAlign:"center" };
+  const homeTaskCardStyle = {
+    ...UI.card,
+    border: "1.5px solid transparent",
+    padding: "13px 14px 11px",
+    position: "relative",
+  };
+  const homeConnectorStyle = {
+    width: 2,
+    height: 22,
+    background: "linear-gradient(to bottom,transparent,#d0d0d0,transparent)",
+    borderRadius: 1,
+  };
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:"transparent",overflow:"hidden",position:"relative"}}>
       <div style={{padding:"10px 14px 0",flexShrink:0,position:"relative",zIndex:2}}>
@@ -4556,11 +4625,9 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
           );
           return (<>
             <div style={{margin:"0 2px 6px"}}>
-              <p style={{fontSize:12,fontWeight:600,color:"#9CA3AF",margin:0,textTransform:"uppercase",letterSpacing:1,textAlign:"center"}}>Special Pick</p>
+              <p style={homeSectionLabelStyle}>Special Pick</p>
             </div>
-            <div onClick={()=>onChampion(!champDone?"champion":!tsDone?"scorer":"champion")} style={{background:"#fff",borderRadius:16,boxShadow:"0 2px 14px rgba(0,0,0,0.07)",
-              border:"1.5px solid transparent",
-              padding:"13px 14px 10px",position:"relative",marginBottom:6,overflow:"hidden",cursor:"pointer",WebkitTapHighlightColor:"transparent"}}>
+            <div onClick={()=>onChampion(!champDone?"champion":!tsDone?"scorer":"champion")} style={{...homeTaskCardStyle,marginBottom:6,cursor:"pointer",WebkitTapHighlightColor:"transparent"}}>
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,marginBottom:5}}>
                 <div style={{display:"flex",flexDirection:"column",alignItems:"flex-start",minWidth:0,position:"relative",zIndex:1}}>
                   <div style={{fontSize:13,fontWeight:700,color:DARK,textAlign:"left",lineHeight:1.15}}>Winner & Top Scorer</div>
@@ -4626,7 +4693,7 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
 
         {/* Connector */}
         <div style={{display:"flex",justifyContent:"center",margin:"4px 0 10px"}}>
-          <div style={{width:2,height:24,background:"linear-gradient(to bottom,transparent,#d0d0d0,transparent)",borderRadius:1}}/>
+          <div style={homeConnectorStyle}/>
         </div>
 
         {/* Card 1 — Predictions + path to trophy */}
@@ -4649,13 +4716,11 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
           ];
           return (<>
             <div style={{margin:"0 2px 6px"}}>
-              <p style={{fontSize:12,fontWeight:600,color:isLocked?"#C0C8D8":"#9CA3AF",margin:0,textTransform:"uppercase",letterSpacing:1,textAlign:"center"}}>{T[lang].predictions}</p>
+              <p style={{...homeSectionLabelStyle,color:isLocked?"#C0C8D8":"#9CA3AF"}}>{T[lang].predictions}</p>
             </div>
-            <div style={{background:"#fff",borderRadius:16,
-              boxShadow:"0 2px 14px rgba(0,0,0,0.07)",
+            <div style={{...homeTaskCardStyle,
               border:`1.5px solid ${allDone?GREEN+"44":"transparent"}`,
-              padding:"14px 14px 12px",
-              opacity:isLocked?0.6:1,position:"relative",overflow:"hidden",
+              opacity:isLocked?0.6:1,
               ...(showFirstAction&&!boardDone&&!deadlinePassed?{animation:"pulse 1.5s ease-in-out 3"}:{})}}>
 
               {predPath.map((step,i)=>{
@@ -4706,7 +4771,7 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
 
         {/* Connector */}
         <div style={{display:"flex",justifyContent:"center",margin:"6px 0 10px"}}>
-          <div style={{width:2,height:24,background:"linear-gradient(to bottom,transparent,#d0d0d0,transparent)",borderRadius:1}}/>
+          <div style={homeConnectorStyle}/>
         </div>
 
         {/* Card 2 — Exact Score + path to trophy */}
@@ -4738,12 +4803,9 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
           ];
           return (<>
             <div style={{margin:"0 2px 6px"}}>
-              <p style={{fontSize:12,fontWeight:600,color:"#9CA3AF",margin:0,textTransform:"uppercase",letterSpacing:1,textAlign:"center"}}>{T[lang].exactScores}</p>
+              <p style={homeSectionLabelStyle}>{T[lang].exactScores}</p>
             </div>
-            <div onClick={()=>onOpenGroups&&onOpenGroups()} style={{background:"#fff",borderRadius:16,
-              boxShadow:"0 2px 14px rgba(0,0,0,0.07)",
-              border:"1.5px solid transparent",
-              padding:"14px 14px 12px",cursor:"pointer",position:"relative",marginBottom:10,overflow:"hidden"}}>
+            <div onClick={()=>onOpenGroups&&onOpenGroups()} style={{...homeTaskCardStyle,cursor:"pointer",marginBottom:10}}>
               {steps.map((w,i)=>{
                 const pct = w.total?Math.round((w.scored/w.total)*100):0;
                 const done = !w.locked && pct===100;
@@ -4913,6 +4975,11 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
   const [boardMembersMap, setBoardMembersMap] = useState({});
   const [boardLeadersMap, setBoardLeadersMap] = useState({});
   const [leaveConfirmBoard, setLeaveConfirmBoard] = useState(null);
+  const [deleteConfirmBoard, setDeleteConfirmBoard] = useState(null);
+  const boardPanelStyle = UI.card;
+  const boardInputStyle = UI.inputPanel;
+  const boardPrimaryBtn = UI.primaryButton;
+  const boardGhostBtn = UI.ghostButton;
 
   const openMembers = async (boardId) => {
     if (viewMembersBoard === boardId) { setViewMembersBoard(null); return; }
@@ -5219,7 +5286,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
             <div style={{width:36,height:4,borderRadius:2,background:"#e0e0e0",margin:"0 auto 20px"}}/>
             <h3 style={{fontSize:17,fontWeight:800,color:DARK,margin:"0 0 4px",textAlign:"center"}}>{joinPrompt.name}</h3>
             <p style={{fontSize:12,color:"#aaa",textAlign:"center",margin:"0 0 20px"}}>{T[lang].passwordProtected}</p>
-            <div style={{background:"#f5f5f5",borderRadius:12,padding:"11px 14px",marginBottom:8,display:"flex",alignItems:"center",gap:8}}>
+            <div style={{...boardInputStyle,marginBottom:8}}>
               <span style={{fontSize:16}}>🔑</span>
               <input value={joinPass} onChange={e=>{setJoinPass(e.target.value);setJoinError("");}}
                 placeholder={T[lang].enterPassword} type="password"
@@ -5239,7 +5306,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
                   setJoinError(T[lang].incorrectPassword);
                 }
               }}
-                style={{flex:2,padding:"13px 0",borderRadius:12,border:"none",background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer"}}>
+                style={{flex:2,padding:"13px 0",borderRadius:12,border:"none",background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,color:"#fff",fontSize:14,fontWeight:750,cursor:"pointer"}}>
                 Join 🏆
               </button>
             </div>
@@ -5249,20 +5316,41 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
       {leaveConfirmBoard && (
         <div style={{position:"fixed",inset:0,zIndex:2000,background:"rgba(0,0,0,0.55)",display:"flex",alignItems:"flex-end"}} onClick={()=>setLeaveConfirmBoard(null)}>
           <div style={{width:"100%",background:"#fff",borderRadius:"20px 20px 0 0",padding:"28px 24px 40px"}} onClick={e=>e.stopPropagation()}>
-            <div style={{fontSize:40,textAlign:"center",marginBottom:12}}>⚠️</div>
-            <h3 style={{fontSize:17,fontWeight:800,color:DARK,textAlign:"center",margin:"0 0 10px"}}>Ești sigur?</h3>
+            <div style={{width:54,height:54,borderRadius:"50%",background:"rgba(200,16,46,0.08)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:28,margin:"0 auto 12px"}}>⚠️</div>
+            <h3 style={{fontSize:17,fontWeight:850,color:DARK,textAlign:"center",margin:"0 0 10px"}}>Leave league?</h3>
             <p style={{fontSize:13,color:"#888",textAlign:"center",lineHeight:1.6,margin:"0 0 24px"}}>
-              Toate punctele și înregistrările tale vor fi șterse din boardul <strong style={{color:DARK}}>{leaveConfirmBoard.name}</strong>.
+              Your points and entries will be removed from <strong style={{color:DARK}}>{leaveConfirmBoard.name}</strong>.
             </p>
             <button onClick={async()=>{
               if(onRemoveMember) await onRemoveMember(leaveConfirmBoard.id, user?.id);
               setLeaveConfirmBoard(null);
-            }} style={{width:"100%",background:RED,color:"#fff",border:"none",borderRadius:14,padding:"14px 0",fontSize:15,fontWeight:700,cursor:"pointer",marginBottom:10}}>
-              Da, ieși din board
+            }} style={{width:"100%",background:RED,color:"#fff",border:"none",borderRadius:14,padding:"14px 0",fontSize:15,fontWeight:750,cursor:"pointer",marginBottom:10}}>
+              Leave league
             </button>
             <button onClick={()=>setLeaveConfirmBoard(null)}
-              style={{width:"100%",background:"transparent",color:"#aaa",border:"1px solid #ddd",borderRadius:14,padding:"12px 0",fontSize:14,fontWeight:600,cursor:"pointer"}}>
-              Anulează
+              style={{width:"100%",background:"#fff",color:"#888",border:"1px solid rgba(10,46,138,0.08)",borderRadius:14,padding:"12px 0",fontSize:14,fontWeight:650,cursor:"pointer"}}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+      {deleteConfirmBoard && (
+        <div style={{position:"fixed",inset:0,zIndex:2000,background:"rgba(0,0,0,0.55)",display:"flex",alignItems:"flex-end"}} onClick={()=>setDeleteConfirmBoard(null)}>
+          <div style={{width:"100%",background:"#fff",borderRadius:"20px 20px 0 0",padding:"28px 24px 40px"}} onClick={e=>e.stopPropagation()}>
+            <div style={{width:54,height:54,borderRadius:"50%",background:"rgba(200,16,46,0.08)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:28,margin:"0 auto 12px"}}>🗑️</div>
+            <h3 style={{fontSize:17,fontWeight:850,color:DARK,textAlign:"center",margin:"0 0 10px"}}>Delete league?</h3>
+            <p style={{fontSize:13,color:"#888",textAlign:"center",lineHeight:1.6,margin:"0 0 24px"}}>
+              This removes <strong style={{color:DARK}}>{deleteConfirmBoard.name}</strong> for everyone in the league.
+            </p>
+            <button onClick={async()=>{
+              if(onDeleteBoard) await onDeleteBoard(deleteConfirmBoard.id);
+              setDeleteConfirmBoard(null);
+            }} style={{width:"100%",background:RED,color:"#fff",border:"none",borderRadius:14,padding:"14px 0",fontSize:15,fontWeight:750,cursor:"pointer",marginBottom:10}}>
+              Delete league
+            </button>
+            <button onClick={()=>setDeleteConfirmBoard(null)}
+              style={{width:"100%",background:"#fff",color:"#888",border:"1px solid rgba(10,46,138,0.08)",borderRadius:14,padding:"12px 0",fontSize:14,fontWeight:650,cursor:"pointer"}}>
+              Cancel
             </button>
           </div>
         </div>
@@ -5271,9 +5359,9 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
 
         {/* Tab: My Boards */}
         {activeTab==="my"&&(()=>{
-          if(myBoards.length===0) return <p style={{fontSize:13,color:"#bbb",textAlign:"center",marginTop:40}}>Nu ești înscris în niciun board.</p>;
+          if(myBoards.length===0) return <EmptyState icon="🏆" title="No joined leagues" body="Join a league or create your own private one." />;
           return (
-            <div style={{background:"#fff",borderRadius:14,boxShadow:"0 2px 12px rgba(0,0,0,0.10)",overflow:"hidden"}}>
+            <div style={boardPanelStyle}>
               {myBoards.map((b,bi,arr)=>{
                 const latest=availBoards.find(c=>c.id===b.id)||createdBoards.find(c=>c.id===b.id)||b;
                 return (
@@ -5305,20 +5393,20 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
             : !boardSearch.trim() ? allAvail.slice(0,8) : [];
           const hasMore=!boardSearch.trim()&&allAvail.length>8;
           return (<>
-            <div style={{background:"#fff",borderRadius:14,boxShadow:"0 2px 12px rgba(0,0,0,0.10)",marginBottom:12,overflow:"hidden"}}>
+            <div style={{...boardPanelStyle,marginBottom:12}}>
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 14px 8px"}}>
                 <span style={{fontSize:11,color:"#bbb"}}>{allAvail.length} boards</span>
                 <button onClick={()=>{ setEditBoard(null); setCName(""); setCPassword(""); setCEmoji(""); setCMaxPlayers(10); setCSlots(3); setCPrizes(["","",""]); changeView("create"); }}
-                  style={{background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,border:"none",borderRadius:8,padding:"5px 10px",color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer"}}>
+                  style={{...boardPrimaryBtn,padding:"6px 11px",fontSize:11}}>
                   + {T[lang].createBoard}
                 </button>
               </div>
               <div style={{padding:"0 14px 10px"}}>
-                <div style={{background:"rgba(0,0,0,0.04)",borderRadius:10,padding:"9px 12px",display:"flex",gap:8,alignItems:"center",border:isCode?`1.5px solid ${NAVY}`:"1.5px solid transparent"}}>
+                <div style={{...boardInputStyle,border:isCode?`1.5px solid ${NAVY}`:"1px solid rgba(10,46,138,0.06)"}}>
                   <span style={{fontSize:14,opacity:0.4}}>{isCode?"🔑":"🔍"}</span>
                   <input value={boardSearch} onChange={e=>{setBoardSearch(e.target.value);setCodeError("");}} placeholder="Search or enter invite code..." style={{flex:1,background:"transparent",border:"none",outline:"none",fontSize:14,color:DARK}}/>
                   {boardSearch&&(isCode?(
-                    <button onClick={()=>{ const found=[...availBoards,...createdBoards].find(b=>b.code===boardSearch.trim().toUpperCase()||b.id===boardSearch.trim()); if(found){joinBoard(found);setBoardSearch("");setCodeError("");}else setCodeError("Code not found."); }} style={{background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,color:"#fff",border:"none",borderRadius:8,padding:"6px 12px",fontSize:12,fontWeight:700,cursor:"pointer"}}>Join</button>
+                    <button onClick={()=>{ const found=[...availBoards,...createdBoards].find(b=>b.code===boardSearch.trim().toUpperCase()||b.id===boardSearch.trim()); if(found){joinBoard(found);setBoardSearch("");setCodeError("");}else setCodeError("Code not found."); }} style={boardPrimaryBtn}>Join</button>
                   ):(<span onClick={()=>setBoardSearch("")} style={{fontSize:13,color:"#bbb",cursor:"pointer"}}>✕</span>))}
                 </div>
                 {isCode&&<p style={{fontSize:11,color:NAVY,margin:"6px 0 0",fontWeight:600}}>🔑 Invite code detected — tap Join</p>}
@@ -5326,9 +5414,9 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
               </div>
               <div style={{height:1,background:"rgba(0,0,0,0.06)"}}/>
               {allAvail.length===0
-                ? <p style={{fontSize:13,color:"#bbb",textAlign:"center",padding:"16px 14px"}}>No boards available to join.</p>
+                ? <div style={{padding:14}}><EmptyState icon="🏆" title="No boards available" body="Create a new league or enter an invite code." /></div>
                 : filtered.length===0&&boardSearch.trim()
-                  ? <p style={{fontSize:13,color:"#bbb",textAlign:"center",padding:"16px 14px"}}>No boards found for "{boardSearch}"</p>
+                  ? <div style={{padding:14}}><EmptyState icon="🔍" title={`No boards found for "${boardSearch}"`} body="Try another name or paste the invite code." /></div>
                   : filtered.map((b,bi)=>(
                     <div key={b.id}>
                       <div style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px"}}>
@@ -5337,7 +5425,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
                           <p style={{fontSize:13,fontWeight:700,color:DARK,margin:0}}>{b.name}</p>
                           <p style={{fontSize:11,color:"#aaa",margin:"2px 0 0"}}>👥 {b.members}{b.max?"/"+b.max:""}{b.password?" · 🔒":""}</p>
                         </div>
-                        <button onClick={()=>joinBoard(b)} style={{background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,color:"#fff",border:"none",borderRadius:9,padding:"7px 14px",fontSize:12,fontWeight:700,cursor:"pointer",flexShrink:0}}>Join</button>
+                        <button onClick={()=>joinBoard(b)} style={boardPrimaryBtn}>Join</button>
                       </div>
                       {bi<filtered.length-1&&<div style={{height:1,background:"rgba(0,0,0,0.05)",margin:"0 14px"}}/>}
                     </div>
@@ -5350,9 +5438,9 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
 
         {/* Tab: Admin */}
         {activeTab==="admin"&&(()=>{
-          if(createdBoards.length===0) return <p style={{fontSize:13,color:"#bbb",textAlign:"center",marginTop:40}}>Nu ai creat niciun board.</p>;
+          if(createdBoards.length===0) return <EmptyState icon="🛠️" title="No leagues managed yet" body="Create a league and it will appear here." />;
           return (
-            <div style={{background:"#fff",borderRadius:14,boxShadow:"0 2px 12px rgba(0,0,0,0.10)",overflow:"hidden"}}>
+            <div style={boardPanelStyle}>
               {createdBoards.map((b,bi)=>(
                 <div key={b.id}>
                   <div style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px"}}>
@@ -5362,14 +5450,14 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
                       <p style={{fontSize:11,color:"#aaa",margin:"2px 0 0"}}>👥 {b.members}{b.max?"/"+b.max:""} · 🔑 {b.code}</p>
                     </div>
                     <div style={{display:"flex",gap:6}}>
-                      <button onClick={()=>openMembers(b.id)} style={{background:"rgba(0,32,91,0.08)",border:"none",borderRadius:9,padding:"7px 10px",fontSize:11,fontWeight:700,color:NAVY,cursor:"pointer"}}>👥</button>
-                      <button onClick={()=>{ setEditBoard(b); setCName(b.name); setCPassword(b.password||""); setCMaxPlayers(b.max||10); setCSlots(b.prizes?.length||3); setCPrizes(b.prizes?.length?[...b.prizes,...Array(5).fill("")]:["",...Array(4).fill("")]); changeView("create"); }} style={{background:"rgba(0,32,91,0.08)",border:"none",borderRadius:9,padding:"7px 10px",fontSize:11,fontWeight:700,color:NAVY,cursor:"pointer"}}>✏️</button>
-                      <button onClick={async()=>{ if(!window.confirm(`Ștergi "${b.name}"?`)) return; if(onDeleteBoard) await onDeleteBoard(b.id); }} style={{background:"rgba(200,16,46,0.08)",border:"none",borderRadius:9,padding:"7px 10px",fontSize:11,fontWeight:700,color:RED,cursor:"pointer"}}>🗑️</button>
+                      <button onClick={()=>openMembers(b.id)} style={boardGhostBtn}>👥</button>
+                      <button onClick={()=>{ setEditBoard(b); setCName(b.name); setCPassword(b.password||""); setCMaxPlayers(b.max||10); setCSlots(b.prizes?.length||3); setCPrizes(b.prizes?.length?[...b.prizes,...Array(5).fill("")]:["",...Array(4).fill("")]); changeView("create"); }} style={boardGhostBtn}>✏️</button>
+                      <button onClick={()=>setDeleteConfirmBoard(b)} style={{background:"rgba(200,16,46,0.08)",border:"none",borderRadius:9,padding:"7px 10px",fontSize:11,fontWeight:700,color:RED,cursor:"pointer"}}>🗑️</button>
                     </div>
                   </div>
                   {viewMembersBoard===b.id&&(
                     <div style={{margin:"0 14px 10px",borderTop:"1px solid rgba(0,0,0,0.06)",paddingTop:8}}>
-                      {!(boardMembersMap[b.id]?.length>0)?(<p style={{fontSize:12,color:"#bbb",margin:"4px 0"}}>No members yet</p>)
+                      {!(boardMembersMap[b.id]?.length>0)?(<EmptyState icon="👥" title="No members yet" body="Share the invite code to bring people in." />)
                       :(boardMembersMap[b.id]||[]).map((m,mi)=>{
                         const isMe=m.id===user?.id;
                         const leaders=boardLeadersMap[b.id]||leaderboardData[b.id]||[];
@@ -6836,8 +6924,7 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
       </div>
       {/* Search bar on white background */}
       <div style={{padding:"12px 20px 4px",background:BG}}>
-        <div style={{display:"flex",alignItems:"center",gap:8,background:"#fff",borderRadius:12,
-          boxShadow:SHADOW_OUT,padding:"9px 14px"}}>
+        <div style={UI.inputPanel}>
           <span style={{fontSize:14,opacity:0.4}}>🔍</span>
           <input value={search} onChange={e=>setSearch(e.target.value)}
             placeholder={T[lang].searchPlayer}
@@ -6856,8 +6943,9 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
       ) : (
         <div style={{flex:1,overflowY:"auto",padding:"12px 20px 100px"}}>
           {filtered.length===0?(
-            <div style={{textAlign:"center",padding:"40px 0",color:"#aaa",fontSize:13}}>
-              {T[lang].noPlayerFound} "{search}"
+            <div style={UI.emptyState}>
+              <div style={{fontSize:28,marginBottom:8}}>🔍</div>
+              <div style={{fontSize:13,fontWeight:700,color:DARK}}>{T[lang].noPlayerFound} "{search}"</div>
             </div>
           ):filtered.map((u,i)=>{
             // Rank badge — only show medal if that rank has a prize
@@ -6871,9 +6959,10 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
             const rankColor = hasPrize&&u.rank===1?"#FFD700":hasPrize&&u.rank===2?"#C0C0C0":hasPrize&&u.rank===3?"#CD7F32":hasPrize&&u.rank===4?"#5856D6":hasPrize&&u.rank===5?"#5856D6":"#bbb";
             return (
             <div key={u.rank} style={{display:"flex",alignItems:"center",
-              background:u.isMe?"#E8F0FF":u.accent||BG,
-              borderRadius:12,padding:"8px 12px",gap:10,marginBottom:6,
-              boxShadow:u.isMe?`0 0 0 2px ${NAVY},${SHADOW_OUT}`:SHADOW_OUT}}>
+              ...UI.card,
+              background:u.isMe?"#E8F0FF":"#fff",
+              border:u.isMe?`1.5px solid ${NAVY}`:UI.card.border,
+              borderRadius:12,padding:"8px 12px",gap:10,marginBottom:6}}>
               {/* Rank indicator */}
               <div style={{width:30,textAlign:"center",flexShrink:0}}>
                 {rankBadge ? (
@@ -6924,6 +7013,8 @@ function ScorePicker({ match, day, savedScore, onSave, onBack }) {
 
   const select = (h,a) => { setHome(h); setAway(a); setCustom(false); };
   const confirmed = home!==null && away!==null;
+  const scorePanelStyle = { ...UI.card, padding:"14px", marginBottom:14 };
+  const scoreLabelStyle = { ...UI.sectionLabel, fontWeight:750, margin:"0 0 10px" };
 
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",position:"relative"}}>
@@ -6955,40 +7046,42 @@ function ScorePicker({ match, day, savedScore, onSave, onBack }) {
       </div>
 
       <div style={{flex:1,overflowY:"auto",padding:"16px 20px"}}>
-        <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 10px"}}>{T[lang].selectScore}</p>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,marginBottom:14}}>
-          {presets.map(([h,a])=>{
-            const sel = home===h&&away===a&&!custom;
-            return (
-              <button key={`${h}-${a}`} onClick={()=>select(h,a)}
-                style={{padding:"10px 4px",borderRadius:10,border:"none",cursor:"pointer",
-                  background:sel?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:BG,
-                  color:sel?"#fff":DARK,
-                  boxShadow:sel?"0 3px 10px rgba(0,32,91,0.3)":SHADOW_OUT,
-                  fontSize:14,fontWeight:sel?800:500,transition:"all 0.15s"}}>
-                {h}-{a}
-              </button>
-            );
-          })}
+        <div style={scorePanelStyle}>
+          <p style={scoreLabelStyle}>{T[lang].selectScore}</p>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
+            {presets.map(([h,a])=>{
+              const sel = home===h&&away===a&&!custom;
+              return (
+                <button key={`${h}-${a}`} onClick={()=>select(h,a)}
+                  style={{padding:"10px 4px",borderRadius:10,border:`1px solid ${sel?NAVY:"rgba(10,46,138,0.07)"}`,cursor:"pointer",
+                    background:sel?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:"#F8FAFC",
+                    color:sel?"#fff":DARK,
+                    boxShadow:sel?"0 3px 10px rgba(0,32,91,0.18)":"none",
+                    fontSize:14,fontWeight:sel?800:600,transition:"all 0.15s"}}>
+                  {h}-{a}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* Custom score */}
-        <div style={{background:BG,borderRadius:14,boxShadow:SHADOW_OUT,padding:"12px 14px",marginBottom:16}}>
-          <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 10px"}}>{T[lang].customScore}</p>
+        <div style={scorePanelStyle}>
+          <p style={scoreLabelStyle}>{T[lang].customScore}</p>
           <div style={{display:"flex",alignItems:"center",gap:10}}>
             <input type="number" min="0" max="20" value={cHome}
               onChange={e=>{setCHome(e.target.value);setCustom(true);setHome(parseInt(e.target.value)||0);setAway(parseInt(cAway)||0);}}
-              style={{flex:1,textAlign:"center",fontSize:20,fontWeight:800,color:NAVY,border:"none",background:"#fff",borderRadius:10,padding:"10px",boxShadow:SHADOW_IN,outline:"none"}}/>
+              style={{flex:1,textAlign:"center",fontSize:20,fontWeight:800,color:NAVY,border:"1px solid rgba(10,46,138,0.07)",background:"#F8FAFC",borderRadius:10,padding:"10px",outline:"none"}}/>
             <span style={{fontSize:18,fontWeight:800,color:"#aaa"}}>-</span>
             <input type="number" min="0" max="20" value={cAway}
               onChange={e=>{setCHome(e.target.value);setCustom(true);setHome(parseInt(cHome)||0);setAway(parseInt(e.target.value)||0);}}
-              style={{flex:1,textAlign:"center",fontSize:20,fontWeight:800,color:NAVY,border:"none",background:"#fff",borderRadius:10,padding:"10px",boxShadow:SHADOW_IN,outline:"none"}}/>
+              style={{flex:1,textAlign:"center",fontSize:20,fontWeight:800,color:NAVY,border:"1px solid rgba(10,46,138,0.07)",background:"#F8FAFC",borderRadius:10,padding:"10px",outline:"none"}}/>
           </div>
         </div>
 
         <div style={{display:"flex",gap:8}}>
           <button onClick={onBack}
-            style={{flex:1,padding:"12px 0",borderRadius:12,border:"none",background:BG,boxShadow:SHADOW_OUT,fontSize:12,fontWeight:700,cursor:"pointer",color:"#888"}}>
+            style={{flex:1,padding:"12px 0",borderRadius:12,border:"1px solid rgba(10,46,138,0.07)",background:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",color:"#888"}}>
             ← Back
           </button>
           <button onClick={()=>confirmed&&onSave(home,away)}
@@ -6996,7 +7089,7 @@ function ScorePicker({ match, day, savedScore, onSave, onBack }) {
               background:confirmed?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:"#e8e8e8",
               color:confirmed?"#fff":"#bbb",fontSize:12,fontWeight:700,
               cursor:confirmed?"pointer":"default",
-              boxShadow:confirmed?"0 4px 12px rgba(0,32,91,0.3)":"none"}}>
+              boxShadow:confirmed?"0 4px 12px rgba(0,32,91,0.18)":"none"}}>
             {T[lang].saveScore}
           </button>
         </div>
@@ -8188,7 +8281,7 @@ function AccountScreen({ setLang, onBoards, onSignOut, onShowGuide, onPremium, u
       <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",position:"relative",zIndex:1}}>
         <div style={{padding:"12px 20px 100px"}}>
           {[{icon:"🏆",label:T[lang].myBoards,sub:T[lang].activeBoards,action:onBoards},{icon:"📖",label:T[lang].appGuide,sub:T[lang].howItWorks,action:onShowGuide},{icon:"🔔",label:T[lang].notifications,sub:T[lang].matchAlertsOn},{icon:"🌍",label:T[lang].language,sub:LANGS.find(l=>l.code===lang)?.name||"English",isLang:true},{icon:"⭐",label:T[lang].upgradePremium,sub:T[lang].removeAds,highlight:true,action:onPremium},{icon:"🚪",label:T[lang].signOut,sub:"",action:handleSignOut}].map(item=>(
-            <div key={item.label} onClick={item.isLang?undefined:item.action||undefined} style={{display:"flex",alignItems:"center",gap:14,background:item.highlight?"#E8F0FF":BG,borderRadius:14,boxShadow:item.highlight?`0 0 0 2px ${NAVY},${SHADOW_OUT}`:SHADOW_OUT,padding:"13px 16px",marginBottom:10,cursor:item.isLang?"default":"pointer"}}>
+            <div key={item.label} onClick={item.isLang?undefined:item.action||undefined} style={{display:"flex",alignItems:"center",gap:14,...UI.card,background:item.highlight?"#E8F0FF":"#fff",border:item.highlight?`1.5px solid ${NAVY}`:UI.card.border,padding:"13px 16px",marginBottom:10,cursor:item.isLang?"default":"pointer"}}>
               <span style={{fontSize:20}}>{item.icon}</span>
               <div style={{flex:1}}>
                 <p style={{fontSize:14,fontWeight:700,color:item.highlight?NAVY:DARK,margin:0}}>{item.label}</p>
@@ -8211,7 +8304,7 @@ function AccountScreen({ setLang, onBoards, onSignOut, onShowGuide, onPremium, u
                   Aceasta va șterge <strong>tot</strong> — predicții, boarduri, scoruri.<br/>Acțiunea este <strong>ireversibilă</strong>.
                 </p>
                 <p style={{fontSize:12,fontWeight:700,color:DARK,margin:"0 0 6px"}}>Introdu emailul tău pentru confirmare:</p>
-                <div style={{background:BG,borderRadius:12,padding:"12px 14px",marginBottom:12,display:"flex",alignItems:"center",gap:8,border:"1px solid #eee"}}>
+                <div style={{...UI.inputPanel,marginBottom:12}}>
                   <input value={deleteEmail} onChange={e=>{setDeleteEmail(e.target.value);setDeleteError("");}}
                     placeholder={user?.email} type="email" autoCapitalize="none"
                     style={{flex:1,border:"none",outline:"none",fontSize:14,color:DARK,background:"transparent"}}/>
@@ -8222,7 +8315,7 @@ function AccountScreen({ setLang, onBoards, onSignOut, onShowGuide, onPremium, u
                   {deleteLoading ? "Se șterge..." : "Șterge definitiv"}
                 </button>
                 <button onClick={()=>{setDeleteMode(false);setDeleteEmail("");setDeleteError("");}}
-                  style={{width:"100%",background:"transparent",color:"#aaa",border:"1px solid #ddd",borderRadius:14,padding:"12px 0",fontSize:14,fontWeight:600,cursor:"pointer"}}>
+                  style={{width:"100%",background:"#fff",color:"#888",border:"1px solid rgba(10,46,138,0.08)",borderRadius:14,padding:"12px 0",fontSize:14,fontWeight:650,cursor:"pointer"}}>
                   Anulează
                 </button>
               </div>
@@ -8294,7 +8387,7 @@ function RulesScreen({ onBack }) {
       <div style={{flex:1,overflowY:"auto",overscrollBehavior:"contain",padding:"10px 14px 100px",position:"relative",zIndex:1}}>
 
         {/* Description */}
-        <div style={{background:"rgba(255,255,255,0.32)",backdropFilter:"blur(28px)",WebkitBackdropFilter:"blur(28px)",borderRadius:20,boxShadow:"0 8px 32px rgba(10,46,138,0.08), inset 0 1px 0 rgba(255,255,255,0.95)",border:"1px solid rgba(255,255,255,0.55)",padding:"14px 16px",marginBottom:12}}>
+        <div style={{...UI.card,padding:"14px 16px",marginBottom:12}}>
           <p style={{fontSize:13,fontWeight:700,color:DARK,margin:"0 0 4px"}}>
             {tab==="predictions" ? T[lang].howPredictionsWork : T[lang].howExactScoreWork}
           </p>
@@ -8304,17 +8397,17 @@ function RulesScreen({ onBack }) {
         </div>
 
         {/* Rules table */}
-        <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 8px"}}>{T[lang].pointsPerPrediction}</p>
+        <p style={{...UI.sectionLabel,margin:"0 0 8px"}}>{T[lang].pointsPerPrediction}</p>
         {tab==="predictions" ? (()=>{
           const SectionHeader = ({label,due,color})=>(
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",
-              background:"rgba(255,255,255,0.4)",padding:"7px 16px",borderBottom:"1px solid rgba(0,0,0,0.06)"}}>
+              background:"#F8FAFC",padding:"7px 16px",borderBottom:"1px solid rgba(10,46,138,0.06)"}}>
               <span style={{fontSize:10,fontWeight:800,color,letterSpacing:1.2,textTransform:"uppercase"}}>{label}</span>
               <span style={{fontSize:10,fontWeight:700,color:"#9CA3AF"}}>{due}</span>
             </div>
           );
           const Row = ({r,i,last})=>(
-            <div style={{display:"flex",alignItems:"center",padding:"12px 16px",background:"rgba(255,255,255,0.25)",borderBottom:last?"none":"1px solid rgba(0,0,0,0.05)",gap:12}}>
+            <div style={{display:"flex",alignItems:"center",padding:"12px 16px",background:"#fff",borderBottom:last?"none":"1px solid rgba(10,46,138,0.05)",gap:12}}>
               <div style={{flex:1}}>
                 <p style={{fontSize:13,fontWeight:700,color:DARK,margin:"0 0 2px"}}>
                   {r.phase.split("⚽").flatMap((p,j)=>j===0?[p]:[<span key={j} style={{colorScheme:"light",filter:"saturate(0) contrast(3) brightness(1.1)"}}>⚽</span>,p])}
@@ -8329,7 +8422,7 @@ function RulesScreen({ onBack }) {
           const task1 = predRules.slice(0,4);
           const task2 = predRules.slice(4);
           return (
-            <div style={{background:"rgba(255,255,255,0.32)",backdropFilter:"blur(28px)",WebkitBackdropFilter:"blur(28px)",borderRadius:20,boxShadow:"0 8px 32px rgba(10,46,138,0.08), inset 0 1px 0 rgba(255,255,255,0.95)",border:"1px solid rgba(255,255,255,0.55)",overflow:"hidden",marginBottom:12}}>
+            <div style={{...UI.card,marginBottom:12}}>
               <SectionHeader label={T[lang].rulesTask1Header} due={T[lang].rulesTask1Due} color={NAVY}/>
               {task1.map((r,i)=><Row key={i} r={r} last={false}/>)}
               <SectionHeader label={T[lang].rulesTask2Header} due={T[lang].rulesTask2Due} color={RED}/>
@@ -8337,9 +8430,9 @@ function RulesScreen({ onBack }) {
             </div>
           );
         })() : (
-          <div style={{background:"rgba(255,255,255,0.32)",backdropFilter:"blur(28px)",WebkitBackdropFilter:"blur(28px)",borderRadius:20,boxShadow:"0 8px 32px rgba(10,46,138,0.08), inset 0 1px 0 rgba(255,255,255,0.95)",border:"1px solid rgba(255,255,255,0.55)",overflow:"hidden",marginBottom:12}}>
+          <div style={{...UI.card,marginBottom:12}}>
             {exactRules.map((r,i)=>(
-              <div key={i} style={{display:"flex",alignItems:"center",padding:"12px 16px",background:"rgba(255,255,255,0.25)",borderBottom:i<exactRules.length-1?"1px solid rgba(0,0,0,0.05)":"none",gap:12}}>
+              <div key={i} style={{display:"flex",alignItems:"center",padding:"12px 16px",background:"#fff",borderBottom:i<exactRules.length-1?"1px solid rgba(10,46,138,0.05)":"none",gap:12}}>
                 <div style={{flex:1}}>
                   <p style={{fontSize:13,fontWeight:700,color:DARK,margin:"0 0 2px"}}>
                     {r.phase.split("⚽").flatMap((p,j)=>j===0?[p]:[<span key={j} style={{colorScheme:"light",filter:"saturate(0) contrast(3) brightness(1.1)"}}>⚽</span>,p])}
@@ -8355,7 +8448,7 @@ function RulesScreen({ onBack }) {
         )}
 
         {/* Example */}
-        <div style={{background:"#E8F0FF",borderRadius:14,padding:"14px 16px",marginBottom:24,border:`1px solid rgba(0,32,91,0.1)`}}>
+        <div style={{...UI.card,background:"#E8F0FF",padding:"14px 16px",marginBottom:24}}>
           <p style={{fontSize:12,fontWeight:700,color:NAVY,margin:"0 0 4px"}}>💡 Exemplu</p>
           <p style={{fontSize:12,color:"#555",margin:0,lineHeight:1.5}}>
             {tab==="predictions"
@@ -8978,7 +9071,7 @@ function App() {
                     }
                   }
                 }
-                showToast("Score saved!", "⚽");
+                showToast("Exact Score saved", "⚽");
               }
             }} simDay={simDay} simHour={simHour} simMin={simMin} initialWeek={groupsInitialWeek} onBack={()=>{ setGroupsInitialWeek(null); setScreen(SCREENS.HOME); }}/>}
           {user&&<div style={{display:screen===SCREENS.ACCOUNT?'flex':'none',flex:1,flexDirection:'column',overflow:'hidden',minHeight:0}}>
