@@ -8792,7 +8792,7 @@ function App() {
         loadAvailableBoards(uid),
       ]);
       const removedBoardIds = getRemovedBoardIds();
-      const visibleBoards = boards.filter(b => !removedBoardIds.has(b.id));
+      const visibleBoards = boards.filter(b => b.isAdmin || !removedBoardIds.has(b.id));
       const visibleAvail = avail.filter(b => !removedBoardIds.has(b.id));
       // adminBoards = boards where user is creator (isAdmin=true)
       const adminBoards = visibleBoards.filter(b => b.isAdmin);
