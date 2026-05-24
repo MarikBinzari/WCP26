@@ -28,6 +28,7 @@ export async function loadPredictions(userId, boardId) {
     .select('*')
     .eq('user_id', userId)
     .eq('board_id', boardId)
+    .limit(1)
     .maybeSingle()
   if (error) {
     console.error('loadPredictions:', error)
