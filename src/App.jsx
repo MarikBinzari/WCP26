@@ -5183,14 +5183,21 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
       isAdmin: true,
     };
     if(editBoard) {
-      setCreatedBoards(p=>p.map(b=>b.id===editBoard.id?newBoard:b));
+      if(cImageFile && user) {
+        uploadBoardImage(user.id, editBoard.id, cImageFile).then(url => {
+          if(url) setCreatedBoards(p=>p.map(b=>b.id===editBoard.id?{...b,...newBoard,image_url:url}:b));
+        });
+      } else {
+        setCreatedBoards(p=>p.map(b=>b.id===editBoard.id?newBoard:b));
+      }
       if(showToast) showToast("League updated", "✏️");
     } else {
       setCreatedBoards(p=>[...p, newBoard]);
       if(showToast) showToast(`"${cName}" league created`, "🏆");
       if(onJoin) onJoin(newBoard.id);
     }
-    setEditBoard(null); setCEmoji(""); setShowEmojiPicker(false); changeView("main");
+    setEditBoard(null); setCEmoji(""); setShowEmojiPicker(false);
+    setCImageFile(null); setCImagePreview(null); changeView("main");
   };
 
   const isJoined = id => myBoards.some(b=>b.id===id);
@@ -5228,23 +5235,33 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
                 setCEmoji(""); setShowEmojiPicker(false);
                 e.target.value="";
               }}/>
-            <div style={{position:"relative",flexShrink:0}}>
-              <div onClick={()=>!cImagePreview&&setShowEmojiPicker(p=>!p)}
-                style={{width:52,height:52,borderRadius:14,cursor:"pointer",overflow:"hidden",
-                  background:cEmoji||cImagePreview?"#F8FAFC":`linear-gradient(135deg,${NAVY}cc,#001840cc)`,
-                  display:"flex",alignItems:"center",justifyContent:"center",
-                  border:showEmojiPicker?`2px solid ${NAVY}`:"1px solid rgba(10,46,138,0.07)"}}>
+            <div style={{flexShrink:0,display:"flex",flexDirection:"column",alignItems:"center",gap:6}}>
+              <div style={{width:52,height:52,borderRadius:14,overflow:"hidden",
+                background:cEmoji||cImagePreview?"#F8FAFC":`linear-gradient(135deg,${NAVY}cc,#001840cc)`,
+                display:"flex",alignItems:"center",justifyContent:"center",
+                border:`1px solid rgba(10,46,138,0.07)`}}>
                 {cImagePreview
                   ? <img src={cImagePreview} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
                   : cEmoji
                     ? <span style={{fontSize:28}}>{cEmoji}</span>
-                    : <span style={{fontSize:22,color:"rgba(255,255,255,0.8)"}}>+</span>}
+                    : <span style={{fontSize:22,color:"rgba(255,255,255,0.8)"}}>?</span>}
               </div>
-              <div onClick={()=>{ if(cImagePreview){setCImageFile(null);setCImagePreview(null);} else boardImageInputRef.current?.click(); }}
-                style={{position:"absolute",bottom:-4,right:-4,width:18,height:18,borderRadius:"50%",
-                  background:cImagePreview?"#FF3B30":NAVY,display:"flex",alignItems:"center",
-                  justifyContent:"center",fontSize:10,color:"#fff",fontWeight:700,cursor:"pointer"}}>
-                {cImagePreview?"✕":"📷"}
+              <div style={{display:"flex",gap:4}}>
+                <div onClick={()=>{setShowEmojiPicker(p=>!p); setCImageFile(null); setCImagePreview(null);}}
+                  style={{fontSize:10,fontWeight:700,color:showEmojiPicker?NAVY:"#888",cursor:"pointer",
+                    padding:"3px 7px",borderRadius:6,background:showEmojiPicker?`${NAVY}15`:"rgba(0,0,0,0.05)"}}>
+                  😊 Emoji
+                </div>
+                <div onClick={()=>boardImageInputRef.current?.click()}
+                  style={{fontSize:10,fontWeight:700,color:cImagePreview?NAVY:"#888",cursor:"pointer",
+                    padding:"3px 7px",borderRadius:6,background:cImagePreview?`${NAVY}15`:"rgba(0,0,0,0.05)"}}>
+                  📷 Foto
+                </div>
+                {(cEmoji||cImagePreview)&&<div onClick={()=>{setCEmoji("");setCImageFile(null);setCImagePreview(null);setShowEmojiPicker(false);}}
+                  style={{fontSize:10,fontWeight:700,color:"#FF3B30",cursor:"pointer",
+                    padding:"3px 7px",borderRadius:6,background:"rgba(255,59,48,0.08)"}}>
+                  ✕
+                </div>}
               </div>
             </div>
             <InputPanel style={{...createInputStyle,flex:1}}>
