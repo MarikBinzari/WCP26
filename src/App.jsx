@@ -5538,7 +5538,9 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
                   : filtered.map((b,bi)=>(
                     <div key={b.id}>
                       <div style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px"}}>
-                        <div style={{width:44,height:44,borderRadius:"50%",background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>{b.label}</div>
+                        <div style={{width:44,height:44,borderRadius:"50%",background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0,overflow:"hidden"}}>
+                          {b.image_url?<img src={b.image_url} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>:b.label}
+                        </div>
                         <div style={{flex:1,minWidth:0}}>
                           <p style={{fontSize:13,fontWeight:700,color:DARK,margin:0}}>{b.name}</p>
                           <p style={{fontSize:11,color:"#aaa",margin:"2px 0 0"}}>👥 {b.members}{b.max?"/"+b.max:""}{b.password?" · 🔒":""}</p>
@@ -5562,7 +5564,9 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
               {createdBoards.map((b,bi)=>(
                 <div key={b.id}>
                   <div style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px"}}>
-                    <div style={{width:44,height:44,borderRadius:"50%",background:`linear-gradient(135deg,${GREEN},#007A36)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>{b.label}</div>
+                    <div style={{width:44,height:44,borderRadius:"50%",background:`linear-gradient(135deg,${GREEN},#007A36)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0,overflow:"hidden"}}>
+                      {b.image_url?<img src={b.image_url} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>:b.label}
+                    </div>
                     <div style={{flex:1,minWidth:0}}>
                       <p style={{fontSize:13,fontWeight:700,color:DARK,margin:0}}>{b.name}</p>
                       <p style={{fontSize:11,color:"#aaa",margin:"2px 0 0"}}>👥 {b.members}{b.max?"/"+b.max:""} · 🔑 {b.code}</p>
