@@ -23,12 +23,16 @@ export async function fetchScoringRules() {
 
 // ─── PREDICTIONS ──────────────────────────────────────────────────────────────
 export async function loadPredictions(userId, boardId) {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('predictions')
     .select('*')
     .eq('user_id', userId)
     .eq('board_id', boardId)
-    .single()
+    .maybeSingle()
+  if (error) {
+    console.error('loadPredictions:', error)
+    return null
+  }
   return data
 }
 
@@ -137,24 +141,43 @@ export async function checkDbHealth() {
 // ─── BOARDS ───────────────────────────────────────────────────────────────────
 // Returns boards with isAdmin=true (created_by) and/or isMember=true (board_members)
 export async function loadUserBoards(userId) {
-  let [memberships, created] = await Promise.all([
-    supabase.from('board_members').select('role, created_at, boards(*)').eq('user_id', userId),
+  const [memberships, created] = await Promise.all([
+    supabase.from('board_members').select('board_id, role').eq('user_id', userId),
     supabase.from('boards').select('*').eq('created_by', userId),
   ])
-  if (memberships.error) {
-    memberships = await supabase.from('board_members').select('role, boards(*)').eq('user_id', userId)
+  if (memberships.error) { console.error('loadUserBoards memberships:', memberships.error); return [] }
+  if (created.error) console.error('loadUserBoards created:', created.error)
+  const memberRows = memberships.data || []
+  const memberBoardIds = [...new Set(memberRows.map(row => row.board_id).filter(Boolean))]
+  const memberBoards = memberBoardIds.length
+    ? await supabase.from('boards').select('*').in('id', memberBoardIds)
+    : { data: [], error: null }
+  if (memberBoards.error) console.error('loadUserBoards member boards:', memberBoards.error)
+  const boardsById = new Map((memberBoards.data || []).map(b => [b.id, b]))
+  const memberBoardSet = new Set(memberRows.map(row => row.board_id))
+  const missingCreatorMemberships = (created.data || [])
+    .filter(b => b?.id && !memberBoardSet.has(b.id))
+    .map(b => ({ board_id: b.id, user_id: userId, role: 'admin' }))
+  if (missingCreatorMemberships.length) {
+    const { error } = await supabase
+      .from('board_members')
+      .upsert(missingCreatorMemberships, { onConflict: 'board_id,user_id' })
+    if (error) console.error('loadUserBoards repair memberships:', error)
   }
   const map = new Map()
   // Creatorul vede mereu boardul său (indiferent de board_members)
   ;(created.data || []).forEach(b => {
     map.set(b.id, { ...b, label: b.emoji || '⚽', isGlobal: false, code: b.invite_code, max: b.max_players, isAdmin: true, isMember: false })
   })
+  ;(created.data || []).forEach(b => {
+    if (b?.id && map.has(b.id)) map.set(b.id, { ...map.get(b.id), isMember: true })
+  })
   // Membrii (inclusiv cu rol admin) din board_members
-  ;(memberships.data || []).forEach(row => {
-    const b = row.boards
+  ;(memberRows || []).forEach(row => {
+    const b = boardsById.get(row.board_id)
     if (!b) return
     const existing = map.get(b.id)
-    const joined_at = row.created_at || b.created_at || existing?.joined_at || null
+    const joined_at = b.created_at || existing?.joined_at || null
     if (existing) {
       map.set(b.id, { ...existing, joined_at, isMember: true })
     } else {
@@ -431,12 +454,12 @@ export async function loadLeaderboard(boardId, search = null, userId = null) {
       p_search: search?.trim() || null,
     }),
     userId
-      ? supabase.from('profiles').select('display_name').eq('id', userId).single()
+      ? supabase.from('profiles').select('display_name').eq('id', userId).maybeSingle()
       : Promise.resolve({ data: null }),
   ])
   if (rpcRes.error) console.error('loadLeaderboard:', rpcRes.error)
   const myName = profileRes.data?.display_name || null
-  return (rpcRes.data || []).map((row, i) => {
+  const rows = (rpcRes.data || []).map((row, i) => {
     const isMe = myName ? row.display_name === myName : false
     return {
       rank:   i + 1,
@@ -446,4 +469,14 @@ export async function loadLeaderboard(boardId, search = null, userId = null) {
       isMe,
     }
   })
+  if (userId && myName && !rows.some(row => row.isMe)) {
+    rows.push({
+      rank: rows.length + 1,
+      name: myName,
+      pts: 0,
+      accent: '#E8F0FF',
+      isMe: true,
+    })
+  }
+  return rows
 }

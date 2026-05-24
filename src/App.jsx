@@ -50,6 +50,14 @@ const UI = {
     textTransform: "uppercase",
     letterSpacing: 1,
   },
+  formLabel: {
+    fontSize: 11,
+    fontWeight: 700,
+    color: "#9CA3AF",
+    margin: "0 0 8px",
+    textTransform: "uppercase",
+    letterSpacing: 1,
+  },
   inputPanel: {
     background: "#F8FAFC",
     borderRadius: 12,
@@ -80,6 +88,16 @@ const UI = {
     color: NAVY,
     cursor: "pointer",
   },
+  dangerButton: {
+    background: "rgba(200,16,46,0.08)",
+    border: "1px solid rgba(200,16,46,0.08)",
+    borderRadius: 10,
+    padding: "7px 10px",
+    fontSize: 11,
+    fontWeight: 750,
+    color: RED,
+    cursor: "pointer",
+  },
   emptyState: {
     background: "#fff",
     borderRadius: 16,
@@ -95,6 +113,24 @@ function EmptyState({ icon="•", title, body }) {
       <div style={{fontSize:30,marginBottom:8}}>{icon}</div>
       <div style={{fontSize:13,fontWeight:750,color:DARK,marginBottom:body?4:0}}>{title}</div>
       {body&&<div style={{fontSize:12,color:"#9CA3AF",lineHeight:1.45}}>{body}</div>}
+    </div>
+  );
+}
+function ConfirmSheet({ icon, title, body, confirmLabel, onConfirm, onCancel, danger=true }) {
+  return (
+    <div style={{position:"fixed",inset:0,zIndex:2000,background:"rgba(0,0,0,0.55)",display:"flex",alignItems:"flex-end"}} onClick={onCancel}>
+      <div style={{width:"100%",background:"#fff",borderRadius:"20px 20px 0 0",padding:"28px 24px 40px"}} onClick={e=>e.stopPropagation()}>
+        <div style={{width:54,height:54,borderRadius:"50%",background:danger?"rgba(200,16,46,0.08)":"rgba(10,46,138,0.08)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:28,margin:"0 auto 12px"}}>{icon}</div>
+        <h3 style={{fontSize:17,fontWeight:850,color:DARK,textAlign:"center",margin:"0 0 10px"}}>{title}</h3>
+        <p style={{fontSize:13,color:"#888",textAlign:"center",lineHeight:1.6,margin:"0 0 24px"}}>{body}</p>
+        <button onClick={onConfirm} style={{width:"100%",background:danger?RED:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,color:"#fff",border:"none",borderRadius:14,padding:"14px 0",fontSize:15,fontWeight:750,cursor:"pointer",marginBottom:10}}>
+          {confirmLabel}
+        </button>
+        <button onClick={onCancel}
+          style={{width:"100%",background:"#fff",color:"#888",border:"1px solid rgba(10,46,138,0.08)",borderRadius:14,padding:"12px 0",fontSize:14,fontWeight:650,cursor:"pointer"}}>
+          Cancel
+        </button>
+      </div>
     </div>
   );
 }
@@ -4980,6 +5016,21 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
   const boardInputStyle = UI.inputPanel;
   const boardPrimaryBtn = UI.primaryButton;
   const boardGhostBtn = UI.ghostButton;
+  const boardDangerBtn = UI.dangerButton;
+  const createPanelStyle = { ...UI.card, padding: 14, marginBottom: 14 };
+  const createInputStyle = { ...UI.inputPanel, padding: "11px 14px" };
+  const createOptionStyle = (active) => ({
+    flex: 1,
+    padding: "9px 0",
+    borderRadius: 10,
+    border: `1px solid ${active ? NAVY : "rgba(10,46,138,0.07)"}`,
+    cursor: "pointer",
+    background: active ? `linear-gradient(135deg,${NAVY}cc,#001840cc)` : "#F8FAFC",
+    color: active ? "#fff" : DARK,
+    fontWeight: active ? 800 : 650,
+    fontSize: 12,
+    boxShadow: active ? "0 3px 10px rgba(0,32,91,0.18)" : "none",
+  });
 
   const openMembers = async (boardId) => {
     if (viewMembersBoard === boardId) { setViewMembersBoard(null); return; }
@@ -5045,7 +5096,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
         prizes: cPrizes.slice(0, cSlots).filter(p=>p.trim()),
       });
       if(data) {
-        if(showToast) showToast(`"${cName}" created!`, "🎉");
+        if(showToast) showToast(`"${cName}" league created`, "🏆");
         setCName(""); setCEmoji(""); setCPassword(""); setShowEmojiPicker(false);
         setEditBoard(null); changeView("main");
       }
@@ -5069,10 +5120,10 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
     };
     if(editBoard) {
       setCreatedBoards(p=>p.map(b=>b.id===editBoard.id?newBoard:b));
-      if(showToast) showToast("Board updated! ✓", "✏️");
+      if(showToast) showToast("League updated", "✏️");
     } else {
       setCreatedBoards(p=>[...p, newBoard]);
-      if(showToast) showToast(`"${cName}" created!`, "🎉");
+      if(showToast) showToast(`"${cName}" league created`, "🏆");
       if(onJoin) onJoin(newBoard.id);
     }
     setEditBoard(null); setCEmoji(""); setShowEmojiPicker(false); changeView("main");
@@ -5104,114 +5155,110 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
       </div>
       <div style={{flex:1,overflowY:"auto",padding:"16px 20px 24px",position:"relative",zIndex:1}}>
         {/* Name */}
-        <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 6px"}}>{T[lang].boardName}</p>
-        <div style={{display:"flex",gap:10,alignItems:"center",marginBottom:16}}>
-          {/* Avatar emoji picker */}
-          <div onClick={()=>setShowEmojiPicker(p=>!p)}
-            style={{width:52,height:52,borderRadius:14,flexShrink:0,cursor:"pointer",
-              background:cEmoji?BG:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,
-              boxShadow:SHADOW_OUT,display:"flex",alignItems:"center",justifyContent:"center",
-              border:showEmojiPicker?`2px solid ${NAVY}`:"2px solid transparent"}}>
-            {cEmoji
-              ? <span style={{fontSize:28}}>{cEmoji}</span>
-              : <span style={{fontSize:22,color:"rgba(255,255,255,0.8)"}}>+</span>}
-          </div>
-          <div style={{flex:1,background:BG,borderRadius:12,boxShadow:SHADOW_IN,padding:"11px 14px"}}>
-            <input value={cName} onChange={e=>setCName(e.target.value)} placeholder="Ex: Colegii de la birou"
-              style={{width:"100%",background:"transparent",border:"none",outline:"none",fontSize:14,color:DARK}}/>
+        <div style={createPanelStyle}>
+          <p style={UI.formLabel}>{T[lang].boardName}</p>
+          <div style={{display:"flex",gap:10,alignItems:"center"}}>
+            {/* Avatar emoji picker */}
+            <div onClick={()=>setShowEmojiPicker(p=>!p)}
+              style={{width:52,height:52,borderRadius:14,flexShrink:0,cursor:"pointer",
+                background:cEmoji?"#F8FAFC":`linear-gradient(135deg,${NAVY}cc,#001840cc)`,
+                display:"flex",alignItems:"center",justifyContent:"center",
+                border:showEmojiPicker?`2px solid ${NAVY}`:"1px solid rgba(10,46,138,0.07)"}}>
+              {cEmoji
+                ? <span style={{fontSize:28}}>{cEmoji}</span>
+                : <span style={{fontSize:22,color:"rgba(255,255,255,0.8)"}}>+</span>}
+            </div>
+            <div style={{...createInputStyle,flex:1}}>
+              <input value={cName} onChange={e=>setCName(e.target.value)} placeholder="Ex: Office league"
+                style={{width:"100%",background:"transparent",border:"none",outline:"none",fontSize:14,color:DARK}}/>
+            </div>
           </div>
         </div>
         {/* Emoji grid */}
         {showEmojiPicker&&(
-          <div style={{background:BG,borderRadius:12,boxShadow:SHADOW_OUT,padding:"12px",marginBottom:14,marginTop:-8}}>
-            <p style={{fontSize:12,fontWeight:700,color:"#aaa",margin:"0 0 8px",textTransform:"uppercase",letterSpacing:1}}>{T[lang].chooseEmoji}</p>
+          <div style={{...createPanelStyle,marginTop:-4}}>
+            <p style={UI.formLabel}>{T[lang].chooseEmoji}</p>
             <div style={{display:"grid",gridTemplateColumns:"repeat(8,1fr)",gap:6}}>
               {["⚽","🏆","🥇","🎯","🔥","⭐","💪","🦁","🐯","🦅","🌍","🎖️","🏅","🥊","🎮","🎪",
                 "🍕","🍺","🎉","🚀","💎","🌟","👑","🤝","🏋️","🎸","🏄","🎭"].map(e=>(
                 <div key={e} onClick={()=>{ setCEmoji(e); setShowEmojiPicker(false); }}
                   style={{width:"100%",aspectRatio:"1",borderRadius:8,display:"flex",alignItems:"center",
                     justifyContent:"center",fontSize:20,cursor:"pointer",
-                    background:cEmoji===e?`${NAVY}22`:"transparent",
-                    border:cEmoji===e?`1.5px solid ${NAVY}`:"1.5px solid transparent"}}>
+                    background:cEmoji===e?`${NAVY}18`:"#F8FAFC",
+                    border:cEmoji===e?`1.5px solid ${NAVY}`:"1px solid rgba(10,46,138,0.06)"}}>
                   {e}
                 </div>
               ))}
             </div>
             {cEmoji&&(
               <button onClick={()=>{ setCEmoji(""); setShowEmojiPicker(false); }}
-                style={{marginTop:8,width:"100%",padding:"6px",borderRadius:8,border:"none",
-                  background:"rgba(0,0,0,0.05)",fontSize:11,color:"#aaa",cursor:"pointer"}}>
+                style={{...boardGhostBtn,marginTop:10,width:"100%"}}>
                 {T[lang].del}
               </button>
             )}
           </div>
         )}
 
-        {/* Password */}
-        <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 6px"}}>{T[lang].boardPassword}</p>
-        <div style={{background:BG,borderRadius:12,boxShadow:SHADOW_IN,padding:"11px 14px",display:"flex",alignItems:"center",gap:8,marginBottom:16}}>
-          <span style={{fontSize:14}}>🔒</span>
-          <input value={cPassword} onChange={e=>setCPassword(e.target.value)} placeholder="Parola pentru join..."
-            style={{flex:1,background:"transparent",border:"none",outline:"none",fontSize:14,color:DARK}}/>
-        </div>
+        <div style={createPanelStyle}>
+          {/* Password */}
+          <p style={UI.formLabel}>{T[lang].boardPassword}</p>
+          <div style={{...createInputStyle,marginBottom:14}}>
+            <span style={{fontSize:14}}>🔒</span>
+            <input value={cPassword} onChange={e=>setCPassword(e.target.value)} placeholder="Password for joining..."
+              style={{flex:1,background:"transparent",border:"none",outline:"none",fontSize:14,color:DARK}}/>
+          </div>
 
-        {/* Max players */}
-        <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 8px"}}>{T[lang].maxPlayers}</p>
-        <div style={{display:"flex",gap:8,marginBottom:16}}>
-          {[5,10,15,20,50].map(n=>(
-            <button key={n} onClick={()=>setCMaxPlayers(n)}
-              style={{flex:1,padding:"8px 0",borderRadius:10,border:"none",cursor:"pointer",
-                background:cMaxPlayers===n?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:BG,
-                color:cMaxPlayers===n?"#fff":DARK,fontWeight:700,fontSize:12,
-                boxShadow:cMaxPlayers===n?"0 3px 10px rgba(0,32,91,0.3)":SHADOW_OUT}}>
-              {n}
-            </button>
-          ))}
-        </div>
+          {/* Max players */}
+          <p style={UI.formLabel}>{T[lang].maxPlayers}</p>
+          <div style={{display:"flex",gap:8,marginBottom:14}}>
+            {[5,10,15,20,50].map(n=>(
+              <button key={n} onClick={()=>setCMaxPlayers(n)} style={createOptionStyle(cMaxPlayers===n)}>
+                {n}
+              </button>
+            ))}
+          </div>
 
-        {/* Prize slots */}
-        <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 8px"}}>{T[lang].prizedSlots}</p>
-        <div style={{display:"flex",gap:8,marginBottom:14}}>
-          {[1,2,3,4,5].map(n=>(
-            <button key={n} onClick={()=>{ setCSlots(n); setCPrizes(p=>{const a=[...p];while(a.length<n)a.push("");return a;}); }}
-              style={{flex:1,padding:"8px 0",borderRadius:10,border:"none",cursor:"pointer",
-                background:cSlots===n?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:BG,
-                color:cSlots===n?"#fff":DARK,fontWeight:700,fontSize:13,
-                boxShadow:cSlots===n?"0 3px 10px rgba(0,32,91,0.3)":SHADOW_OUT}}>
-              {n}
-            </button>
-          ))}
+          {/* Prize slots */}
+          <p style={UI.formLabel}>{T[lang].prizedSlots}</p>
+          <div style={{display:"flex",gap:8}}>
+            {[1,2,3,4,5].map(n=>(
+              <button key={n} onClick={()=>{ setCSlots(n); setCPrizes(p=>{const a=[...p];while(a.length<n)a.push("");return a;}); }} style={createOptionStyle(cSlots===n)}>
+                {n}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Prizes per slot */}
-        <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 8px"}}>{T[lang].prizesLabel}</p>
-        {Array.from({length:cSlots},(_,i)=>(
-          <div key={i} style={{background:BG,borderRadius:12,boxShadow:SHADOW_IN,padding:"10px 14px",
-            display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
-            <div style={{width:28,height:28,borderRadius:8,background:i===0?"#FFD700":i===1?"#C0C0C0":"#CD7F32",
-              display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,flexShrink:0}}>
-              {i===0?"🥇":i===1?"🥈":"🥉"}
+        <div style={createPanelStyle}>
+          <p style={UI.formLabel}>{T[lang].prizesLabel}</p>
+          {Array.from({length:cSlots},(_,i)=>(
+            <div key={i} style={{...createInputStyle,marginBottom:i<cSlots-1?8:0}}>
+              <div style={{width:28,height:28,borderRadius:8,background:i===0?"#FFD700":i===1?"#C0C0C0":"#CD7F32",
+                display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,flexShrink:0}}>
+                {i===0?"🥇":i===1?"🥈":"🥉"}
+              </div>
+              <span style={{fontSize:12,fontWeight:750,color:"#9CA3AF",width:50}}>Rank {i+1}</span>
+              <input value={cPrizes[i]||""} onChange={e=>{ const a=[...cPrizes]; a[i]=e.target.value; setCPrizes(a); }}
+                placeholder={[
+                  "e.g. $50, team jersey, gift voucher...",
+                  "e.g. $30, match ticket, voucher...",
+                  "e.g. $15, cap, surprise gift...",
+                  "e.g. Drinks on you, weekend trip...",
+                  "e.g. Cake, Netflix subscription..."
+                ][i]||"e.g. Your prize..."}
+                style={{flex:1,background:"transparent",border:"none",outline:"none",fontSize:13,color:DARK,minWidth:0}}/>
             </div>
-            <span style={{fontSize:12,fontWeight:700,color:"#aaa",width:50}}>Rank {i+1}</span>
-            <input value={cPrizes[i]||""} onChange={e=>{ const a=[...cPrizes]; a[i]=e.target.value; setCPrizes(a); }}
-              placeholder={[
-                "e.g. $50, team jersey, gift voucher...",
-                "e.g. $30, match ticket, voucher...",
-                "e.g. $15, cap, surprise gift...",
-                "e.g. Drinks on you, weekend trip...",
-                "e.g. Cake, Netflix subscription..."
-              ][i]||"e.g. Your prize..."}
-              style={{flex:1,background:"transparent",border:"none",outline:"none",fontSize:13,color:DARK}}/>
-          </div>
-        ))}
+          ))}
+        </div>
 
         {/* Members management — only when editing */}
         {editBoard&&(editBoard.membersList?.length>0)&&(<>
-          <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"16px 0 8px"}}>{T[lang].membersLabel}</p>
-          <div style={{background:BG,borderRadius:12,boxShadow:SHADOW_OUT,overflow:"hidden",marginBottom:4}}>
+          <p style={{...UI.formLabel,margin:"16px 0 8px"}}>{T[lang].membersLabel}</p>
+          <div style={UI.card}>
             {(editBoard.membersList||[]).map((m,mi)=>(
               <div key={mi} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",
-                background:"#fff",borderBottom:mi<editBoard.membersList.length-1?"1px solid rgba(0,0,0,0.05)":"none"}}>
+                  background:"#fff",borderBottom:mi<editBoard.membersList.length-1?"1px solid rgba(10,46,138,0.05)":"none"}}>
                 <div style={{width:32,height:32,borderRadius:"50%",
                   background:m.isMe?`${NAVY}22`:"rgba(0,0,0,0.07)",
                   display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
@@ -5223,8 +5270,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
                     const updated = {...editBoard, membersList: editBoard.membersList.filter(x=>x.id!==m.id), members:Math.max(0,(editBoard.members||0)-1)};
                     setEditBoard(updated);
                     setCreatedBoards(p=>p.map(b=>b.id===updated.id?updated:b));
-                  }} style={{background:"rgba(200,16,46,0.08)",border:"none",borderRadius:8,
-                    padding:"5px 12px",fontSize:11,fontWeight:700,color:RED,cursor:"pointer"}}>
+                  }} style={boardDangerBtn}>
                     Remove
                   </button>
                 ):(
@@ -5239,7 +5285,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
           style={{width:"100%",marginTop:16,padding:"15px 0",borderRadius:14,border:"none",
             background:cName.trim()?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:"#e0e0e0",
             color:cName.trim()?"#fff":"#bbb",fontSize:15,fontWeight:800,cursor:cName.trim()?"pointer":"default",
-            boxShadow:cName.trim()?"0 6px 20px rgba(0,32,91,0.3)":"none"}}>
+            boxShadow:cName.trim()?"0 6px 20px rgba(0,32,91,0.18)":"none"}}>
           {editBoard ? T[lang].saveChanges : T[lang].createBoard2}
         </button>
       </div>
@@ -5314,46 +5360,30 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
         </div>
       )}
       {leaveConfirmBoard && (
-        <div style={{position:"fixed",inset:0,zIndex:2000,background:"rgba(0,0,0,0.55)",display:"flex",alignItems:"flex-end"}} onClick={()=>setLeaveConfirmBoard(null)}>
-          <div style={{width:"100%",background:"#fff",borderRadius:"20px 20px 0 0",padding:"28px 24px 40px"}} onClick={e=>e.stopPropagation()}>
-            <div style={{width:54,height:54,borderRadius:"50%",background:"rgba(200,16,46,0.08)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:28,margin:"0 auto 12px"}}>⚠️</div>
-            <h3 style={{fontSize:17,fontWeight:850,color:DARK,textAlign:"center",margin:"0 0 10px"}}>Leave league?</h3>
-            <p style={{fontSize:13,color:"#888",textAlign:"center",lineHeight:1.6,margin:"0 0 24px"}}>
-              Your points and entries will be removed from <strong style={{color:DARK}}>{leaveConfirmBoard.name}</strong>.
-            </p>
-            <button onClick={async()=>{
+        <ConfirmSheet
+          icon="⚠️"
+          title="Leave league?"
+          body={<>Your points and entries will be removed from <strong style={{color:DARK}}>{leaveConfirmBoard.name}</strong>.</>}
+          confirmLabel="Leave league"
+          onCancel={()=>setLeaveConfirmBoard(null)}
+          onConfirm={async()=>{
               if(onRemoveMember) await onRemoveMember(leaveConfirmBoard.id, user?.id);
               setLeaveConfirmBoard(null);
-            }} style={{width:"100%",background:RED,color:"#fff",border:"none",borderRadius:14,padding:"14px 0",fontSize:15,fontWeight:750,cursor:"pointer",marginBottom:10}}>
-              Leave league
-            </button>
-            <button onClick={()=>setLeaveConfirmBoard(null)}
-              style={{width:"100%",background:"#fff",color:"#888",border:"1px solid rgba(10,46,138,0.08)",borderRadius:14,padding:"12px 0",fontSize:14,fontWeight:650,cursor:"pointer"}}>
-              Cancel
-            </button>
-          </div>
-        </div>
+          }}
+        />
       )}
       {deleteConfirmBoard && (
-        <div style={{position:"fixed",inset:0,zIndex:2000,background:"rgba(0,0,0,0.55)",display:"flex",alignItems:"flex-end"}} onClick={()=>setDeleteConfirmBoard(null)}>
-          <div style={{width:"100%",background:"#fff",borderRadius:"20px 20px 0 0",padding:"28px 24px 40px"}} onClick={e=>e.stopPropagation()}>
-            <div style={{width:54,height:54,borderRadius:"50%",background:"rgba(200,16,46,0.08)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:28,margin:"0 auto 12px"}}>🗑️</div>
-            <h3 style={{fontSize:17,fontWeight:850,color:DARK,textAlign:"center",margin:"0 0 10px"}}>Delete league?</h3>
-            <p style={{fontSize:13,color:"#888",textAlign:"center",lineHeight:1.6,margin:"0 0 24px"}}>
-              This removes <strong style={{color:DARK}}>{deleteConfirmBoard.name}</strong> for everyone in the league.
-            </p>
-            <button onClick={async()=>{
+        <ConfirmSheet
+          icon="🗑️"
+          title="Delete league?"
+          body={<>This removes <strong style={{color:DARK}}>{deleteConfirmBoard.name}</strong> for everyone in the league.</>}
+          confirmLabel="Delete league"
+          onCancel={()=>setDeleteConfirmBoard(null)}
+          onConfirm={async()=>{
               if(onDeleteBoard) await onDeleteBoard(deleteConfirmBoard.id);
               setDeleteConfirmBoard(null);
-            }} style={{width:"100%",background:RED,color:"#fff",border:"none",borderRadius:14,padding:"14px 0",fontSize:15,fontWeight:750,cursor:"pointer",marginBottom:10}}>
-              Delete league
-            </button>
-            <button onClick={()=>setDeleteConfirmBoard(null)}
-              style={{width:"100%",background:"#fff",color:"#888",border:"1px solid rgba(10,46,138,0.08)",borderRadius:14,padding:"12px 0",fontSize:14,fontWeight:650,cursor:"pointer"}}>
-              Cancel
-            </button>
-          </div>
-        </div>
+          }}
+        />
       )}
       <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",padding:"16px 20px 100px",position:"relative",zIndex:1}}>
 
@@ -5452,11 +5482,11 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
                     <div style={{display:"flex",gap:6}}>
                       <button onClick={()=>openMembers(b.id)} style={boardGhostBtn}>👥</button>
                       <button onClick={()=>{ setEditBoard(b); setCName(b.name); setCPassword(b.password||""); setCMaxPlayers(b.max||10); setCSlots(b.prizes?.length||3); setCPrizes(b.prizes?.length?[...b.prizes,...Array(5).fill("")]:["",...Array(4).fill("")]); changeView("create"); }} style={boardGhostBtn}>✏️</button>
-                      <button onClick={()=>setDeleteConfirmBoard(b)} style={{background:"rgba(200,16,46,0.08)",border:"none",borderRadius:9,padding:"7px 10px",fontSize:11,fontWeight:700,color:RED,cursor:"pointer"}}>🗑️</button>
+                      <button onClick={()=>setDeleteConfirmBoard(b)} style={boardDangerBtn}>🗑️</button>
                     </div>
                   </div>
                   {viewMembersBoard===b.id&&(
-                    <div style={{margin:"0 14px 10px",borderTop:"1px solid rgba(0,0,0,0.06)",paddingTop:8}}>
+                    <div style={{margin:"0 14px 10px",borderTop:"1px solid rgba(10,46,138,0.06)",paddingTop:8}}>
                       {!(boardMembersMap[b.id]?.length>0)?(<EmptyState icon="👥" title="No members yet" body="Share the invite code to bring people in." />)
                       :(boardMembersMap[b.id]||[]).map((m,mi)=>{
                         const isMe=m.id===user?.id;
@@ -5465,10 +5495,10 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
                         const rankMedals=["🥇","🥈","🥉"];
                         const rankLabel=lEntry?(rankMedals[lEntry.rank-1]||`#${lEntry.rank}`):null;
                         return (
-                          <div key={m.id} style={{display:"flex",alignItems:"center",gap:8,padding:"5px 0",borderBottom:mi<(boardMembersMap[b.id].length-1)?"1px solid rgba(0,0,0,0.04)":"none"}}>
-                            <span style={{flex:1,fontSize:12,fontWeight:600,color:isMe?NAVY:DARK}}>{m.name}{isMe?" (Tu)":""}</span>
+                          <div key={m.id} style={{display:"flex",alignItems:"center",gap:8,padding:"7px 0",borderBottom:mi<(boardMembersMap[b.id].length-1)?"1px solid rgba(10,46,138,0.05)":"none"}}>
+                            <span style={{flex:1,fontSize:12,fontWeight:600,color:isMe?NAVY:DARK}}>{m.name}{isMe?" (You)":""}</span>
                             <span style={{fontSize:11,color:NAVY,fontWeight:700}}>{rankLabel&&<>{rankLabel} </>}{lEntry?.pts??0}pt</span>
-                            <button onClick={async()=>{ if(onRemoveMember) await onRemoveMember(b.id,m.id); setBoardMembersMap(prev=>({...prev,[b.id]:prev[b.id].filter(x=>x.id!==m.id)})); }} style={{background:"rgba(200,16,46,0.08)",border:"none",borderRadius:8,padding:"4px 10px",fontSize:11,fontWeight:700,color:RED,cursor:"pointer"}}>{T[lang].remove}</button>
+                            <button onClick={async()=>{ if(onRemoveMember) await onRemoveMember(b.id,m.id); setBoardMembersMap(prev=>({...prev,[b.id]:prev[b.id].filter(x=>x.id!==m.id)})); }} style={boardDangerBtn}>{T[lang].remove}</button>
                           </div>
                         );
                       })}
@@ -8216,7 +8246,7 @@ function StatsScreen() {
   );
 }
 
-function AccountScreen({ setLang, onBoards, onSignOut, onShowGuide, onPremium, user }) {
+function AccountScreen({ setLang, onBoards, onSignOut, onShowGuide, onPremium, user, isActive=true }) {
   const lang = useLang();
   const displayName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "—";
   const memberSince = user?.created_at
@@ -8226,6 +8256,21 @@ function AccountScreen({ setLang, onBoards, onSignOut, onShowGuide, onPremium, u
   const [deleteEmail, setDeleteEmail] = useState("");
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteError, setDeleteError] = useState("");
+  const closeDeleteModal = () => {
+    if(deleteLoading) return;
+    setDeleteMode(false);
+    setDeleteEmail("");
+    setDeleteError("");
+  };
+
+  useEffect(()=>{
+    if(!isActive) {
+      setDeleteMode(false);
+      setDeleteEmail("");
+      setDeleteError("");
+      setDeleteLoading(false);
+    }
+  }, [isActive]);
 
   const handleSignOut = async () => {
     try {
@@ -8294,35 +8339,41 @@ function AccountScreen({ setLang, onBoards, onSignOut, onShowGuide, onPremium, u
             style={{textAlign:"center",fontSize:12,color:RED,margin:"8px 0 4px",cursor:"pointer",textDecoration:"underline",opacity:0.7}}>
             Șterge contul
           </p>
-
-          {deleteMode && (
-            <div style={{position:"fixed",inset:0,zIndex:9999,background:"rgba(0,0,0,0.6)",display:"flex",alignItems:"flex-end"}}>
-              <div style={{width:"100%",background:"#fff",borderRadius:"20px 20px 0 0",padding:"28px 24px",paddingBottom:"calc(env(safe-area-inset-bottom, 0px) + 32px)"}}>
-                <div style={{fontSize:40,textAlign:"center",marginBottom:12}}>⚠️</div>
-                <h3 style={{fontSize:18,fontWeight:800,color:DARK,textAlign:"center",margin:"0 0 8px"}}>Șterge contul</h3>
-                <p style={{fontSize:13,color:"#888",textAlign:"center",margin:"0 0 20px",lineHeight:1.5}}>
-                  Aceasta va șterge <strong>tot</strong> — predicții, boarduri, scoruri.<br/>Acțiunea este <strong>ireversibilă</strong>.
-                </p>
-                <p style={{fontSize:12,fontWeight:700,color:DARK,margin:"0 0 6px"}}>Introdu emailul tău pentru confirmare:</p>
-                <div style={{...UI.inputPanel,marginBottom:12}}>
-                  <input value={deleteEmail} onChange={e=>{setDeleteEmail(e.target.value);setDeleteError("");}}
-                    placeholder={user?.email} type="email" autoCapitalize="none"
-                    style={{flex:1,border:"none",outline:"none",fontSize:14,color:DARK,background:"transparent"}}/>
-                </div>
-                {deleteError && <p style={{fontSize:12,color:RED,margin:"0 0 8px",textAlign:"center"}}>{deleteError}</p>}
-                <button onClick={handleDeleteAccount} disabled={deleteLoading||!deleteEmail.trim()}
-                  style={{width:"100%",background:deleteEmail.trim()?RED:"#e0e0e0",color:"#fff",border:"none",borderRadius:14,padding:"14px 0",fontSize:15,fontWeight:700,cursor:"pointer",marginBottom:10,opacity:deleteLoading?0.7:1}}>
-                  {deleteLoading ? "Se șterge..." : "Șterge definitiv"}
-                </button>
-                <button onClick={()=>{setDeleteMode(false);setDeleteEmail("");setDeleteError("");}}
-                  style={{width:"100%",background:"#fff",color:"#888",border:"1px solid rgba(10,46,138,0.08)",borderRadius:14,padding:"12px 0",fontSize:14,fontWeight:650,cursor:"pointer"}}>
-                  Anulează
-                </button>
-              </div>
-            </div>
-          )}
         </div>
       </div>
+      {deleteMode && (
+        <div
+          style={{position:"fixed",inset:0,zIndex:9999,background:"rgba(0,0,0,0.6)",display:"flex",alignItems:"flex-end"}}
+          onPointerDown={e=>{ if(e.target===e.currentTarget) closeDeleteModal(); }}>
+          <div style={{position:"relative",width:"100%",background:"#fff",borderRadius:"20px 20px 0 0",padding:"28px 24px",paddingBottom:"calc(env(safe-area-inset-bottom, 0px) + 32px)"}} onClick={e=>e.stopPropagation()}>
+            <button onClick={closeDeleteModal}
+              disabled={deleteLoading}
+              style={{position:"absolute",right:16,top:16,width:34,height:34,borderRadius:"50%",border:"1px solid rgba(10,46,138,0.08)",background:"#fff",color:"#9CA3AF",fontSize:18,fontWeight:700,cursor:deleteLoading?"default":"pointer",opacity:deleteLoading?0.45:1}}>
+              ×
+            </button>
+            <div style={{fontSize:40,textAlign:"center",marginBottom:12}}>⚠️</div>
+            <h3 style={{fontSize:18,fontWeight:800,color:DARK,textAlign:"center",margin:"0 0 8px"}}>Șterge contul</h3>
+            <p style={{fontSize:13,color:"#888",textAlign:"center",margin:"0 0 20px",lineHeight:1.5}}>
+              Aceasta va șterge <strong>tot</strong> — predicții, boarduri, scoruri.<br/>Acțiunea este <strong>ireversibilă</strong>.
+            </p>
+            <p style={{fontSize:12,fontWeight:700,color:DARK,margin:"0 0 6px"}}>Introdu emailul tău pentru confirmare:</p>
+            <div style={{...UI.inputPanel,marginBottom:12}}>
+              <input value={deleteEmail} onChange={e=>{setDeleteEmail(e.target.value);setDeleteError("");}}
+                placeholder="Email" type="email" autoCapitalize="none"
+                style={{flex:1,border:"none",outline:"none",fontSize:14,color:DARK,background:"transparent"}}/>
+            </div>
+            {deleteError && <p style={{fontSize:12,color:RED,margin:"0 0 8px",textAlign:"center"}}>{deleteError}</p>}
+            <button onClick={handleDeleteAccount} disabled={deleteLoading||!deleteEmail.trim()}
+              style={{width:"100%",background:deleteEmail.trim()?RED:"#e0e0e0",color:"#fff",border:"none",borderRadius:14,padding:"14px 0",fontSize:15,fontWeight:700,cursor:"pointer",marginBottom:10,opacity:deleteLoading?0.7:1}}>
+              {deleteLoading ? "Se șterge..." : "Șterge definitiv"}
+            </button>
+            <button onClick={closeDeleteModal}
+              style={{width:"100%",background:"#fff",color:"#888",border:"1px solid rgba(10,46,138,0.08)",borderRadius:14,padding:"12px 0",fontSize:14,fontWeight:650,cursor:"pointer"}}>
+              Anulează
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -9075,7 +9126,7 @@ function App() {
               }
             }} simDay={simDay} simHour={simHour} simMin={simMin} initialWeek={groupsInitialWeek} onBack={()=>{ setGroupsInitialWeek(null); setScreen(SCREENS.HOME); }}/>}
           {user&&<div style={{display:screen===SCREENS.ACCOUNT?'flex':'none',flex:1,flexDirection:'column',overflow:'hidden',minHeight:0}}>
-            <AccountScreen setLang={setLang} onBoards={()=>{ setBoardsInitialTab("my"); setScreen(SCREENS.BOARDS); }} onSignOut={()=>setScreen(SCREENS.SPLASH)} onShowGuide={()=>{ setShowOnboarding(true); setScreen(SCREENS.HOME); }} onPremium={()=>setScreen(SCREENS.PREMIUM)} user={user}/>
+            <AccountScreen setLang={setLang} onBoards={()=>{ setBoardsInitialTab("my"); setScreen(SCREENS.BOARDS); }} onSignOut={()=>setScreen(SCREENS.SPLASH)} onShowGuide={()=>{ setShowOnboarding(true); setScreen(SCREENS.HOME); }} onPremium={()=>setScreen(SCREENS.PREMIUM)} user={user} isActive={screen===SCREENS.ACCOUNT}/>
           </div>}
         </div>
         <Toast message={toast.message} emoji={toast.emoji} visible={toast.visible}/>
