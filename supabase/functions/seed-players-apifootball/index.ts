@@ -135,21 +135,24 @@ Deno.serve(async () => {
     }
   }
 
+  let dbError: string | null = null
   if (upserts.length > 0) {
-    await supabase
+    const { error } = await supabase
       .from('players')
       .upsert(upserts, { onConflict: 'api_football_id' })
+    if (error) dbError = error.message
   }
 
   const teamsRemaining = remaining.length - batch.length
 
   return new Response(
     JSON.stringify({
-      ok:             true,
+      ok:             !dbError,
       done:           teamsRemaining === 0,
       teamsProcessed: batch.length,
       teamsRemaining,
       playersUpserted: upserts.length,
+      dbError,
       warnings:       warnings.length ? warnings : undefined,
     }),
     { headers: { 'Content-Type': 'application/json' } }

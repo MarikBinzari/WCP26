@@ -46,6 +46,37 @@ export async function savePredictions(userId, boardId, pickState) {
   if (error) console.error('savePredictions:', error)
 }
 
+// ─── SPECIAL PICKS (champion + top scorer) ───────────────────────────────────
+export async function loadSpecialPick(userId, boardId) {
+  const { data } = await supabase
+    .from('special_picks')
+    .select('champion, top_scorer_team, top_scorer_player')
+    .eq('user_id', userId)
+    .eq('board_id', boardId)
+    .maybeSingle()
+  if (!data) return { champion: null, topScorer: null }
+  return {
+    champion: data.champion || null,
+    topScorer: data.top_scorer_player
+      ? { team: data.top_scorer_team, player: data.top_scorer_player }
+      : null,
+  }
+}
+
+export async function saveSpecialPick(userId, boardId, { champion, topScorer }) {
+  const { error } = await supabase
+    .from('special_picks')
+    .upsert({
+      user_id:            userId,
+      board_id:           boardId,
+      champion:           champion || null,
+      top_scorer_team:    topScorer?.team   || null,
+      top_scorer_player:  topScorer?.player || null,
+      updated_at:         new Date().toISOString(),
+    }, { onConflict: 'user_id,board_id' })
+  if (error) console.error('saveSpecialPick:', error)
+}
+
 // ─── EXACT SCORES ─────────────────────────────────────────────────────────────
 export async function loadExactScores(userId, boardId) {
   const { data } = await supabase
@@ -291,6 +322,23 @@ export async function loadPlayers() {
     })
   })
   return result
+}
+
+// Players for a single team — loaded lazily when team is selected
+export async function loadPlayersByTeam(teamName) {
+  const { data, error } = await supabase
+    .from('players')
+    .select('player_name, position, shirt_number, photo_url, nationality')
+    .eq('team_name', teamName)
+    .order('shirt_number', { ascending: true, nullsFirst: false })
+  if (error) { console.error('loadPlayersByTeam:', error); return [] }
+  return (data || []).map(row => ({
+    name:        row.player_name,
+    position:    row.position,
+    number:      row.shirt_number,
+    photo:       row.photo_url,
+    nationality: row.nationality,
+  }))
 }
 
 // Top scorers across all teams — sorted by goals desc, then assists desc
