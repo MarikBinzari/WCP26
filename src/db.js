@@ -451,14 +451,19 @@ export function subscribeLiveScores(onChange) {
 export async function uploadAvatar(userId, file) {
   const ext = file.name.split('.').pop().toLowerCase()
   const path = `${userId}/avatar.${ext}`
+  // Remove any existing avatar files for this user before uploading
+  const { data: existing } = await supabase.storage.from('avatars').list(userId)
+  if (existing?.length) {
+    await supabase.storage.from('avatars').remove(existing.map(f => `${userId}/${f.name}`))
+  }
   const { error: uploadError } = await supabase.storage
     .from('avatars')
-    .upload(path, file, { upsert: true, contentType: file.type })
-  if (uploadError) { console.error('uploadAvatar:', uploadError); return null }
+    .upload(path, file, { contentType: file.type })
+  if (uploadError) { console.error('uploadAvatar storage:', uploadError); return null }
   const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path)
   const urlWithBust = `${publicUrl}?t=${Date.now()}`
   const { error: updateError } = await supabase.auth.updateUser({ data: { avatar_url: urlWithBust } })
-  if (updateError) { console.error('updateUser avatar_url:', updateError); return null }
+  if (updateError) { console.error('uploadAvatar auth:', updateError); return null }
   await supabase.from('profiles').update({ avatar_url: urlWithBust }).eq('id', userId)
   return urlWithBust
 }
