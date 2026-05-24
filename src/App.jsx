@@ -4578,7 +4578,7 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
           <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,flexShrink:0,paddingTop:20}}>
             <button onClick={onAccount} style={{background:"none",border:"none",padding:0,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",WebkitTapHighlightColor:"transparent"}}>
               {avatarUrl
-                ? <img src={avatarUrl} style={{width:36,height:36,borderRadius:"50%",objectFit:"cover",border:`2px solid ${NAVY}`}} alt=""/>
+                ? <img src={avatarUrl} style={{width:36,height:36,borderRadius:"50%",objectFit:"cover"}} alt=""/>
                 : <div style={{width:36,height:36,borderRadius:"50%",background:NAVY,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,color:"#fff",fontWeight:700}}>{initials}</div>
               }
             </button>
