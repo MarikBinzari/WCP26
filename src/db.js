@@ -258,27 +258,27 @@ export async function joinBoardById(userId, boardId) {
 }
 
 export async function removeBoardMember(boardId, userId) {
-  const [memberRes, predRes, scoreRes] = await Promise.all([
+  const results = await Promise.all([
     supabase.from('board_members').delete().eq('board_id', boardId).eq('user_id', userId),
     supabase.from('predictions').delete().eq('board_id', boardId).eq('user_id', userId),
     supabase.from('exact_scores').delete().eq('board_id', boardId).eq('user_id', userId),
+    supabase.from('special_picks').delete().eq('board_id', boardId).eq('user_id', userId),
   ])
-  if (memberRes.error) console.error('removeBoardMember board_members:', memberRes.error)
-  if (predRes.error) console.error('removeBoardMember predictions:', predRes.error)
-  if (scoreRes.error) console.error('removeBoardMember exact_scores:', scoreRes.error)
+  results.forEach((r, i) => { if (r.error) console.error('removeBoardMember:', i, r.error) })
 }
 
 export async function removeParticipation(boardId, userId) {
-  const [predRes, scoreRes] = await Promise.all([
+  const results = await Promise.all([
     supabase.from('predictions').delete().eq('board_id', boardId).eq('user_id', userId),
     supabase.from('exact_scores').delete().eq('board_id', boardId).eq('user_id', userId),
+    supabase.from('special_picks').delete().eq('board_id', boardId).eq('user_id', userId),
   ])
-  if (predRes.error) console.error('removeParticipation predictions:', predRes.error)
-  if (scoreRes.error) console.error('removeParticipation exact_scores:', scoreRes.error)
+  results.forEach((r, i) => { if (r.error) console.error('removeParticipation:', i, r.error) })
 }
 
 export async function deleteBoard(boardId) {
   const cleanup = await Promise.all([
+    supabase.from('special_picks').delete().eq('board_id', boardId),
     supabase.from('exact_scores').delete().eq('board_id', boardId),
     supabase.from('predictions').delete().eq('board_id', boardId),
     supabase.from('board_members').delete().eq('board_id', boardId),
@@ -288,6 +288,70 @@ export async function deleteBoard(boardId) {
   const { error } = await supabase.from('boards').delete().eq('id', boardId)
   if (error) { console.error('deleteBoard:', error); return { error }; }
   return { error: null }
+}
+
+// ─── BULK LOADERS (optimized — fewer requests) ───────────────────────────────
+// Replaces loadUserBoards + loadAvailableBoards: 2 requests instead of 5
+export async function loadAllBoards(userId) {
+  const [memberships, allBoards] = await Promise.all([
+    supabase.from('board_members').select('board_id, role').eq('user_id', userId),
+    supabase.from('boards').select('*'),
+  ])
+  if (allBoards.error) { console.error('loadAllBoards:', allBoards.error); return { userBoards: [], availableBoards: [] } }
+
+  const memberRows = memberships.data || []
+  const memberSet = new Set(memberRows.map(r => r.board_id))
+  const roleMap = Object.fromEntries(memberRows.map(r => [r.board_id, r.role]))
+
+  const userBoards = []
+  const availableBoards = []
+
+  ;(allBoards.data || []).forEach(b => {
+    const isMember = memberSet.has(b.id)
+    const isCreator = b.created_by === userId
+    if (isMember) {
+      userBoards.push({ ...b, label: b.emoji || '⚽', image_url: b.image_url || null, isGlobal: false, code: b.invite_code, max: b.max_players, isAdmin: roleMap[b.id] === 'admin' || isCreator, isMember: true })
+    } else if (isCreator) {
+      // Creator always sees their board even if they left as participant — no auto-rejoin to board_members
+      userBoards.push({ ...b, label: b.emoji || '⚽', image_url: b.image_url || null, isGlobal: false, code: b.invite_code, max: b.max_players, isAdmin: true, isMember: false })
+    } else {
+      availableBoards.push({ ...b, label: b.emoji || '⚽', image_url: b.image_url || null, isGlobal: false, code: b.invite_code, max: b.max_players })
+    }
+  })
+
+  return { userBoards, availableBoards }
+}
+
+// Replaces N × loadForBoard calls: 3 requests instead of N×3
+export async function loadAllUserPicks(userId) {
+  const [predsRes, scoresRes, specialRes] = await Promise.all([
+    supabase.from('predictions').select('*').eq('user_id', userId),
+    supabase.from('exact_scores')
+      .select('team1_score, team2_score, board_id, matches!inner(match_key)')
+      .eq('user_id', userId),
+    supabase.from('special_picks')
+      .select('champion, top_scorer_team, top_scorer_player, board_id')
+      .eq('user_id', userId),
+  ])
+
+  const predictions = {}
+  ;(predsRes.data || []).forEach(row => { predictions[row.board_id] = row })
+
+  const exactScores = {}
+  ;(scoresRes.data || []).forEach(row => {
+    if (!exactScores[row.board_id]) exactScores[row.board_id] = {}
+    exactScores[row.board_id][row.matches.match_key] = { home: row.team1_score, away: row.team2_score }
+  })
+
+  const specialPicks = {}
+  ;(specialRes.data || []).forEach(row => {
+    specialPicks[row.board_id] = {
+      champion: row.champion || null,
+      topScorer: row.top_scorer_player ? { team: row.top_scorer_team, player: row.top_scorer_player } : null,
+    }
+  })
+
+  return { predictions, exactScores, specialPicks }
 }
 
 // ─── MEMBER COUNTS ───────────────────────────────────────────────────────────

@@ -7,7 +7,7 @@ import specialPickBadge from "./assets/special-pick-badge.png";
 import bellIcon from "./assets/bell-icon.svg";
 import { ALL_GROUPS_DATA, FLAGS, TEAM_COLORS, CALENDAR_EVENTS } from "./data/worldcup2026.js";
 import { supabase } from "./supabase.js";
-import { loadPredictions, savePredictions, loadExactScores, saveExactScore, loadUserBoards, loadAvailableBoards, createBoard, joinBoardByCode, joinBoardById, loadLeaderboard, fetchScoringRules, fetchMemberCounts, removeBoardMember, removeParticipation, deleteBoard, loadBoardMembers, checkDbHealth, checkEmailExists, loadLiveScores, subscribeLiveScores, loadPlayers, loadPlayersByTeam, seedPlayersFromApi, loadSpecialPick, saveSpecialPick, uploadAvatar, uploadBoardImage } from "./db.js";
+import { savePredictions, saveExactScore, createBoard, joinBoardByCode, joinBoardById, loadLeaderboard, fetchScoringRules, fetchMemberCounts, removeBoardMember, removeParticipation, deleteBoard, loadBoardMembers, checkDbHealth, checkEmailExists, loadLiveScores, subscribeLiveScores, loadPlayers, loadPlayersByTeam, seedPlayersFromApi, saveSpecialPick, uploadAvatar, uploadBoardImage, loadAllBoards, loadAllUserPicks } from "./db.js";
 
 const TEAM_CODE = {"Mexico":"MEX","South Africa":"RSA","South Korea":"KOR","Czechia":"CZE","Canada":"CAN","Switzerland":"SUI","Qatar":"QAT","Bosnia-Herzegovina":"BIH","Brazil":"BRA","Morocco":"MAR","Scotland":"SCO","Haiti":"HAI","USA":"USA","Paraguay":"PAR","Australia":"AUS","Turkiye":"TUR","Germany":"GER","Ecuador":"ECU","Ivory Coast":"CIV","Curacao":"CUW","Netherlands":"NED","Japan":"JPN","Tunisia":"TUN","Sweden":"SWE","Belgium":"BEL","Iran":"IRI","Egypt":"EGY","New Zealand":"NZL","Spain":"ESP","Uruguay":"URU","Saudi Arabia":"KSA","Cape Verde":"CPV","France":"FRA","Senegal":"SEN","Norway":"NOR","Iraq":"IRQ","Argentina":"ARG","Austria":"AUT","Algeria":"ALG","Jordan":"JOR","Portugal":"POR","Colombia":"COL","Uzbekistan":"UZB","DR Congo":"COD","England":"ENG","Croatia":"CRO","Panama":"PAN","Ghana":"GHA"};
 
@@ -33,7 +33,7 @@ const SCREENS = {
   CHAMPION:"champion",
 };
 
-const INITIAL_BOARDS = [{ id:"global", label:"🌍", name:"Global Board", members:48291, isGlobal:true }];
+const INITIAL_BOARDS = [{ id:"global", label:"🌍", name:"Global League", members:48291, isGlobal:true }];
 const UI = {
   card: {
     background: "#fff",
@@ -135,7 +135,7 @@ function EmptyState({ icon="•", title, body }) {
 }
 function LoadingState({ title="Loading", body="Syncing your latest data..." }) {
   return (
-    <div style={{width:"100%",height:"100%",background:BG,display:"flex",alignItems:"center",justifyContent:"center",padding:24}}>
+    <div style={{position:"fixed",inset:0,background:BG,display:"flex",alignItems:"center",justifyContent:"center",padding:24}}>
       <Card style={{width:"100%",maxWidth:320,padding:"26px 18px",textAlign:"center"}}>
         <div style={{width:34,height:34,borderRadius:"50%",border:"3px solid rgba(10,46,138,0.12)",borderTopColor:NAVY,margin:"0 auto 12px",animation:"spin 0.9s linear infinite"}}/>
         <div style={{fontSize:14,fontWeight:800,color:DARK,marginBottom:4}}>{title}</div>
@@ -235,7 +235,7 @@ const T = {
     joinTheGame:"Join the Game", continueGoogle:"Continue with Google",
     continueFacebook:"Continue with Facebook", continueInstagram:"Continue with Instagram",
     groupsSchedule:"Groups & Schedule", groupTeams:"Teams", matchSchedule:"Match Schedule",
-    myBoards:"My Boards", activeBoards:"3 active boards", appGuide:"App Guide",
+    myBoards:"My Leagues", activeBoards:"3 active leagues", appGuide:"App Guide",
     howItWorks:"How it works", notifications:"Notifications", matchAlertsOn:"Match alerts on",
     language:"Language", upgradePremium:"Upgrade to Premium", removeAds:"Remove ads",
     signOut:"Sign Out", memberSince:"Member since March 2026",
@@ -252,8 +252,8 @@ const T = {
     best3Title:"🥉 Best Third", selectTeams:"Select 8 3rd place teams...",
     thirdPlaceRanking:"3rd Place Ranking · sorted by points", team:"Team",
     knockout:"Knockout →", selectMore:"Select more",
-    boards:"Boards", createBoard:"Create Board", editBoard:"Edit Board",
-    boardName:"Group name", joinBoard:"Join Board", enterCode:"Enter code",
+    boards:"Leagues", createBoard:"Create League", editBoard:"Edit League",
+    boardName:"Group name", joinBoard:"Join League", enterCode:"Enter code",
     invalidCode:"Invalid code. Please check and try again.",
     rules:"Rules", howPredictionsWork:"How does Predictions work?",
     howExactScoreWork:"How does Exact Score work?",
@@ -275,7 +275,7 @@ const T = {
     realLabel:"Real", predictedLabel:"Predicted", noMatchesScheduled:"No matches scheduled",
     finished:"Finished", prediction:"Prediction",
     noMembersYet:"No members yet", searchOrCode:"Search or enter invite code...",
-    joinBtn:"Join", noBoardsFor:"No boards found for",
+    joinBtn:"Join", noBoardsFor:"No leagues found for",
     dontShowAgain:"Don't show again",
     onb0Title:"Two Prediction Phases", onb0Sub:"Groups + Best Third · Knockout",
     onb0Desc:"Phase 1 (before Jun 11): Rank all 12 groups and pick your 8 best-third teams. Phase 2: The knockout bracket unlocks Jun 27 after the last group match — build your path to the trophy.",
@@ -283,7 +283,7 @@ const T = {
     onb1Title:"Weekly Exact Score", onb1Sub:"Unlocks every Sunday at 8:00 AM",
     onb1Desc:"Predict the exact score of each week's matches for bonus points. New matches every Sunday.",
     onb1Next:"Invite friends →",
-    onb2Title:"Compete With Friends", onb2Sub:"Private boards · Custom prizes",
+    onb2Title:"Compete With Friends", onb2Sub:"Private leagues · Custom prizes",
     onb2Desc:"Create a private group, invite your friends and set your own prizes. May the best predictor win.",
     onb2Next:null,
     getStarted:"Get Started",
@@ -291,11 +291,11 @@ const T = {
     rulesDescBest3:"Best-3rd advancing", rulesDescMatch:"Match winner", rulesDescFinal:"Tournament winner",
     boardPassword:"Group Password", maxPlayers:"Max Players", prizedSlots:"Prize slots", prizesLabel:"Prizes",
     membersLabel:"Members", adminLabel:"Admin", remove:"Remove", saveChanges:"Save Changes ✓",
-    createBoard2:"Create Board 🏆", boardAdmin:"Board Admin", incorrectPassword:"Incorrect password. Try again.",
-    joinBoardTitle:"Join a Board", joinedBoards:"My Boards", availableBoards:"Available Boards",
-    chooseEmoji:"Choose emoji", passwordProtected:"🔒 Password protected board",
+    createBoard2:"Create League 🏆", boardAdmin:"League Admin", incorrectPassword:"Incorrect password. Try again.",
+    joinBoardTitle:"Join a League", joinedBoards:"My Leagues", availableBoards:"Available Leagues",
+    chooseEmoji:"Choose emoji", passwordProtected:"🔒 Password protected league",
     enterPassword:"Enter password...", rank:"Rank",
-    globalBoard:"Global", noBoards:"No boards found.",
+    globalBoard:"Global", noBoards:"No leagues found.",
     viewAll2:"View all", members2:"members", code:"code",
     allMatchesGrp:"All Matches · Gr.",
   },
@@ -318,7 +318,7 @@ const T = {
     joinTheGame:"Intră în Joc", continueGoogle:"Continuă cu Google",
     continueFacebook:"Continuă cu Facebook", continueInstagram:"Continuă cu Instagram",
     groupsSchedule:"Grupe & Program", groupTeams:"Echipe", matchSchedule:"Program Meciuri",
-    myBoards:"Board-urile mele", activeBoards:"3 board-uri active", appGuide:"Ghid Aplicație",
+    myBoards:"Ligile mele", activeBoards:"3 ligi active", appGuide:"Ghid Aplicație",
     howItWorks:"Cum funcționează", notifications:"Notificări", matchAlertsOn:"Alerte meci active",
     language:"Limbă", upgradePremium:"Upgrade la Premium", removeAds:"Elimină reclamele",
     signOut:"Deconectare", memberSince:"Membru din Martie 2026",
@@ -335,7 +335,7 @@ const T = {
     best3Title:"🥉 Best Third", selectTeams:"Selectează 8 echipe de pe locul 3...",
     thirdPlaceRanking:"Clasament Locul 3 · sortat după puncte", team:"Echipă",
     knockout:"Knockout →", selectMore:"Mai selectează",
-    boards:"Board-uri", createBoard:"Creează Board", editBoard:"Editează Board",
+    boards:"Ligi", createBoard:"Creează Ligă", editBoard:"Editează Liga",
     boardName:"Nume grup", joinBoard:"Alătură-te", enterCode:"Introdu codul",
     invalidCode:"Cod invalid. Verifică și încearcă din nou.",
     rules:"Reguli", howPredictionsWork:"Cum funcționează Predicțiile?",
@@ -358,7 +358,7 @@ const T = {
     realLabel:"Real", predictedLabel:"Prezis", noMatchesScheduled:"Nu sunt meciuri programate",
     finished:"Terminat", prediction:"Predicție",
     noMembersYet:"Niciun membru încă", searchOrCode:"Caută sau introdu codul...",
-    joinBtn:"Alătură-te", noBoardsFor:"Niciun board găsit pentru",
+    joinBtn:"Alătură-te", noBoardsFor:"Nicio ligă găsită pentru",
     dontShowAgain:"Nu mai arăta",
     onb0Title:"Predicții în Două Etape", onb0Sub:"Grupe + Best Third · Knockout",
     onb0Desc:"Etapa 1 (înainte de 11 Iun): Clasează cele 12 grupe și alege 8 echipe best-third. Etapa 2: Bracket-ul knockout se deblochează pe 27 Iun după ultimul meci din grupe.",
@@ -366,7 +366,7 @@ const T = {
     onb1Title:"Scor Exact Săptămânal", onb1Sub:"Se deschide duminică la 8:00",
     onb1Desc:"Prezice scorul exact al meciurilor săptămânii pentru puncte bonus. Meciuri noi în fiecare duminică.",
     onb1Next:"Invită prieteni →",
-    onb2Title:"Concurează cu Prietenii", onb2Sub:"Board-uri private · Premii personalizate",
+    onb2Title:"Concurează cu Prietenii", onb2Sub:"Ligi private · Premii personalizate",
     onb2Desc:"Creează un grup privat, invită prietenii și setează propriile premii. Câștige cel mai bun prezicător.",
     onb2Next:null,
     getStarted:"Începe",
@@ -374,11 +374,11 @@ const T = {
     rulesDescBest3:"Echipă best-3rd care avansează", rulesDescMatch:"Câștigătorul meciului", rulesDescFinal:"Câștigătorul turneului",
     boardPassword:"Parolă Grup", maxPlayers:"Jucători max", prizedSlots:"Locuri premiate", prizesLabel:"Premii",
     membersLabel:"Membri", adminLabel:"Admin", remove:"Elimină", saveChanges:"Salvează Modificările ✓",
-    createBoard2:"Creează Board 🏆", boardAdmin:"Board Admin", incorrectPassword:"Parolă incorectă. Încearcă din nou.",
-    joinBoardTitle:"Alătură-te unui Board", joinedBoards:"Board-urile mele", availableBoards:"Board-uri disponibile",
-    chooseEmoji:"Alege un emoji", passwordProtected:"🔒 Board protejat cu parolă",
+    createBoard2:"Creează Ligă 🏆", boardAdmin:"Admin Ligă", incorrectPassword:"Parolă incorectă. Încearcă din nou.",
+    joinBoardTitle:"Alătură-te unei Ligi", joinedBoards:"Ligile mele", availableBoards:"Ligi disponibile",
+    chooseEmoji:"Alege un emoji", passwordProtected:"🔒 Ligă protejată cu parolă",
     enterPassword:"Introdu parola...", rank:"Rang",
-    globalBoard:"Global", noBoards:"Niciun board găsit.",
+    globalBoard:"Global", noBoards:"Nicio ligă găsită.",
     viewAll2:"Vezi tot", members2:"membri", code:"cod",
     allMatchesGrp:"Toate Meciurile · Gr.",
   },
@@ -401,7 +401,7 @@ const T = {
     joinTheGame:"Rejoignez le Jeu", continueGoogle:"Continuer avec Google",
     continueFacebook:"Continuer avec Facebook", continueInstagram:"Continuer avec Instagram",
     groupsSchedule:"Groupes & Programme", groupTeams:"Équipes", matchSchedule:"Programme des Matchs",
-    myBoards:"Mes Boards", activeBoards:"3 boards actifs", appGuide:"Guide App",
+    myBoards:"Mes Ligues", activeBoards:"3 ligues actives", appGuide:"Guide App",
     howItWorks:"Comment ça marche", notifications:"Notifications", matchAlertsOn:"Alertes match activées",
     language:"Langue", upgradePremium:"Passer à Premium", removeAds:"Supprimer les pubs",
     signOut:"Déconnexion", memberSince:"Membre depuis Mars 2026",
@@ -418,7 +418,7 @@ const T = {
     best3Title:"🥉 Best Third", selectTeams:"Sélectionnez 8 équipes de 3e place...",
     thirdPlaceRanking:"Classement 3e Place · trié par points", team:"Équipe",
     knockout:"Knockout →", selectMore:"Sélectionner encore",
-    boards:"Boards", createBoard:"Créer un Board", editBoard:"Modifier le Board",
+    boards:"Ligues", createBoard:"Créer une Ligue", editBoard:"Modifier la Ligue",
     boardName:"Nom du groupe", joinBoard:"Rejoindre", enterCode:"Entrer le code",
     invalidCode:"Code invalide. Veuillez vérifier et réessayer.",
     rules:"Règles", howPredictionsWork:"Comment fonctionnent les Pronostics ?",
@@ -441,7 +441,7 @@ const T = {
     realLabel:"Réel", predictedLabel:"Prédit", noMatchesScheduled:"Aucun match programmé",
     finished:"Terminé", prediction:"Pronostic",
     noMembersYet:"Aucun membre encore", searchOrCode:"Chercher ou entrer le code...",
-    joinBtn:"Rejoindre", noBoardsFor:"Aucun board trouvé pour",
+    joinBtn:"Rejoindre", noBoardsFor:"Aucune ligue trouvée pour",
     dontShowAgain:"Ne plus afficher",
     onb0Title:"Deux Phases de Pronostics", onb0Sub:"Groupes + Meilleur 3e · Knockout",
     onb0Desc:"Phase 1 (avant le 11 Juin) : Classez les 12 groupes et choisissez 8 équipes meilleur 3e. Phase 2 : Le bracket knockout se déverrouille le 27 Juin après le dernier match de groupes.",
@@ -449,7 +449,7 @@ const T = {
     onb1Title:"Score Exact Hebdomadaire", onb1Sub:"Déverrouillé chaque dimanche à 8h",
     onb1Desc:"Prédisez le score exact des matchs de la semaine pour des points bonus. Nouveaux matchs chaque dimanche.",
     onb1Next:"Inviter des amis →",
-    onb2Title:"Affrontez Vos Amis", onb2Sub:"Boards privés · Prix personnalisés",
+    onb2Title:"Affrontez Vos Amis", onb2Sub:"Ligues privées · Prix personnalisés",
     onb2Desc:"Créez un groupe privé, invitez vos amis et fixez vos propres prix. Que le meilleur pronostiqueur gagne.",
     onb2Next:null,
     getStarted:"Commencer",
@@ -457,11 +457,11 @@ const T = {
     rulesDescBest3:"Équipe best-3rd qui avance", rulesDescMatch:"Vainqueur du match", rulesDescFinal:"Vainqueur du tournoi",
     boardPassword:"Mot de passe", maxPlayers:"Joueurs max", prizedSlots:"Places primées", prizesLabel:"Prix",
     membersLabel:"Membres", adminLabel:"Admin", remove:"Retirer", saveChanges:"Sauvegarder ✓",
-    createBoard2:"Créer Board 🏆", boardAdmin:"Board Admin", incorrectPassword:"Mot de passe incorrect. Réessayez.",
-    joinBoardTitle:"Rejoindre un Board", joinedBoards:"Mes Boards", availableBoards:"Boards disponibles",
-    chooseEmoji:"Choisir un emoji", passwordProtected:"🔒 Board protégé par mot de passe",
+    createBoard2:"Créer Ligue 🏆", boardAdmin:"Admin Ligue", incorrectPassword:"Mot de passe incorrect. Réessayez.",
+    joinBoardTitle:"Rejoindre une Ligue", joinedBoards:"Mes Ligues", availableBoards:"Ligues disponibles",
+    chooseEmoji:"Choisir un emoji", passwordProtected:"🔒 Ligue protégée par mot de passe",
     enterPassword:"Entrer le mot de passe...", rank:"Rang",
-    globalBoard:"Global", noBoards:"Aucun board trouvé.",
+    globalBoard:"Global", noBoards:"Aucune ligue trouvée.",
     viewAll2:"Voir tout", members2:"membres", code:"code",
     allMatchesGrp:"Tous les Matchs · Gr.",
   },
@@ -5490,8 +5490,8 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
                         <p style={{fontSize:13,fontWeight:700,color:DARK,margin:0}}>{latest.name}</p>
                         <p style={{fontSize:11,color:"#aaa",margin:"2px 0 0"}}>👥 {latest.members}{latest.max?"/"+latest.max:""} members</p>
                       </div>
-                      <span style={{fontSize:11,fontWeight:700,color:NAVY,flexShrink:0}}>✓ Joined</span>
-                      {!b.isGlobal&&<Button variant="danger" onClick={e=>{e.stopPropagation();setLeaveConfirmBoard(b);}} style={{fontSize:13,flexShrink:0}}>🗑️</Button>}
+                      <span style={{fontSize:11,fontWeight:700,color:b.isAdmin&&!b.isMember?"#F59E0B":NAVY,flexShrink:0}}>{b.isAdmin&&!b.isMember?"👑 Admin":"✓ Joined"}</span>
+                      {!b.isGlobal&&b.isMember&&<Button variant="danger" onClick={e=>{e.stopPropagation();setLeaveConfirmBoard(b);}} style={{fontSize:13,flexShrink:0}}>🗑️</Button>}
                     </div>
                     {bi<arr.length-1&&<div style={{height:1,background:"rgba(0,0,0,0.05)",margin:"0 14px"}}/>}
                   </div>
@@ -5651,7 +5651,7 @@ function Footer({ active, onNavigate, lang, user }) {
     {key:SCREENS.HOME,        label:"Home"},
     {key:SCREENS.LEADERBOARD, label:"Ranking"},
     {key:SCREENS.RULES,       label:"Rules"},
-    {key:SCREENS.BOARDS,      label:"Boards"},
+    {key:SCREENS.BOARDS,      label:"Leagues"},
     {key:SCREENS.ACCOUNT,     label:"More"},
   ];
   const avatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
@@ -5711,20 +5711,32 @@ function Footer({ active, onNavigate, lang, user }) {
 
 function LangSelector({ lang, setLang }) {
   const [open,setOpen]=useState(false);
+  const [pos,setPos]=useState({top:0,right:0});
+  const btnRef=useRef(null);
   const cur=LANGS.find(l=>l.code===lang);
+  const handleOpen=()=>{
+    if(btnRef.current){
+      const r=btnRef.current.getBoundingClientRect();
+      setPos({top:r.bottom+8,right:window.innerWidth-r.right});
+    }
+    setOpen(o=>!o);
+  };
   return (
     <div style={{position:"relative",zIndex:100}}>
-      <div onClick={()=>setOpen(o=>!o)} style={{width:44,height:44,borderRadius:12,background:"#F0F4FF",border:"1px solid rgba(0,32,91,0.15)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,cursor:"pointer"}}>{cur.flag}</div>
+      <div ref={btnRef} onClick={handleOpen} style={{width:44,height:44,borderRadius:12,background:"#F0F4FF",border:"1px solid rgba(0,32,91,0.15)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,cursor:"pointer"}}>{cur.flag}</div>
       {open&&(
-        <div style={{position:"absolute",top:52,right:0,background:"#fff",border:"1px solid rgba(0,32,91,0.1)",borderRadius:14,overflow:"hidden",minWidth:160,zIndex:200,boxShadow:"0 12px 40px rgba(0,32,91,0.15)"}}>
-          {LANGS.map(l=>(
-            <div key={l.code} onClick={()=>{setLang(l.code);setOpen(false);}} style={{display:"flex",alignItems:"center",gap:10,padding:"12px 16px",background:lang===l.code?"#F0F4FF":"transparent",cursor:"pointer",borderBottom:"1px solid rgba(0,0,0,0.05)"}}>
-              <span style={{fontSize:20}}>{l.flag}</span>
-              <span style={{fontSize:14,fontWeight:lang===l.code?700:400,color:lang===l.code?NAVY:"#555"}}>{l.name}</span>
-              {lang===l.code&&<span style={{marginLeft:"auto",fontSize:12,color:RED}}>✓</span>}
-            </div>
-          ))}
-        </div>
+        <>
+          <div style={{position:"fixed",inset:0,zIndex:1999}} onClick={()=>setOpen(false)}/>
+          <div style={{position:"fixed",top:pos.top,right:pos.right,background:"#fff",border:"1px solid rgba(0,32,91,0.1)",borderRadius:14,overflow:"hidden",minWidth:160,zIndex:2000,boxShadow:"0 12px 40px rgba(0,32,91,0.15)"}}>
+            {LANGS.map(l=>(
+              <div key={l.code} onClick={()=>{setLang(l.code);setOpen(false);}} style={{display:"flex",alignItems:"center",gap:10,padding:"12px 16px",background:lang===l.code?"#F0F4FF":"transparent",cursor:"pointer",borderBottom:"1px solid rgba(0,0,0,0.05)"}}>
+                <span style={{fontSize:20}}>{l.flag}</span>
+                <span style={{fontSize:14,fontWeight:lang===l.code?700:400,color:lang===l.code?NAVY:"#555"}}>{l.name}</span>
+                {lang===l.code&&<span style={{marginLeft:"auto",fontSize:12,color:RED}}>✓</span>}
+              </div>
+            ))}
+          </div>
+        </>
       )}
     </div>
   );
@@ -6312,7 +6324,6 @@ function SplashScreen({ onNext, lang, setLang, simDay, simHour=12, simMin=0, tou
 function OnboardingSheet({ onDone }) {
   const lang = useLang();
   const [slide, setSlide] = useState(0);
-  const [skipNext, setSkipNext] = useState(false);
   const startX = useRef(null);
 
   const slides = [
@@ -6397,46 +6408,24 @@ function OnboardingSheet({ onDone }) {
             </div>
           </div>
 
-          {/* Dots */}
-          <div style={{display:"flex",justifyContent:"center",gap:8,padding:"10px 0 12px"}}>
-            {slides.map((_,i)=>(
-              <div key={i} onClick={()=>setSlide(i)}
-                style={{width:i===slide?22:7,height:7,borderRadius:4,cursor:"pointer",
-                  background:i===slide?"rgba(255,255,255,0.95)":"rgba(255,255,255,0.3)",
-                  transition:"all 0.3s"}}/>
-            ))}
-          </div>
-
-          {/* Bottom */}
-          <div style={{padding:"0 24px"}}>
-            <div style={{display:"flex",alignItems:"center",gap:8,justifyContent:"center",marginBottom:10}}
-              onClick={()=>setSkipNext(s=>!s)}>
-              <div style={{width:20,height:20,borderRadius:6,
-                border:`2px solid ${skipNext?"rgba(255,255,255,0.9)":"rgba(255,255,255,0.3)"}`,
-                background:skipNext?"rgba(255,255,255,0.9)":"transparent",
-                display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.2s",cursor:"pointer"}}>
-                {skipNext&&<span style={{fontSize:11,color:NAVY,fontWeight:900}}>✓</span>}
-              </div>
-              <span style={{fontSize:12,color:"rgba(255,255,255,0.55)",cursor:"pointer"}}>Don't show again</span>
+          {/* Navigation */}
+          <div style={{padding:"8px 28px 20px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+            <button onClick={()=>setSlide(s=>s-1)}
+              style={{background:"none",border:"none",color:slide>0?"rgba(255,255,255,0.65)":"transparent",fontSize:22,cursor:slide>0?"pointer":"default",padding:"6px",lineHeight:1,WebkitTapHighlightColor:"transparent"}}>
+              ←
+            </button>
+            <div style={{display:"flex",gap:8}}>
+              {slides.map((_,i)=>(
+                <div key={i} onClick={()=>setSlide(i)}
+                  style={{width:i===slide?22:7,height:7,borderRadius:4,cursor:"pointer",
+                    background:i===slide?"rgba(255,255,255,0.95)":"rgba(255,255,255,0.3)",
+                    transition:"all 0.3s"}}/>
+              ))}
             </div>
-
-            <div style={{display:"flex",gap:10}}>
-              {!isLast&&(
-                <button onClick={()=>onDone(skipNext)}
-                  style={{flex:1,padding:"13px 0",borderRadius:14,border:"none",
-                    background:"rgba(255,255,255,0.15)",color:"rgba(255,255,255,0.7)",
-                    fontSize:14,fontWeight:700,cursor:"pointer"}}>
-                  Skip
-                </button>
-              )}
-              <button onClick={()=>{ if(isLast) onDone(skipNext); else setSlide(s=>s+1); }}
-                style={{flex:2,padding:"13px 0",borderRadius:14,border:"none",cursor:"pointer",
-                  background:"rgba(255,255,255,0.95)",
-                  color:NAVY,fontSize:15,fontWeight:800,
-                  boxShadow:"0 6px 20px rgba(0,0,0,0.2)"}}>
-                {isLast?"Let's go! 🏆":cur.nextLabel||"Next →"}
-              </button>
-            </div>
+            <button onClick={()=>{ if(isLast) onDone(false); else setSlide(s=>s+1); }}
+              style={{background:"none",border:"none",color:"rgba(255,255,255,0.85)",fontSize:14,fontWeight:700,cursor:"pointer",padding:"6px",display:"flex",alignItems:"center",gap:5,lineHeight:1,WebkitTapHighlightColor:"transparent"}}>
+              {isLast?"Close":"View next"}<span style={{fontSize:20}}>{isLast?"":"→"}</span>
+            </button>
           </div>
         </div>
       </div>
@@ -8351,7 +8340,7 @@ function StatsScreen() {
   );
 }
 
-function AccountScreen({ setLang, onBoards, onSignOut, onShowGuide, onPremium, user, isActive=true, onAvatarUpdate }) {
+function AccountScreen({ setLang, onBoards, onSignOut, onShowGuide, onPremium, onNotifications, user, isActive=true, onAvatarUpdate }) {
   const lang = useLang();
   const displayName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "—";
   const memberSince = user?.created_at
@@ -8364,6 +8353,12 @@ function AccountScreen({ setLang, onBoards, onSignOut, onShowGuide, onPremium, u
   const [avatarUrl, setAvatarUrl] = useState(user?.user_metadata?.avatar_url || null);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const avatarInputRef = useRef(null);
+
+  // Sync local avatar state whenever the auth user object updates (token refresh, USER_UPDATED, etc.)
+  useEffect(() => {
+    const url = user?.user_metadata?.avatar_url || null;
+    if (url) setAvatarUrl(url);
+  }, [user?.user_metadata?.avatar_url]);
 
   const handleAvatarChange = async (e) => {
     const file = e.target.files?.[0];
@@ -8450,7 +8445,7 @@ function AccountScreen({ setLang, onBoards, onSignOut, onShowGuide, onPremium, u
       </div>
       <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",position:"relative",zIndex:1}}>
         <div style={{padding:"12px 20px 100px"}}>
-          {[{icon:"🏆",label:T[lang].myBoards,sub:T[lang].activeBoards,action:onBoards},{icon:"📖",label:T[lang].appGuide,sub:T[lang].howItWorks,action:onShowGuide},{icon:"🔔",label:T[lang].notifications,sub:T[lang].matchAlertsOn},{icon:"🌍",label:T[lang].language,sub:LANGS.find(l=>l.code===lang)?.name||"English",isLang:true},{icon:"⭐",label:T[lang].upgradePremium,sub:T[lang].removeAds,highlight:true,action:onPremium},{icon:"🚪",label:T[lang].signOut,sub:"",action:handleSignOut}].map(item=>(
+          {[{icon:"🏆",label:T[lang].myBoards,sub:T[lang].activeBoards,action:onBoards},{icon:"📖",label:T[lang].appGuide,sub:T[lang].howItWorks,action:onShowGuide},{icon:"🔔",label:T[lang].notifications,sub:T[lang].matchAlertsOn,action:onNotifications},{icon:"🌍",label:T[lang].language,sub:LANGS.find(l=>l.code===lang)?.name||"English",isLang:true},{icon:"⭐",label:T[lang].upgradePremium,sub:T[lang].removeAds,highlight:true,action:onPremium},{icon:"🚪",label:T[lang].signOut,sub:"",action:handleSignOut}].map(item=>(
             <div key={item.label} onClick={item.isLang?undefined:item.action||undefined} style={{display:"flex",alignItems:"center",gap:14,...UI.card,background:item.highlight?"#E8F0FF":"#fff",border:item.highlight?`1.5px solid ${NAVY}`:UI.card.border,padding:"13px 16px",marginBottom:10,cursor:item.isLang?"default":"pointer"}}>
               <span style={{fontSize:20}}>{item.icon}</span>
               <div style={{flex:1}}>
@@ -8737,11 +8732,12 @@ function App() {
       if (u) {
         if (event === 'INITIAL_SESSION') {
           const nonRestorable = [SCREENS.SPLASH, SCREENS.LOGIN, SCREENS.RESET_PASSWORD, SCREENS.SET_PASSWORD];
-          const saved = (() => { try { return sessionStorage.getItem('lastScreen'); } catch { return null; } })();
+          const saved = (() => { try { return localStorage.getItem('lastScreen'); } catch { return null; } })();
           setScreen(saved && !nonRestorable.includes(saved) ? saved : SCREENS.HOME);
-        } else {
+        } else if (event === 'SIGNED_IN') {
           setScreen(SCREENS.HOME);
         }
+        // USER_UPDATED, TOKEN_REFRESHED — only update user state, don't navigate
       } else setScreen(SCREENS.SPLASH);
     });
 
@@ -8753,13 +8749,7 @@ function App() {
     if (!user) return;
     const uid = user.id;
 
-    // Predictions + exact scores + special picks pentru un board
-    const loadForBoard = async (boardId) => {
-      const [preds, scores, special] = await Promise.all([
-        loadPredictions(uid, boardId),
-        loadExactScores(uid, boardId),
-        loadSpecialPick(uid, boardId),
-      ]);
+    const applyPicks = (boardId, preds, scores, special) => {
       if (preds) {
         setAllInstantPickStates(p => ({
           ...p,
@@ -8772,12 +8762,9 @@ function App() {
         }));
         const hasTask1 = Object.keys(preds.group_rankings || {}).length > 0 || (preds.best3_picks || []).length > 0;
         const hasTask2 = Object.keys(preds.ko_picks || {}).length > 0;
-        if (hasTask1 || hasTask2)
-          setPredictionsComplete(p => ({ ...p, [boardId]: true }));
-        if (hasTask1 || hasTask2)
-          setAllInstantPickDone(p => ({ ...p, [boardId]: true }));
-        if (hasTask2)
-          setAllKoPickDone(p => ({ ...p, [boardId]: true }));
+        if (hasTask1 || hasTask2) setPredictionsComplete(p => ({ ...p, [boardId]: true }));
+        if (hasTask1 || hasTask2) setAllInstantPickDone(p => ({ ...p, [boardId]: true }));
+        if (hasTask2) setAllKoPickDone(p => ({ ...p, [boardId]: true }));
       }
       if (scores && Object.keys(scores).length > 0)
         setExactScoresByBoard(p => ({ ...p, [boardId]: scores }));
@@ -8788,27 +8775,27 @@ function App() {
       setPredictionsLoaded(p => ({ ...p, [boardId]: true }));
     };
 
-    // Boards + member counts + predicții pentru toate boardurile
-    loadForBoard('global');
+    // Boards + picks loaded in 2 parallel waves (7 total requests vs 10+3N before)
     const refreshBoards = async () => {
-      const [boards, avail] = await Promise.all([
-        loadUserBoards(uid),
-        loadAvailableBoards(uid),
+      const [{ userBoards, availableBoards }, allPicks] = await Promise.all([
+        loadAllBoards(uid),
+        loadAllUserPicks(uid),
       ]);
-      const visibleBoards = boards;
-      const visibleAvail = avail;
-      // adminBoards = boards where user is creator (isAdmin=true)
-      const adminBoards = visibleBoards.filter(b => b.isAdmin);
-      // participantBoards = boards where user is member (isMember=true)
-      const participantBoards = sortJoinedBoards(visibleBoards.filter(b => b.isMember));
-      // allMyBoards = Global + boards joined by user + boards created by user.
-      // Created boards must stay visible even if board_members is delayed/missing after refresh.
+
+      // Apply picks for global + all user boards
+      const allBoardIds = ['global', ...userBoards.map(b => b.id)];
+      allBoardIds.forEach(id => applyPicks(id, allPicks.predictions[id], allPicks.exactScores[id], allPicks.specialPicks[id]));
+
+      const adminBoards = userBoards.filter(b => b.isAdmin);
+      // boards where creator left as participant — visible in Admin tab + Discover, not in My Boards
+      const adminOnlyBoards = adminBoards.filter(b => !b.isMember);
+      const participantBoards = sortJoinedBoards(userBoards.filter(b => b.isMember));
       const seen = new Set(INITIAL_BOARDS.map(b => b.id));
       const allMyBoards = [...INITIAL_BOARDS];
-      for (const b of sortJoinedBoards([...participantBoards, ...adminBoards])) {
+      for (const b of participantBoards) {
         if (!seen.has(b.id)) { seen.add(b.id); allMyBoards.push(b); }
       }
-      const allIds = [...allMyBoards.map(b => b.id), ...adminBoards.map(b => b.id), ...visibleAvail.map(b => b.id)];
+      const allIds = [...allMyBoards.map(b => b.id), ...adminBoards.map(b => b.id), ...availableBoards.map(b => b.id), ...adminOnlyBoards.map(b => b.id)];
       const counts = await fetchMemberCounts(allIds);
       const freshBoards = allMyBoards.map(b => ({ ...b, members: counts[b.id] ?? b.members }));
       setMyBoards(freshBoards);
@@ -8817,10 +8804,11 @@ function App() {
       }
       try { localStorage.setItem('myBoards', JSON.stringify(freshBoards)); } catch {}
       setCreatedBoards(adminBoards.map(b => ({ ...b, members: counts[b.id] ?? 0 })));
-      setAvailableBoards(visibleAvail.map(b => ({ ...b, members: counts[b.id] ?? 0 })));
-      return boards;
+      // adminOnlyBoards apar și în Discover ca să se poată re-înscrie
+      setAvailableBoards([...availableBoards, ...adminOnlyBoards].map(b => ({ ...b, members: counts[b.id] ?? 0 })));
+      return userBoards;
     };
-    refreshBoards().then(boards => { setBoardsLoading(false); boards.forEach(b => loadForBoard(b.id)); });
+    refreshBoards().then(() => { setBoardsLoading(false); });
 
     // Realtime: actualizează membrii și board-urile când se schimbă ceva
     const boardChannel = supabase
@@ -8840,6 +8828,7 @@ function App() {
 
   const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
   const inRecoveryRef = useRef(false);
+  const notificationsBackRef = useRef(SCREENS.HOME);
   const [screen, setScreen] = useState(SCREENS.SPLASH);
   const [championMode, setChampionMode] = useState("champion");
   const [boardsInitialTab, setBoardsInitialTab] = useState("my");
@@ -8981,7 +8970,7 @@ function App() {
   const noFooter = [SCREENS.SPLASH, SCREENS.LOGIN, SCREENS.INSTANT_PICK, SCREENS.GROUPS_SCHEDULE, SCREENS.CHAMPION];
   const showFooter = !noFooter.includes(screen) && !(screen===SCREENS.BOARDS && boardsSubView==="create");
   const _nonSaveable = [SCREENS.SPLASH, SCREENS.LOGIN, SCREENS.RESET_PASSWORD, SCREENS.SET_PASSWORD];
-  if (!_nonSaveable.includes(screen)) { try { sessionStorage.setItem('lastScreen', screen); } catch {} }
+  if (!_nonSaveable.includes(screen)) { try { localStorage.setItem('lastScreen', screen); } catch {} }
   const footerActive = screen===SCREENS.RULES?SCREENS.RULES:screen===SCREENS.LEADERBOARD?SCREENS.LEADERBOARD:screen===SCREENS.BOARDS?SCREENS.BOARDS:screen===SCREENS.ACCOUNT?SCREENS.ACCOUNT:SCREENS.HOME;
 
   if (authLoading || (user && boardsLoading)) return <LoadingState title={authLoading ? "Starting Predicto" : "Loading leagues"} body={authLoading ? "Preparing your session..." : "Syncing boards, rankings and picks..."} />;
@@ -9015,8 +9004,8 @@ function App() {
           }}/>}
           {screen===SCREENS.SPLASH&&<SplashScreen simDay={simDay} simHour={simHour} simMin={simMin} tournamentStarted={tournamentStarted} onNext={()=>setScreen(SCREENS.LOGIN)} lang={lang} setLang={setLang}/>}
           {screen===SCREENS.LOGIN&&<LoginScreen onNext={()=>{ if(!skipOnboarding) setShowOnboarding(true); setScreen(SCREENS.HOME); }}/>}
-          {screen===SCREENS.HOME&&showOnboarding&&(
-            <OnboardingSheet onDone={(skip)=>{ if(skip) setSkipOnboarding(true); setShowOnboarding(false); setShowFirstAction(true); setTimeout(()=>setShowFirstAction(false), 5000); }}/>
+          {showOnboarding&&(
+            <OnboardingSheet onDone={()=>{ setShowOnboarding(false); if(screen===SCREENS.HOME){setShowFirstAction(true);setTimeout(()=>setShowFirstAction(false),5000);} }}/>
           )}
           {user&&<div style={{display:screen===SCREENS.HOME?'flex':'none',flex:1,flexDirection:'column',overflow:'hidden',minHeight:0}}>
             <HomeScreen
@@ -9050,7 +9039,7 @@ function App() {
                 showToast("Predictions copied!","✅");
               }}
               onAccount={()=>setScreen(SCREENS.ACCOUNT)}
-              onNotifications={()=>setScreen(SCREENS.NOTIFICATIONS)}
+              onNotifications={()=>{ notificationsBackRef.current=SCREENS.HOME; setScreen(SCREENS.NOTIFICATIONS); }}
               onChampion={(mode)=>{ setChampionMode(mode||"champion"); setScreen(SCREENS.CHAMPION); }}
               myBoards={myBoards}
               predictionsComplete={predictionsComplete}
@@ -9072,7 +9061,7 @@ function App() {
               setChampionPick={setChampionPick}
               setTopScorerPick={setTopScorerPick}/>
           </div>}
-          {screen===SCREENS.NOTIFICATIONS&&<NotificationsScreen onBack={()=>setScreen(SCREENS.HOME)}/>}
+          {screen===SCREENS.NOTIFICATIONS&&<NotificationsScreen onBack={()=>setScreen(notificationsBackRef.current)}/>}
           {screen===SCREENS.PREMIUM&&<PremiumScreen onBack={()=>setScreen(SCREENS.ACCOUNT)}/>}
           {screen===SCREENS.CHAMPION&&<ChampionScreen
             onBack={()=>setScreen(SCREENS.HOME)}
@@ -9110,9 +9099,18 @@ function App() {
               if (!user) return null;
               const { data, error } = await joinBoardByCode(user.id, code);
               if (error) { showToast(error, "❌"); return null; }
-              forgetRemovedBoard(data.id);
+              const bid = data.id;
+              forgetRemovedBoard(bid);
+              setAllInstantPickStates(prev => { const n = {...prev}; delete n[bid]; return n; });
+              setAllInstantPickDone(prev => { const n = {...prev}; delete n[bid]; return n; });
+              setAllKoPickDone(prev => { const n = {...prev}; delete n[bid]; return n; });
+              setExactScoresByBoard(prev => { const n = {...prev}; delete n[bid]; return n; });
+              setPredictionsComplete(prev => { const n = {...prev}; delete n[bid]; return n; });
+              setPredictionsLoaded(prev => { const n = {...prev}; delete n[bid]; return n; });
+              setAllChampionPicks(prev => { const n = {...prev}; delete n[bid]; return n; });
+              setAllTopScorerPicks(prev => { const n = {...prev}; delete n[bid]; return n; });
               setMyBoards(prev => appendJoinedBoard(prev, { ...data, isMember: true, members: (data.members || 0) + 1 }));
-              setAvailableBoards(prev => prev.filter(b => b.id !== data.id));
+              setAvailableBoards(prev => prev.filter(b => b.id !== bid));
               return data;
             }}
             onJoin={(boardId)=>{ setActiveBoardId(boardId); setScreen(SCREENS.HOME); }}
@@ -9124,9 +9122,12 @@ function App() {
               forgetRemovedBoard(boardId);
               setAllInstantPickStates(prev => { const n = {...prev}; delete n[boardId]; return n; });
               setAllInstantPickDone(prev => { const n = {...prev}; delete n[boardId]; return n; });
+              setAllKoPickDone(prev => { const n = {...prev}; delete n[boardId]; return n; });
               setExactScoresByBoard(prev => { const n = {...prev}; delete n[boardId]; return n; });
               setPredictionsComplete(prev => { const n = {...prev}; delete n[boardId]; return n; });
-              setPredictionsLoaded(prev => ({ ...prev, [boardId]: true }));
+              setPredictionsLoaded(prev => { const n = {...prev}; delete n[boardId]; return n; });
+              setAllChampionPicks(prev => { const n = {...prev}; delete n[boardId]; return n; });
+              setAllTopScorerPicks(prev => { const n = {...prev}; delete n[boardId]; return n; });
               const board = availableBoards.find(b => b.id === boardId) || createdBoards.find(b => b.id === boardId);
               if (board) {
                 setMyBoards(prev => appendJoinedBoard(prev, { ...board, isMember: true, members: (board.members || 0) + 1 }));
@@ -9138,10 +9139,22 @@ function App() {
               if (error) { showToast("Eroare la ștergere", "❌"); return; }
               rememberRemovedBoard(boardId);
               setCreatedBoards(prev => prev.filter(b => b.id !== boardId));
-              setMyBoards(prev => prev.filter(b => b.id !== boardId));
+              setMyBoards(prev => {
+                const updated = prev.filter(b => b.id !== boardId);
+                try { localStorage.setItem('myBoards', JSON.stringify(updated)); } catch {}
+                return updated;
+              });
               setAvailableBoards(prev => prev.filter(b => b.id !== boardId));
+              setAllInstantPickStates(prev => { const n = {...prev}; delete n[boardId]; return n; });
+              setAllInstantPickDone(prev => { const n = {...prev}; delete n[boardId]; return n; });
+              setAllKoPickDone(prev => { const n = {...prev}; delete n[boardId]; return n; });
+              setExactScoresByBoard(prev => { const n = {...prev}; delete n[boardId]; return n; });
+              setPredictionsComplete(prev => { const n = {...prev}; delete n[boardId]; return n; });
+              setPredictionsLoaded(prev => { const n = {...prev}; delete n[boardId]; return n; });
+              setAllChampionPicks(prev => { const n = {...prev}; delete n[boardId]; return n; });
+              setAllTopScorerPicks(prev => { const n = {...prev}; delete n[boardId]; return n; });
               if (activeBoardId === boardId) setActiveBoardId('global');
-              showToast("Board șters", "🗑️");
+              showToast("Ligă ștearsă", "🗑️");
             }}
             leaderboardData={leaderboardData}
             onRemoveMember={async (boardId, memberId) => {
@@ -9156,9 +9169,12 @@ function App() {
                 });
                 setAllInstantPickStates(prev => { const n = {...prev}; delete n[boardId]; return n; });
                 setAllInstantPickDone(prev => { const n = {...prev}; delete n[boardId]; return n; });
+                setAllKoPickDone(prev => { const n = {...prev}; delete n[boardId]; return n; });
                 setExactScoresByBoard(prev => { const n = {...prev}; delete n[boardId]; return n; });
                 setPredictionsComplete(prev => { const n = {...prev}; delete n[boardId]; return n; });
                 setPredictionsLoaded(prev => { const n = {...prev}; delete n[boardId]; return n; });
+                setAllChampionPicks(prev => { const n = {...prev}; delete n[boardId]; return n; });
+                setAllTopScorerPicks(prev => { const n = {...prev}; delete n[boardId]; return n; });
                 if (activeBoardId === boardId) setActiveBoardId('global');
               }
             }}/>}
@@ -9242,7 +9258,7 @@ function App() {
               }
             }} simDay={simDay} simHour={simHour} simMin={simMin} initialWeek={groupsInitialWeek} onBack={()=>{ setGroupsInitialWeek(null); setScreen(SCREENS.HOME); }}/>}
           {user&&<div style={{display:screen===SCREENS.ACCOUNT?'flex':'none',flex:1,flexDirection:'column',overflow:'hidden',minHeight:0}}>
-            <AccountScreen setLang={setLang} onBoards={()=>{ setBoardsInitialTab("my"); setScreen(SCREENS.BOARDS); }} onSignOut={()=>setScreen(SCREENS.SPLASH)} onShowGuide={()=>{ setShowOnboarding(true); setScreen(SCREENS.HOME); }} onPremium={()=>setScreen(SCREENS.PREMIUM)} user={user} isActive={screen===SCREENS.ACCOUNT}/>
+            <AccountScreen setLang={setLang} onBoards={()=>{ setBoardsInitialTab("my"); setScreen(SCREENS.BOARDS); }} onSignOut={()=>setScreen(SCREENS.SPLASH)} onShowGuide={()=>{ setShowOnboarding(true); }} onPremium={()=>setScreen(SCREENS.PREMIUM)} onNotifications={()=>{ notificationsBackRef.current=SCREENS.ACCOUNT; setScreen(SCREENS.NOTIFICATIONS); }} user={user} isActive={screen===SCREENS.ACCOUNT}/>
           </div>}
         </div>
         <Toast message={toast.message} emoji={toast.emoji} visible={toast.visible}/>
