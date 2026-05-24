@@ -451,12 +451,8 @@ export function subscribeLiveScores(onChange) {
 export async function uploadBoardImage(userId, boardId, file) {
   const ext = file.name.split('.').pop().toLowerCase()
   const path = `${userId}/${boardId}.${ext}`
-  const { data: existing } = await supabase.storage.from('board-images').list(userId)
-  if (existing?.length) {
-    const old = existing.filter(f => f.name.startsWith(boardId))
-    if (old.length) await supabase.storage.from('board-images').remove(old.map(f => `${userId}/${f.name}`))
-  }
-  const { error } = await supabase.storage.from('board-images').upload(path, file, { contentType: file.type })
+  const { error } = await supabase.storage.from('board-images')
+    .upload(path, file, { contentType: file.type, upsert: true })
   if (error) { console.error('uploadBoardImage:', error); return null }
   const { data: { publicUrl } } = supabase.storage.from('board-images').getPublicUrl(path)
   const urlWithBust = `${publicUrl}?t=${Date.now()}`

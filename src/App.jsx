@@ -5184,13 +5184,18 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
     };
     if(editBoard) {
       if(cImageFile && user) {
+        if(showToast) showToast("Se încarcă poza...", "⏳");
         uploadBoardImage(user.id, editBoard.id, cImageFile).then(url => {
-          if(url) setCreatedBoards(p=>p.map(b=>b.id===editBoard.id?{...b,...newBoard,image_url:url}:b));
+          if(url) {
+            setCreatedBoards(p=>p.map(b=>b.id===editBoard.id?{...b,...newBoard,image_url:url}:b));
+            setMyBoards(p=>p.map(b=>b.id===editBoard.id?{...b,...newBoard,image_url:url}:b));
+            if(showToast) showToast("Poză salvată!", "✅");
+          }
         });
       } else {
         setCreatedBoards(p=>p.map(b=>b.id===editBoard.id?newBoard:b));
+        if(showToast) showToast("League updated", "✏️");
       }
-      if(showToast) showToast("League updated", "✏️");
     } else {
       setCreatedBoards(p=>[...p, newBoard]);
       if(showToast) showToast(`"${cName}" league created`, "🏆");
