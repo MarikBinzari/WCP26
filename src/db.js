@@ -459,6 +459,7 @@ export async function uploadAvatar(userId, file) {
   const urlWithBust = `${publicUrl}?t=${Date.now()}`
   const { error: updateError } = await supabase.auth.updateUser({ data: { avatar_url: urlWithBust } })
   if (updateError) { console.error('updateUser avatar_url:', updateError); return null }
+  await supabase.from('profiles').update({ avatar_url: urlWithBust }).eq('id', userId)
   return urlWithBust
 }
 
@@ -478,10 +479,11 @@ export async function loadLeaderboard(boardId, search = null, userId = null) {
   const rows = (rpcRes.data || []).map((row, i) => {
     const isMe = myName ? row.display_name === myName : false
     return {
-      rank:   i + 1,
-      name:   row.display_name || '—',
-      pts:    row.total_pts || 0,
-      accent: isMe ? '#E8F0FF' : '#fff',
+      rank:      i + 1,
+      name:      row.display_name || '—',
+      pts:       row.total_pts || 0,
+      avatarUrl: row.avatar_url || null,
+      accent:    isMe ? '#E8F0FF' : '#fff',
       isMe,
     }
   })

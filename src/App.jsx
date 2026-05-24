@@ -7034,7 +7034,7 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
               border:u.isMe?`1.5px solid ${NAVY}`:UI.card.border,
               borderRadius:12,padding:"8px 12px",gap:10,marginBottom:6}}>
               {/* Rank indicator */}
-              <div style={{width:30,textAlign:"center",flexShrink:0}}>
+              <div style={{width:26,textAlign:"center",flexShrink:0}}>
                 {rankBadge ? (
                   <span style={{fontSize:20}}>{rankBadge}</span>
                 ) : (
@@ -7045,6 +7045,19 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
                   </div>
                 )}
               </div>
+              {/* Avatar */}
+              {!u.empty && (
+                <div style={{width:32,height:32,borderRadius:"50%",flexShrink:0,overflow:"hidden",
+                  background:u.isMe?`${NAVY}22`:"rgba(0,0,0,0.07)",
+                  display:"flex",alignItems:"center",justifyContent:"center"}}>
+                  {u.avatarUrl
+                    ? <img src={u.avatarUrl} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                    : <span style={{fontSize:11,fontWeight:700,color:u.isMe?NAVY:"#888"}}>
+                        {u.name.split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2)}
+                      </span>
+                  }
+                </div>
+              )}
               <div style={{flex:1,minWidth:0}}>
                 {u.empty
                   ? <span style={{fontSize:12,color:"#ccc",fontStyle:"italic"}}>{T[lang].openSlot}</span>
