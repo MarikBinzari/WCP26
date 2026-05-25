@@ -1,11 +1,13 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import confetti from "canvas-confetti";
 import trophy from "./assets/hands-trophy.png";
 import varBg from "./assets/var-bg.jpg";
 import predictoLogo from "./assets/predicto-logo.png";
+import specialPickBadge from "./assets/special-pick-badge.png";
 import bellIcon from "./assets/bell-icon.svg";
 import { ALL_GROUPS_DATA, FLAGS, TEAM_COLORS, CALENDAR_EVENTS } from "./data/worldcup2026.js";
 import { supabase } from "./supabase.js";
-import { loadPredictions, savePredictions, loadExactScores, saveExactScore, loadUserBoards, loadAvailableBoards, createBoard, joinBoardByCode, joinBoardById, loadLeaderboard, fetchScoringRules, fetchMemberCounts, removeBoardMember, removeParticipation, deleteBoard, loadBoardMembers, checkDbHealth, checkEmailExists } from "./db.js";
+import { savePredictions, saveExactScore, createBoard, joinBoardByCode, joinBoardById, loadLeaderboard, loadMyScoreBreakdown, fetchScoringRules, fetchMemberCounts, removeBoardMember, removeParticipation, deleteBoard, loadBoardMembers, checkDbHealth, checkEmailExists, loadLiveScores, subscribeLiveScores, loadPlayers, loadPlayersByTeam, seedPlayersFromApi, saveSpecialPick, uploadAvatar, uploadBoardImage, loadAllBoards, loadAllUserPicks } from "./db.js";
 
 const TEAM_CODE = {"Mexico":"MEX","South Africa":"RSA","South Korea":"KOR","Czechia":"CZE","Canada":"CAN","Switzerland":"SUI","Qatar":"QAT","Bosnia-Herzegovina":"BIH","Brazil":"BRA","Morocco":"MAR","Scotland":"SCO","Haiti":"HAI","USA":"USA","Paraguay":"PAR","Australia":"AUS","Turkiye":"TUR","Germany":"GER","Ecuador":"ECU","Ivory Coast":"CIV","Curacao":"CUW","Netherlands":"NED","Japan":"JPN","Tunisia":"TUN","Sweden":"SWE","Belgium":"BEL","Iran":"IRI","Egypt":"EGY","New Zealand":"NZL","Spain":"ESP","Uruguay":"URU","Saudi Arabia":"KSA","Cape Verde":"CPV","France":"FRA","Senegal":"SEN","Norway":"NOR","Iraq":"IRQ","Argentina":"ARG","Austria":"AUT","Algeria":"ALG","Jordan":"JOR","Portugal":"POR","Colombia":"COL","Uzbekistan":"UZB","DR Congo":"COD","England":"ENG","Croatia":"CRO","Panama":"PAN","Ghana":"GHA"};
 
@@ -26,9 +28,176 @@ const SCREENS = {
   RULES:"rules",
   RESET_PASSWORD:"reset_password",
   SET_PASSWORD:"set_password",
+  NOTIFICATIONS:"notifications",
+  PREMIUM:"premium",
+  CHAMPION:"champion",
 };
 
-const INITIAL_BOARDS = [{ id:"global", label:"🌍", name:"Global Board", members:48291, isGlobal:true }];
+const INITIAL_BOARDS = [{ id:"global", label:"🌍", name:"Global League", members:48291, isGlobal:true }];
+const UI = {
+  card: {
+    background: "#fff",
+    borderRadius: 16,
+    boxShadow: "0 2px 14px rgba(0,0,0,0.07)",
+    border: "1px solid rgba(10,46,138,0.06)",
+    overflow: "hidden",
+  },
+  sectionLabel: {
+    fontSize: 11,
+    fontWeight: 700,
+    color: "#9CA3AF",
+    margin: 0,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+  },
+  formLabel: {
+    fontSize: 11,
+    fontWeight: 700,
+    color: "#9CA3AF",
+    margin: "0 0 8px",
+    textTransform: "uppercase",
+    letterSpacing: 1,
+  },
+  inputPanel: {
+    background: "#F8FAFC",
+    borderRadius: 12,
+    padding: "10px 12px",
+    display: "flex",
+    gap: 8,
+    alignItems: "center",
+    border: "1px solid rgba(10,46,138,0.06)",
+  },
+  primaryButton: {
+    background: `linear-gradient(135deg,${NAVY}cc,#001840cc)`,
+    color: "#fff",
+    border: "none",
+    borderRadius: 10,
+    padding: "7px 14px",
+    fontSize: 12,
+    fontWeight: 750,
+    cursor: "pointer",
+    flexShrink: 0,
+  },
+  ghostButton: {
+    background: "rgba(10,46,138,0.07)",
+    border: "1px solid rgba(10,46,138,0.08)",
+    borderRadius: 10,
+    padding: "7px 10px",
+    fontSize: 11,
+    fontWeight: 750,
+    color: NAVY,
+    cursor: "pointer",
+  },
+  dangerButton: {
+    background: "rgba(200,16,46,0.08)",
+    border: "1px solid rgba(200,16,46,0.08)",
+    borderRadius: 10,
+    padding: "7px 10px",
+    fontSize: 11,
+    fontWeight: 750,
+    color: RED,
+    cursor: "pointer",
+  },
+  emptyState: {
+    background: "#fff",
+    borderRadius: 16,
+    boxShadow: "0 2px 14px rgba(0,0,0,0.07)",
+    border: "1px solid rgba(10,46,138,0.06)",
+    padding: "28px 18px",
+    textAlign: "center",
+  },
+};
+function Card({ children, style, ...props }) {
+  return <div style={{...UI.card,...style}} {...props}>{children}</div>;
+}
+function Button({ children, variant="primary", style, disabled=false, ...props }) {
+  const base = variant==="ghost" ? UI.ghostButton : variant==="danger" ? UI.dangerButton : UI.primaryButton;
+  return (
+    <button
+      disabled={disabled}
+      style={{...base,opacity:disabled?0.55:base.opacity,cursor:disabled?"default":base.cursor,...style}}
+      {...props}>
+      {children}
+    </button>
+  );
+}
+function InputPanel({ children, style, ...props }) {
+  return <div style={{...UI.inputPanel,...style}} {...props}>{children}</div>;
+}
+function EmptyState({ icon="•", title, body }) {
+  return (
+    <Card style={{...UI.emptyState}}>
+      <div style={{fontSize:30,marginBottom:8}}>{icon}</div>
+      <div style={{fontSize:13,fontWeight:750,color:DARK,marginBottom:body?4:0}}>{title}</div>
+      {body&&<div style={{fontSize:12,color:"#9CA3AF",lineHeight:1.45}}>{body}</div>}
+    </Card>
+  );
+}
+function LoadingState({ title="Loading", body="Syncing your latest data..." }) {
+  return (
+    <div style={{position:"fixed",inset:0,background:BG,display:"flex",alignItems:"center",justifyContent:"center",padding:24}}>
+      <Card style={{width:"100%",maxWidth:320,padding:"26px 18px",textAlign:"center"}}>
+        <div style={{width:34,height:34,borderRadius:"50%",border:"3px solid rgba(10,46,138,0.12)",borderTopColor:NAVY,margin:"0 auto 12px",animation:"spin 0.9s linear infinite"}}/>
+        <div style={{fontSize:14,fontWeight:800,color:DARK,marginBottom:4}}>{title}</div>
+        <div style={{fontSize:12,color:"#9CA3AF",lineHeight:1.45}}>{body}</div>
+      </Card>
+    </div>
+  );
+}
+function ConfirmSheet({ icon, title, body, confirmLabel, onConfirm, onCancel, danger=true }) {
+  return (
+    <div style={{position:"fixed",inset:0,zIndex:2000,background:"rgba(0,0,0,0.55)",display:"flex",alignItems:"flex-end"}} onClick={onCancel}>
+      <div style={{width:"100%",background:"#fff",borderRadius:"20px 20px 0 0",padding:"28px 24px 40px"}} onClick={e=>e.stopPropagation()}>
+        <div style={{width:54,height:54,borderRadius:"50%",background:danger?"rgba(200,16,46,0.08)":"rgba(10,46,138,0.08)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:28,margin:"0 auto 12px"}}>{icon}</div>
+        <h3 style={{fontSize:17,fontWeight:850,color:DARK,textAlign:"center",margin:"0 0 10px"}}>{title}</h3>
+        <p style={{fontSize:13,color:"#888",textAlign:"center",lineHeight:1.6,margin:"0 0 24px"}}>{body}</p>
+        <button onClick={onConfirm} style={{width:"100%",background:danger?RED:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,color:"#fff",border:"none",borderRadius:14,padding:"14px 0",fontSize:15,fontWeight:750,cursor:"pointer",marginBottom:10}}>
+          {confirmLabel}
+        </button>
+        <button onClick={onCancel}
+          style={{width:"100%",background:"#fff",color:"#888",border:"1px solid rgba(10,46,138,0.08)",borderRadius:14,padding:"12px 0",fontSize:14,fontWeight:650,cursor:"pointer"}}>
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+}
+function HeaderShell({ onBack, children, footer, fade=78 }) {
+  return (
+    <div style={{padding:"10px 14px 0",flexShrink:0,position:"relative",zIndex:2}}>
+      <div style={{background:"rgba(255,255,255,0.32)",backdropFilter:"blur(28px)",WebkitBackdropFilter:"blur(28px)",borderRadius:26,boxShadow:"0 8px 32px rgba(10,46,138,0.12), inset 0 1px 0 rgba(255,255,255,0.95)",border:"1px solid rgba(255,255,255,0.55)",padding:`12px 14px ${footer?0:4}px`,position:"relative",WebkitMaskImage:`linear-gradient(to bottom,black 0%,black ${fade}%,transparent 100%)`,maskImage:`linear-gradient(to bottom,black 0%,black ${fade}%,transparent 100%)`}}>
+        <div style={{position:"absolute",inset:0,borderRadius:26,background:"linear-gradient(135deg,rgba(255,255,255,0.3) 0%,rgba(255,255,255,0.08) 40%,transparent 65%)",pointerEvents:"none",zIndex:0}}/>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",position:"relative",zIndex:1}}>
+          <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,flexShrink:0,paddingTop:10}}>
+            {onBack ? (
+              <button onClick={onBack} style={{width:44,height:44,background:"none",border:"none",padding:0,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",WebkitTapHighlightColor:"transparent"}}>
+                <span style={{fontSize:22,color:"#374151",lineHeight:1}}>‹</span>
+              </button>
+            ) : <div style={{width:44,height:44}}/>}
+            <p style={{fontSize:11,color:"transparent",margin:0,userSelect:"none"}}> </p>
+          </div>
+          <div style={{textAlign:"center"}}>
+            <img src={predictoLogo} alt="Predicto" decoding="sync" style={{height:36,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
+            <h1 style={{fontSize:10,fontWeight:700,margin:"2px 0 0",letterSpacing:2.5,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
+            <p style={{fontSize:11,color:"#6B7280",margin:"3px 0 0"}}>{children}</p>
+          </div>
+          <div style={{width:44,paddingTop:10}}/>
+        </div>
+        {footer}
+      </div>
+    </div>
+  );
+}
+const boardOrderKey = (board) => board?.joined_at || board?.created_at || board?.name || board?.id || "";
+const sortJoinedBoards = (boards) =>
+  [...boards].sort((a, b) => String(boardOrderKey(a)).localeCompare(String(boardOrderKey(b))));
+const appendJoinedBoard = (boards, board) => {
+  if (boards.some(b => b.id === board.id)) return boards;
+  const nextBoard = { ...board, joined_at: board.joined_at || new Date().toISOString() };
+  const pinned = boards.filter(b => b.isGlobal);
+  const joined = boards.filter(b => !b.isGlobal);
+  return [...pinned, ...sortJoinedBoards([...joined, nextBoard])];
+};
 const BOARD_LEADERS = {
   global: [
     { rank:1,    name:"Alex M.",      pts:342, prize:"250 lei", emoji:"🥇", accent:"#fff" },
@@ -66,7 +235,7 @@ const T = {
     joinTheGame:"Join the Game", continueGoogle:"Continue with Google",
     continueFacebook:"Continue with Facebook", continueInstagram:"Continue with Instagram",
     groupsSchedule:"Groups & Schedule", groupTeams:"Teams", matchSchedule:"Match Schedule",
-    myBoards:"My Boards", activeBoards:"3 active boards", appGuide:"App Guide",
+    myBoards:"My Leagues", activeBoards:"3 active leagues", appGuide:"App Guide",
     howItWorks:"How it works", notifications:"Notifications", matchAlertsOn:"Match alerts on",
     language:"Language", upgradePremium:"Upgrade to Premium", removeAds:"Remove ads",
     signOut:"Sign Out", memberSince:"Member since March 2026",
@@ -83,8 +252,8 @@ const T = {
     best3Title:"🥉 Best Third", selectTeams:"Select 8 3rd place teams...",
     thirdPlaceRanking:"3rd Place Ranking · sorted by points", team:"Team",
     knockout:"Knockout →", selectMore:"Select more",
-    boards:"Boards", createBoard:"Create Board", editBoard:"Edit Board",
-    boardName:"Group name", joinBoard:"Join Board", enterCode:"Enter code",
+    boards:"Leagues", createBoard:"Create League", editBoard:"Edit League",
+    boardName:"Group name", joinBoard:"Join League", enterCode:"Enter code",
     invalidCode:"Invalid code. Please check and try again.",
     rules:"Rules", howPredictionsWork:"How does Predictions work?",
     howExactScoreWork:"How does Exact Score work?",
@@ -106,7 +275,7 @@ const T = {
     realLabel:"Real", predictedLabel:"Predicted", noMatchesScheduled:"No matches scheduled",
     finished:"Finished", prediction:"Prediction",
     noMembersYet:"No members yet", searchOrCode:"Search or enter invite code...",
-    joinBtn:"Join", noBoardsFor:"No boards found for",
+    joinBtn:"Join", noBoardsFor:"No leagues found for",
     dontShowAgain:"Don't show again",
     onb0Title:"Two Prediction Phases", onb0Sub:"Groups + Best Third · Knockout",
     onb0Desc:"Phase 1 (before Jun 11): Rank all 12 groups and pick your 8 best-third teams. Phase 2: The knockout bracket unlocks Jun 27 after the last group match — build your path to the trophy.",
@@ -114,7 +283,7 @@ const T = {
     onb1Title:"Weekly Exact Score", onb1Sub:"Unlocks every Sunday at 8:00 AM",
     onb1Desc:"Predict the exact score of each week's matches for bonus points. New matches every Sunday.",
     onb1Next:"Invite friends →",
-    onb2Title:"Compete With Friends", onb2Sub:"Private boards · Custom prizes",
+    onb2Title:"Compete With Friends", onb2Sub:"Private leagues · Custom prizes",
     onb2Desc:"Create a private group, invite your friends and set your own prizes. May the best predictor win.",
     onb2Next:null,
     getStarted:"Get Started",
@@ -122,11 +291,11 @@ const T = {
     rulesDescBest3:"Best-3rd advancing", rulesDescMatch:"Match winner", rulesDescFinal:"Tournament winner",
     boardPassword:"Group Password", maxPlayers:"Max Players", prizedSlots:"Prize slots", prizesLabel:"Prizes",
     membersLabel:"Members", adminLabel:"Admin", remove:"Remove", saveChanges:"Save Changes ✓",
-    createBoard2:"Create Board 🏆", boardAdmin:"Board Admin", incorrectPassword:"Incorrect password. Try again.",
-    joinBoardTitle:"Join a Board", joinedBoards:"My Boards", availableBoards:"Available Boards",
-    chooseEmoji:"Choose emoji", passwordProtected:"🔒 Password protected board",
+    createBoard2:"Create League 🏆", boardAdmin:"League Admin", incorrectPassword:"Incorrect password. Try again.",
+    joinBoardTitle:"Join a League", joinedBoards:"My Leagues", availableBoards:"Available Leagues",
+    chooseEmoji:"Choose emoji", passwordProtected:"🔒 Password protected league",
     enterPassword:"Enter password...", rank:"Rank",
-    globalBoard:"Global", noBoards:"No boards found.",
+    globalBoard:"Global", noBoards:"No leagues found.",
     viewAll2:"View all", members2:"members", code:"code",
     allMatchesGrp:"All Matches · Gr.",
   },
@@ -149,7 +318,7 @@ const T = {
     joinTheGame:"Intră în Joc", continueGoogle:"Continuă cu Google",
     continueFacebook:"Continuă cu Facebook", continueInstagram:"Continuă cu Instagram",
     groupsSchedule:"Grupe & Program", groupTeams:"Echipe", matchSchedule:"Program Meciuri",
-    myBoards:"Board-urile mele", activeBoards:"3 board-uri active", appGuide:"Ghid Aplicație",
+    myBoards:"Ligile mele", activeBoards:"3 ligi active", appGuide:"Ghid Aplicație",
     howItWorks:"Cum funcționează", notifications:"Notificări", matchAlertsOn:"Alerte meci active",
     language:"Limbă", upgradePremium:"Upgrade la Premium", removeAds:"Elimină reclamele",
     signOut:"Deconectare", memberSince:"Membru din Martie 2026",
@@ -166,7 +335,7 @@ const T = {
     best3Title:"🥉 Best Third", selectTeams:"Selectează 8 echipe de pe locul 3...",
     thirdPlaceRanking:"Clasament Locul 3 · sortat după puncte", team:"Echipă",
     knockout:"Knockout →", selectMore:"Mai selectează",
-    boards:"Board-uri", createBoard:"Creează Board", editBoard:"Editează Board",
+    boards:"Ligi", createBoard:"Creează Ligă", editBoard:"Editează Liga",
     boardName:"Nume grup", joinBoard:"Alătură-te", enterCode:"Introdu codul",
     invalidCode:"Cod invalid. Verifică și încearcă din nou.",
     rules:"Reguli", howPredictionsWork:"Cum funcționează Predicțiile?",
@@ -189,7 +358,7 @@ const T = {
     realLabel:"Real", predictedLabel:"Prezis", noMatchesScheduled:"Nu sunt meciuri programate",
     finished:"Terminat", prediction:"Predicție",
     noMembersYet:"Niciun membru încă", searchOrCode:"Caută sau introdu codul...",
-    joinBtn:"Alătură-te", noBoardsFor:"Niciun board găsit pentru",
+    joinBtn:"Alătură-te", noBoardsFor:"Nicio ligă găsită pentru",
     dontShowAgain:"Nu mai arăta",
     onb0Title:"Predicții în Două Etape", onb0Sub:"Grupe + Best Third · Knockout",
     onb0Desc:"Etapa 1 (înainte de 11 Iun): Clasează cele 12 grupe și alege 8 echipe best-third. Etapa 2: Bracket-ul knockout se deblochează pe 27 Iun după ultimul meci din grupe.",
@@ -197,7 +366,7 @@ const T = {
     onb1Title:"Scor Exact Săptămânal", onb1Sub:"Se deschide duminică la 8:00",
     onb1Desc:"Prezice scorul exact al meciurilor săptămânii pentru puncte bonus. Meciuri noi în fiecare duminică.",
     onb1Next:"Invită prieteni →",
-    onb2Title:"Concurează cu Prietenii", onb2Sub:"Board-uri private · Premii personalizate",
+    onb2Title:"Concurează cu Prietenii", onb2Sub:"Ligi private · Premii personalizate",
     onb2Desc:"Creează un grup privat, invită prietenii și setează propriile premii. Câștige cel mai bun prezicător.",
     onb2Next:null,
     getStarted:"Începe",
@@ -205,11 +374,11 @@ const T = {
     rulesDescBest3:"Echipă best-3rd care avansează", rulesDescMatch:"Câștigătorul meciului", rulesDescFinal:"Câștigătorul turneului",
     boardPassword:"Parolă Grup", maxPlayers:"Jucători max", prizedSlots:"Locuri premiate", prizesLabel:"Premii",
     membersLabel:"Membri", adminLabel:"Admin", remove:"Elimină", saveChanges:"Salvează Modificările ✓",
-    createBoard2:"Creează Board 🏆", boardAdmin:"Board Admin", incorrectPassword:"Parolă incorectă. Încearcă din nou.",
-    joinBoardTitle:"Alătură-te unui Board", joinedBoards:"Board-urile mele", availableBoards:"Board-uri disponibile",
-    chooseEmoji:"Alege un emoji", passwordProtected:"🔒 Board protejat cu parolă",
+    createBoard2:"Creează Ligă 🏆", boardAdmin:"Admin Ligă", incorrectPassword:"Parolă incorectă. Încearcă din nou.",
+    joinBoardTitle:"Alătură-te unei Ligi", joinedBoards:"Ligile mele", availableBoards:"Ligi disponibile",
+    chooseEmoji:"Alege un emoji", passwordProtected:"🔒 Ligă protejată cu parolă",
     enterPassword:"Introdu parola...", rank:"Rang",
-    globalBoard:"Global", noBoards:"Niciun board găsit.",
+    globalBoard:"Global", noBoards:"Nicio ligă găsită.",
     viewAll2:"Vezi tot", members2:"membri", code:"cod",
     allMatchesGrp:"Toate Meciurile · Gr.",
   },
@@ -232,7 +401,7 @@ const T = {
     joinTheGame:"Rejoignez le Jeu", continueGoogle:"Continuer avec Google",
     continueFacebook:"Continuer avec Facebook", continueInstagram:"Continuer avec Instagram",
     groupsSchedule:"Groupes & Programme", groupTeams:"Équipes", matchSchedule:"Programme des Matchs",
-    myBoards:"Mes Boards", activeBoards:"3 boards actifs", appGuide:"Guide App",
+    myBoards:"Mes Ligues", activeBoards:"3 ligues actives", appGuide:"Guide App",
     howItWorks:"Comment ça marche", notifications:"Notifications", matchAlertsOn:"Alertes match activées",
     language:"Langue", upgradePremium:"Passer à Premium", removeAds:"Supprimer les pubs",
     signOut:"Déconnexion", memberSince:"Membre depuis Mars 2026",
@@ -249,7 +418,7 @@ const T = {
     best3Title:"🥉 Best Third", selectTeams:"Sélectionnez 8 équipes de 3e place...",
     thirdPlaceRanking:"Classement 3e Place · trié par points", team:"Équipe",
     knockout:"Knockout →", selectMore:"Sélectionner encore",
-    boards:"Boards", createBoard:"Créer un Board", editBoard:"Modifier le Board",
+    boards:"Ligues", createBoard:"Créer une Ligue", editBoard:"Modifier la Ligue",
     boardName:"Nom du groupe", joinBoard:"Rejoindre", enterCode:"Entrer le code",
     invalidCode:"Code invalide. Veuillez vérifier et réessayer.",
     rules:"Règles", howPredictionsWork:"Comment fonctionnent les Pronostics ?",
@@ -272,7 +441,7 @@ const T = {
     realLabel:"Réel", predictedLabel:"Prédit", noMatchesScheduled:"Aucun match programmé",
     finished:"Terminé", prediction:"Pronostic",
     noMembersYet:"Aucun membre encore", searchOrCode:"Chercher ou entrer le code...",
-    joinBtn:"Rejoindre", noBoardsFor:"Aucun board trouvé pour",
+    joinBtn:"Rejoindre", noBoardsFor:"Aucune ligue trouvée pour",
     dontShowAgain:"Ne plus afficher",
     onb0Title:"Deux Phases de Pronostics", onb0Sub:"Groupes + Meilleur 3e · Knockout",
     onb0Desc:"Phase 1 (avant le 11 Juin) : Classez les 12 groupes et choisissez 8 équipes meilleur 3e. Phase 2 : Le bracket knockout se déverrouille le 27 Juin après le dernier match de groupes.",
@@ -280,7 +449,7 @@ const T = {
     onb1Title:"Score Exact Hebdomadaire", onb1Sub:"Déverrouillé chaque dimanche à 8h",
     onb1Desc:"Prédisez le score exact des matchs de la semaine pour des points bonus. Nouveaux matchs chaque dimanche.",
     onb1Next:"Inviter des amis →",
-    onb2Title:"Affrontez Vos Amis", onb2Sub:"Boards privés · Prix personnalisés",
+    onb2Title:"Affrontez Vos Amis", onb2Sub:"Ligues privées · Prix personnalisés",
     onb2Desc:"Créez un groupe privé, invitez vos amis et fixez vos propres prix. Que le meilleur pronostiqueur gagne.",
     onb2Next:null,
     getStarted:"Commencer",
@@ -288,11 +457,11 @@ const T = {
     rulesDescBest3:"Équipe best-3rd qui avance", rulesDescMatch:"Vainqueur du match", rulesDescFinal:"Vainqueur du tournoi",
     boardPassword:"Mot de passe", maxPlayers:"Joueurs max", prizedSlots:"Places primées", prizesLabel:"Prix",
     membersLabel:"Membres", adminLabel:"Admin", remove:"Retirer", saveChanges:"Sauvegarder ✓",
-    createBoard2:"Créer Board 🏆", boardAdmin:"Board Admin", incorrectPassword:"Mot de passe incorrect. Réessayez.",
-    joinBoardTitle:"Rejoindre un Board", joinedBoards:"Mes Boards", availableBoards:"Boards disponibles",
-    chooseEmoji:"Choisir un emoji", passwordProtected:"🔒 Board protégé par mot de passe",
+    createBoard2:"Créer Ligue 🏆", boardAdmin:"Admin Ligue", incorrectPassword:"Mot de passe incorrect. Réessayez.",
+    joinBoardTitle:"Rejoindre une Ligue", joinedBoards:"Mes Ligues", availableBoards:"Ligues disponibles",
+    chooseEmoji:"Choisir un emoji", passwordProtected:"🔒 Ligue protégée par mot de passe",
     enterPassword:"Entrer le mot de passe...", rank:"Rang",
-    globalBoard:"Global", noBoards:"Aucun board trouvé.",
+    globalBoard:"Global", noBoards:"Aucune ligue trouvée.",
     viewAll2:"Voir tout", members2:"membres", code:"code",
     allMatchesGrp:"Tous les Matchs · Gr.",
   },
@@ -363,7 +532,7 @@ const isWeekUnlocked = (day, simDay=null, simHour=12, simMin=0) => {
     const simDate = new Date(2026,5,simDay,simHour,simMin,0);
     if(day >= 43) return simDate >= july(12);   // Final week
     if(day >= 36) return simDate >= july(5);    // QF/SF week
-    if(day >= 29) return simDate >= june(28);   // R16 week
+    if(day >= 28) return simDate >= june(28);   // R32 week (starts Jun 28)
     if(day >= 22) return simDate >= june(21);
     if(day >= 15) return simDate >= june(14);
     return true;
@@ -371,7 +540,7 @@ const isWeekUnlocked = (day, simDay=null, simHour=12, simMin=0) => {
   const now2 = new Date();
   if(day >= 43) return now2 >= july(12);
   if(day >= 36) return now2 >= july(5);
-  if(day >= 29) return WEEK_UNLOCKED[29];
+  if(day >= 28) return WEEK_UNLOCKED[29];
   if(day >= 22) return WEEK_UNLOCKED[22];
   if(day >= 15) return WEEK_UNLOCKED[15];
   return WEEK_UNLOCKED[8];
@@ -428,6 +597,37 @@ const computeLiveScores = (simDay=null, simHour=12, simMin=0) => {
 };
 const LIVE_SCORES_DEFAULT = computeLiveScores();
 let LIVE_SCORES = LIVE_SCORES_DEFAULT;
+
+// Hook: merge scoruri reale din Supabase peste scoruri simulate.
+// DB suprascrie simularea; dacă DB e gol (înainte de turneu), simularea rămâne.
+function useLiveScores(simDay, simHour, simMin) {
+  const [dbScores, setDbScores] = useState({});
+
+  useEffect(() => {
+    loadLiveScores().then(scores => {
+      if (Object.keys(scores).length > 0) setDbScores(scores);
+    });
+
+    const channel = subscribeLiveScores((payload) => {
+      const row = payload.new;
+      if (!row) return;
+      setDbScores(prev => ({
+        ...prev,
+        [row.match_key]: {
+          status: row.status,
+          home:   row.home_score,
+          away:   row.away_score,
+          min:    row.live_min,
+        },
+      }));
+    });
+
+    return () => { channel.unsubscribe(); };
+  }, []);
+
+  const computed = computeLiveScores(simDay, simHour, simMin);
+  return { ...computed, ...dbScores };
+}
 
 const toLabel = (d) => d > 30 ? `${d-30} July` : `${d} June`;
 
@@ -539,7 +739,7 @@ function CalendarSlider() {
 
       {/* Match popup — fixed bottom sheet */}
       {sm&&(
-        <div style={{position:"absolute",inset:0,zIndex:50,display:"flex",flexDirection:"column",justifyContent:"flex-end"}}
+        <div style={{position:"fixed",inset:0,zIndex:2000,display:"flex",flexDirection:"column",justifyContent:"flex-end"}}
           onClick={()=>setSelDay(null)}>
           <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.4)"}}/>
           <div onClick={e=>e.stopPropagation()}
@@ -595,7 +795,7 @@ function CalendarSlider() {
 function KOTeamRow({ team, pick, pairId, setKnockoutPicks }) {
   const flag = FLAGS[team] || "🏳";
   const selected = pick === team;
-  const ph = !team||team.includes("W")||team.includes("L")||team.includes("3rd")||team.includes("Best")||team.includes("SF")||team.includes("QF")||team.includes("R16");
+  const ph = !team||team.includes("W")||team.includes("L")||team.includes("3rd")||team.includes("Best")||team.includes("SF")||team.includes("QF")||team.includes("R16")||team.includes("R32")||team.includes("°");
   const handleSelect = () => {
     if(!ph) setKnockoutPicks(k => ({...k, [pairId]: k[pairId]===team ? null : team}));
   };
@@ -2857,7 +3057,6 @@ function InstantPickScreen({ onBack, onComplete, onKoComplete, onModify, savedSt
 
   const sharedHeader = (
     <div style={{background:"rgba(0,32,91,0.88)", paddingBottom:0, flexShrink:0, position:"relative", zIndex:1, overflow:"hidden"}}>
-      <img src={varBg} alt="" style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover",objectPosition:"center 30%",opacity:0.28,pointerEvents:"none"}}/>
       {/* Top row */}
       <div style={{display:"flex", alignItems:"center", gap:10, padding:"10px 20px 6px"}}>
         <button onClick={headerBack} style={{background:"rgba(255,255,255,0.12)",border:"none",borderRadius:10,width:34,height:34,color:"#fff",fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>‹</button>
@@ -2966,7 +3165,7 @@ function InstantPickScreen({ onBack, onComplete, onKoComplete, onModify, savedSt
       "Portugal":"POR","Colombia":"COL","Uzbekistan":"UZB","DR Congo":"COD",
       "England":"ENG","Croatia":"CRO","Panama":"PAN","Ghana":"GHA"};
     return (
-      <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,userSelect:"none"}}>
+      <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,userSelect:"none",position:"relative",overflow:"hidden"}}>
 
         {sharedHeader}
         {/* Progress bar */}
@@ -3005,7 +3204,7 @@ function InstantPickScreen({ onBack, onComplete, onKoComplete, onModify, savedSt
         </div>
 
         {/* ── AVAILABLE TEAMS — same row style as GroupRankingScreen ── */}
-        <div style={{flex:1,overflowY:"auto",background:BG,padding:"8px 14px",
+        <div style={{flex:1,minHeight:0,overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",background:BG,padding:"8px 14px",
           display:"flex",flexDirection:"column",gap:6}}>
           {available.map(team=>{
             const grp=GROUPS.find(g=>(allGroupStandings[g]||[])[2]===team)||"?";
@@ -3734,8 +3933,8 @@ function GroupRankingScreen({ group, teams, existingRanking, onConfirm, onAutoSa
 }
 
 // ── CIRCLE TAB ────────────────────────────────────────────────────────────────
-function CircleTab({ label, name, isActive, onClick, lightBg=false, distance=0, rank, members }) {
-  const scale = isActive ? 1.1 : Math.max(0.58, 1 - distance * 0.2);
+function CircleTab({ label, imageUrl, name, isActive, onClick, lightBg=false, distance=0, rank, members }) {
+  const scale = isActive ? 1.32 : Math.max(0.58, 1 - distance * 0.2);
   const opacity = isActive ? 1 : Math.max(0.32, 1 - distance * 0.28);
   return (
     <div onClick={onClick} style={{
@@ -3751,11 +3950,13 @@ function CircleTab({ label, name, isActive, onClick, lightBg=false, distance=0, 
         background:isActive?"#fff":lightBg?"rgba(0,0,0,0.05)":"rgba(255,255,255,0.1)",
         border:isActive?`2px solid ${NAVY}`:"1px solid rgba(0,0,0,0.10)",
         display:"flex",alignItems:"center",justifyContent:"center",
-        fontSize:22,
+        fontSize:22, overflow:"hidden",
         boxShadow:isActive?`0 0 0 4px ${NAVY}18, 0 4px 14px rgba(10,46,138,0.18)`:"none",
         transition:"all 0.25s",
       }}>
-        {label}
+        {imageUrl
+          ? <img src={imageUrl} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+          : label}
       </div>
       <span style={{
         fontSize:isActive?10:9,
@@ -3769,34 +3970,555 @@ function CircleTab({ label, name, isActive, onClick, lightBg=false, distance=0, 
 }
 
 
-// ── HOME ────────────────────────────────────────────────────────────────────
-function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateBoard, onOpenGroups, onCopyPredictions, onCopyExactScores, onAccount, myBoards, predictionsComplete, instantPickDone, koPickDone, koUnlocked, exactScores, activeBoardId, setActiveBoardId, tournamentStarted, simDay, simHour, simMin, createdBoards=[], showFirstAction, leaderboardData={}, boardsLoading=false, predictionsLoaded={} }) {
+// ── PULSE NODE ───────────────────────────────────────────────────────────────
+function PulseNode({ color=NAVY, children }) {
+  return (
+    <div style={{position:"relative",width:18,height:18,flexShrink:0}}>
+      <div style={{
+        position:"absolute", inset:0, borderRadius:"50%", background:color,
+        display:"flex", alignItems:"center", justifyContent:"center",
+        animation:"nodeBreath 3s ease-in-out infinite",
+      }}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// ── PREMIUM ──────────────────────────────────────────────────────────────────
+function PremiumScreen({ onBack }) {
   const lang = useLang();
+  return (
+    <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",position:"relative"}}>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.09,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
+      <div style={{padding:"10px 14px 0",flexShrink:0,position:"relative",zIndex:2}}>
+        <div style={{background:"rgba(255,255,255,0.32)",backdropFilter:"blur(28px)",WebkitBackdropFilter:"blur(28px)",borderRadius:26,boxShadow:"0 8px 32px rgba(10,46,138,0.12), inset 0 1px 0 rgba(255,255,255,0.95)",border:"1px solid rgba(255,255,255,0.55)",padding:"12px 20px 0",position:"relative",WebkitMaskImage:"linear-gradient(to bottom,black 0%,black 78%,transparent 100%)",maskImage:"linear-gradient(to bottom,black 0%,black 78%,transparent 100%)"}}>
+          <div style={{position:"absolute",inset:0,borderRadius:26,background:"linear-gradient(135deg,rgba(255,255,255,0.3) 0%,rgba(255,255,255,0.08) 40%,transparent 65%)",pointerEvents:"none",zIndex:0}}/>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",position:"relative",zIndex:1}}>
+            <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,flexShrink:0,paddingTop:10}}>
+              <button onClick={onBack} style={{width:44,height:44,background:"none",border:"none",padding:0,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",WebkitTapHighlightColor:"transparent"}}>
+                <span style={{fontSize:22,color:"#374151",lineHeight:1}}>‹</span>
+              </button>
+              <p style={{fontSize:11,color:"transparent",margin:0,userSelect:"none"}}> </p>
+            </div>
+            <div style={{textAlign:"center"}}>
+              <img src={predictoLogo} alt="Predicto" decoding="sync" style={{height:36,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
+              <h1 style={{fontSize:10,fontWeight:700,margin:"2px 0 0",letterSpacing:2.5,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
+              <p style={{fontSize:11,color:"#6B7280",margin:"3px 0 0"}}>{T[lang].location}</p>
+            </div>
+            <div style={{width:44,paddingTop:10}}/>
+          </div>
+        </div>
+      </div>
+      <div style={{flex:1,display:"flex",flexDirection:"column",padding:"16px 14px",overflow:"hidden",position:"relative",zIndex:1}}>
+        <div style={{background:"#fff",borderRadius:20,boxShadow:"0 2px 16px rgba(10,46,138,0.07)",flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:12,padding:"32px 24px"}}>
+          <span style={{fontSize:48}}>⭐</span>
+          <p style={{fontSize:18,fontWeight:800,color:NAVY,margin:0,textAlign:"center"}}>You're already Premium for us</p>
+          <p style={{fontSize:13,color:"#888",margin:0,textAlign:"center",lineHeight:1.6}}>Thank you for being part of Predicto.<br/>You get the full experience, on us.</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── NOTIFICATIONS ────────────────────────────────────────────────────────────
+function NotificationsScreen({ onBack }) {
+  const lang = useLang();
+  return (
+    <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",position:"relative"}}>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.09,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
+      <div style={{padding:"10px 14px 0",flexShrink:0,position:"relative",zIndex:2}}>
+        <div style={{background:"rgba(255,255,255,0.32)",backdropFilter:"blur(28px)",WebkitBackdropFilter:"blur(28px)",borderRadius:26,boxShadow:"0 8px 32px rgba(10,46,138,0.12), inset 0 1px 0 rgba(255,255,255,0.95)",border:"1px solid rgba(255,255,255,0.55)",padding:"12px 20px 0",position:"relative",WebkitMaskImage:"linear-gradient(to bottom,black 0%,black 78%,transparent 100%)",maskImage:"linear-gradient(to bottom,black 0%,black 78%,transparent 100%)"}}>
+          <div style={{position:"absolute",inset:0,borderRadius:26,background:"linear-gradient(135deg,rgba(255,255,255,0.3) 0%,rgba(255,255,255,0.08) 40%,transparent 65%)",pointerEvents:"none",zIndex:0}}/>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",position:"relative",zIndex:1}}>
+            <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,flexShrink:0,paddingTop:10}}>
+              <button onClick={onBack} style={{width:44,height:44,background:"none",border:"none",padding:0,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",WebkitTapHighlightColor:"transparent"}}>
+                <span style={{fontSize:22,color:"#374151",lineHeight:1}}>‹</span>
+              </button>
+              <p style={{fontSize:11,color:"transparent",margin:0,userSelect:"none"}}> </p>
+            </div>
+            <div style={{textAlign:"center"}}>
+              <img src={predictoLogo} alt="Predicto" decoding="sync" style={{height:36,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
+              <h1 style={{fontSize:10,fontWeight:700,margin:"2px 0 0",letterSpacing:2.5,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
+              <p style={{fontSize:11,color:"#6B7280",margin:"3px 0 0"}}>{T[lang].location}</p>
+            </div>
+            <div style={{width:44,paddingTop:10}}/>
+          </div>
+        </div>
+      </div>
+      <div style={{flex:1,display:"flex",flexDirection:"column",padding:"16px 14px",overflow:"hidden"}}>
+        <div style={{background:"#fff",borderRadius:20,boxShadow:"0 2px 16px rgba(10,46,138,0.07)",flex:1,display:"flex",alignItems:"center",justifyContent:"center"}}>
+          <p style={{fontSize:13,color:"rgba(0,0,0,0.3)",fontWeight:500}}>No notifications yet</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── CHAMPION & TOP SCORE ────────────────────────────────────────────────────
+const POS_LABEL = { Goalkeeper:'GK', Defence:'DEF', Midfield:'MID', Offence:'FWD' };
+
+function PaniniCard({ player, teamName, isSelected, onClick }) {
+  const [primary, secondary] = TEAM_COLORS[teamName] || ['#1a3a6b','#c8102e'];
+  const flag  = FLAGS[teamName] || '🏳';
+  const code  = TEAM_CODE[teamName] || teamName?.slice(0,3).toUpperCase() || '???';
+  const p     = typeof player === 'string' ? { name:player, position:null, number:null, photo:null } : player;
+  const posLbl = POS_LABEL[p.position] || '';
+  const lastName = p.name.split(' ').slice(-1)[0];
+  const displayNumber = p.number ?? 26;
+
+  return (
+    <div onClick={onClick} style={{
+      position:'relative', width:'100%', paddingBottom:'132%',
+      borderRadius:10, overflow:'hidden', cursor:'pointer',
+      border: isSelected ? '2px solid rgba(240,160,32,0.55)' : '1px solid rgba(0,0,0,0.08)',
+      boxShadow: isSelected ? '0 2px 10px rgba(0,0,0,0.08)' : 'none',
+      transform: isSelected ? 'scale(1.06) translateY(-3px)' : 'scale(1)',
+      transition:'all 0.16s cubic-bezier(0.34,1.56,0.64,1)',
+    }}>
+      <div style={{position:'absolute',inset:0}}>
+
+        {/* Sky-blue gradient background */}
+        <div style={{position:'absolute',inset:0,background:'#F3F4F6'}}/>
+
+        {/* Team color stripe top */}
+        <div style={{position:'absolute',top:0,left:0,right:0,height:4,background:`linear-gradient(90deg,${primary},${secondary})`}}/>
+
+        {/* Shirt number watermark */}
+        <div style={{
+          position:'absolute',top:'-2%',left:'-1%',
+          fontSize:62,fontWeight:900,fontStyle:'italic',
+          color:primary,opacity:0.17,lineHeight:1,
+          userSelect:'none',pointerEvents:'none',letterSpacing:-2,
+        }}>{displayNumber}</div>
+
+        {/* Flag + FIFA code top-right */}
+        <div style={{position:'absolute',top:5,right:5,zIndex:3,display:'flex',flexDirection:'column',alignItems:'center',gap:1}}>
+          <span style={{fontSize:14,lineHeight:1}}>{flag}</span>
+          <span style={{fontSize:6.5,fontWeight:800,color:'#fff',textShadow:'0 1px 2px rgba(0,0,0,0.6)',letterSpacing:0.3}}>{code}</span>
+        </div>
+
+        {/* Player photo */}
+        {p.photo ? (
+          <img src={p.photo} alt={p.name}
+            style={{position:'absolute',bottom:22,left:'50%',transform:'translateX(-50%)',height:'67%',width:'auto',maxWidth:'95%',objectFit:'cover',objectPosition:'top center',zIndex:2,filter:'none',
+              WebkitMaskImage:'radial-gradient(ellipse 58% 74% at 50% 50%, #000 62%, rgba(0,0,0,0.75) 70%, transparent 82%)',
+              maskImage:'radial-gradient(ellipse 58% 74% at 50% 50%, #000 62%, rgba(0,0,0,0.75) 70%, transparent 82%)'}}
+            onError={e=>{e.currentTarget.style.display='none'}}/>
+        ):(
+          <div style={{position:'absolute',bottom:22,left:'50%',transform:'translateX(-50%)',fontSize:40,lineHeight:1,zIndex:2,opacity:0.25}}>👤</div>
+        )}
+
+        {/* Bottom name bar */}
+        <div style={{position:'absolute',bottom:0,left:0,right:0,zIndex:4,background:primary,padding:'4px 3px 3px',minHeight:22}}>
+          <div style={{fontSize:8,fontWeight:900,color:'#fff',textAlign:'center',textTransform:'uppercase',letterSpacing:0.4,lineHeight:1.2,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>
+            {lastName}
+          </div>
+          {posLbl&&(
+            <div style={{fontSize:6.5,color:secondary&&secondary!=='#FFFFFF'?secondary:'rgba(255,255,255,0.75)',textAlign:'center',fontWeight:700,letterSpacing:0.8,textTransform:'uppercase',lineHeight:1.2}}>
+              {posLbl}
+            </div>
+          )}
+        </div>
+
+        {/* Gold shimmer overlay when selected */}
+        {isSelected&&(
+          <div style={{position:'absolute',inset:0,zIndex:5,background:'rgba(255,215,0,0.1)',pointerEvents:'none'}}/>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ChampionScreen({ onBack, initialMode="champion", championPick, topScorerPick, setChampionPick, setTopScorerPick, showToast, simDay=null, simHour=12, simMin=0 }) {
+  const allTeams = Object.values(ALL_GROUPS_DATA).flat();
+  const tCode = (t) => TEAM_CODE[t]||t.slice(0,3).toUpperCase();
+  const showChampion = initialMode !== "scorer";
+  const showScorer = initialMode !== "champion";
+  const simNow = simDay ? new Date(2026,5,simDay,simHour,simMin,0) : new Date();
+  const phase1Deadline = new Date(2026,5,11,19,0,0);
+  const phase2Open     = new Date(2026,5,27,21,0,0);
+  const isPhase1 = simNow < phase1Deadline;
+  const isPhase2 = simNow >= phase2Open;
+  const isLocked = !isPhase1 && !isPhase2;
+  const featuredChampionTeams = ["Argentina","Brazil","France","England","Spain","Portugal"].filter(t=>allTeams.includes(t));
+  const otherChampionTeams = allTeams.filter(t=>!featuredChampionTeams.includes(t));
+  const pickCardStyle = UI.card;
+  const pickLabelStyle = UI.sectionLabel;
+  const finishPick = (message, icon) => {
+    showToast&&showToast(message, icon);
+    setTimeout(()=>onBack&&onBack(), 450);
+  };
+  const selectChampion = (team) => {
+    if (isLocked) return;
+    const next = championPick===team ? null : team;
+    setChampionPick(next);
+    if(next) finishPick("Winner Team saved", FLAGS[team]||"🏆");
+    else showToast&&showToast("Winner Team cleared", "↺");
+  };
+  const [tsTeam, setTsTeam] = useState(topScorerPick?.team||null);
+  const [champPopup, setChampPopup] = useState(false);
+  const [tsPopup, setTsPopup] = useState(false);
+  const [teamPlayers, setTeamPlayers] = useState([]);
+  const [playersLoading, setPlayersLoading] = useState(false);
+
+  useEffect(() => {
+    if (!tsTeam) { setTeamPlayers([]); return; }
+    setPlayersLoading(true);
+    loadPlayersByTeam(tsTeam).then(p => { setTeamPlayers(p); setPlayersLoading(false); });
+  }, [tsTeam]);
+
+  return (
+    <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",position:"relative"}}>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.055,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
+
+      {/* Navy header */}
+      <div style={{background:"rgba(0,32,91,0.88)",flexShrink:0,position:"relative",zIndex:1,overflow:"hidden"}}>
+        {/* trophy image watermark inside header */}
+        <img src={trophy} alt="" style={{position:"absolute",right:-10,top:-18,height:130,opacity:0.13,pointerEvents:"none",filter:"grayscale(0.3) contrast(1.2)"}}/>
+        <div style={{position:"relative",zIndex:1}}>
+          <div style={{display:"flex",alignItems:"center",gap:10,padding:"28px 14px 28px"}}>
+            <button onClick={onBack} style={{background:"rgba(255,255,255,0.12)",border:"none",borderRadius:10,width:34,height:34,color:"#fff",fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>‹</button>
+            <div style={{flex:1,textAlign:"center"}}>
+              <div style={{fontSize:18,fontWeight:800,color:"#fff"}}>{showChampion?"Pick Champion":"Pick Top Scorer"}</div>
+            </div>
+            <div style={{width:34,flexShrink:0}}/>
+          </div>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",padding:"24px 18px 100px",position:"relative",zIndex:1}}>
+
+        {/* Lock banner */}
+        {isLocked&&(
+          <div style={{background:"rgba(10,46,138,0.07)",border:"1.5px solid rgba(10,46,138,0.14)",borderRadius:14,padding:"12px 16px",marginBottom:16,display:"flex",alignItems:"center",gap:10}}>
+            <span style={{fontSize:20}}>🔒</span>
+            <div>
+              <div style={{fontSize:13,fontWeight:700,color:NAVY}}>Picks locked until Knockout Phase</div>
+              <div style={{fontSize:11,color:"#6B7280",marginTop:2}}>Opens Jun 27 after the last group match. Your current picks are saved.</div>
+            </div>
+          </div>
+        )}
+
+        {/* Champion card */}
+        {showChampion&&<>
+          <div style={{...pickCardStyle,padding:"18px",marginBottom:12,position:"relative"}}>
+            <div style={{display:"flex",alignItems:"center",gap:14}}>
+              <div style={{width:76,height:76,borderRadius:"50%",background:"linear-gradient(135deg,#FFF7E1,#F3F4F6)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,border:"1px solid rgba(240,160,32,0.22)"}}>
+                <span style={{fontSize:46,lineHeight:1}}>{championPick ? (FLAGS[championPick]||"🏳") : "🏆"}</span>
+              </div>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{...pickLabelStyle,color:"#D4820A"}}>Champion Pick</div>
+                <div style={{fontSize:22,fontWeight:900,color:DARK,marginTop:4,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+                  {championPick || "Choose your winner"}
+                </div>
+                <div style={{fontSize:12,color:"#9CA3AF",fontWeight:600,marginTop:3}}>
+                  {championPick ? `${tCode(championPick)} selected` : "Tap a team below"}
+                </div>
+              </div>
+              {championPick&&(
+                <button onClick={()=>selectChampion(championPick)} style={{border:"none",background:"#F3F4F6",borderRadius:10,padding:"8px 10px",fontSize:11,fontWeight:800,color:"#6B7280",cursor:"pointer",flexShrink:0}}>
+                  Clear
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:12,opacity:isLocked?0.5:1,pointerEvents:isLocked?"none":"auto"}}>
+            {featuredChampionTeams.map(team=>{
+              const isSel = championPick===team;
+              return (
+                <button key={`featured-${team}`} onClick={()=>selectChampion(team)}
+                  style={{background:isSel?NAVY:"#fff",borderRadius:16,border:`1.5px solid ${isSel?NAVY:"rgba(240,160,32,0.20)"}`,boxShadow:isSel?"0 4px 14px rgba(10,46,138,0.16)":"0 2px 10px rgba(0,0,0,0.05)",padding:"12px 6px",minHeight:94,cursor:isLocked?"default":"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:7,position:"relative",overflow:"hidden"}}>
+                  <span style={{fontSize:34,lineHeight:1}}>{FLAGS[team]||"🏳"}</span>
+                  <span style={{fontSize:11,fontWeight:900,color:isSel?"#fff":DARK,lineHeight:1.15,textAlign:"center",maxWidth:"100%",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{team}</span>
+                  <span style={{fontSize:9,fontWeight:900,color:isSel?"rgba(255,255,255,0.55)":"#D4820A",letterSpacing:0.5}}>{tCode(team)}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div style={{...pickLabelStyle,margin:"2px 2px 8px"}}>All teams</div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:8,opacity:isLocked?0.5:1,pointerEvents:isLocked?"none":"auto"}}>
+            {otherChampionTeams.map(team=>{
+              const isSel = championPick===team;
+              return (
+                <button key={team} onClick={()=>selectChampion(team)}
+                  style={{background:"#fff",borderRadius:14,border:`1.5px solid ${isSel?NAVY:"transparent"}`,boxShadow:isSel?"0 2px 12px rgba(10,46,138,0.12)":"0 2px 10px rgba(0,0,0,0.05)",padding:"10px 10px",minHeight:58,cursor:isLocked?"default":"pointer",display:"flex",alignItems:"center",gap:9,position:"relative",overflow:"hidden",textAlign:"left"}}>
+                  {isSel&&<div style={{position:"absolute",top:7,right:7,width:18,height:18,borderRadius:"50%",background:GREEN,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:900,color:"#fff"}}>✓</div>}
+                  <span style={{fontSize:24,lineHeight:1,flexShrink:0}}>{FLAGS[team]||"🏳"}</span>
+                  <span style={{flex:1,minWidth:0}}>
+                    <span style={{display:"block",fontSize:11,fontWeight:850,color:isSel?NAVY:DARK,lineHeight:1.15,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{team}</span>
+                    <span style={{display:"block",fontSize:9,fontWeight:800,color:"#C0C8D8",letterSpacing:0.5,marginTop:3}}>{tCode(team)}</span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </>}
+
+        {/* Top Scorer card */}
+        {showScorer&&<div style={{...pickCardStyle,padding:"18px",opacity:isLocked?0.7:1}}>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,marginBottom:14}}>
+            <div style={{minWidth:0}}>
+              <div style={{...pickLabelStyle,color:"#D4820A"}}>Top Scorer Pick</div>
+              <div style={{fontSize:18,fontWeight:850,color:DARK,marginTop:3,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+                {topScorerPick?.player || "Choose your player"}
+              </div>
+              <div style={{fontSize:11,color:"#9CA3AF",fontWeight:600,marginTop:2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+                {topScorerPick?.team ? `${FLAGS[topScorerPick.team]||"🏳"} ${topScorerPick.team}` : "Start with a team"}
+              </div>
+            </div>
+            {topScorerPick?.player&&<div style={{width:30,height:30,borderRadius:"50%",background:GREEN,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:900,color:"#fff",flexShrink:0}}>✓</div>}
+          </div>
+
+          {/* shirt button — opens team picker */}
+          <div onClick={isLocked ? undefined : ()=>setTsPopup(true)}
+            style={{display:"flex",alignItems:"center",gap:12,cursor:isLocked?"default":"pointer",padding:"12px 14px",borderRadius:14,background:"#F8FAFC",border:"1px solid rgba(10,46,138,0.06)"}}>
+            <span style={{fontSize:38,lineHeight:1,flexShrink:0}}>👕</span>
+            {tsTeam?(
+              <div style={{flex:1,minWidth:0,textAlign:"left"}}>
+                <div style={{fontSize:13,fontWeight:700,color:DARK}}>{FLAGS[tsTeam]||"🏳"} {tsTeam}</div>
+                <div style={{fontSize:11,color:"#9CA3AF",fontWeight:600}}>{tCode(tsTeam)}</div>
+              </div>
+            ):(
+              <span style={{flex:1,fontSize:12,color:"#9CA3AF",fontWeight:600}}>Pick a team...</span>
+            )}
+            <span style={{fontSize:18,color:"#C0C8D8",fontWeight:700,lineHeight:1}}>›</span>
+          </div>
+
+          {/* Players — grid or selected view */}
+          {tsTeam&&(
+            <div style={{marginTop:16}}>
+              {topScorerPick?.team===tsTeam&&topScorerPick?.player ? (
+                /* Selected player — card mare centrat */
+                <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:12,padding:"8px 0 80px"}}>
+                  <div style={{fontSize:11,fontWeight:600,color:"#9CA3AF",letterSpacing:0.3}}>
+                    {FLAGS[tsTeam]||"🏳"} {tsTeam}
+                  </div>
+                  <div style={{width:140}}>
+                    {teamPlayers.filter(p=>p.name===topScorerPick.player).map(player=>(
+                      <PaniniCard key={player.name} player={player} teamName={tsTeam} isSelected={true} onClick={()=>{}}/>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                /* Grid de selectie */
+                <>
+                  <div style={{fontSize:11,fontWeight:600,color:"#9CA3AF",marginBottom:14,textAlign:"center",letterSpacing:0.3}}>
+                    {FLAGS[tsTeam]||"🏳"} {tsTeam} — pick the top scorer
+                  </div>
+                  {playersLoading ? (
+                    <div style={{textAlign:"center",padding:"24px 0",fontSize:12,color:"#9CA3AF"}}>Loading players…</div>
+                  ) : teamPlayers.length === 0 ? (
+                    <div style={{textAlign:"center",padding:"24px 0",fontSize:12,color:"#9CA3AF"}}>No players found for this team.</div>
+                  ) : (
+                    <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,paddingBottom:80}}>
+                      {teamPlayers.map(player=>{
+                        const name = player.name;
+                        const isSel = topScorerPick?.player===name&&topScorerPick?.team===tsTeam;
+                        return (
+                          <PaniniCard
+                            key={name}
+                            player={player}
+                            teamName={tsTeam}
+                            isSelected={isSel}
+                            onClick={isLocked ? undefined : ()=>{
+                              setTopScorerPick({team:tsTeam,player:name});
+                              finishPick("Top Scorer saved", FLAGS[tsTeam]||"👕");
+                            }}
+                          />
+                        );
+                      })}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+        </div>}
+      </div>
+
+      {/* Top scorer confirmation bar */}
+      {showScorer&&topScorerPick?.player&&(
+        <div style={{position:"fixed",bottom:0,left:0,right:0,zIndex:500,
+          background:"linear-gradient(135deg,#0A2E8A,#001840)",
+          borderTop:"2px solid #FFD700",
+          padding:"12px 20px 28px",
+          display:"flex",alignItems:"center",gap:12}}>
+          <button onClick={()=>setTopScorerPick(null)}
+            style={{background:"rgba(255,255,255,0.12)",border:"1px solid rgba(255,255,255,0.2)",borderRadius:10,padding:"7px 14px",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",flexShrink:0}}>
+            Change
+          </button>
+          <span style={{fontSize:24,lineHeight:1,flexShrink:0}}>{FLAGS[topScorerPick.team]||"🏳"}</span>
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{fontSize:10,fontWeight:700,color:"#FFD700",letterSpacing:1,textTransform:"uppercase"}}>Top Scorer</div>
+            <div style={{fontSize:15,fontWeight:900,color:"#fff",marginTop:1,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{topScorerPick.player}</div>
+          </div>
+          <div style={{width:34,height:34,borderRadius:"50%",background:"#FFD700",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+            <span style={{fontSize:16,fontWeight:900,color:NAVY}}>✓</span>
+          </div>
+        </div>
+      )}
+
+      {/* Champion pick popup — bottom sheet with team list */}
+      {showChampion&&champPopup&&(
+        <div style={{position:"fixed",inset:0,zIndex:2000,display:"flex",flexDirection:"column",justifyContent:"flex-end",touchAction:"none",overscrollBehavior:"none"}}
+          onClick={()=>setChampPopup(false)}
+          onWheel={e=>e.stopPropagation()}>
+          <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.55)"}}/>
+          <div onClick={e=>e.stopPropagation()}
+            style={{position:"relative",background:"#1C1C1E",borderRadius:"20px 20px 0 0",zIndex:1,
+              display:"flex",flexDirection:"column",maxHeight:"75vh"}}>
+            {/* drag handle */}
+            <div style={{display:"flex",justifyContent:"center",padding:"10px 0 4px",flexShrink:0,touchAction:"none",position:"relative",zIndex:1}}
+              onTouchStart={e=>{ e.currentTarget._y0=e.touches[0].clientY; }}
+              onTouchMove={e=>{
+                const dy=e.touches[0].clientY-e.currentTarget._y0;
+                if(dy>0){ const s=e.currentTarget.parentElement; s.style.transform=`translateY(${dy}px)`; s.style.transition="none"; }
+              }}
+              onTouchEnd={e=>{
+                const dy=e.changedTouches[0].clientY-e.currentTarget._y0;
+                const s=e.currentTarget.parentElement;
+                s.style.transition="transform 0.3s"; s.style.transform="";
+                if(dy>80) setChampPopup(false);
+              }}>
+              <div style={{width:36,height:4,borderRadius:2,background:"rgba(255,255,255,0.35)"}}/>
+            </div>
+            {/* header */}
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 20px 12px",flexShrink:0,borderBottom:"1px solid rgba(255,255,255,0.07)",position:"relative",zIndex:1}}>
+              <span style={{fontSize:15,fontWeight:800,color:"#fff"}}>🏆 Pick Champion</span>
+              <button onClick={()=>setChampPopup(false)}
+                style={{background:"rgba(255,255,255,0.1)",border:"none",borderRadius:8,padding:"5px 14px",color:"rgba(255,255,255,0.6)",fontSize:13,cursor:"pointer"}}>
+                Close
+              </button>
+            </div>
+            {/* scrollable team list */}
+            <div style={{overflowY:"auto",WebkitOverflowScrolling:"touch",flex:1,padding:"8px 0 40px",position:"relative",zIndex:1}}>
+              {allTeams.map(team=>{
+                const isSel = championPick===team;
+                return (
+                  <div key={team} onClick={()=>{ setChampionPick(isSel?null:team); setChampPopup(false); }}
+                    style={{display:"flex",alignItems:"center",gap:14,padding:"12px 20px",
+                      background:isSel?"rgba(10,46,138,0.35)":"transparent",
+                      borderBottom:"1px solid rgba(255,255,255,0.05)",cursor:"pointer"}}>
+                    <span style={{fontSize:28,lineHeight:1,flexShrink:0}}>{FLAGS[team]||"🏳"}</span>
+                    <div style={{flex:1}}>
+                      <div style={{fontSize:14,fontWeight:isSel?700:500,color:isSel?"#fff":"rgba(255,255,255,0.85)"}}>{team}</div>
+                      <div style={{fontSize:11,color:"rgba(255,255,255,0.35)",fontWeight:600,letterSpacing:0.5}}>{tCode(team)}</div>
+                    </div>
+                    {isSel&&<span style={{fontSize:16,color:GREEN,fontWeight:800}}>✓</span>}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Top Scorer team popup — bottom sheet */}
+      {showScorer&&tsPopup&&(
+        <div style={{position:"fixed",inset:0,zIndex:2000,display:"flex",flexDirection:"column",justifyContent:"flex-end",touchAction:"none",overscrollBehavior:"none"}}
+          onClick={()=>setTsPopup(false)}
+          onWheel={e=>e.stopPropagation()}>
+          <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.55)"}}/>
+          <div onClick={e=>e.stopPropagation()}
+            style={{position:"relative",background:"#1C1C1E",borderRadius:"20px 20px 0 0",zIndex:1,
+              display:"flex",flexDirection:"column",maxHeight:"75vh"}}>
+            <div style={{display:"flex",justifyContent:"center",padding:"10px 0 4px",flexShrink:0,touchAction:"none"}}
+              onTouchStart={e=>{ e.currentTarget._y0=e.touches[0].clientY; }}
+              onTouchMove={e=>{
+                const dy=e.touches[0].clientY-e.currentTarget._y0;
+                if(dy>0){ const s=e.currentTarget.parentElement; s.style.transform=`translateY(${dy}px)`; s.style.transition="none"; }
+              }}
+              onTouchEnd={e=>{
+                const dy=e.changedTouches[0].clientY-e.currentTarget._y0;
+                const s=e.currentTarget.parentElement;
+                s.style.transition="transform 0.3s"; s.style.transform="";
+                if(dy>80) setTsPopup(false);
+              }}>
+              <div style={{width:36,height:4,borderRadius:2,background:"rgba(255,255,255,0.35)"}}/>
+            </div>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 20px 12px",flexShrink:0,borderBottom:"1px solid rgba(255,255,255,0.07)"}}>
+              <span style={{fontSize:15,fontWeight:800,color:"#fff"}}>👕 Pick Team</span>
+              <button onClick={()=>setTsPopup(false)}
+                style={{background:"rgba(255,255,255,0.1)",border:"none",borderRadius:8,padding:"5px 14px",color:"rgba(255,255,255,0.6)",fontSize:13,cursor:"pointer"}}>
+                Close
+              </button>
+            </div>
+            <div style={{overflowY:"auto",WebkitOverflowScrolling:"touch",flex:1,padding:"12px 16px 40px"}}>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:14}}>
+                {featuredChampionTeams.map(team=>{
+                  const isSel = tsTeam===team;
+                  return (
+                    <button key={`ts-featured-${team}`} onClick={()=>{ setTsTeam(team); setTsPopup(false); }}
+                      style={{background:isSel?NAVY:"rgba(255,255,255,0.08)",borderRadius:14,border:`1.5px solid ${isSel?NAVY:"rgba(255,255,255,0.08)"}`,padding:"11px 5px",minHeight:88,cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:6,position:"relative"}}>
+                      {isSel&&<span style={{position:"absolute",top:6,right:6,width:17,height:17,borderRadius:"50%",background:GREEN,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:900,color:"#fff"}}>✓</span>}
+                      <span style={{fontSize:30,lineHeight:1}}>{FLAGS[team]||"🏳"}</span>
+                      <span style={{fontSize:10,fontWeight:800,color:"#fff",lineHeight:1.15,textAlign:"center",maxWidth:"100%",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{team}</span>
+                      <span style={{fontSize:8,fontWeight:800,color:"rgba(255,255,255,0.35)",letterSpacing:0.5}}>{tCode(team)}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div style={{fontSize:10,fontWeight:800,color:"rgba(255,255,255,0.35)",letterSpacing:0.8,textTransform:"uppercase",margin:"0 2px 8px"}}>All teams</div>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:8}}>
+              {otherChampionTeams.map(team=>{
+                const isSel = tsTeam===team;
+                return (
+                  <button key={team} onClick={()=>{ setTsTeam(team); setTsPopup(false); }}
+                    style={{display:"flex",alignItems:"center",gap:9,padding:"10px",
+                      background:isSel?"rgba(10,46,138,0.55)":"rgba(255,255,255,0.06)",
+                      border:`1.5px solid ${isSel?NAVY:"rgba(255,255,255,0.04)"}`,borderRadius:12,cursor:"pointer",textAlign:"left",position:"relative",overflow:"hidden"}}>
+                    {isSel&&<span style={{position:"absolute",top:6,right:6,width:16,height:16,borderRadius:"50%",background:GREEN,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:900,color:"#fff"}}>✓</span>}
+                    <span style={{fontSize:23,lineHeight:1,flexShrink:0}}>{FLAGS[team]||"🏳"}</span>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{fontSize:11,fontWeight:700,color:"#fff",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{team}</div>
+                      <div style={{fontSize:9,color:"rgba(255,255,255,0.35)",fontWeight:700,letterSpacing:0.5,marginTop:3}}>{tCode(team)}</div>
+                    </div>
+                  </button>
+                );
+              })}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── HOME ────────────────────────────────────────────────────────────────────
+function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateBoard, onOpenGroups, onCopyPredictions, onCopyExactScores, onCopySpecial, onAccount, onNotifications, onChampion, myBoards, predictionsComplete, instantPickDone, koPickDone, koUnlocked, exactScores, activeBoardId, setActiveBoardId, tournamentStarted, simDay, simHour, simMin, createdBoards=[], showFirstAction, leaderboardData={}, boardsLoading=false, predictionsLoaded={}, championPick=null, topScorerPick=null, setChampionPick=()=>{}, setTopScorerPick=()=>{}, myScoreBreakdown=null }) {
+  const lang = useLang();
+  const user = useUser();
   const displayName = useDisplayName();
   const initials = useInitials();
+  const avatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
   const [showCopySheet, setShowCopySheet] = useState(null); // "predictions" | "scores" | null
-  const [copyDone, setCopyDone] = useState(null);
+  const [copyWeekStart, setCopyWeekStart] = useState(null);
+  const [copyDone, setCopyDone] = useState({});
   const activeId = activeBoardId;
   const setActiveId = setActiveBoardId;
-  const allSliderItems = [...myBoards, {id:'__add__', isAdd:true}];
+  const allSliderItems = myBoards;
   const [sliderPos, setSliderPos] = useState(()=>Math.max(0,myBoards.findIndex(b=>b.id===activeBoardId)));
   const sliderTouchRef = useRef(null);
   useEffect(()=>{
     const idx = myBoards.findIndex(b=>b.id===activeId);
     if(idx>=0) setSliderPos(idx);
-  },[activeId]);
+  },[activeId,myBoards]);
   const handleSliderTouchStart = (e)=>{ sliderTouchRef.current = e.touches[0].clientX; };
   const handleSliderTouchEnd = (e)=>{
     if(sliderTouchRef.current===null) return;
     const dx = e.changedTouches[0].clientX - sliderTouchRef.current;
     sliderTouchRef.current = null;
     if(Math.abs(dx)<28) return;
-    if(dx<0 && sliderPos<myBoards.length-1){
-      const np=sliderPos+1; setSliderPos(np);
-      setActiveId(allSliderItems[np].id);
+    if(dx<0 && sliderPos<allSliderItems.length-1){
+      const np=sliderPos+1; setSliderPos(np); setActiveId(allSliderItems[np].id);
     } else if(dx>0 && sliderPos>0){
-      const np=sliderPos-1; setSliderPos(np);
-      if(!allSliderItems[np]?.isAdd) setActiveId(allSliderItems[np].id);
+      const np=sliderPos-1; setSliderPos(np); setActiveId(allSliderItems[np].id);
     }
   };
   const [cdUnitIdx, setCdUnitIdx] = useState(0);
@@ -3825,6 +4547,7 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
   const topCount = Math.max(3, prizeSlots || 3);
   const top3 = leaders.slice(0, topCount);
   const me = leaders.find(u=>u.isMe);
+  const rankingLoading = !!activeBoard && !leaderboardData[activeBoard.id]?.length;
   const {d:cdD,h:cdH,m:cdM,s:cdS}=useCountdown();
   const cdTarget=new Date("2026-06-11T19:00:00");
   const cdSimNow=simDay?new Date(2026,5,simDay,simHour,simMin,0):new Date();
@@ -3835,129 +4558,233 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
   const cdSecs=simDay?Math.max(0,Math.floor((cdDiff%60000)/1000)):cdS;
   const tournamentOver = cdDiff<=0;
   const meInTop3 = top3.some(u=>u.isMe);
+  const homeSectionLabelStyle = { ...UI.sectionLabel, fontSize:12, fontWeight:750, color:"rgba(10,46,138,0.55)", textAlign:"center", letterSpacing:1.2 };
+  const homeTaskCardStyle = {
+    ...UI.card,
+    border: "1.5px solid transparent",
+    padding: "13px 14px 11px",
+    position: "relative",
+  };
+  const homeConnectorStyle = {
+    width: 2,
+    height: 22,
+    background: "linear-gradient(to bottom,transparent,#d0d0d0,transparent)",
+    borderRadius: 1,
+  };
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:"transparent",overflow:"hidden",position:"relative"}}>
-      <div style={{padding:"10px 14px 0",flexShrink:0,position:"relative",zIndex:2}}>
-      <div style={{background:"rgba(255,255,255,0.32)",backdropFilter:"blur(28px)",WebkitBackdropFilter:"blur(28px)",borderRadius:26,boxShadow:"0 8px 32px rgba(10,46,138,0.12), inset 0 1px 0 rgba(255,255,255,0.95)",border:"1px solid rgba(255,255,255,0.55)",padding:"12px 20px 0",WebkitMaskImage:"linear-gradient(to bottom, black 0%, black 78%, transparent 100%)",maskImage:"linear-gradient(to bottom, black 0%, black 78%, transparent 100%)",position:"relative"}}>
-        {/* Gloss overlay */}
-        <div style={{position:"absolute",inset:0,borderRadius:26,background:"linear-gradient(135deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.08) 40%, transparent 65%)",pointerEvents:"none",zIndex:0}}/>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",position:"relative",zIndex:1}}>
-          <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,flexShrink:0,paddingTop:10}}>
-            <button onClick={onAccount} style={{width:44,height:44,background:"none",border:"none",padding:0,cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:3,WebkitTapHighlightColor:"transparent"}}>
-              <svg width="22" height="16" viewBox="0 0 22 16" fill="none">
-                <rect x="0" y="0" width="22" height="2.5" rx="1.25" fill="#374151"/>
-                <rect x="0" y="6.75" width="22" height="2.5" rx="1.25" fill="#374151"/>
-                <rect x="0" y="13.5" width="22" height="2.5" rx="1.25" fill="#374151"/>
-              </svg>
+      <div style={{flex:1,display:"flex",flexDirection:"column",background:"linear-gradient(to bottom, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0.10) 28%, rgba(255,255,255,0.02) 48%, transparent 65%)",borderRadius:26,margin:"10px 14px 0",boxShadow:"0 8px 32px rgba(10,46,138,0.10), inset 0 1px 0 rgba(255,255,255,0.80)",border:"1px solid rgba(255,255,255,0.22)",overflow:"hidden",position:"relative",willChange:"transform",transform:"translateZ(0)"}}>
+        {/* Blur layer — fades from top */}
+        <div style={{position:"absolute",inset:0,backdropFilter:"blur(28px)",WebkitBackdropFilter:"blur(28px)",WebkitMaskImage:"linear-gradient(to bottom, black 0%, black 44%, transparent 64%)",maskImage:"linear-gradient(to bottom, black 0%, black 44%, transparent 64%)",pointerEvents:"none",zIndex:0}}/>
+        {/* Gloss highlight */}
+        <div style={{position:"absolute",top:0,left:0,right:0,height:"45%",background:"linear-gradient(135deg, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0.06) 40%, transparent 65%)",pointerEvents:"none",zIndex:0}}/>
+        <div style={{padding:"12px 14px 0",flexShrink:0,position:"relative",zIndex:2}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+          <div style={{display:"flex",flexDirection:"column",alignItems:"center",flexShrink:0,paddingTop:20,position:"relative"}}>
+            <button onClick={onAccount} style={{width:44,height:44,background:"none",border:"none",padding:0,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",WebkitTapHighlightColor:"transparent"}}>
+              {avatarUrl
+                ? <img src={avatarUrl} style={{width:36,height:36,borderRadius:"50%",objectFit:"cover"}} alt=""/>
+                : <div style={{width:36,height:36,borderRadius:"50%",background:NAVY,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,color:"#fff",fontWeight:700}}>{initials}</div>
+              }
             </button>
-            <p style={{fontSize:11,color:"transparent",margin:0,userSelect:"none"}}> </p>
+            <p style={{fontSize:11,fontWeight:700,color:"rgba(10,46,138,0.75)",margin:"4px 0 0"}}>Hi, {displayName.split(" ")[0]} 👋</p>
           </div>
           <div style={{textAlign:"center"}}>
             <img src={predictoLogo} alt="Predicto" decoding="sync" style={{height:36,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
             <h1 style={{fontSize:10,fontWeight:700,margin:"2px 0 0",letterSpacing:2.5,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
             <p style={{fontSize:11,color:"#6B7280",margin:"3px 0 0"}}>{T[lang].location}</p>
           </div>
-          <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,flexShrink:0,paddingTop:10}}>
-            <img src={bellIcon} alt="Notifications" style={{width:44,height:44}}/>
+          <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,flexShrink:0,paddingTop:20}}>
+            <button onClick={onNotifications} style={{background:"none",border:"none",padding:0,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",WebkitTapHighlightColor:"transparent"}}>
+              <img src={bellIcon} alt="Notifications" style={{width:44,height:44}}/>
+            </button>
             <p style={{fontSize:11,color:"transparent",margin:0,userSelect:"none"}}> </p>
           </div>
         </div>
-        {(()=>{
-          const leftItem  = allSliderItems[sliderPos-1] ?? null;
-          const centerItem= allSliderItems[sliderPos];
-          const rightItem = allSliderItems[sliderPos+1] ?? null;
-          const renderItem = (item, pos) => {
-            if(!item) return <div style={{flex:1}}/>;
-            const isCenter = pos===0;
-            const dist = Math.abs(pos);
-            const scale = isCenter?1:Math.max(0.58,1-dist*0.2);
-            const opacity = isCenter?1:Math.max(0.32,1-dist*0.28);
-            const handleTap = ()=>{
-              if(item.isAdd){ onBoards("available"); return; }
-              if(!isCenter){ const np=sliderPos+pos; setSliderPos(np); setActiveId(item.id); }
-            };
-            if(item.isAdd) return (
-              <div style={{flex:1,display:"flex",justifyContent:"center",alignItems:"flex-end",paddingBottom:0}}>
-                <div onClick={()=>onBoards("available")} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4,cursor:"pointer",WebkitTapHighlightColor:"transparent",transform:`scale(${scale})`,transformOrigin:"center bottom",opacity}}>
-                  <div style={{width:42,height:42,borderRadius:"50%",background:"transparent",border:"1.5px dashed rgba(0,0,0,0.25)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,color:"rgba(0,0,0,0.35)"}}>+</div>
-                  <span style={{fontSize:9,color:"rgba(0,0,0,0.55)",fontWeight:600,maxWidth:50,textAlign:"center",lineHeight:1.2}}>{T[lang].add}</span>
-                </div>
-              </div>
-            );
-            const boardLeaders = leaderboardData[item.id];
-            const myRank = boardLeaders?.find(u=>u.isMe)?.rank;
-            const memberCount = item.members;
-            return (
-              <div style={{flex:1,display:"flex",justifyContent:"center",alignItems:"flex-end"}}>
-                <CircleTab label={item.label} name={item.isGlobal?"Global":item.name.split(" ")[0]}
-                  isActive={isCenter} onClick={handleTap} lightBg distance={dist}
-                  rank={isCenter?myRank:undefined} members={isCenter?memberCount:undefined}/>
-              </div>
-            );
+        </div>
+      {(()=>{
+        const leftItem  = allSliderItems[sliderPos-1] ?? null;
+        const centerItem= allSliderItems[sliderPos];
+        const rightItem = allSliderItems[sliderPos+1] ?? null;
+        const renderItem = (item, pos) => {
+          if(!item) return <div style={{flex:1}}/>;
+          const isCenter = pos===0;
+          const dist = Math.abs(pos);
+          const handleTap = ()=>{
+            if(!isCenter){ const np=sliderPos+pos; setSliderPos(np); setActiveId(item.id); }
           };
+          const boardLeaders = leaderboardData[item.id];
+          const myRank = boardLeaders?.find(u=>u.isMe)?.rank;
+          const memberCount = item.members;
           return (
-            <div style={{position:"relative"}}>
-              <div style={{height:10}}/>
-              {sliderPos>0&&(
-                <div style={{position:"absolute",left:0,top:"50%",transform:"translateY(-50%)",zIndex:5,pointerEvents:"none"}}>
-                  <span style={{fontSize:18,color:"rgba(0,0,0,0.45)",fontWeight:700,lineHeight:1}}>‹</span>
-                </div>
-              )}
-              {sliderPos<allSliderItems.length-1&&(
-                <div style={{position:"absolute",right:0,top:"50%",transform:"translateY(-50%)",zIndex:5,pointerEvents:"none"}}>
-                  <span style={{fontSize:18,color:"rgba(0,0,0,0.45)",fontWeight:700,lineHeight:1}}>›</span>
-                </div>
-              )}
-              <div onTouchStart={handleSliderTouchStart} onTouchEnd={handleSliderTouchEnd}
-                style={{display:"flex",alignItems:"center",padding:"10px 0 22px",overflow:"visible",userSelect:"none"}}>
-                {renderItem(leftItem,-1)}
-                {renderItem(centerItem,0)}
-                {renderItem(rightItem,1)}
-              </div>
+            <div style={{flex:1,display:"flex",justifyContent:"center",alignItems:"center",...(isCenter?{transform:"translateY(-6px)",zIndex:2}:{})}}>
+              <CircleTab label={item.label} imageUrl={item.image_url||undefined} name={item.isGlobal?"Global":item.name.split(" ")[0]}
+                isActive={isCenter} onClick={handleTap} lightBg distance={dist}
+                rank={isCenter?myRank:undefined} members={isCenter?memberCount:undefined}/>
             </div>
           );
-        })()}
-      </div>
-      <div onClick={()=>onLeaderboard&&onLeaderboard()} style={{position:"relative",cursor:"pointer",WebkitTapHighlightColor:"transparent",marginTop:2}}>
-        {/* linie continuă pe toate 3 rânduri */}
-        <div style={{position:"absolute",left:"50%",top:0,bottom:0,width:2,transform:"translateX(-50%)",background:"linear-gradient(to bottom,transparent,#d0d0d0 35%,#d0d0d0 65%,transparent)",borderRadius:2,pointerEvents:"none"}}/>
-        {/* rând 1 — gol */}
-        <div style={{height:10}}/>
-        {/* rând 2 — conținut */}
-        <div style={{position:"relative",display:"flex",justifyContent:"center",alignItems:"center",height:28}}>
-          <span style={{position:"absolute",left:0,fontSize:11,fontWeight:600,color:"#6B7280"}}>Hey {displayName.split(" ")[0]} 👋</span>
-          <span style={{position:"absolute",right:"calc(50% + 6px)",fontSize:14,fontWeight:800,color:NAVY,opacity:0.35}}>{me?.rank?`${me.rank}${[,'st','nd','rd'][me.rank]||'th'}`:"—"}</span>
-          {me&&<span style={{position:"absolute",left:"calc(50% + 4px)",fontSize:14,fontWeight:800,color:"#D4820A",opacity:0.35}}>{me.pts??0} pts</span>}
-          <div style={{position:"absolute",right:0,width:100,overflow:"hidden",WebkitMaskImage:"linear-gradient(to right,transparent 0%,black 18%,black 82%,transparent 100%)",maskImage:"linear-gradient(to right,transparent 0%,black 18%,black 82%,transparent 100%)"}}>
-            {tournamentOver
-              ? <span style={{fontSize:11,fontWeight:600,color:"#6B7280",whiteSpace:"nowrap"}}>🏆 start is here</span>
-              : (()=>{
-                  const txt=`⚽ Kickoff in ${cdDays}d ${String(cdHours).padStart(2,"0")}h ${String(cdMins).padStart(2,"0")}m · make your picks · `;
-                  return <div style={{display:"inline-flex",animation:"cdTicker 16s linear infinite",whiteSpace:"nowrap"}}>
-                    <span style={{fontSize:11,fontWeight:600,color:"#6B7280",paddingRight:0}}>{txt}</span>
-                    <span style={{fontSize:11,fontWeight:600,color:"#6B7280",paddingRight:0}}>{txt}</span>
-                  </div>;
-                })()
-            }
+        };
+        return (
+          <div style={{margin:"18px 14px 0",background:"#fff",borderRadius:16,boxShadow:"0 2px 10px rgba(0,0,0,0.06)",border:"1px solid rgba(10,46,138,0.06)",display:"flex",alignItems:"center",padding:"8px 4px",overflow:"visible",flexShrink:0}}>
+            <button onClick={()=>{ const np=sliderPos+1; if(np<allSliderItems.length){setSliderPos(np);setActiveId(allSliderItems[np].id);} }}
+              style={{background:"none",border:"none",padding:"0 16px",cursor:"pointer",fontSize:22,fontWeight:700,color:NAVY,opacity:sliderPos<allSliderItems.length-1?0.65:0.12,WebkitTapHighlightColor:"transparent",lineHeight:1,transition:"opacity 0.2s",flexShrink:0}}>‹</button>
+            <div onTouchStart={handleSliderTouchStart} onTouchEnd={handleSliderTouchEnd}
+              style={{flex:1,display:"flex",alignItems:"center",userSelect:"none",touchAction:"pan-x",overflow:"visible",padding:"6px 0"}}>
+              {renderItem(leftItem,-1)}
+              {renderItem(centerItem,0)}
+              {renderItem(rightItem,1)}
+            </div>
+            <button onClick={()=>{ const np=sliderPos-1; if(np>=0){setSliderPos(np);setActiveId(allSliderItems[np].id);} }}
+              style={{background:"none",border:"none",padding:"0 16px",cursor:"pointer",fontSize:22,fontWeight:700,color:NAVY,opacity:sliderPos>0?0.65:0.12,WebkitTapHighlightColor:"transparent",lineHeight:1,transition:"opacity 0.2s",flexShrink:0}}>›</button>
+          </div>
+        );
+      })()}
+      <div style={{position:"relative",marginTop:0,flexShrink:0}}>
+        {/* rând 1 — manage + new league */}
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",height:24,marginBottom:3}}>
+          <div onClick={e=>{e.stopPropagation();onBoards("my");}} style={{display:"flex",alignItems:"center",justifyContent:"center",minWidth:68,height:24,borderRadius:"0 999px 999px 0",background:"rgba(255,255,255,0.34)",border:"1px solid rgba(10,46,138,0.08)",borderLeft:"none",cursor:"pointer",flexShrink:0,padding:"0 9px 0 12px"}}>
+            <span style={{fontSize:10,fontWeight:650,color:"rgba(10,46,138,0.62)",lineHeight:1}}>Manage League</span>
+          </div>
+          <div onClick={e=>{e.stopPropagation();onBoards("available");}} style={{display:"flex",alignItems:"center",justifyContent:"center",minWidth:68,height:24,borderRadius:"999px 0 0 999px",background:"rgba(255,255,255,0.34)",border:"1px solid rgba(10,46,138,0.08)",borderRight:"none",cursor:"pointer",flexShrink:0,padding:"0 12px 0 9px"}}>
+            <span style={{fontSize:10,fontWeight:650,color:"rgba(10,46,138,0.62)",lineHeight:1}}>New League</span>
           </div>
         </div>
-        {/* rând 3 — gol */}
-        <div style={{height:10}}/>
-        {/* rând 4 — linie orizontală centrată */}
-        <div style={{display:"flex",justifyContent:"center",paddingBottom:6}}>
-          <div style={{width:24,height:1.5,background:"linear-gradient(to right,transparent,#d0d0d0,transparent)",borderRadius:1}}/>
+        {/* rând 2 — rank & pts */}
+        <div style={{position:"relative",display:"flex",justifyContent:"center",alignItems:"center",height:32,marginBottom:6}}>
+          <div onClick={()=>onLeaderboard&&onLeaderboard()} style={{background:"#fff",borderRadius:12,boxShadow:"0 1px 4px rgba(0,0,0,0.05)",border:"1px solid rgba(10,46,138,0.06)",padding:"7px 16px",display:"flex",alignItems:"center",gap:8,cursor:"pointer",WebkitTapHighlightColor:"transparent"}}>
+            <span style={{fontSize:13,fontWeight:800,color:NAVY}}>{rankingLoading ? "..." : `Rank ${me?.rank?`#${me.rank}`:"—"}`}</span>
+            <span style={{width:3,height:3,borderRadius:"50%",background:"#C0C8D8"}}/>
+            <span style={{fontSize:13,fontWeight:800,color:"#D4820A"}}>{rankingLoading ? "syncing" : `${me?.pts??0} pts`}</span>
+          </div>
+        </div>
+        {/* rând 3 — countdown */}
+        <div style={{display:"flex",justifyContent:"center",alignItems:"center",marginBottom:10}}>
+          {tournamentOver
+            ? <span style={{fontSize:11,fontWeight:700,color:"rgba(10,46,138,0.60)"}}>🏆 tournament live</span>
+            : <span style={{fontSize:11,fontWeight:700,color:"rgba(10,46,138,0.60)"}}>⚽ {cdDays}d {String(cdHours).padStart(2,"0")}h {String(cdMins).padStart(2,"0")}m · kickoff</span>
+          }
         </div>
       </div>
-      </div>
-      <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",padding:"0 16px 90px",display:"flex",flexDirection:"column"}}>
-        <div style={{position:"relative",borderRadius:18,padding:"14px 14px 14px",flex:1}}>
+      <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",padding:"0 14px 90px",display:"flex",flexDirection:"column"}}>
+        <div style={{position:"relative",borderRadius:18,padding:"14px 0 14px",flex:1}}>
           <div style={{position:"absolute",inset:0,borderRadius:18,background:"rgba(255,255,255,0.15)",WebkitMaskImage:"linear-gradient(to bottom,black 0%,black 55%,transparent 100%)",maskImage:"linear-gradient(to bottom,black 0%,black 55%,transparent 100%)",pointerEvents:"none"}}/>
           <div style={{position:"relative",zIndex:1}}>
+        {/* Card 0 — Champion & Top Score (teaser) */}
+        {(()=>{
+          const champDone = !!championPick;
+          const tsDone = !!(topScorerPick?.player);
+          const tCode = (t) => TEAM_CODE[t]||t.slice(0,3).toUpperCase();
+          const allDone = champDone && tsDone;
+          const doneCount = (champDone?1:0) + (tsDone?1:0);
+          const simNowHome = simDay ? new Date(2026,5,simDay,simHour||12,simMin||0,0) : new Date();
+          const specialPhase1Locked = simNowHome >= new Date(2026,5,11,19,0,0);
+          const specialPhase2Open   = simNowHome >= new Date(2026,5,27,21,0,0);
+          const specialLocked = specialPhase1Locked && !specialPhase2Open;
+          const taskRow = ({ icon, title, value, meta, done, mode }) => (
+            <button onClick={e=>{e.stopPropagation();onChampion(mode);}}
+              style={{width:"100%",border:"none",background:"transparent",padding:"8px 0",display:"flex",alignItems:"center",gap:10,cursor:"pointer",WebkitTapHighlightColor:"transparent",textAlign:"left"}}>
+              <span style={{width:18,height:18,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,lineHeight:1,flexShrink:0}}>{icon}</span>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{display:"flex",alignItems:"center",gap:6}}>
+                  <span style={{fontSize:12,fontWeight:700,color:specialLocked?"#9CA3AF":DARK,whiteSpace:"nowrap"}}>{title}</span>
+                </div>
+                <div style={{fontSize:11,color:specialLocked?"#C0C8D8":done?GREEN:"#9CA3AF",fontWeight:done?600:500,marginTop:1,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+                  {specialLocked ? "Locked until Jun 27" : value}
+                </div>
+                {meta&&<div style={{fontSize:10,color:"#C0C8D8",fontWeight:700,letterSpacing:0.4,marginTop:1,textTransform:"uppercase"}}>{meta}</div>}
+              </div>
+              <div style={{display:"flex",alignItems:"center",gap:5,flexShrink:0}}>
+                {done && !specialLocked ? (<>
+                  <span style={{fontSize:11,fontWeight:600,color:GREEN,opacity:0.8}}>Done</span>
+                  <div onClick={e=>{e.stopPropagation();setCopyDone({});setShowCopySheet(mode);}} style={{cursor:"pointer",opacity:0.55,width:9,height:9,display:"flex",alignItems:"center"}}>
+                    <svg width="9" height="9" viewBox="0 0 14 14" fill="none"><rect x="4" y="4" width="8" height="8" rx="1.5" stroke={DARK} strokeWidth="1.8"/><path d="M2 10V2h8" stroke={DARK} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  </div>
+                </>) : (
+                  <span style={{fontSize:18,color:"#C0C8D8",fontWeight:700,lineHeight:1}}>›</span>
+                )}
+              </div>
+            </button>
+          );
+          return (<>
+            <div style={{margin:"0 2px 6px"}}>
+              <p style={homeSectionLabelStyle}>Special Pick</p>
+            </div>
+            <div onClick={()=>onChampion(!champDone?"champion":!tsDone?"scorer":"champion")} style={{...homeTaskCardStyle,marginBottom:6,cursor:"pointer",WebkitTapHighlightColor:"transparent"}}>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,marginBottom:5}}>
+                <div style={{display:"flex",flexDirection:"column",alignItems:"flex-start",minWidth:0,position:"relative",zIndex:1}}>
+                  <div style={{fontSize:13,fontWeight:700,color:DARK,textAlign:"left",lineHeight:1.15}}>Winner & Top Scorer</div>
+                  <div style={{fontSize:10,color:specialLocked?"#D4820A":"#C0C8D8",fontWeight:500,marginTop:3,lineHeight:1.2}}>
+                    {specialLocked ? "Reopens Jun 27" : "Team win +3 · Player scored +3"}
+                  </div>
+                </div>
+                {doneCount===0 ? (
+                  <div style={{position:"relative",width:36,height:36,flexShrink:0,zIndex:1}}>
+                    <div style={{position:"absolute",inset:0,borderRadius:"50%",background:"#fff",border:`1.5px solid ${NAVY}`,display:"flex",alignItems:"center",justifyContent:"center",animation:"nodeBreath 3s ease-in-out infinite"}}>
+                      <span style={{fontSize:11,fontWeight:700,color:NAVY}}>0/2</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{width:36,height:36,borderRadius:"50%",border:`1.5px solid ${allDone?GREEN:NAVY}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,background:allDone?`${GREEN}22`:"rgba(10,46,138,0.06)",position:"relative",zIndex:1}}>
+                    <span style={{fontSize:11,fontWeight:700,color:allDone?GREEN:NAVY}}>{doneCount}/2</span>
+                  </div>
+                )}
+              </div>
+              {taskRow({
+                icon:"🏆",
+                title:"Winner Team",
+                value:champDone?championPick:"Pick your team",
+                meta:null,
+                done:champDone,
+                mode:"champion",
+              })}
+              <div style={{height:1,background:"#F1F3F7",marginLeft:32}}/>
+              {taskRow({
+                icon:"👕",
+                title:"Top Scorer",
+                value:tsDone?topScorerPick.player:"Pick your player",
+                meta:null,
+                done:tsDone,
+                mode:"scorer",
+              })}
+            </div>
+            <div onClick={onChampion}
+              style={{display:"none",background:"#fff",borderRadius:16,boxShadow:"0 2px 14px rgba(0,0,0,0.07)",
+                border:`1.5px solid ${allDone?GREEN+"44":"transparent"}`,
+                padding:"16px",cursor:"pointer",position:"relative",marginBottom:6}}>
+              <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:8}}>
+                <div style={{width:44,height:44,borderRadius:12,background:allDone?`linear-gradient(135deg,${GREEN},#007A36)`:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                  <span style={{fontSize:22}}>{allDone?"✓":"🏆"}</span>
+                </div>
+                <div style={{textAlign:"center"}}>
+                  <div style={{fontSize:13,fontWeight:700,color:DARK}}>Champion & Top Scorer</div>
+                  {allDone?(
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,marginTop:3}}>
+                      <span style={{fontSize:11,color:GREEN,fontWeight:600}}>{FLAGS[championPick]||"🏳"} {tCode(championPick)}</span>
+                      <span style={{fontSize:10,color:"#C0C8D8"}}>·</span>
+                      <span style={{fontSize:11,color:GREEN,fontWeight:600}}>{FLAGS[topScorerPick.team]||"🏳"} {topScorerPick.player}</span>
+                    </div>
+                  ):(
+                    <div style={{fontSize:11,color:"#9CA3AF",marginTop:3}}>Choose your team and favorite player</div>
+                  )}
+                </div>
+                <span style={{fontSize:12,color:"#C0C8D8",fontWeight:600,letterSpacing:0.5}}>TAP TO SELECT ›</span>
+              </div>
+            </div>
+          </>);
+        })()}
+
+        {/* Connector */}
+        <div style={{display:"flex",justifyContent:"center",alignItems:"center",margin:"2px 0 6px",position:"relative"}}>
+          <div style={homeConnectorStyle}/>
+          <span style={{position:"absolute",right:2,fontSize:10,fontWeight:700,color:"rgba(10,46,138,0.30)",letterSpacing:"0.2px"}}>Total: {myScoreBreakdown?.specialPts??0} pts</span>
+        </div>
+
         {/* Card 1 — Predictions + path to trophy */}
         {(()=>{
           const deadlinePassed = simDay ? (simDay > 11 || (simDay === 11 && (simHour||0) >= 19)) : new Date() >= new Date(2026,5,11,19,0,0);
           const boardDone = deadlinePassed ? (instantPickDone || predictionsComplete[activeId]) : instantPickDone;
           const isLocked = deadlinePassed && !boardDone;
+          const predLoading = !predictionsLoaded[activeId];
           const koAvailable = koUnlocked && boardDone && !koPickDone;
           const allDone = boardDone && koPickDone;
           const handleClick = () => {
@@ -3967,45 +4794,61 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
           const showBadge = koAvailable || (!boardDone && !deadlinePassed && predictionsLoaded[activeId]);
           const boardLabel = activeBoard?.isGlobal?"🌍 Global":(activeBoard?.name||"");
           const predPath = [
-            { label:"Groups + Best Third", due:T[lang].dueJun11, done:boardDone, locked:false, active:!boardDone&&!deadlinePassed&&!!predictionsLoaded[activeId] },
-            { label:"Knockout Phase", due:koAvailable?"Available now":T[lang].koDueJun27, done:koPickDone, locked:!koUnlocked||!boardDone, active:!!koAvailable },
-            { label:"Trophy", isFinal:true },
+            { label:"Jun 11", stage:"Groups + Best Third", due:T[lang].dueJun11, done:boardDone, locked:false, active:!boardDone&&!deadlinePassed&&!!predictionsLoaded[activeId] },
+            { label:"Jun 27", stage:"Knockout Phase", due:koAvailable?"Available now":T[lang].koDueJun27, done:koPickDone, locked:!koUnlocked||!boardDone, active:!!koAvailable },
+            { label:"Jul 19", stage:"Final", isFinal:true },
           ];
           return (<>
             <div style={{margin:"0 2px 6px"}}>
-              <p style={{fontSize:12,fontWeight:600,color:isLocked?"#C0C8D8":"#9CA3AF",margin:0,textTransform:"uppercase",letterSpacing:1,textAlign:"center"}}>{T[lang].predictions}</p>
+              <p style={{...homeSectionLabelStyle,color:isLocked?"#C0C8D8":"rgba(10,46,138,0.55)"}}>{T[lang].predictions}</p>
             </div>
-            <div onClick={handleClick} style={{background:"#fff",borderRadius:16,
-              boxShadow:"0 2px 14px rgba(0,0,0,0.07)",
-              border:"1.5px solid transparent",
-              padding:"14px 14px 12px",cursor:isLocked?"default":"pointer",
-              opacity:isLocked?0.6:1,position:"relative",
+            <div style={{...homeTaskCardStyle,
+              border:`1.5px solid ${allDone?GREEN+"44":"transparent"}`,
+              opacity:isLocked?0.6:1,
               ...(showFirstAction&&!boardDone&&!deadlinePassed?{animation:"pulse 1.5s ease-in-out 3"}:{})}}>
+              {predLoading&&(
+                <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:7,color:"#9CA3AF",fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:0.6}}>
+                  <span style={{width:10,height:10,borderRadius:"50%",border:"2px solid rgba(10,46,138,0.12)",borderTopColor:NAVY,animation:"spin 0.9s linear infinite"}}/>
+                  Syncing predictions
+                </div>
+              )}
 
               {predPath.map((step,i)=>{
                 const nodeColor = step.isFinal?"#F0A020":step.done?GREEN:step.active?NAVY:"#ddd";
                 const isLast = i===predPath.length-1;
+                const stepClick = step.isFinal||step.locked?undefined:()=>{
+                  if(i===0&&!deadlinePassed) onPredict(activeId);
+                  else if(i===1&&koAvailable) onPredictKo&&onPredictKo(activeId);
+                };
                 return (
-                  <div key={i} style={{display:"flex",gap:10,borderRadius:10,
+                  <div key={i} onClick={stepClick} style={{display:"flex",gap:10,borderRadius:10,
                     background:step.isFinal?"linear-gradient(90deg,rgba(240,160,32,0.08),transparent)":step.locked?"rgba(0,0,0,0.025)":"transparent",
-                    padding:"4px 6px 4px 4px",margin:"0 -6px 0 -4px"}}>
+                    padding:"4px 6px 4px 4px",margin:"0 -6px 0 -4px",
+                    cursor:stepClick?"pointer":"default"}}>
                     <div style={{display:"flex",flexDirection:"column",alignItems:"center",width:18,flexShrink:0}}>
-                      <div style={{width:18,height:18,borderRadius:"50%",background:nodeColor,display:"flex",alignItems:"center",justifyContent:"center",
-                        boxShadow:step.isFinal?"0 0 0 3px rgba(240,160,32,0.25), 0 2px 8px rgba(240,160,32,0.4)":step.done?`0 0 0 3px ${GREEN}33`:step.active?`0 0 0 3px ${NAVY}22`:"none",flexShrink:0}}>
-                        {step.isFinal?<span style={{fontSize:9}}>★</span>:step.done?<div style={{width:5,height:5,borderRadius:"50%",background:"#fff"}}/>:step.locked?<span style={{fontSize:8}}>🔒</span>:step.active?<div style={{width:5,height:5,borderRadius:"50%",background:"#fff"}}/>:null}
-                      </div>
+                      {step.active ? (
+                        <PulseNode color={NAVY}><div style={{width:5,height:5,borderRadius:"50%",background:"#fff"}}/></PulseNode>
+                      ) : (
+                        <div style={{width:18,height:18,borderRadius:"50%",background:nodeColor,display:"flex",alignItems:"center",justifyContent:"center",
+                          boxShadow:step.isFinal?"0 0 0 3px rgba(240,160,32,0.25), 0 2px 8px rgba(240,160,32,0.4)":step.done?`0 0 0 3px ${GREEN}33`:"none",flexShrink:0}}>
+                          {step.isFinal?<span style={{fontSize:9}}>★</span>:step.done?<div style={{width:5,height:5,borderRadius:"50%",background:"#fff"}}/>:step.locked?<span style={{fontSize:8}}>🔒</span>:null}
+                        </div>
+                      )}
                       {!isLast&&<div style={{width:2,flex:1,minHeight:22,marginTop:2,background:step.done?GREEN:"#e8e8e8",borderRadius:1}}/>}
                     </div>
                     <div style={{flex:1,paddingBottom:isLast?0:4}}>
                       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                        <span style={{fontSize:13,fontWeight:step.isFinal?700:step.active?700:step.done?600:500,
-                          color:step.isFinal?"#D4820A":step.locked?"#C0C8D8":DARK,opacity:step.locked?0.5:1}}>{step.label}</span>
+                        <div>
+                          <span style={{fontSize:13,fontWeight:step.isFinal?700:step.active?700:step.done?600:500,
+                            color:step.isFinal?"#D4820A":step.locked?"#C0C8D8":DARK,opacity:step.locked?0.5:1}}>{step.label}</span>
+                          <span style={{fontSize:10,color:step.isFinal?"rgba(212,130,10,0.6)":"#9CA3AF",marginLeft:5,fontWeight:400,opacity:step.locked?0.5:0.7}}>{step.stage}</span>
+                        </div>
                         <div style={{display:"flex",alignItems:"center",gap:5}}>
                           <span style={{fontSize:11,fontWeight:step.active?600:400,
                             color:step.isFinal?"#D4820A":step.locked?"#C0C8D8":step.done?GREEN:"#9CA3AF",opacity:step.locked?0.5:0.8}}>
                             {step.isFinal?"Trophy":step.locked?T[lang].locked:step.done?"Done":step.due}
                           </span>
-                          <div onClick={e=>{if(!step.done||step.isFinal)return;e.stopPropagation();setCopyDone(null);setShowCopySheet("predictions");}} style={{cursor:step.done&&!step.isFinal?"pointer":"default",opacity:step.done&&!step.isFinal?0.55:0,pointerEvents:step.done&&!step.isFinal?"auto":"none",width:9,height:9,flexShrink:0,display:"flex",alignItems:"center"}}><svg width="9" height="9" viewBox="0 0 14 14" fill="none"><rect x="4" y="4" width="8" height="8" rx="1.5" stroke={DARK} strokeWidth="1.8"/><path d="M2 10V2h8" stroke={DARK} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg></div>
+                          <div onClick={e=>{if(!step.done||step.isFinal)return;e.stopPropagation();setCopyDone({});setShowCopySheet("predictions");}} style={{cursor:step.done&&!step.isFinal?"pointer":"default",opacity:step.done&&!step.isFinal?0.55:0,pointerEvents:step.done&&!step.isFinal?"auto":"none",width:9,height:9,flexShrink:0,display:"flex",alignItems:"center"}}><svg width="9" height="9" viewBox="0 0 14 14" fill="none"><rect x="4" y="4" width="8" height="8" rx="1.5" stroke={DARK} strokeWidth="1.8"/><path d="M2 10V2h8" stroke={DARK} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg></div>
                         </div>
                       </div>
                     </div>
@@ -4017,8 +4860,9 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
         })()}
 
         {/* Connector */}
-        <div style={{display:"flex",justifyContent:"center",margin:"6px 0 10px"}}>
-          <div style={{width:2,height:48,background:"linear-gradient(to bottom,transparent,#d0d0d0,transparent)",borderRadius:1}}/>
+        <div style={{display:"flex",justifyContent:"center",alignItems:"center",margin:"2px 0 6px",position:"relative"}}>
+          <div style={homeConnectorStyle}/>
+          <span style={{position:"absolute",right:2,fontSize:10,fontWeight:700,color:"rgba(10,46,138,0.30)",letterSpacing:"0.2px"}}>Total: {myScoreBreakdown?.predPts??0} pts</span>
         </div>
 
         {/* Card 2 — Exact Score + path to trophy */}
@@ -4050,12 +4894,9 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
           ];
           return (<>
             <div style={{margin:"0 2px 6px"}}>
-              <p style={{fontSize:12,fontWeight:600,color:"#9CA3AF",margin:0,textTransform:"uppercase",letterSpacing:1,textAlign:"center"}}>{T[lang].exactScores}</p>
+              <p style={homeSectionLabelStyle}>{T[lang].exactScores}</p>
             </div>
-            <div onClick={()=>onOpenGroups&&onOpenGroups()} style={{background:"#fff",borderRadius:16,
-              boxShadow:"0 2px 14px rgba(0,0,0,0.07)",
-              border:"1.5px solid transparent",
-              padding:"14px 14px 12px",cursor:"pointer",position:"relative",marginBottom:10}}>
+            <div onClick={()=>onOpenGroups&&onOpenGroups()} style={{...homeTaskCardStyle,cursor:"pointer"}}>
               {steps.map((w,i)=>{
                 const pct = w.total?Math.round((w.scored/w.total)*100):0;
                 const done = !w.locked && pct===100;
@@ -4071,10 +4912,14 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
                     opacity:(isPast&&!done)?0.6:1}}
                     onClick={e=>{e.stopPropagation();(!w.locked||isPast)&&!w.isFinal&&onOpenGroups&&onOpenGroups(w.weekStart);}}>
                     <div style={{display:"flex",flexDirection:"column",alignItems:"center",width:18,flexShrink:0}}>
-                      <div style={{width:18,height:18,borderRadius:"50%",background:nodeColor,display:"flex",alignItems:"center",justifyContent:"center",
-                        boxShadow:w.isFinal?"0 0 0 3px rgba(240,160,32,0.25), 0 2px 8px rgba(240,160,32,0.4)":done?`0 0 0 3px ${GREEN}33`:active?`0 0 0 3px ${NAVY}22`:"none",flexShrink:0}}>
-                        {w.isFinal?<span style={{fontSize:9}}>★</span>:done?<div style={{width:5,height:5,borderRadius:"50%",background:"#fff"}}/>:w.locked&&!isPast?<span style={{fontSize:8}}>🔒</span>:active?<div style={{width:5,height:5,borderRadius:"50%",background:"#fff"}}/>:null}
-                      </div>
+                      {active ? (
+                        <PulseNode color={NAVY}><div style={{width:5,height:5,borderRadius:"50%",background:"#fff"}}/></PulseNode>
+                      ) : (
+                        <div style={{width:18,height:18,borderRadius:"50%",background:nodeColor,display:"flex",alignItems:"center",justifyContent:"center",
+                          boxShadow:w.isFinal?"0 0 0 3px rgba(240,160,32,0.25), 0 2px 8px rgba(240,160,32,0.4)":done?`0 0 0 3px ${GREEN}33`:"none",flexShrink:0}}>
+                          {w.isFinal?<span style={{fontSize:9}}>★</span>:done?<div style={{width:5,height:5,borderRadius:"50%",background:"#fff"}}/>:w.locked&&!isPast?<span style={{fontSize:8}}>🔒</span>:null}
+                        </div>
+                      )}
                       {!isLast&&<div style={{width:2,flex:1,minHeight:16,marginTop:2,borderRadius:1,background:"#e8e8e8",position:"relative",overflow:"hidden"}}>
                         <div style={{position:"absolute",top:0,left:0,right:0,height:`${w.locked?0:pct}%`,background:done?GREEN:active?NAVY+"99":"#bbb",borderRadius:1,transition:"height 0.4s"}}/>
                       </div>}
@@ -4091,7 +4936,7 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
                             color:w.isFinal?"#D4820A":w.locked&&!isPast?"#C0C8D8":done?GREEN:"#9CA3AF",opacity:w.locked&&!isPast?0.5:0.8}}>
                             {w.isFinal?"Trophy":w.locked&&!isPast?T[lang].locked:done?T[lang].weekComplete:isPast?`${w.scored}/${w.total}`:`${w.scored}/${w.total}`}
                           </span>
-                          <div onClick={e=>{if(!done||w.isFinal)return;e.stopPropagation();setCopyDone(null);setShowCopySheet("scores");}} style={{cursor:done&&!w.isFinal?"pointer":"default",opacity:done&&!w.isFinal?0.55:0,pointerEvents:done&&!w.isFinal?"auto":"none",width:9,height:9,flexShrink:0,display:"flex",alignItems:"center"}}><svg width="9" height="9" viewBox="0 0 14 14" fill="none"><rect x="4" y="4" width="8" height="8" rx="1.5" stroke={DARK} strokeWidth="1.8"/><path d="M2 10V2h8" stroke={DARK} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg></div>
+                          <div onClick={e=>{if(!done||w.isFinal)return;e.stopPropagation();setCopyDone({});setCopyWeekStart(w.weekStart);setShowCopySheet("scores");}} style={{cursor:done&&!w.isFinal?"pointer":"default",opacity:done&&!w.isFinal?0.55:0,pointerEvents:done&&!w.isFinal?"auto":"none",width:9,height:9,flexShrink:0,display:"flex",alignItems:"center"}}><svg width="9" height="9" viewBox="0 0 14 14" fill="none"><rect x="4" y="4" width="8" height="8" rx="1.5" stroke={DARK} strokeWidth="1.8"/><path d="M2 10V2h8" stroke={DARK} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg></div>
                         </div>
                       </div>
                     </div>
@@ -4102,19 +4947,30 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
           </>);
         })()}
 
+        {/* Connector */}
+        <div style={{display:"flex",justifyContent:"center",alignItems:"center",margin:"2px 0 6px",position:"relative"}}>
+          <div style={homeConnectorStyle}/>
+          <span style={{position:"absolute",right:2,fontSize:10,fontWeight:700,color:"rgba(10,46,138,0.30)",letterSpacing:"0.2px"}}>Total: {myScoreBreakdown?.exactPts??0} pts</span>
+        </div>
+
+        {/* Footer teaser */}
+        <div style={{margin:"0 2px 6px",paddingBottom:16}}>
+          <p style={homeSectionLabelStyle}>· more to come ·</p>
+        </div>
+
           </div>
         </div>
-        <div style={{marginBottom:80}}/>
 
+      </div>
       </div>
 
     {/* Copy predictions sheet */}
     {showCopySheet&&(
-      <div style={{position:"fixed",inset:0,zIndex:200,display:"flex",flexDirection:"column",justifyContent:"flex-end"}}
+      <div style={{position:"fixed",inset:0,zIndex:1100,display:"flex",flexDirection:"column",justifyContent:"flex-end"}}
         onClick={()=>setShowCopySheet(false)}>
         <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.5)"}}/>
         <div onClick={e=>e.stopPropagation()}
-          style={{position:"relative",background:"#1C1C1E",borderRadius:"20px 20px 0 0",padding:"0 0 34px",maxHeight:"70vh",display:"flex",flexDirection:"column"}}>
+          style={{position:"relative",background:"#1C1C1E",borderRadius:"20px 20px 0 0",padding:"0 0 calc(env(safe-area-inset-bottom, 10px) + 90px)",maxHeight:"70vh",display:"flex",flexDirection:"column"}}>
           {/* Handle */}
           <div style={{display:"flex",justifyContent:"center",padding:"10px 0 4px"}}>
             <div style={{width:36,height:4,borderRadius:2,background:"rgba(255,255,255,0.2)"}}/>
@@ -4127,13 +4983,19 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
                 <path d="M2 10V2h8" stroke={GREEN} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
               <span style={{fontSize:15,fontWeight:800,color:"#fff"}}>
-                {showCopySheet==="scores"?"Copy exact scores":"Copy predictions"}
+                {showCopySheet==="scores"?"Copy exact scores":showCopySheet==="champion"?"Copy Winner Team":showCopySheet==="scorer"?"Copy Top Scorer":showCopySheet==="special"?"Copy special picks":"Copy predictions"}
               </span>
             </div>
             <p style={{fontSize:12,color:"rgba(255,255,255,0.45)",margin:"4px 0 0"}}>
               {showCopySheet==="scores"
-                ?"Replicate this week's exact scores to another board"
-                :"Replicate your Group phase predictions to another board"}
+                ?"Replicate this week's exact scores to another league"
+                :showCopySheet==="champion"
+                ?"Replicate your Winner Team pick to another league"
+                :showCopySheet==="scorer"
+                ?"Replicate your Top Scorer pick to another league"
+                :showCopySheet==="special"
+                ?"Replicate your Winner Team & Top Scorer to another league"
+                :"Replicate your Group phase predictions to another league"}
             </p>
           </div>
           {/* Board list */}
@@ -4145,16 +5007,17 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
             ):myBoards.filter(b=>b.id!==activeId).map(b=>(
               <div key={b.id}
                 onClick={async()=>{
-                  if(copyDone===b.id) return;
-                  if(showCopySheet==="scores") await onCopyExactScores&&onCopyExactScores(b.id);
+                  if(copyDone[b.id]) return;
+                  if(showCopySheet==="scores") await onCopyExactScores&&onCopyExactScores(b.id, copyWeekStart);
+                  else if(showCopySheet==="champion"||showCopySheet==="scorer"||showCopySheet==="special") await onCopySpecial&&onCopySpecial(b.id,showCopySheet);
                   else await onCopyPredictions&&onCopyPredictions(b.id);
-                  setCopyDone(b.id);
+                  setCopyDone(p=>({...p,[b.id]:true}));
                 }}
                 style={{display:"flex",alignItems:"center",gap:12,padding:"12px 4px",
                   borderBottom:"1px solid rgba(255,255,255,0.07)",cursor:"pointer"}}>
                 <span style={{fontSize:22,display:"inline-block",width:30,flexShrink:0}}>{b.emoji||"⚽"}</span>
                 <span style={{flex:1,fontSize:13,fontWeight:700,color:"#fff"}}>{b.name}</span>
-                {copyDone===b.id?(
+                {copyDone[b.id]?(
                   <span style={{fontSize:12,fontWeight:700,color:GREEN}}>✓ Copied</span>
                 ):(
                   <div style={{background:`linear-gradient(135deg,${GREEN},#007A36)`,borderRadius:8,
@@ -4182,10 +5045,11 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
 
 
 // ── BOARDS ────────────────────────────────────────────────────────────────────
-function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: createdBoardsProp, setCreatedBoards: setCreatedBoardsProp, availableBoards: availableBoardsProp, setAvailableBoards: setAvailableBoardsProp, showToast, user, onCreateBoard, onJoinByCode, onJoinBoard, onDeleteBoard, onRemoveMember, leaderboardData={}, initialTab="my" }) {
+function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: createdBoardsProp, setCreatedBoards: setCreatedBoardsProp, availableBoards: availableBoardsProp, setAvailableBoards: setAvailableBoardsProp, showToast, user, onCreateBoard, onJoinByCode, onJoinBoard, onDeleteBoard, onRemoveMember, leaderboardData={}, initialTab="my", onViewChange }) {
   const displayName = useDisplayName();
   const lang = useLang();
   const [view, setView] = useState("main"); // main | join | create
+  const changeView = (v) => { setView(v); onViewChange?.(v); };
   const [activeTab, setActiveTab] = useState(initialTab); // my | available | admin
   const [showCodeInfo, setShowCodeInfo] = useState(false);
   const [boardSearch, setBoardSearch] = useState("");
@@ -4195,6 +5059,9 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
   // Create form state
   const [cName, setCName] = useState("");
   const [cEmoji, setCEmoji] = useState("");
+  const [cImageFile, setCImageFile] = useState(null);
+  const [cImagePreview, setCImagePreview] = useState(null);
+  const boardImageInputRef = useRef(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [cPassword, setCPassword] = useState("");
   const [cMaxPlayers, setCMaxPlayers] = useState(10);
@@ -4214,6 +5081,21 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
   const [boardMembersMap, setBoardMembersMap] = useState({});
   const [boardLeadersMap, setBoardLeadersMap] = useState({});
   const [leaveConfirmBoard, setLeaveConfirmBoard] = useState(null);
+  const [deleteConfirmBoard, setDeleteConfirmBoard] = useState(null);
+  const createPanelStyle = { ...UI.card, padding: 14, marginBottom: 14 };
+  const createInputStyle = { ...UI.inputPanel, padding: "11px 14px" };
+  const createOptionStyle = (active) => ({
+    flex: 1,
+    padding: "9px 0",
+    borderRadius: 10,
+    border: `1px solid ${active ? NAVY : "rgba(10,46,138,0.07)"}`,
+    cursor: "pointer",
+    background: active ? `linear-gradient(135deg,${NAVY}cc,#001840cc)` : "#F8FAFC",
+    color: active ? "#fff" : DARK,
+    fontWeight: active ? 800 : 650,
+    fontSize: 12,
+    boxShadow: active ? "0 3px 10px rgba(0,32,91,0.18)" : "none",
+  });
 
   const openMembers = async (boardId) => {
     if (viewMembersBoard === boardId) { setViewMembersBoard(null); return; }
@@ -4228,7 +5110,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
 
   const doJoin = (b) => {
     if(!myBoards.find(x=>x.id===b.id)){
-      setMyBoards(p=>[...p,{...b}]);
+      setMyBoards(p=>appendJoinedBoard(p,{...b}));
       setAvailBoards(p=>p.map(c=>c.id===b.id?{...c,members:(c.members||0)+1}:c));
       if(onJoinBoard) onJoinBoard(b.id);
       if(showToast) showToast(`Joined "${b.name}"!`, "🏆");
@@ -4277,11 +5159,13 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
         password: cPassword,
         max_players: cMaxPlayers,
         prizes: cPrizes.slice(0, cSlots).filter(p=>p.trim()),
+        imageFile: cImageFile || null,
       });
       if(data) {
-        if(showToast) showToast(`"${cName}" created!`, "🎉");
+        if(showToast) showToast(`"${cName}" league created`, "🏆");
         setCName(""); setCEmoji(""); setCPassword(""); setShowEmojiPicker(false);
-        setEditBoard(null); setView("main");
+        setCImageFile(null); setCImagePreview(null);
+        setEditBoard(null); changeView("main");
       }
       return;
     }
@@ -4302,155 +5186,195 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
       isAdmin: true,
     };
     if(editBoard) {
-      setCreatedBoards(p=>p.map(b=>b.id===editBoard.id?newBoard:b));
-      if(showToast) showToast("Board updated! ✓", "✏️");
+      if(cImageFile && user) {
+        if(showToast) showToast("Se încarcă poza...", "⏳");
+        uploadBoardImage(user.id, editBoard.id, cImageFile).then(url => {
+          if(url) {
+            setCreatedBoards(p=>p.map(b=>b.id===editBoard.id?{...b,...newBoard,image_url:url}:b));
+            setMyBoards(p=>p.map(b=>b.id===editBoard.id?{...b,...newBoard,image_url:url}:b));
+            if(showToast) showToast("Poză salvată!", "✅");
+          }
+        });
+      } else {
+        setCreatedBoards(p=>p.map(b=>b.id===editBoard.id?newBoard:b));
+        if(showToast) showToast("League updated", "✏️");
+      }
     } else {
       setCreatedBoards(p=>[...p, newBoard]);
-      if(showToast) showToast(`"${cName}" created!`, "🎉");
+      if(showToast) showToast(`"${cName}" league created`, "🏆");
       if(onJoin) onJoin(newBoard.id);
     }
-    setEditBoard(null); setCEmoji(""); setShowEmojiPicker(false); setView("main");
+    setEditBoard(null); setCEmoji(""); setShowEmojiPicker(false);
+    setCImageFile(null); setCImagePreview(null); changeView("main");
   };
 
   const isJoined = id => myBoards.some(b=>b.id===id);
+  const boardCopy = {
+    manageTabs: [
+      {key:"my",label:"My Leagues"},
+      {key:"available",label:"Discover"},
+      {key:"admin",label:"Admin"},
+    ],
+    namePlaceholder: "Ex: Office league",
+    passwordPlaceholder: "Password for joining...",
+    searchPlaceholder: "Search or enter invite code...",
+    joinedEmptyTitle: "No joined leagues",
+    joinedEmptyBody: "Join a league or create your own private one.",
+    availableEmptyTitle: "No leagues available",
+    availableEmptyBody: "Create a new league or enter an invite code.",
+    adminEmptyTitle: "No leagues managed yet",
+    adminEmptyBody: "Create a league and it will appear here.",
+  };
 
   if(view==="create") return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,position:"relative",overflow:"hidden"}}>
       <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.055,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
-      <div style={{position:"relative",zIndex:1,background:"linear-gradient(180deg,#CCDAFF 0%,#E2EBFF 40%,#F8F8F8 100%)",padding:"12px 20px 10px",flexShrink:0}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-          <div onClick={()=>setView("main")} style={{width:36,height:36,borderRadius:10,background:"rgba(10,46,138,0.08)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:DARK}}>&#8249;</div>
-          <div style={{textAlign:"center"}}>
-            <img src={predictoLogo} alt="Predicto" decoding="sync" style={{height:36,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
-            <h1 style={{fontSize:10,fontWeight:700,margin:"2px 0 0",letterSpacing:2.5,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
-            <p style={{fontSize:11,color:"#6B7280",margin:"3px 0 0"}}>{T[lang].location}</p>
-          </div>
-          <div style={{width:36}}/>
-        </div>
-      </div>
+      <HeaderShell onBack={()=>changeView("main")}>{editBoard ? "Edit League" : "Create League"}</HeaderShell>
       <div style={{flex:1,overflowY:"auto",padding:"16px 20px 24px",position:"relative",zIndex:1}}>
         {/* Name */}
-        <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 6px"}}>{T[lang].boardName}</p>
-        <div style={{display:"flex",gap:10,alignItems:"center",marginBottom:16}}>
-          {/* Avatar emoji picker */}
-          <div onClick={()=>setShowEmojiPicker(p=>!p)}
-            style={{width:52,height:52,borderRadius:14,flexShrink:0,cursor:"pointer",
-              background:cEmoji?BG:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,
-              boxShadow:SHADOW_OUT,display:"flex",alignItems:"center",justifyContent:"center",
-              border:showEmojiPicker?`2px solid ${NAVY}`:"2px solid transparent"}}>
-            {cEmoji
-              ? <span style={{fontSize:28}}>{cEmoji}</span>
-              : <span style={{fontSize:22,color:"rgba(255,255,255,0.8)"}}>+</span>}
+        <Card style={createPanelStyle}>
+          <p style={UI.formLabel}>{T[lang].boardName}</p>
+          <div style={{display:"flex",gap:10,alignItems:"center"}}>
+            {/* Avatar emoji/photo picker */}
+            <input ref={boardImageInputRef} type="file" accept="image/*" style={{display:"none"}}
+              onChange={e=>{
+                const f=e.target.files?.[0]; if(!f) return;
+                setCImageFile(f); setCImagePreview(URL.createObjectURL(f));
+                setCEmoji(""); setShowEmojiPicker(false);
+                e.target.value="";
+              }}/>
+            <div style={{flexShrink:0,display:"flex",flexDirection:"column",alignItems:"center",gap:6}}>
+              <div style={{width:52,height:52,borderRadius:14,overflow:"hidden",
+                background:cEmoji||cImagePreview?"#F8FAFC":`linear-gradient(135deg,${NAVY}cc,#001840cc)`,
+                display:"flex",alignItems:"center",justifyContent:"center",
+                border:`1px solid rgba(10,46,138,0.07)`}}>
+                {cImagePreview
+                  ? <img src={cImagePreview} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                  : cEmoji
+                    ? <span style={{fontSize:28}}>{cEmoji}</span>
+                    : <span style={{fontSize:22,color:"rgba(255,255,255,0.8)"}}>?</span>}
+              </div>
+              <div style={{display:"flex",gap:4}}>
+                <div onClick={()=>{setShowEmojiPicker(p=>!p); setCImageFile(null); setCImagePreview(null);}}
+                  style={{fontSize:10,fontWeight:700,color:showEmojiPicker?NAVY:"#888",cursor:"pointer",
+                    padding:"3px 7px",borderRadius:6,background:showEmojiPicker?`${NAVY}15`:"rgba(0,0,0,0.05)"}}>
+                  😊 Emoji
+                </div>
+                <div onClick={()=>boardImageInputRef.current?.click()}
+                  style={{fontSize:10,fontWeight:700,color:cImagePreview?NAVY:"#888",cursor:"pointer",
+                    padding:"3px 7px",borderRadius:6,background:cImagePreview?`${NAVY}15`:"rgba(0,0,0,0.05)"}}>
+                  📷 Foto
+                </div>
+                {(cEmoji||cImagePreview)&&<div onClick={()=>{setCEmoji("");setCImageFile(null);setCImagePreview(null);setShowEmojiPicker(false);}}
+                  style={{fontSize:10,fontWeight:700,color:"#FF3B30",cursor:"pointer",
+                    padding:"3px 7px",borderRadius:6,background:"rgba(255,59,48,0.08)"}}>
+                  ✕
+                </div>}
+              </div>
+            </div>
+            <InputPanel style={{...createInputStyle,flex:1}}>
+              <input value={cName} onChange={e=>setCName(e.target.value)} placeholder={boardCopy.namePlaceholder}
+                style={{width:"100%",background:"transparent",border:"none",outline:"none",fontSize:14,color:DARK}}/>
+            </InputPanel>
           </div>
-          <div style={{flex:1,background:BG,borderRadius:12,boxShadow:SHADOW_IN,padding:"11px 14px"}}>
-            <input value={cName} onChange={e=>setCName(e.target.value)} placeholder="Ex: Colegii de la birou"
-              style={{width:"100%",background:"transparent",border:"none",outline:"none",fontSize:14,color:DARK}}/>
-          </div>
-        </div>
+        </Card>
         {/* Emoji grid */}
         {showEmojiPicker&&(
-          <div style={{background:BG,borderRadius:12,boxShadow:SHADOW_OUT,padding:"12px",marginBottom:14,marginTop:-8}}>
-            <p style={{fontSize:12,fontWeight:700,color:"#aaa",margin:"0 0 8px",textTransform:"uppercase",letterSpacing:1}}>{T[lang].chooseEmoji}</p>
+          <Card style={{...createPanelStyle,marginTop:-4}}>
+            <p style={UI.formLabel}>{T[lang].chooseEmoji}</p>
             <div style={{display:"grid",gridTemplateColumns:"repeat(8,1fr)",gap:6}}>
               {["⚽","🏆","🥇","🎯","🔥","⭐","💪","🦁","🐯","🦅","🌍","🎖️","🏅","🥊","🎮","🎪",
                 "🍕","🍺","🎉","🚀","💎","🌟","👑","🤝","🏋️","🎸","🏄","🎭"].map(e=>(
                 <div key={e} onClick={()=>{ setCEmoji(e); setShowEmojiPicker(false); }}
                   style={{width:"100%",aspectRatio:"1",borderRadius:8,display:"flex",alignItems:"center",
                     justifyContent:"center",fontSize:20,cursor:"pointer",
-                    background:cEmoji===e?`${NAVY}22`:"transparent",
-                    border:cEmoji===e?`1.5px solid ${NAVY}`:"1.5px solid transparent"}}>
+                    background:cEmoji===e?`${NAVY}18`:"#F8FAFC",
+                    border:cEmoji===e?`1.5px solid ${NAVY}`:"1px solid rgba(10,46,138,0.06)"}}>
                   {e}
                 </div>
               ))}
             </div>
             {cEmoji&&(
-              <button onClick={()=>{ setCEmoji(""); setShowEmojiPicker(false); }}
-                style={{marginTop:8,width:"100%",padding:"6px",borderRadius:8,border:"none",
-                  background:"rgba(0,0,0,0.05)",fontSize:11,color:"#aaa",cursor:"pointer"}}>
+              <Button variant="ghost" onClick={()=>{ setCEmoji(""); setShowEmojiPicker(false); }}
+                style={{marginTop:10,width:"100%"}}>
                 {T[lang].del}
-              </button>
+              </Button>
             )}
-          </div>
+          </Card>
         )}
 
-        {/* Password */}
-        <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 6px"}}>{T[lang].boardPassword}</p>
-        <div style={{background:BG,borderRadius:12,boxShadow:SHADOW_IN,padding:"11px 14px",display:"flex",alignItems:"center",gap:8,marginBottom:16}}>
-          <span style={{fontSize:14}}>🔒</span>
-          <input value={cPassword} onChange={e=>setCPassword(e.target.value)} placeholder="Parola pentru join..."
-            style={{flex:1,background:"transparent",border:"none",outline:"none",fontSize:14,color:DARK}}/>
-        </div>
+        <Card style={createPanelStyle}>
+          {/* Password */}
+          <p style={UI.formLabel}>{T[lang].boardPassword}</p>
+          <InputPanel style={{...createInputStyle,marginBottom:14}}>
+            <span style={{fontSize:14}}>🔒</span>
+            <input value={cPassword} onChange={e=>setCPassword(e.target.value)} placeholder={boardCopy.passwordPlaceholder}
+              style={{flex:1,background:"transparent",border:"none",outline:"none",fontSize:14,color:DARK}}/>
+          </InputPanel>
 
-        {/* Max players */}
-        <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 8px"}}>{T[lang].maxPlayers}</p>
-        <div style={{display:"flex",gap:8,marginBottom:16}}>
-          {[5,10,15,20,50].map(n=>(
-            <button key={n} onClick={()=>setCMaxPlayers(n)}
-              style={{flex:1,padding:"8px 0",borderRadius:10,border:"none",cursor:"pointer",
-                background:cMaxPlayers===n?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:BG,
-                color:cMaxPlayers===n?"#fff":DARK,fontWeight:700,fontSize:12,
-                boxShadow:cMaxPlayers===n?"0 3px 10px rgba(0,32,91,0.3)":SHADOW_OUT}}>
-              {n}
-            </button>
-          ))}
-        </div>
+          {/* Max players */}
+          <p style={UI.formLabel}>{T[lang].maxPlayers}</p>
+          <div style={{display:"flex",gap:8,marginBottom:14}}>
+            {[5,10,15,20,50].map(n=>(
+              <button key={n} onClick={()=>setCMaxPlayers(n)} style={createOptionStyle(cMaxPlayers===n)}>
+                {n}
+              </button>
+            ))}
+          </div>
 
-        {/* Prize slots */}
-        <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 8px"}}>{T[lang].prizedSlots}</p>
-        <div style={{display:"flex",gap:8,marginBottom:14}}>
-          {[1,2,3,4,5].map(n=>(
-            <button key={n} onClick={()=>{ setCSlots(n); setCPrizes(p=>{const a=[...p];while(a.length<n)a.push("");return a;}); }}
-              style={{flex:1,padding:"8px 0",borderRadius:10,border:"none",cursor:"pointer",
-                background:cSlots===n?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:BG,
-                color:cSlots===n?"#fff":DARK,fontWeight:700,fontSize:13,
-                boxShadow:cSlots===n?"0 3px 10px rgba(0,32,91,0.3)":SHADOW_OUT}}>
-              {n}
-            </button>
-          ))}
-        </div>
+          {/* Prize slots */}
+          <p style={UI.formLabel}>{T[lang].prizedSlots}</p>
+          <div style={{display:"flex",gap:8}}>
+            {[1,2,3,4,5].map(n=>(
+              <button key={n} onClick={()=>{ setCSlots(n); setCPrizes(p=>{const a=[...p];while(a.length<n)a.push("");return a;}); }} style={createOptionStyle(cSlots===n)}>
+                {n}
+              </button>
+            ))}
+          </div>
+        </Card>
 
         {/* Prizes per slot */}
-        <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 8px"}}>{T[lang].prizesLabel}</p>
-        {Array.from({length:cSlots},(_,i)=>(
-          <div key={i} style={{background:BG,borderRadius:12,boxShadow:SHADOW_IN,padding:"10px 14px",
-            display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
-            <div style={{width:28,height:28,borderRadius:8,background:i===0?"#FFD700":i===1?"#C0C0C0":"#CD7F32",
-              display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,flexShrink:0}}>
-              {i===0?"🥇":i===1?"🥈":"🥉"}
-            </div>
-            <span style={{fontSize:12,fontWeight:700,color:"#aaa",width:50}}>Rank {i+1}</span>
-            <input value={cPrizes[i]||""} onChange={e=>{ const a=[...cPrizes]; a[i]=e.target.value; setCPrizes(a); }}
-              placeholder={[
-                "e.g. $50, team jersey, gift voucher...",
-                "e.g. $30, match ticket, voucher...",
-                "e.g. $15, cap, surprise gift...",
-                "e.g. Drinks on you, weekend trip...",
-                "e.g. Cake, Netflix subscription..."
-              ][i]||"e.g. Your prize..."}
-              style={{flex:1,background:"transparent",border:"none",outline:"none",fontSize:13,color:DARK}}/>
-          </div>
-        ))}
+        <Card style={createPanelStyle}>
+          <p style={UI.formLabel}>{T[lang].prizesLabel}</p>
+          {Array.from({length:cSlots},(_,i)=>(
+            <InputPanel key={i} style={{...createInputStyle,marginBottom:i<cSlots-1?8:0}}>
+              <div style={{width:28,height:28,borderRadius:8,background:i===0?"#FFD700":i===1?"#C0C0C0":"#CD7F32",
+                display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,flexShrink:0}}>
+                {i===0?"🥇":i===1?"🥈":"🥉"}
+              </div>
+              <span style={{fontSize:12,fontWeight:750,color:"#9CA3AF",width:50}}>Rank {i+1}</span>
+              <input value={cPrizes[i]||""} onChange={e=>{ const a=[...cPrizes]; a[i]=e.target.value; setCPrizes(a); }}
+                placeholder={[
+                  "e.g. $50, team jersey, gift voucher...",
+                  "e.g. $30, match ticket, voucher...",
+                  "e.g. $15, cap, surprise gift...",
+                  "e.g. Drinks on you, weekend trip...",
+                  "e.g. Cake, Netflix subscription..."
+                ][i]||"e.g. Your prize..."}
+                style={{flex:1,background:"transparent",border:"none",outline:"none",fontSize:13,color:DARK,minWidth:0}}/>
+            </InputPanel>
+          ))}
+        </Card>
 
         {/* Members management — only when editing */}
         {editBoard&&(editBoard.membersList?.length>0)&&(<>
-          <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"16px 0 8px"}}>{T[lang].membersLabel}</p>
-          <div style={{background:BG,borderRadius:12,boxShadow:SHADOW_OUT,overflow:"hidden",marginBottom:4}}>
+          <p style={{...UI.formLabel,margin:"16px 0 8px"}}>{T[lang].membersLabel}</p>
+          <Card>
             {(editBoard.membersList||[]).map((m,mi)=>(
               <div key={mi} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",
-                background:"#fff",borderBottom:mi<editBoard.membersList.length-1?"1px solid rgba(0,0,0,0.05)":"none"}}>
+                  background:"#fff",borderBottom:mi<editBoard.membersList.length-1?"1px solid rgba(10,46,138,0.05)":"none"}}>
                 <div style={{width:32,height:32,borderRadius:"50%",
                   background:m.isMe?`${NAVY}22`:"rgba(0,0,0,0.07)",
                   display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                   <span style={{fontSize:13,fontWeight:700,color:m.isMe?NAVY:"#888"}}>{m.name[0]}</span>
                 </div>
-                <span style={{flex:1,fontSize:13,fontWeight:600,color:m.isMe?NAVY:DARK}}>{m.name}{m.isMe?" (Tu)":""}</span>
+                <span style={{flex:1,fontSize:13,fontWeight:600,color:m.isMe?NAVY:DARK}}>{m.name}{m.isMe?" (You)":""}</span>
                 {!m.isMe?(
                   <button onClick={()=>{
                     const updated = {...editBoard, membersList: editBoard.membersList.filter(x=>x.id!==m.id), members:Math.max(0,(editBoard.members||0)-1)};
                     setEditBoard(updated);
                     setCreatedBoards(p=>p.map(b=>b.id===updated.id?updated:b));
-                  }} style={{background:"rgba(200,16,46,0.08)",border:"none",borderRadius:8,
-                    padding:"5px 12px",fontSize:11,fontWeight:700,color:RED,cursor:"pointer"}}>
+                  }} style={UI.dangerButton}>
                     Remove
                   </button>
                 ):(
@@ -4458,65 +5382,58 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
                 )}
               </div>
             ))}
-          </div>
+          </Card>
         </>)}
 
-        <button onClick={handleCreate}
-          style={{width:"100%",marginTop:16,padding:"15px 0",borderRadius:14,border:"none",
+        <Button onClick={handleCreate} disabled={!cName.trim()}
+          style={{width:"100%",marginTop:16,padding:"15px 0",borderRadius:14,fontSize:15,fontWeight:800,
             background:cName.trim()?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:"#e0e0e0",
-            color:cName.trim()?"#fff":"#bbb",fontSize:15,fontWeight:800,cursor:cName.trim()?"pointer":"default",
-            boxShadow:cName.trim()?"0 6px 20px rgba(0,32,91,0.3)":"none"}}>
+            color:cName.trim()?"#fff":"#bbb",
+            boxShadow:cName.trim()?"0 6px 20px rgba(0,32,91,0.18)":"none"}}>
           {editBoard ? T[lang].saveChanges : T[lang].createBoard2}
-        </button>
+        </Button>
       </div>
     </div>
   );
 
   return (
-    <div style={{flex:1,display:"flex",flexDirection:"column",background:"transparent",position:"relative",overflow:"hidden"}}>
+    <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,position:"relative",overflow:"hidden"}}>
       <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.055,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
-      <div style={{position:"relative",zIndex:1,background:"linear-gradient(180deg,#CCDAFF 0%,#E2EBFF 40%,#F8F8F8 100%)",padding:"12px 20px 10px",flexShrink:0}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-          <div onClick={onBack} style={{width:36,height:36,borderRadius:10,background:"rgba(10,46,138,0.08)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:DARK,flexShrink:0}}>&#8249;</div>
-          <div style={{textAlign:"center"}}>
-            <img src={predictoLogo} alt="Predicto" decoding="sync" style={{height:36,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
-            <h1 style={{fontSize:10,fontWeight:700,margin:"2px 0 0",letterSpacing:2.5,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
-            <p style={{fontSize:11,color:"#6B7280",margin:"3px 0 0"}}>{T[lang].location}</p>
+      <HeaderShell onBack={onBack} footer={
+          <div style={{display:"flex",gap:0,borderTop:"1px solid rgba(0,0,0,0.06)",marginTop:10,position:"relative",zIndex:1}}>
+            {boardCopy.manageTabs.map(t=>(
+              <button key={t.key} onClick={()=>setActiveTab(t.key)}
+                style={{flex:1,background:"transparent",border:"none",cursor:"pointer",padding:"12px 0",
+                  fontSize:12,fontWeight:700,color:activeTab===t.key?NAVY:"#aaa",
+                  borderBottom:activeTab===t.key?`3px solid ${RED}`:"3px solid transparent",
+                  transition:"all 0.2s"}}>
+                {t.label}
+              </button>
+            ))}
           </div>
-          <div style={{width:36}}/>
-        </div>
-        {/* Tabs */}
-        <div style={{display:"flex",gap:0,borderBottom:"2px solid rgba(0,0,0,0.06)",marginTop:10}}>
-          {[{key:"my",label:"My Boards"},{key:"available",label:"Available"},{key:"admin",label:"Admin"}].map(t=>(
-            <div key={t.key} onClick={()=>setActiveTab(t.key)}
-              style={{flex:1,textAlign:"center",padding:"8px 0 10px",fontSize:12,fontWeight:activeTab===t.key?800:500,
-                color:activeTab===t.key?NAVY:"#aaa",cursor:"pointer",position:"relative"}}>
-              {t.label}
-              {activeTab===t.key&&<div style={{position:"absolute",bottom:-2,left:"20%",right:"20%",height:2,background:NAVY,borderRadius:2}}/>}
-            </div>
-          ))}
-        </div>
-      </div>
+        }>
+        Leagues
+      </HeaderShell>
       {/* Password modal */}
       {joinPrompt&&(
-        <div style={{position:"absolute",inset:0,zIndex:200,display:"flex",alignItems:"flex-end",background:"rgba(0,0,0,0.5)"}}>
+        <div style={{position:"fixed",inset:0,zIndex:2000,display:"flex",alignItems:"flex-end",background:"rgba(0,0,0,0.5)"}}>
           <div style={{background:"#fff",borderRadius:"20px 20px 0 0",padding:"24px 20px 40px",width:"100%"}}>
             <div style={{width:36,height:4,borderRadius:2,background:"#e0e0e0",margin:"0 auto 20px"}}/>
             <h3 style={{fontSize:17,fontWeight:800,color:DARK,margin:"0 0 4px",textAlign:"center"}}>{joinPrompt.name}</h3>
             <p style={{fontSize:12,color:"#aaa",textAlign:"center",margin:"0 0 20px"}}>{T[lang].passwordProtected}</p>
-            <div style={{background:"#f5f5f5",borderRadius:12,padding:"11px 14px",marginBottom:8,display:"flex",alignItems:"center",gap:8}}>
+            <InputPanel style={{marginBottom:8}}>
               <span style={{fontSize:16}}>🔑</span>
               <input value={joinPass} onChange={e=>{setJoinPass(e.target.value);setJoinError("");}}
                 placeholder={T[lang].enterPassword} type="password"
                 style={{flex:1,background:"transparent",border:"none",outline:"none",fontSize:14,color:DARK}}/>
-            </div>
+            </InputPanel>
             {joinError&&<p style={{fontSize:11,color:RED,margin:"0 0 12px 4px"}}>{joinError}</p>}
             <div style={{display:"flex",gap:10,marginTop:16}}>
-              <button onClick={()=>setJoinPrompt(null)}
-                style={{flex:1,padding:"13px 0",borderRadius:12,border:"none",background:"#f0f0f0",color:"#888",fontSize:14,fontWeight:700,cursor:"pointer"}}>
+              <Button variant="ghost" onClick={()=>setJoinPrompt(null)}
+                style={{flex:1,padding:"13px 0",borderRadius:12,background:"#fff",color:"#888",fontSize:14}}>
                 {T[lang].cancel}
-              </button>
-              <button onClick={()=>{
+              </Button>
+              <Button onClick={()=>{
                 if(joinPass===joinPrompt.password){
                   doJoin(joinPrompt);
                   setJoinPrompt(null);
@@ -4524,61 +5441,66 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
                   setJoinError(T[lang].incorrectPassword);
                 }
               }}
-                style={{flex:2,padding:"13px 0",borderRadius:12,border:"none",background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer"}}>
+                style={{flex:2,padding:"13px 0",borderRadius:12,fontSize:14}}>
                 Join 🏆
-              </button>
+              </Button>
             </div>
           </div>
         </div>
       )}
+      {leaveConfirmBoard && (
+        <ConfirmSheet
+          icon="⚠️"
+          title="Leave league?"
+          body={<>Your points and entries will be removed from <strong style={{color:DARK}}>{leaveConfirmBoard.name}</strong>.</>}
+          confirmLabel="Leave league"
+          onCancel={()=>setLeaveConfirmBoard(null)}
+          onConfirm={async()=>{
+              if(onRemoveMember) await onRemoveMember(leaveConfirmBoard.id, user?.id);
+              setLeaveConfirmBoard(null);
+          }}
+        />
+      )}
+      {deleteConfirmBoard && (
+        <ConfirmSheet
+          icon="🗑️"
+          title="Delete league?"
+          body={<>This removes <strong style={{color:DARK}}>{deleteConfirmBoard.name}</strong> for everyone in the league.</>}
+          confirmLabel="Delete league"
+          onCancel={()=>setDeleteConfirmBoard(null)}
+          onConfirm={async()=>{
+              if(onDeleteBoard) await onDeleteBoard(deleteConfirmBoard.id);
+              setDeleteConfirmBoard(null);
+          }}
+        />
+      )}
       <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",padding:"16px 20px 100px",position:"relative",zIndex:1}}>
-
-        {/* Leave board confirmation popup */}
-        {leaveConfirmBoard && (
-          <div style={{position:"fixed",inset:0,zIndex:9999,background:"rgba(0,0,0,0.55)",display:"flex",alignItems:"flex-end"}} onClick={()=>setLeaveConfirmBoard(null)}>
-            <div style={{width:"100%",background:"#fff",borderRadius:"20px 20px 0 0",padding:"28px 24px 40px"}} onClick={e=>e.stopPropagation()}>
-              <div style={{fontSize:40,textAlign:"center",marginBottom:12}}>⚠️</div>
-              <h3 style={{fontSize:17,fontWeight:800,color:DARK,textAlign:"center",margin:"0 0 10px"}}>Ești sigur?</h3>
-              <p style={{fontSize:13,color:"#888",textAlign:"center",lineHeight:1.6,margin:"0 0 24px"}}>
-                Toate punctele și înregistrările tale vor fi șterse din boardul <strong style={{color:DARK}}>{leaveConfirmBoard.name}</strong>.
-              </p>
-              <button onClick={async()=>{
-                if(onRemoveMember) await onRemoveMember(leaveConfirmBoard.id, user?.id);
-                setLeaveConfirmBoard(null);
-              }} style={{width:"100%",background:RED,color:"#fff",border:"none",borderRadius:14,padding:"14px 0",fontSize:15,fontWeight:700,cursor:"pointer",marginBottom:10}}>
-                Da, ieși din board
-              </button>
-              <button onClick={()=>setLeaveConfirmBoard(null)}
-                style={{width:"100%",background:"transparent",color:"#aaa",border:"1px solid #ddd",borderRadius:14,padding:"12px 0",fontSize:14,fontWeight:600,cursor:"pointer"}}>
-                Anulează
-              </button>
-            </div>
-          </div>
-        )}
 
         {/* Tab: My Boards */}
         {activeTab==="my"&&(()=>{
-          if(myBoards.length===0) return <p style={{fontSize:13,color:"#bbb",textAlign:"center",marginTop:40}}>Nu ești înscris în niciun board.</p>;
+          if(myBoards.length===0) return <EmptyState icon="🏆" title={boardCopy.joinedEmptyTitle} body={boardCopy.joinedEmptyBody} />;
           return (
-            <div style={{background:"#fff",borderRadius:14,boxShadow:"0 2px 12px rgba(0,0,0,0.10)",overflow:"hidden"}}>
+            <Card>
               {myBoards.map((b,bi,arr)=>{
                 const latest=availBoards.find(c=>c.id===b.id)||createdBoards.find(c=>c.id===b.id)||b;
                 return (
                   <div key={b.id}>
                     <div style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",cursor:"pointer"}} onClick={()=>onJoin&&onJoin(b.id)}>
-                      <div style={{width:44,height:44,borderRadius:"50%",background:b.isGlobal?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:`linear-gradient(135deg,#5856D6,#3634A3)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>{latest.label}</div>
+                      <div style={{width:44,height:44,borderRadius:"50%",background:b.isGlobal?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:`linear-gradient(135deg,#5856D6,#3634A3)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0,overflow:"hidden"}}>
+                        {latest.image_url ? <img src={latest.image_url} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/> : latest.label}
+                      </div>
                       <div style={{flex:1,minWidth:0}}>
                         <p style={{fontSize:13,fontWeight:700,color:DARK,margin:0}}>{latest.name}</p>
                         <p style={{fontSize:11,color:"#aaa",margin:"2px 0 0"}}>👥 {latest.members}{latest.max?"/"+latest.max:""} members</p>
                       </div>
-                      <div style={{background:"#E8F0FF",borderRadius:9,padding:"7px 12px",fontSize:11,fontWeight:700,color:NAVY,flexShrink:0}}>✓ Joined</div>
-                      {!b.isGlobal&&<button onClick={e=>{e.stopPropagation();setLeaveConfirmBoard(b);}} style={{background:"rgba(200,16,46,0.08)",border:"none",borderRadius:9,padding:"7px 10px",fontSize:13,color:RED,cursor:"pointer",flexShrink:0}}>🗑️</button>}
+                      <span style={{fontSize:11,fontWeight:700,color:b.isAdmin&&!b.isMember?"#F59E0B":NAVY,flexShrink:0}}>{b.isAdmin&&!b.isMember?"👑 Admin":"✓ Joined"}</span>
+                      {!b.isGlobal&&b.isMember&&<Button variant="danger" onClick={e=>{e.stopPropagation();setLeaveConfirmBoard(b);}} style={{fontSize:13,flexShrink:0}}>🗑️</Button>}
                     </div>
                     {bi<arr.length-1&&<div style={{height:1,background:"rgba(0,0,0,0.05)",margin:"0 14px"}}/>}
                   </div>
                 );
               })}
-            </div>
+            </Card>
           );
         })()}
 
@@ -4592,71 +5514,75 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
             : !boardSearch.trim() ? allAvail.slice(0,8) : [];
           const hasMore=!boardSearch.trim()&&allAvail.length>8;
           return (<>
-            <div style={{background:"#fff",borderRadius:14,boxShadow:"0 2px 12px rgba(0,0,0,0.10)",marginBottom:12,overflow:"hidden"}}>
+            <Card style={{marginBottom:12}}>
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 14px 8px"}}>
                 <span style={{fontSize:11,color:"#bbb"}}>{allAvail.length} boards</span>
-                <button onClick={()=>{ setEditBoard(null); setCName(""); setCPassword(""); setCEmoji(""); setCMaxPlayers(10); setCSlots(3); setCPrizes(["","",""]); setView("create"); }}
-                  style={{background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,border:"none",borderRadius:8,padding:"5px 10px",color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer"}}>
+                <Button onClick={()=>{ setEditBoard(null); setCName(""); setCPassword(""); setCEmoji(""); setCMaxPlayers(10); setCSlots(3); setCPrizes(["","",""]); changeView("create"); }}
+                  style={{padding:"6px 11px",fontSize:11}}>
                   + {T[lang].createBoard}
-                </button>
+                </Button>
               </div>
               <div style={{padding:"0 14px 10px"}}>
-                <div style={{background:"rgba(0,0,0,0.04)",borderRadius:10,padding:"9px 12px",display:"flex",gap:8,alignItems:"center",border:isCode?`1.5px solid ${NAVY}`:"1.5px solid transparent"}}>
+                <InputPanel style={{border:isCode?`1.5px solid ${NAVY}`:"1px solid rgba(10,46,138,0.06)"}}>
                   <span style={{fontSize:14,opacity:0.4}}>{isCode?"🔑":"🔍"}</span>
-                  <input value={boardSearch} onChange={e=>{setBoardSearch(e.target.value);setCodeError("");}} placeholder="Search or enter invite code..." style={{flex:1,background:"transparent",border:"none",outline:"none",fontSize:14,color:DARK}}/>
+                  <input value={boardSearch} onChange={e=>{setBoardSearch(e.target.value);setCodeError("");}} placeholder={boardCopy.searchPlaceholder} style={{flex:1,background:"transparent",border:"none",outline:"none",fontSize:14,color:DARK}}/>
                   {boardSearch&&(isCode?(
-                    <button onClick={()=>{ const found=[...availBoards,...createdBoards].find(b=>b.code===boardSearch.trim().toUpperCase()||b.id===boardSearch.trim()); if(found){joinBoard(found);setBoardSearch("");setCodeError("");}else setCodeError("Code not found."); }} style={{background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,color:"#fff",border:"none",borderRadius:8,padding:"6px 12px",fontSize:12,fontWeight:700,cursor:"pointer"}}>Join</button>
+                    <Button onClick={()=>{ const found=[...availBoards,...createdBoards].find(b=>b.code===boardSearch.trim().toUpperCase()||b.id===boardSearch.trim()); if(found){joinBoard(found);setBoardSearch("");setCodeError("");}else setCodeError("Code not found."); }}>Join</Button>
                   ):(<span onClick={()=>setBoardSearch("")} style={{fontSize:13,color:"#bbb",cursor:"pointer"}}>✕</span>))}
-                </div>
+                </InputPanel>
                 {isCode&&<p style={{fontSize:11,color:NAVY,margin:"6px 0 0",fontWeight:600}}>🔑 Invite code detected — tap Join</p>}
                 {codeError&&<p style={{fontSize:11,color:RED,margin:"6px 0 0"}}>{codeError}</p>}
               </div>
               <div style={{height:1,background:"rgba(0,0,0,0.06)"}}/>
               {allAvail.length===0
-                ? <p style={{fontSize:13,color:"#bbb",textAlign:"center",padding:"16px 14px"}}>No boards available to join.</p>
+                ? <div style={{padding:14}}><EmptyState icon="🏆" title={boardCopy.availableEmptyTitle} body={boardCopy.availableEmptyBody} /></div>
                 : filtered.length===0&&boardSearch.trim()
-                  ? <p style={{fontSize:13,color:"#bbb",textAlign:"center",padding:"16px 14px"}}>No boards found for "{boardSearch}"</p>
+                  ? <div style={{padding:14}}><EmptyState icon="🔍" title={`No boards found for "${boardSearch}"`} body="Try another name or paste the invite code." /></div>
                   : filtered.map((b,bi)=>(
                     <div key={b.id}>
                       <div style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px"}}>
-                        <div style={{width:44,height:44,borderRadius:"50%",background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>{b.label}</div>
+                        <div style={{width:44,height:44,borderRadius:"50%",background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0,overflow:"hidden"}}>
+                          {b.image_url?<img src={b.image_url} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>:b.label}
+                        </div>
                         <div style={{flex:1,minWidth:0}}>
                           <p style={{fontSize:13,fontWeight:700,color:DARK,margin:0}}>{b.name}</p>
                           <p style={{fontSize:11,color:"#aaa",margin:"2px 0 0"}}>👥 {b.members}{b.max?"/"+b.max:""}{b.password?" · 🔒":""}</p>
                         </div>
-                        <button onClick={()=>joinBoard(b)} style={{background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,color:"#fff",border:"none",borderRadius:9,padding:"7px 14px",fontSize:12,fontWeight:700,cursor:"pointer",flexShrink:0}}>Join</button>
+                        <Button onClick={()=>joinBoard(b)}>Join</Button>
                       </div>
                       {bi<filtered.length-1&&<div style={{height:1,background:"rgba(0,0,0,0.05)",margin:"0 14px"}}/>}
                     </div>
                   ))
               }
-            </div>
+            </Card>
             {hasMore&&<p style={{fontSize:12,color:"#bbb",textAlign:"center",marginTop:-4,marginBottom:12,fontStyle:"italic"}}>+{allAvail.length-8} more · use search</p>}
           </>);
         })()}
 
         {/* Tab: Admin */}
         {activeTab==="admin"&&(()=>{
-          if(createdBoards.length===0) return <p style={{fontSize:13,color:"#bbb",textAlign:"center",marginTop:40}}>Nu ai creat niciun board.</p>;
+          if(createdBoards.length===0) return <EmptyState icon="🛠️" title={boardCopy.adminEmptyTitle} body={boardCopy.adminEmptyBody} />;
           return (
-            <div style={{background:"#fff",borderRadius:14,boxShadow:"0 2px 12px rgba(0,0,0,0.10)",overflow:"hidden"}}>
+            <Card>
               {createdBoards.map((b,bi)=>(
                 <div key={b.id}>
                   <div style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px"}}>
-                    <div style={{width:44,height:44,borderRadius:"50%",background:`linear-gradient(135deg,${GREEN},#007A36)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>{b.label}</div>
+                    <div style={{width:44,height:44,borderRadius:"50%",background:`linear-gradient(135deg,${GREEN},#007A36)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0,overflow:"hidden"}}>
+                      {b.image_url?<img src={b.image_url} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>:b.label}
+                    </div>
                     <div style={{flex:1,minWidth:0}}>
                       <p style={{fontSize:13,fontWeight:700,color:DARK,margin:0}}>{b.name}</p>
                       <p style={{fontSize:11,color:"#aaa",margin:"2px 0 0"}}>👥 {b.members}{b.max?"/"+b.max:""} · 🔑 {b.code}</p>
                     </div>
                     <div style={{display:"flex",gap:6}}>
-                      <button onClick={()=>openMembers(b.id)} style={{background:"rgba(0,32,91,0.08)",border:"none",borderRadius:9,padding:"7px 10px",fontSize:11,fontWeight:700,color:NAVY,cursor:"pointer"}}>👥</button>
-                      <button onClick={()=>{ setEditBoard(b); setCName(b.name); setCPassword(b.password||""); setCMaxPlayers(b.max||10); setCSlots(b.prizes?.length||3); setCPrizes(b.prizes?.length?[...b.prizes,...Array(5).fill("")]:["",...Array(4).fill("")]); setView("create"); }} style={{background:"rgba(0,32,91,0.08)",border:"none",borderRadius:9,padding:"7px 10px",fontSize:11,fontWeight:700,color:NAVY,cursor:"pointer"}}>✏️</button>
-                      <button onClick={async()=>{ if(!window.confirm(`Ștergi "${b.name}"?`)) return; if(onDeleteBoard) await onDeleteBoard(b.id); }} style={{background:"rgba(200,16,46,0.08)",border:"none",borderRadius:9,padding:"7px 10px",fontSize:11,fontWeight:700,color:RED,cursor:"pointer"}}>🗑️</button>
+                      <Button variant="ghost" onClick={()=>openMembers(b.id)}>👥</Button>
+                      <Button variant="ghost" onClick={()=>{ setEditBoard(b); setCName(b.name); setCPassword(b.password||""); setCMaxPlayers(b.max||10); setCSlots(b.prizes?.length||3); setCPrizes(b.prizes?.length?[...b.prizes,...Array(5).fill("")]:["",...Array(4).fill("")]); changeView("create"); }}>✏️</Button>
+                      <Button variant="danger" onClick={()=>setDeleteConfirmBoard(b)}>🗑️</Button>
                     </div>
                   </div>
                   {viewMembersBoard===b.id&&(
-                    <div style={{margin:"0 14px 10px",borderTop:"1px solid rgba(0,0,0,0.06)",paddingTop:8}}>
-                      {!(boardMembersMap[b.id]?.length>0)?(<p style={{fontSize:12,color:"#bbb",margin:"4px 0"}}>No members yet</p>)
+                    <div style={{margin:"0 14px 10px",borderTop:"1px solid rgba(10,46,138,0.06)",paddingTop:8}}>
+                      {!(boardMembersMap[b.id]?.length>0)?(<EmptyState icon="👥" title="No members yet" body="Share the invite code to bring people in." />)
                       :(boardMembersMap[b.id]||[]).map((m,mi)=>{
                         const isMe=m.id===user?.id;
                         const leaders=boardLeadersMap[b.id]||leaderboardData[b.id]||[];
@@ -4664,10 +5590,10 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
                         const rankMedals=["🥇","🥈","🥉"];
                         const rankLabel=lEntry?(rankMedals[lEntry.rank-1]||`#${lEntry.rank}`):null;
                         return (
-                          <div key={m.id} style={{display:"flex",alignItems:"center",gap:8,padding:"5px 0",borderBottom:mi<(boardMembersMap[b.id].length-1)?"1px solid rgba(0,0,0,0.04)":"none"}}>
-                            <span style={{flex:1,fontSize:12,fontWeight:600,color:isMe?NAVY:DARK}}>{m.name}{isMe?" (Tu)":""}</span>
+                          <div key={m.id} style={{display:"flex",alignItems:"center",gap:8,padding:"7px 0",borderBottom:mi<(boardMembersMap[b.id].length-1)?"1px solid rgba(10,46,138,0.05)":"none"}}>
+                            <span style={{flex:1,fontSize:12,fontWeight:600,color:isMe?NAVY:DARK}}>{m.name}{isMe?" (You)":""}</span>
                             <span style={{fontSize:11,color:NAVY,fontWeight:700}}>{rankLabel&&<>{rankLabel} </>}{lEntry?.pts??0}pt</span>
-                            <button onClick={async()=>{ if(onRemoveMember) await onRemoveMember(b.id,m.id); setBoardMembersMap(prev=>({...prev,[b.id]:prev[b.id].filter(x=>x.id!==m.id)})); }} style={{background:"rgba(200,16,46,0.08)",border:"none",borderRadius:8,padding:"4px 10px",fontSize:11,fontWeight:700,color:RED,cursor:"pointer"}}>{T[lang].remove}</button>
+                            <Button variant="danger" onClick={async()=>{ if(onRemoveMember) await onRemoveMember(b.id,m.id); setBoardMembersMap(prev=>({...prev,[b.id]:prev[b.id].filter(x=>x.id!==m.id)})); }}>{T[lang].remove}</Button>
                           </div>
                         );
                       })}
@@ -4676,7 +5602,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
                   {bi<createdBoards.length-1&&<div style={{height:1,background:"rgba(0,0,0,0.05)",margin:"0 14px"}}/>}
                 </div>
               ))}
-            </div>
+            </Card>
           );
         })()}
       </div>
@@ -4723,44 +5649,57 @@ const _footerIcons = {
     </svg>
   ),
 };
-function Footer({ active, onNavigate, lang }) {
+function Footer({ active, onNavigate, lang, user }) {
   const tabs = [
     {key:SCREENS.HOME,        label:"Home"},
-    {key:SCREENS.RULES,       label:"Rules"},
     {key:SCREENS.LEADERBOARD, label:"Ranking"},
-    {key:SCREENS.BOARDS,      label:"Boards"},
+    {key:SCREENS.RULES,       label:"Rules"},
+    {key:SCREENS.BOARDS,      label:"Leagues"},
+    {key:SCREENS.ACCOUNT,     label:"More"},
   ];
+  const avatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
+  const displayName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "—";
+  const initials = displayName.split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2);
   return (
     <div style={{position:"fixed",bottom:0,left:0,right:0,padding:"0 14px",paddingBottom:"env(safe-area-inset-bottom, 10px)",zIndex:1000}}>
       <div style={{
-        background:"rgba(255,255,255,0.45)",
-        backdropFilter:"blur(24px)",
-        WebkitBackdropFilter:"blur(24px)",
-        borderRadius:26,
-        boxShadow:"0 8px 32px rgba(10,46,138,0.16), inset 0 -1px 0 rgba(0,0,0,0.03)",
-        border:"1px solid rgba(255,255,255,0.72)",
+        background:"#fff",
+        backdropFilter:"blur(18px)",
+        WebkitBackdropFilter:"blur(18px)",
+        borderRadius:16,
+        boxShadow:"0 2px 14px rgba(0,0,0,0.07)",
+        border:"1.5px solid rgba(255,255,255,0.72)",
         display:"flex",
         alignItems:"stretch",
         height:62,
         margin:"10px 0 0",
+        overflow:"hidden",
       }}>
         {tabs.map(tab=>{
           const isActive=active===tab.key;
           const iconColor = isActive ? NAVY : "#6B7280";
+          const isAccount = tab.key === SCREENS.ACCOUNT;
           return (
             <button key={tab.key} onClick={()=>onNavigate(tab.key)}
               style={{flex:1,background:"transparent",border:"none",cursor:"pointer",WebkitTapHighlightColor:"transparent",
                 display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:3,padding:0,position:"relative",
                 opacity:isActive?1:0.6,transition:"opacity 0.18s"}}>
               <div style={{
-                width:40,height:36,borderRadius:13,
+                width:40,height:36,borderRadius:11,
                 background:isActive?`rgba(10,46,138,0.08)`:"transparent",
-                boxShadow:isActive?`0 2px 10px rgba(10,46,138,0.14)`:"none",
+                boxShadow:isActive?`0 2px 10px rgba(10,46,138,0.10)`:"none",
                 display:"flex",alignItems:"center",justifyContent:"center",
                 animation:isActive?"tabPop 0.3s cubic-bezier(0.175,0.885,0.32,1.275) forwards":"none",
                 transition:"background 0.2s, box-shadow 0.2s",
               }}>
-                {_footerIcons[tab.key]?.(iconColor, isActive)}
+                {isAccount
+                  ? <svg width="22" height="6" viewBox="0 0 22 6" fill="none">
+                      <circle cx="3" cy="3" r="2.5" fill={iconColor}/>
+                      <circle cx="11" cy="3" r="2.5" fill={iconColor}/>
+                      <circle cx="19" cy="3" r="2.5" fill={iconColor}/>
+                    </svg>
+                  : _footerIcons[tab.key]?.(iconColor, isActive)
+                }
               </div>
               <span style={{fontSize:10,fontWeight:isActive?700:500,color:isActive?NAVY:"#6B7280",transition:"all 0.18s",letterSpacing:0.2}}>
                 {tab.label}
@@ -4775,26 +5714,64 @@ function Footer({ active, onNavigate, lang }) {
 
 function LangSelector({ lang, setLang }) {
   const [open,setOpen]=useState(false);
+  const [pos,setPos]=useState({top:0,right:0});
+  const btnRef=useRef(null);
   const cur=LANGS.find(l=>l.code===lang);
+  const handleOpen=()=>{
+    if(btnRef.current){
+      const r=btnRef.current.getBoundingClientRect();
+      setPos({top:r.bottom+8,right:window.innerWidth-r.right});
+    }
+    setOpen(o=>!o);
+  };
   return (
     <div style={{position:"relative",zIndex:100}}>
-      <div onClick={()=>setOpen(o=>!o)} style={{width:44,height:44,borderRadius:12,background:"#F0F4FF",border:"1px solid rgba(0,32,91,0.15)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,cursor:"pointer"}}>{cur.flag}</div>
+      <div ref={btnRef} onClick={handleOpen} style={{width:44,height:44,borderRadius:12,background:"#F0F4FF",border:"1px solid rgba(0,32,91,0.15)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,cursor:"pointer"}}>{cur.flag}</div>
       {open&&(
-        <div style={{position:"absolute",top:52,right:0,background:"#fff",border:"1px solid rgba(0,32,91,0.1)",borderRadius:14,overflow:"hidden",minWidth:160,zIndex:200,boxShadow:"0 12px 40px rgba(0,32,91,0.15)"}}>
-          {LANGS.map(l=>(
-            <div key={l.code} onClick={()=>{setLang(l.code);setOpen(false);}} style={{display:"flex",alignItems:"center",gap:10,padding:"12px 16px",background:lang===l.code?"#F0F4FF":"transparent",cursor:"pointer",borderBottom:"1px solid rgba(0,0,0,0.05)"}}>
-              <span style={{fontSize:20}}>{l.flag}</span>
-              <span style={{fontSize:14,fontWeight:lang===l.code?700:400,color:lang===l.code?NAVY:"#555"}}>{l.name}</span>
-              {lang===l.code&&<span style={{marginLeft:"auto",fontSize:12,color:RED}}>✓</span>}
-            </div>
-          ))}
-        </div>
+        <>
+          <div style={{position:"fixed",inset:0,zIndex:1999}} onClick={()=>setOpen(false)}/>
+          <div style={{position:"fixed",top:pos.top,right:pos.right,background:"#fff",border:"1px solid rgba(0,32,91,0.1)",borderRadius:14,overflow:"hidden",minWidth:160,zIndex:2000,boxShadow:"0 12px 40px rgba(0,32,91,0.15)"}}>
+            {LANGS.map(l=>(
+              <div key={l.code} onClick={()=>{setLang(l.code);setOpen(false);}} style={{display:"flex",alignItems:"center",gap:10,padding:"12px 16px",background:lang===l.code?"#F0F4FF":"transparent",cursor:"pointer",borderBottom:"1px solid rgba(0,0,0,0.05)"}}>
+                <span style={{fontSize:20}}>{l.flag}</span>
+                <span style={{fontSize:14,fontWeight:lang===l.code?700:400,color:lang===l.code?NAVY:"#555"}}>{l.name}</span>
+                {lang===l.code&&<span style={{marginLeft:"auto",fontSize:12,color:RED}}>✓</span>}
+              </div>
+            ))}
+          </div>
+        </>
       )}
     </div>
   );
 }
 
 const ADMIN_EMAIL = "admin@wcp2026.com";
+
+function SeedPlayersButton() {
+  const [state, setState] = useState('idle'); // idle | loading | ok | error
+  const [msg, setMsg] = useState('');
+  const run = async () => {
+    setState('loading');
+    const res = await seedPlayersFromApi();
+    if (res?.error) { setState('error'); setMsg(res.error); }
+    else if (res?.warning) { setState('error'); setMsg(res.warning); }
+    else { setState('ok'); setMsg(`✓ ${res.players} players from ${res.teams} teams saved`); }
+  };
+  return (
+    <div>
+      <button onClick={run} disabled={state==='loading'} style={{
+        width:"100%",padding:"9px",borderRadius:9,border:"none",
+        background:state==='ok'?GREEN:state==='error'?"#fee2e2":state==='loading'?"rgba(0,0,0,0.08)":"#0A2E8A",
+        color:state==='error'?RED:state==='loading'?"rgba(0,0,0,0.3)":"#fff",
+        fontSize:12,fontWeight:800,cursor:state==='loading'?"default":"pointer",
+      }}>
+        {state==='loading'?"Fetching from football-data.org…":"🔄 Seed Players from API"}
+      </button>
+      {msg&&<div style={{fontSize:11,marginTop:5,color:state==='ok'?GREEN:RED,fontWeight:600}}>{msg}</div>}
+    </div>
+  );
+}
+
 
 function AdminBugPanel({ user, allInstantPickStates, allInstantPickDone, exactScoresByBoard, myBoards, bugLog, simDay, simHour, simMin }) {
   const [open, setOpen] = useState(false);
@@ -5058,6 +6035,24 @@ function AdminBugPanel({ user, allInstantPickStates, allInstantPickDone, exactSc
                           <span style={{fontSize:11,fontWeight:700,color:dbHealth.exactScoresTable?.ok?GREEN:RED}}>{dbHealth.exactScoresTable?.ok?"✓ Accessible":"✗ Error"}</span>
                         </div>
                         {!dbHealth.exactScoresTable?.ok&&<div style={{fontSize:11,color:RED,fontWeight:700,marginTop:4}}>{dbHealth.exactScoresTable?.error}</div>}
+                      </div>
+
+                      {/* players table */}
+                      <div style={{background:"#fff",borderRadius:12,padding:"12px",border:`1.5px solid ${dbHealth.playersTable?.ok?"rgba(0,0,0,0.08)":"#fee2e2"}`}}>
+                        <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
+                          <span style={{fontSize:12,fontWeight:800,color:NAVY}}>players table</span>
+                          <span style={{fontSize:11,fontWeight:700,color:dbHealth.playersTable?.ok?GREEN:RED}}>{dbHealth.playersTable?.ok?"✓ Accessible":"✗ Error"}</span>
+                        </div>
+                        {dbHealth.playersTable?.ok && (
+                          <div style={{fontSize:11,color:"rgba(0,0,0,0.55)",marginBottom:8}}>
+                            Players in DB: <strong>{dbHealth.playersTotal||0}</strong>
+                            {(dbHealth.playersTotal||0)===0&&<span style={{color:"#F59E0B",fontWeight:700}}> ← Click "Seed Players" to import</span>}
+                          </div>
+                        )}
+                        {!dbHealth.playersTable?.ok&&<div style={{fontSize:11,color:RED,fontWeight:700,marginBottom:8}}>{dbHealth.playersTable?.error}</div>}
+                        <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                          <SeedPlayersButton />
+                        </div>
                       </div>
                     </>
                   )}
@@ -5332,7 +6327,6 @@ function SplashScreen({ onNext, lang, setLang, simDay, simHour=12, simMin=0, tou
 function OnboardingSheet({ onDone }) {
   const lang = useLang();
   const [slide, setSlide] = useState(0);
-  const [skipNext, setSkipNext] = useState(false);
   const startX = useRef(null);
 
   const slides = [
@@ -5363,7 +6357,7 @@ function OnboardingSheet({ onDone }) {
   const isLast = slide === slides.length - 1;
 
   return (
-    <div style={{position:"absolute",inset:0,zIndex:300,display:"flex",flexDirection:"column",
+    <div style={{position:"fixed",inset:0,zIndex:1100,display:"flex",flexDirection:"column",
       justifyContent:"flex-end",touchAction:"none",overflow:"hidden"}}
       onWheel={e=>e.stopPropagation()}>
       {/* Backdrop — click to close */}
@@ -5417,46 +6411,24 @@ function OnboardingSheet({ onDone }) {
             </div>
           </div>
 
-          {/* Dots */}
-          <div style={{display:"flex",justifyContent:"center",gap:8,padding:"10px 0 12px"}}>
-            {slides.map((_,i)=>(
-              <div key={i} onClick={()=>setSlide(i)}
-                style={{width:i===slide?22:7,height:7,borderRadius:4,cursor:"pointer",
-                  background:i===slide?"rgba(255,255,255,0.95)":"rgba(255,255,255,0.3)",
-                  transition:"all 0.3s"}}/>
-            ))}
-          </div>
-
-          {/* Bottom */}
-          <div style={{padding:"0 24px"}}>
-            <div style={{display:"flex",alignItems:"center",gap:8,justifyContent:"center",marginBottom:10}}
-              onClick={()=>setSkipNext(s=>!s)}>
-              <div style={{width:20,height:20,borderRadius:6,
-                border:`2px solid ${skipNext?"rgba(255,255,255,0.9)":"rgba(255,255,255,0.3)"}`,
-                background:skipNext?"rgba(255,255,255,0.9)":"transparent",
-                display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.2s",cursor:"pointer"}}>
-                {skipNext&&<span style={{fontSize:11,color:NAVY,fontWeight:900}}>✓</span>}
-              </div>
-              <span style={{fontSize:12,color:"rgba(255,255,255,0.55)",cursor:"pointer"}}>Don't show again</span>
+          {/* Navigation */}
+          <div style={{padding:"8px 28px 20px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+            <button onClick={()=>setSlide(s=>s-1)}
+              style={{background:"none",border:"none",color:slide>0?"rgba(255,255,255,0.65)":"transparent",fontSize:22,cursor:slide>0?"pointer":"default",padding:"6px",lineHeight:1,WebkitTapHighlightColor:"transparent"}}>
+              ←
+            </button>
+            <div style={{display:"flex",gap:8}}>
+              {slides.map((_,i)=>(
+                <div key={i} onClick={()=>setSlide(i)}
+                  style={{width:i===slide?22:7,height:7,borderRadius:4,cursor:"pointer",
+                    background:i===slide?"rgba(255,255,255,0.95)":"rgba(255,255,255,0.3)",
+                    transition:"all 0.3s"}}/>
+              ))}
             </div>
-
-            <div style={{display:"flex",gap:10}}>
-              {!isLast&&(
-                <button onClick={()=>onDone(skipNext)}
-                  style={{flex:1,padding:"13px 0",borderRadius:14,border:"none",
-                    background:"rgba(255,255,255,0.15)",color:"rgba(255,255,255,0.7)",
-                    fontSize:14,fontWeight:700,cursor:"pointer"}}>
-                  Skip
-                </button>
-              )}
-              <button onClick={()=>{ if(isLast) onDone(skipNext); else setSlide(s=>s+1); }}
-                style={{flex:2,padding:"13px 0",borderRadius:14,border:"none",cursor:"pointer",
-                  background:"rgba(255,255,255,0.95)",
-                  color:NAVY,fontSize:15,fontWeight:800,
-                  boxShadow:"0 6px 20px rgba(0,0,0,0.2)"}}>
-                {isLast?"Let's go! 🏆":cur.nextLabel||"Next →"}
-              </button>
-            </div>
+            <button onClick={()=>{ if(isLast) onDone(false); else setSlide(s=>s+1); }}
+              style={{background:"none",border:"none",color:"rgba(255,255,255,0.85)",fontSize:14,fontWeight:700,cursor:"pointer",padding:"6px",display:"flex",alignItems:"center",gap:5,lineHeight:1,WebkitTapHighlightColor:"transparent"}}>
+              {isLast?"Close":"View next"}<span style={{fontSize:20}}>{isLast?"":"→"}</span>
+            </button>
           </div>
         </div>
       </div>
@@ -5964,53 +6936,103 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
   const lang = useLang();
   const leaders = leadersProp || BOARD_LEADERS.global;
   const [search, setSearch] = useState("");
-  const [searchResults, setSearchResults] = useState(null);
-  const [searching, setSearching] = useState(false);
 
-  useEffect(() => {
-    if (!search.trim()) { setSearchResults(null); return; }
-    const timer = setTimeout(async () => {
-      setSearching(true);
-      const results = await loadLeaderboard(activeBoardId, search.trim(), userId);
-      setSearchResults(results);
-      setSearching(false);
-    }, 350);
-    return () => clearTimeout(timer);
-  }, [search, activeBoardId]);
+  const sliderItems = myBoards;
+  const [sliderPos, setSliderPos] = useState(()=>Math.max(0,myBoards.findIndex(b=>b.id===activeBoardId)));
+  const sliderTouchRef = useRef(null);
+  useEffect(()=>{
+    const idx = myBoards.findIndex(b=>b.id===activeBoardId);
+    if(idx>=0) setSliderPos(idx);
+  },[activeBoardId,myBoards]);
+  const handleSliderTouchStart = (e)=>{ sliderTouchRef.current = e.touches[0].clientX; };
+  const handleSliderTouchEnd = (e)=>{
+    if(sliderTouchRef.current===null) return;
+    const dx = e.changedTouches[0].clientX - sliderTouchRef.current;
+    sliderTouchRef.current = null;
+    if(Math.abs(dx)<28) return;
+    if(dx<0 && sliderPos<sliderItems.length-1){
+      const np=sliderPos+1; setSliderPos(np);
+      setActiveBoardId&&setActiveBoardId(sliderItems[np].id);
+    } else if(dx>0 && sliderPos>0){
+      const np=sliderPos-1; setSliderPos(np);
+      setActiveBoardId&&setActiveBoardId(sliderItems[np].id);
+    }
+  };
 
-  const filtered = search.trim() ? (searchResults || []) : leaders;
+  const filtered = search.trim()
+    ? leaders.filter(u => u.name?.toLowerCase().includes(search.trim().toLowerCase()))
+    : leaders;
   const me = leaders.find(u=>u.isMe);
 
   return (
-    <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,position:"relative",overflow:"hidden"}}>
+    <div style={{flex:1,display:"flex",flexDirection:"column",background:"transparent",position:"relative",overflow:"hidden"}}>
       <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.055,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
-      <div style={{position:"relative",zIndex:1,background:"linear-gradient(180deg,#CCDAFF 0%,#E2EBFF 40%,#F8F8F8 100%)",padding:"12px 20px 0",flexShrink:0}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:myBoards.length>1?0:8}}>
-          <div onClick={onBack} style={{width:36,height:36,borderRadius:10,background:"rgba(10,46,138,0.08)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:DARK}}>&#8249;</div>
-          <div style={{textAlign:"center"}}>
-            <img src={predictoLogo} alt="Predicto" decoding="sync" style={{height:36,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
-            <h1 style={{fontSize:10,fontWeight:700,margin:"2px 0 0",letterSpacing:2.5,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
-            <p style={{fontSize:11,color:"#6B7280",margin:"3px 0 0"}}>{T[lang].location}</p>
+      <div style={{flex:1,display:"flex",flexDirection:"column",background:"linear-gradient(to bottom, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0.10) 28%, rgba(255,255,255,0.02) 48%, transparent 65%)",borderRadius:26,margin:"10px 14px 0",boxShadow:"0 8px 32px rgba(10,46,138,0.10), inset 0 1px 0 rgba(255,255,255,0.80)",border:"1px solid rgba(255,255,255,0.22)",overflow:"hidden",position:"relative",willChange:"transform",transform:"translateZ(0)"}}>
+        {/* Blur layer */}
+        <div style={{position:"absolute",inset:0,backdropFilter:"blur(28px)",WebkitBackdropFilter:"blur(28px)",WebkitMaskImage:"linear-gradient(to bottom, black 0%, black 44%, transparent 64%)",maskImage:"linear-gradient(to bottom, black 0%, black 44%, transparent 64%)",pointerEvents:"none",zIndex:0}}/>
+        {/* Gloss highlight */}
+        <div style={{position:"absolute",top:0,left:0,right:0,height:"45%",background:"linear-gradient(135deg, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0.06) 40%, transparent 65%)",pointerEvents:"none",zIndex:0}}/>
+        <div style={{padding:"12px 14px 0",flexShrink:0,position:"relative",zIndex:2}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+            <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,flexShrink:0,paddingTop:10}}>
+              <button onClick={onBack} style={{width:44,height:44,background:"none",border:"none",padding:0,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",WebkitTapHighlightColor:"transparent"}}>
+                <span style={{fontSize:22,color:"#374151",lineHeight:1}}>‹</span>
+              </button>
+              <p style={{fontSize:11,color:"transparent",margin:0,userSelect:"none"}}> </p>
+            </div>
+            <div style={{textAlign:"center"}}>
+              <img src={predictoLogo} alt="Predicto" decoding="sync" style={{height:36,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
+              <h1 style={{fontSize:10,fontWeight:700,margin:"2px 0 0",letterSpacing:2.5,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
+              <p style={{fontSize:11,color:"#6B7280",margin:"3px 0 0"}}>{T[lang].location}</p>
+            </div>
+            <div style={{width:44,paddingTop:10}}/>
           </div>
-          <div style={{width:36}}/>
         </div>
-        {myBoards.length>0&&(
-          <div style={{display:"flex",alignItems:"flex-start",gap:10,overflowX:"auto",scrollbarWidth:"none",padding:"10px 0 2px"}}>
-            {myBoards.map(b=><CircleTab key={b.id} label={b.label} name={b.isGlobal?"Global":b.name.split(" ")[0]} isActive={activeBoardId===b.id} onClick={()=>setActiveBoardId&&setActiveBoardId(b.id)} lightBg/>)}
-          </div>
-        )}
-      </div>
-      {/* Search bar on white background */}
-      <div style={{padding:"12px 20px 4px",background:BG}}>
-        <div style={{display:"flex",alignItems:"center",gap:8,background:"#fff",borderRadius:12,
-          boxShadow:SHADOW_OUT,padding:"9px 14px"}}>
+        {myBoards.length>0&&(()=>{
+          const leftItem  = sliderItems[sliderPos-1] ?? null;
+          const centerItem= sliderItems[sliderPos];
+          const rightItem = sliderItems[sliderPos+1] ?? null;
+          const myRank = leaders.find(u=>u.isMe)?.rank;
+          const renderItem = (item, pos) => {
+            if(!item) return <div key={pos} style={{flex:1}}/>;
+            const isCenter = pos===0;
+            const dist = Math.abs(pos);
+            const handleTap = ()=>{
+              if(!isCenter){ const np=sliderPos+pos; setSliderPos(np); setActiveBoardId&&setActiveBoardId(item.id); }
+            };
+            return (
+              <div key={item.id} style={{flex:1,display:"flex",justifyContent:"center",alignItems:"center",...(isCenter?{transform:"translateY(-6px)",zIndex:2}:{})}}>
+                <CircleTab label={item.label} imageUrl={item.image_url||undefined} name={item.isGlobal?"Global":item.name.split(" ")[0]}
+                  isActive={isCenter} onClick={handleTap} lightBg distance={dist}
+                  rank={isCenter?myRank:undefined} members={isCenter?item.members:undefined}/>
+              </div>
+            );
+          };
+          return (
+            <div style={{margin:"18px 14px 0",background:"#fff",borderRadius:16,boxShadow:"0 2px 10px rgba(0,0,0,0.06)",border:"1px solid rgba(10,46,138,0.06)",display:"flex",alignItems:"center",padding:"8px 4px",overflow:"visible",flexShrink:0}}>
+              <button onClick={()=>{ const np=sliderPos+1; if(np<sliderItems.length){setSliderPos(np);setActiveBoardId&&setActiveBoardId(sliderItems[np].id);} }}
+                style={{background:"none",border:"none",padding:"0 16px",cursor:"pointer",fontSize:22,fontWeight:700,color:NAVY,opacity:sliderPos<sliderItems.length-1?0.65:0.12,WebkitTapHighlightColor:"transparent",lineHeight:1,transition:"opacity 0.2s",flexShrink:0}}>‹</button>
+              <div onTouchStart={handleSliderTouchStart} onTouchEnd={handleSliderTouchEnd}
+                style={{flex:1,display:"flex",alignItems:"center",userSelect:"none",touchAction:"pan-x",overflow:"visible",padding:"6px 0"}}>
+                {renderItem(leftItem,-1)}
+                {renderItem(centerItem,0)}
+                {renderItem(rightItem,1)}
+              </div>
+              <button onClick={()=>{ const np=sliderPos-1; if(np>=0){setSliderPos(np);setActiveBoardId&&setActiveBoardId(sliderItems[np].id);} }}
+                style={{background:"none",border:"none",padding:"0 16px",cursor:"pointer",fontSize:22,fontWeight:700,color:NAVY,opacity:sliderPos>0?0.65:0.12,WebkitTapHighlightColor:"transparent",lineHeight:1,transition:"opacity 0.2s",flexShrink:0}}>›</button>
+            </div>
+          );
+        })()}
+      <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",display:"flex",flexDirection:"column"}}>
+      {/* Search bar */}
+      <div style={{padding:"12px 20px 4px"}}>
+        <div style={UI.inputPanel}>
           <span style={{fontSize:14,opacity:0.4}}>🔍</span>
           <input value={search} onChange={e=>setSearch(e.target.value)}
             placeholder={T[lang].searchPlayer}
             style={{flex:1,background:"transparent",border:"none",outline:"none",
               fontSize:13,color:DARK,fontWeight:500}}/>
-          {searching && <span style={{fontSize:12,color:"#bbb"}}>...</span>}
-          {search&&!searching&&<span onClick={()=>{setSearch("");setSearchResults(null);}} style={{fontSize:14,color:"#bbb",cursor:"pointer"}}>✕</span>}
+          {search&&<span onClick={()=>setSearch("")} style={{fontSize:14,color:"#bbb",cursor:"pointer"}}>✕</span>}
         </div>
       </div>
 
@@ -6021,11 +7043,12 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
           <p style={{fontSize:13,color:"#aaa",lineHeight:1.5,margin:0}}>{T[lang].leaderboardMsg}</p>
         </div>
       ) : (
-        <div style={{flex:1,overflowY:"auto",padding:"12px 20px 100px"}}>
+        <div style={{padding:"0 20px 100px"}}>
           {filtered.length===0?(
-            <div style={{textAlign:"center",padding:"40px 0",color:"#aaa",fontSize:13}}>
-              {T[lang].noPlayerFound} "{search}"
-            </div>
+            <Card style={UI.emptyState}>
+              <div style={{fontSize:28,marginBottom:8}}>🔍</div>
+              <div style={{fontSize:13,fontWeight:700,color:DARK}}>{T[lang].noPlayerFound} "{search}"</div>
+            </Card>
           ):filtered.map((u,i)=>{
             // Rank badge — only show medal if that rank has a prize
             const hasPrize = !!u.prize;
@@ -6038,11 +7061,12 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
             const rankColor = hasPrize&&u.rank===1?"#FFD700":hasPrize&&u.rank===2?"#C0C0C0":hasPrize&&u.rank===3?"#CD7F32":hasPrize&&u.rank===4?"#5856D6":hasPrize&&u.rank===5?"#5856D6":"#bbb";
             return (
             <div key={u.rank} style={{display:"flex",alignItems:"center",
-              background:u.isMe?"#E8F0FF":u.accent||BG,
-              borderRadius:12,padding:"8px 12px",gap:10,marginBottom:6,
-              boxShadow:u.isMe?`0 0 0 2px ${NAVY},${SHADOW_OUT}`:SHADOW_OUT}}>
+              ...UI.card,
+              background:u.isMe?"#E8F0FF":"#fff",
+              border:u.isMe?`1.5px solid ${NAVY}`:UI.card.border,
+              borderRadius:12,padding:"8px 12px",gap:10,marginBottom:6}}>
               {/* Rank indicator */}
-              <div style={{width:30,textAlign:"center",flexShrink:0}}>
+              <div style={{width:26,textAlign:"center",flexShrink:0}}>
                 {rankBadge ? (
                   <span style={{fontSize:20}}>{rankBadge}</span>
                 ) : (
@@ -6053,6 +7077,19 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
                   </div>
                 )}
               </div>
+              {/* Avatar */}
+              {!u.empty && (
+                <div style={{width:32,height:32,borderRadius:"50%",flexShrink:0,overflow:"hidden",
+                  background:u.isMe?`${NAVY}22`:"rgba(0,0,0,0.07)",
+                  display:"flex",alignItems:"center",justifyContent:"center"}}>
+                  {u.avatarUrl
+                    ? <img src={u.avatarUrl} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                    : <span style={{fontSize:11,fontWeight:700,color:u.isMe?NAVY:"#888"}}>
+                        {u.name.split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2)}
+                      </span>
+                  }
+                </div>
+              )}
               <div style={{flex:1,minWidth:0}}>
                 {u.empty
                   ? <span style={{fontSize:12,color:"#ccc",fontStyle:"italic"}}>{T[lang].openSlot}</span>
@@ -6074,6 +7111,8 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
           })}
         </div>
       )}
+      </div>
+      </div>
     </div>
   );
 }
@@ -6091,6 +7130,8 @@ function ScorePicker({ match, day, savedScore, onSave, onBack }) {
 
   const select = (h,a) => { setHome(h); setAway(a); setCustom(false); };
   const confirmed = home!==null && away!==null;
+  const scorePanelStyle = { ...UI.card, padding:"14px", marginBottom:14 };
+  const scoreLabelStyle = { ...UI.sectionLabel, fontWeight:750, margin:"0 0 10px" };
 
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",position:"relative"}}>
@@ -6122,40 +7163,42 @@ function ScorePicker({ match, day, savedScore, onSave, onBack }) {
       </div>
 
       <div style={{flex:1,overflowY:"auto",padding:"16px 20px"}}>
-        <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 10px"}}>{T[lang].selectScore}</p>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,marginBottom:14}}>
-          {presets.map(([h,a])=>{
-            const sel = home===h&&away===a&&!custom;
-            return (
-              <button key={`${h}-${a}`} onClick={()=>select(h,a)}
-                style={{padding:"10px 4px",borderRadius:10,border:"none",cursor:"pointer",
-                  background:sel?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:BG,
-                  color:sel?"#fff":DARK,
-                  boxShadow:sel?"0 3px 10px rgba(0,32,91,0.3)":SHADOW_OUT,
-                  fontSize:14,fontWeight:sel?800:500,transition:"all 0.15s"}}>
-                {h}-{a}
-              </button>
-            );
-          })}
+        <div style={scorePanelStyle}>
+          <p style={scoreLabelStyle}>{T[lang].selectScore}</p>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
+            {presets.map(([h,a])=>{
+              const sel = home===h&&away===a&&!custom;
+              return (
+                <button key={`${h}-${a}`} onClick={()=>select(h,a)}
+                  style={{padding:"10px 4px",borderRadius:10,border:`1px solid ${sel?NAVY:"rgba(10,46,138,0.07)"}`,cursor:"pointer",
+                    background:sel?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:"#F8FAFC",
+                    color:sel?"#fff":DARK,
+                    boxShadow:sel?"0 3px 10px rgba(0,32,91,0.18)":"none",
+                    fontSize:14,fontWeight:sel?800:600,transition:"all 0.15s"}}>
+                  {h}-{a}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* Custom score */}
-        <div style={{background:BG,borderRadius:14,boxShadow:SHADOW_OUT,padding:"12px 14px",marginBottom:16}}>
-          <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 10px"}}>{T[lang].customScore}</p>
+        <div style={scorePanelStyle}>
+          <p style={scoreLabelStyle}>{T[lang].customScore}</p>
           <div style={{display:"flex",alignItems:"center",gap:10}}>
             <input type="number" min="0" max="20" value={cHome}
               onChange={e=>{setCHome(e.target.value);setCustom(true);setHome(parseInt(e.target.value)||0);setAway(parseInt(cAway)||0);}}
-              style={{flex:1,textAlign:"center",fontSize:20,fontWeight:800,color:NAVY,border:"none",background:"#fff",borderRadius:10,padding:"10px",boxShadow:SHADOW_IN,outline:"none"}}/>
+              style={{flex:1,textAlign:"center",fontSize:20,fontWeight:800,color:NAVY,border:"1px solid rgba(10,46,138,0.07)",background:"#F8FAFC",borderRadius:10,padding:"10px",outline:"none"}}/>
             <span style={{fontSize:18,fontWeight:800,color:"#aaa"}}>-</span>
             <input type="number" min="0" max="20" value={cAway}
               onChange={e=>{setCHome(e.target.value);setCustom(true);setHome(parseInt(cHome)||0);setAway(parseInt(e.target.value)||0);}}
-              style={{flex:1,textAlign:"center",fontSize:20,fontWeight:800,color:NAVY,border:"none",background:"#fff",borderRadius:10,padding:"10px",boxShadow:SHADOW_IN,outline:"none"}}/>
+              style={{flex:1,textAlign:"center",fontSize:20,fontWeight:800,color:NAVY,border:"1px solid rgba(10,46,138,0.07)",background:"#F8FAFC",borderRadius:10,padding:"10px",outline:"none"}}/>
           </div>
         </div>
 
         <div style={{display:"flex",gap:8}}>
           <button onClick={onBack}
-            style={{flex:1,padding:"12px 0",borderRadius:12,border:"none",background:BG,boxShadow:SHADOW_OUT,fontSize:12,fontWeight:700,cursor:"pointer",color:"#888"}}>
+            style={{flex:1,padding:"12px 0",borderRadius:12,border:"1px solid rgba(10,46,138,0.07)",background:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",color:"#888"}}>
             ← Back
           </button>
           <button onClick={()=>confirmed&&onSave(home,away)}
@@ -6163,7 +7206,7 @@ function ScorePicker({ match, day, savedScore, onSave, onBack }) {
               background:confirmed?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:"#e8e8e8",
               color:confirmed?"#fff":"#bbb",fontSize:12,fontWeight:700,
               cursor:confirmed?"pointer":"default",
-              boxShadow:confirmed?"0 4px 12px rgba(0,32,91,0.3)":"none"}}>
+              boxShadow:confirmed?"0 4px 12px rgba(0,32,91,0.18)":"none"}}>
             {T[lang].saveScore}
           </button>
         </div>
@@ -6177,7 +7220,7 @@ const scA = (sc) => Array.isArray(sc) ? sc[1] : (sc?.away ?? 0);
 
 function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScoresProp, simDay, simHour=12, simMin=0, initialWeek }) {
   const lang = useLang();
-  const LIVE_SCORES = computeLiveScores(simDay, simHour, simMin);
+  const LIVE_SCORES = useLiveScores(simDay, simHour, simMin);
   // Build GROUPS_DATA dynamically from CALENDAR_EVENTS
   const GROUPS_DATA = (() => {
     const gMap = {};
@@ -6333,21 +7376,23 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
   });
   standing.sort((a,b)=>b.pts-a.pts||b.gd-a.gd||b.gf-a.gf);
 
+  const wDaysHeader = Array.from({length:7},(_,i)=>weekStart+i).filter(d=>d>=1&&d<=50);
+  const weekTotal = wDaysHeader.reduce((s,d)=>s+(mm0[d]||[]).length,0);
+  const weekScored = wDaysHeader.reduce((s,d)=>s+(mm0[d]||[]).filter((_,i)=>scores[`${d}-${i}`]).length,0);
+  const weekRemaining = weekTotal - weekScored;
+
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",position:"relative"}}>
       <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.055,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
-      <div style={{position:"relative",zIndex:1,background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"10px 20px 12px",flexShrink:0,overflow:"hidden"}}>
-        <img src={varBg} alt="" style={{
-          position:"absolute",inset:0,width:"100%",height:"100%",
-          objectFit:"cover",objectPosition:"center 30%",
-          opacity:0.28,pointerEvents:"none",
-        }}/>
-        <div style={{position:"relative"}}>
-          <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:14}}>
-            <div onClick={onBack} style={{width:36,height:36,borderRadius:10,background:"rgba(255,255,255,0.12)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:"#fff"}}>&#8249;</div>
-            <div>
-              <h2 style={{fontSize:18,fontWeight:800,color:"#fff",margin:0}}>{T[lang].groupsSchedule}</h2>
-            </div>
+      <div style={{background:"rgba(0,32,91,0.88)",flexShrink:0,position:"relative",zIndex:1,overflow:"hidden"}}>
+        <div style={{display:"flex",alignItems:"center",gap:10,padding:"28px 14px 28px"}}>
+          <button onClick={onBack} style={{background:"rgba(255,255,255,0.12)",border:"none",borderRadius:10,width:34,height:34,color:"#fff",fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>‹</button>
+          <div style={{flex:1,textAlign:"center"}}>
+            <div style={{fontSize:18,fontWeight:800,color:"#fff"}}>{T[lang].exactScores}</div>
+          </div>
+          <div style={{textAlign:"right",flexShrink:0,minWidth:34}}>
+            <div style={{fontSize:13,fontWeight:700,color:"#fff"}}>{weekScored}/{weekTotal}</div>
+            <div style={{fontSize:10,color:"rgba(255,255,255,0.45)"}}>{weekRemaining===0?"complete":`${weekRemaining} left`}</div>
           </div>
         </div>
       </div>
@@ -6569,7 +7614,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
 
       {/* Score Picker Modal */}
       {scorePick&&(
-        <div style={{position:"absolute",inset:0,zIndex:100,display:"flex",flexDirection:"column",justifyContent:"flex-end",touchAction:"none",overscrollBehavior:"none"}}
+        <div style={{position:"fixed",inset:0,zIndex:2000,display:"flex",flexDirection:"column",justifyContent:"flex-end",touchAction:"none",overscrollBehavior:"none"}}
           onClick={()=>setScorePick(null)}
           onWheel={e=>e.stopPropagation()}
           onTouchMove={e=>e.stopPropagation()}>
@@ -7288,7 +8333,7 @@ function StatsScreen() {
   );
 }
 
-function AccountScreen({ setLang, onBoards, onSignOut, onShowGuide, user }) {
+function AccountScreen({ setLang, onBoards, onSignOut, onShowGuide, onPremium, onNotifications, user, isActive=true, onAvatarUpdate }) {
   const lang = useLang();
   const displayName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "—";
   const memberSince = user?.created_at
@@ -7298,16 +8343,53 @@ function AccountScreen({ setLang, onBoards, onSignOut, onShowGuide, user }) {
   const [deleteEmail, setDeleteEmail] = useState("");
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteError, setDeleteError] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState(user?.user_metadata?.avatar_url || null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const avatarInputRef = useRef(null);
+
+  // Sync local avatar state whenever the auth user object updates (token refresh, USER_UPDATED, etc.)
+  useEffect(() => {
+    const url = user?.user_metadata?.avatar_url || null;
+    if (url) setAvatarUrl(url);
+  }, [user?.user_metadata?.avatar_url]);
+
+  const handleAvatarChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAvatarUploading(true);
+    const url = await uploadAvatar(user.id, file);
+    if (url) { setAvatarUrl(url); onAvatarUpdate?.(url); }
+    setAvatarUploading(false);
+    e.target.value = "";
+  };
+  const closeDeleteModal = () => {
+    if(deleteLoading) return;
+    setDeleteMode(false);
+    setDeleteEmail("");
+    setDeleteError("");
+  };
+
+  useEffect(()=>{
+    if(!isActive) {
+      setDeleteMode(false);
+      setDeleteEmail("");
+      setDeleteError("");
+      setDeleteLoading(false);
+    }
+  }, [isActive]);
 
   const handleSignOut = async () => {
-    try { localStorage.removeItem('myBoards'); } catch {}
+    try {
+      localStorage.removeItem('myBoards');
+      localStorage.removeItem('activeBoardId');
+    } catch {}
     await supabase.auth.signOut();
     onSignOut();
   };
 
   const handleDeleteAccount = async () => {
     if (deleteEmail.trim().toLowerCase() !== user?.email?.toLowerCase()) {
-      setDeleteError("Emailul introdus nu coincide cu contul tău.");
+      setDeleteError("The email does not match your account.");
       return;
     }
     setDeleteLoading(true); setDeleteError("");
@@ -7326,29 +8408,38 @@ function AccountScreen({ setLang, onBoards, onSignOut, onShowGuide, user }) {
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,position:"relative",overflow:"hidden"}}>
       <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.055,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
-      <div style={{background:"linear-gradient(180deg,#CCDAFF 0%,#E2EBFF 40%,#F8F8F8 100%)",padding:"12px 20px 10px",flexShrink:0,position:"relative",zIndex:1,boxSizing:"border-box"}}>
-        <div style={{textAlign:"center",marginBottom:8}}>
-          <img src={predictoLogo} alt="Predicto" decoding="sync" style={{height:36,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
-          <h1 style={{fontSize:10,fontWeight:700,margin:"2px 0 0",letterSpacing:2.5,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
-          <p style={{fontSize:11,color:"#6B7280",margin:"3px 0 0"}}>{T[lang].location}</p>
-        </div>
-        <div style={{borderTop:"2px solid rgba(0,0,0,0.06)",marginTop:10}}/>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:12,paddingTop:10}}>
-          <div style={{position:"relative",flexShrink:0}}>
-            <div style={{width:52,height:52,borderRadius:"50%",background:"rgba(0,0,0,0.05)",border:"2px dashed rgba(0,0,0,0.15)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,cursor:"pointer"}}>👤</div>
-            <div style={{position:"absolute",bottom:0,right:0,width:18,height:18,borderRadius:"50%",background:NAVY,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:"#fff",fontWeight:700,lineHeight:1}}>+</div>
+      <div style={{padding:"10px 14px 0",flexShrink:0,position:"relative",zIndex:2}}>
+        <div style={{background:"rgba(255,255,255,0.32)",backdropFilter:"blur(28px)",WebkitBackdropFilter:"blur(28px)",borderRadius:26,boxShadow:"0 8px 32px rgba(10,46,138,0.12), inset 0 1px 0 rgba(255,255,255,0.95)",border:"1px solid rgba(255,255,255,0.55)",padding:"12px 20px 14px",position:"relative",WebkitMaskImage:"linear-gradient(to bottom,black 0%,black 85%,transparent 100%)",maskImage:"linear-gradient(to bottom,black 0%,black 85%,transparent 100%)"}}>
+          <div style={{position:"absolute",inset:0,borderRadius:26,background:"linear-gradient(135deg,rgba(255,255,255,0.3) 0%,rgba(255,255,255,0.08) 40%,transparent 65%)",pointerEvents:"none",zIndex:0}}/>
+          <div style={{textAlign:"center",position:"relative",zIndex:1}}>
+            <img src={predictoLogo} alt="Predicto" decoding="sync" style={{height:36,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
+            <h1 style={{fontSize:10,fontWeight:700,margin:"2px 0 0",letterSpacing:2.5,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
+            <p style={{fontSize:11,color:"#6B7280",margin:"3px 0 0"}}>{T[lang].location}</p>
           </div>
-          <div>
-            <p style={{fontSize:13,color:"#888",margin:0}}>{user?.email}</p>
-            {memberSince && <p style={{fontSize:11,color:"#aaa",margin:"2px 0 0"}}>Membru din {memberSince}</p>}
+          <div style={{borderTop:"1px solid rgba(0,0,0,0.06)",marginTop:10,position:"relative",zIndex:1}}/>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:12,paddingTop:10,position:"relative",zIndex:1}}>
+            <div style={{position:"relative",flexShrink:0}} onClick={()=>!avatarUploading&&avatarInputRef.current?.click()}>
+              <input ref={avatarInputRef} type="file" accept="image/*" style={{display:"none"}} onChange={handleAvatarChange}/>
+              <div style={{width:52,height:52,borderRadius:"50%",background:avatarUrl?"transparent":"rgba(0,0,0,0.05)",border:avatarUrl?"none":"2px dashed rgba(0,0,0,0.15)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,cursor:"pointer",overflow:"hidden"}}>
+                {avatarUploading
+                  ? <span style={{fontSize:13,color:"#888"}}>...</span>
+                  : avatarUrl
+                    ? <img src={avatarUrl} alt="avatar" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                    : "👤"}
+              </div>
+              <div style={{position:"absolute",bottom:0,right:0,width:18,height:18,borderRadius:"50%",background:NAVY,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:"#fff",fontWeight:700,lineHeight:1}}>+</div>
+            </div>
+            <div>
+              <p style={{fontSize:13,color:"#888",margin:0}}>{user?.email}</p>
+              {memberSince && <p style={{fontSize:11,color:"#aaa",margin:"2px 0 0"}}>Member since {memberSince}</p>}
+            </div>
           </div>
         </div>
-        <div style={{borderTop:"2px solid rgba(0,0,0,0.06)",marginTop:10}}/>
       </div>
       <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",position:"relative",zIndex:1}}>
         <div style={{padding:"12px 20px 100px"}}>
-          {[{icon:"🏆",label:T[lang].myBoards,sub:T[lang].activeBoards,action:onBoards},{icon:"📖",label:T[lang].appGuide,sub:T[lang].howItWorks,action:onShowGuide},{icon:"🔔",label:T[lang].notifications,sub:T[lang].matchAlertsOn},{icon:"🌍",label:T[lang].language,sub:LANGS.find(l=>l.code===lang)?.name||"English",isLang:true},{icon:"⭐",label:T[lang].upgradePremium,sub:T[lang].removeAds,highlight:true},{icon:"🚪",label:T[lang].signOut,sub:"",action:handleSignOut}].map(item=>(
-            <div key={item.label} onClick={item.isLang?undefined:item.action||undefined} style={{display:"flex",alignItems:"center",gap:14,background:item.highlight?"#E8F0FF":BG,borderRadius:14,boxShadow:item.highlight?`0 0 0 2px ${NAVY},${SHADOW_OUT}`:SHADOW_OUT,padding:"13px 16px",marginBottom:10,cursor:item.isLang?"default":"pointer"}}>
+          {[{icon:"🏆",label:T[lang].myBoards,sub:T[lang].activeBoards,action:onBoards},{icon:"📖",label:T[lang].appGuide,sub:T[lang].howItWorks,action:onShowGuide},{icon:"🔔",label:T[lang].notifications,sub:T[lang].matchAlertsOn,action:onNotifications},{icon:"🌍",label:T[lang].language,sub:LANGS.find(l=>l.code===lang)?.name||"English",isLang:true},{icon:"⭐",label:T[lang].upgradePremium,sub:T[lang].removeAds,highlight:true,action:onPremium},{icon:"🚪",label:T[lang].signOut,sub:"",action:handleSignOut}].map(item=>(
+            <div key={item.label} onClick={item.isLang?undefined:item.action||undefined} style={{display:"flex",alignItems:"center",gap:14,...UI.card,background:item.highlight?"#E8F0FF":"#fff",border:item.highlight?`1.5px solid ${NAVY}`:UI.card.border,padding:"13px 16px",marginBottom:10,cursor:item.isLang?"default":"pointer"}}>
               <span style={{fontSize:20}}>{item.icon}</span>
               <div style={{flex:1}}>
                 <p style={{fontSize:14,fontWeight:700,color:item.highlight?NAVY:DARK,margin:0}}>{item.label}</p>
@@ -7359,37 +8450,43 @@ function AccountScreen({ setLang, onBoards, onSignOut, onShowGuide, user }) {
           ))}
           <p onClick={()=>setDeleteMode(true)}
             style={{textAlign:"center",fontSize:12,color:RED,margin:"8px 0 4px",cursor:"pointer",textDecoration:"underline",opacity:0.7}}>
-            Șterge contul
+            Delete account
           </p>
-
-          {deleteMode && (
-            <div style={{position:"fixed",inset:0,zIndex:9999,background:"rgba(0,0,0,0.6)",display:"flex",alignItems:"flex-end"}}>
-              <div style={{width:"100%",background:"#fff",borderRadius:"20px 20px 0 0",padding:"28px 24px 40px"}}>
-                <div style={{fontSize:40,textAlign:"center",marginBottom:12}}>⚠️</div>
-                <h3 style={{fontSize:18,fontWeight:800,color:DARK,textAlign:"center",margin:"0 0 8px"}}>Șterge contul</h3>
-                <p style={{fontSize:13,color:"#888",textAlign:"center",margin:"0 0 20px",lineHeight:1.5}}>
-                  Aceasta va șterge <strong>tot</strong> — predicții, boarduri, scoruri.<br/>Acțiunea este <strong>ireversibilă</strong>.
-                </p>
-                <p style={{fontSize:12,fontWeight:700,color:DARK,margin:"0 0 6px"}}>Introdu emailul tău pentru confirmare:</p>
-                <div style={{background:BG,borderRadius:12,padding:"12px 14px",marginBottom:12,display:"flex",alignItems:"center",gap:8,border:"1px solid #eee"}}>
-                  <input value={deleteEmail} onChange={e=>{setDeleteEmail(e.target.value);setDeleteError("");}}
-                    placeholder={user?.email} type="email" autoCapitalize="none"
-                    style={{flex:1,border:"none",outline:"none",fontSize:14,color:DARK,background:"transparent"}}/>
-                </div>
-                {deleteError && <p style={{fontSize:12,color:RED,margin:"0 0 8px",textAlign:"center"}}>{deleteError}</p>}
-                <button onClick={handleDeleteAccount} disabled={deleteLoading||!deleteEmail.trim()}
-                  style={{width:"100%",background:deleteEmail.trim()?RED:"#e0e0e0",color:"#fff",border:"none",borderRadius:14,padding:"14px 0",fontSize:15,fontWeight:700,cursor:"pointer",marginBottom:10,opacity:deleteLoading?0.7:1}}>
-                  {deleteLoading ? "Se șterge..." : "Șterge definitiv"}
-                </button>
-                <button onClick={()=>{setDeleteMode(false);setDeleteEmail("");setDeleteError("");}}
-                  style={{width:"100%",background:"transparent",color:"#aaa",border:"1px solid #ddd",borderRadius:14,padding:"12px 0",fontSize:14,fontWeight:600,cursor:"pointer"}}>
-                  Anulează
-                </button>
-              </div>
-            </div>
-          )}
         </div>
       </div>
+      {deleteMode && (
+        <div
+          style={{position:"fixed",inset:0,zIndex:9999,background:"rgba(0,0,0,0.6)",display:"flex",alignItems:"flex-end"}}
+          onPointerDown={e=>{ if(e.target===e.currentTarget) closeDeleteModal(); }}>
+          <div style={{position:"relative",width:"100%",background:"#fff",borderRadius:"20px 20px 0 0",padding:"28px 24px",paddingBottom:"calc(env(safe-area-inset-bottom, 0px) + 32px)"}} onClick={e=>e.stopPropagation()}>
+            <button onClick={closeDeleteModal}
+              disabled={deleteLoading}
+              style={{position:"absolute",right:16,top:16,width:34,height:34,borderRadius:"50%",border:"1px solid rgba(10,46,138,0.08)",background:"#fff",color:"#9CA3AF",fontSize:18,fontWeight:700,cursor:deleteLoading?"default":"pointer",opacity:deleteLoading?0.45:1}}>
+              ×
+            </button>
+            <div style={{fontSize:40,textAlign:"center",marginBottom:12}}>⚠️</div>
+            <h3 style={{fontSize:18,fontWeight:800,color:DARK,textAlign:"center",margin:"0 0 8px"}}>Delete account</h3>
+            <p style={{fontSize:13,color:"#888",textAlign:"center",margin:"0 0 20px",lineHeight:1.5}}>
+              This will delete <strong>everything</strong>: predictions, leagues and scores.<br/>This action is <strong>irreversible</strong>.
+            </p>
+            <p style={{fontSize:12,fontWeight:700,color:DARK,margin:"0 0 6px"}}>Enter your email to confirm:</p>
+            <InputPanel style={{marginBottom:12}}>
+              <input value={deleteEmail} onChange={e=>{setDeleteEmail(e.target.value);setDeleteError("");}}
+                placeholder="Email" type="email" autoCapitalize="none"
+                style={{flex:1,border:"none",outline:"none",fontSize:14,color:DARK,background:"transparent"}}/>
+            </InputPanel>
+            {deleteError && <p style={{fontSize:12,color:RED,margin:"0 0 8px",textAlign:"center"}}>{deleteError}</p>}
+            <button onClick={handleDeleteAccount} disabled={deleteLoading||!deleteEmail.trim()}
+              style={{width:"100%",background:deleteEmail.trim()?RED:"#e0e0e0",color:"#fff",border:"none",borderRadius:14,padding:"14px 0",fontSize:15,fontWeight:700,cursor:"pointer",marginBottom:10,opacity:deleteLoading?0.7:1}}>
+              {deleteLoading ? "Deleting..." : "Delete permanently"}
+            </button>
+            <button onClick={closeDeleteModal}
+              style={{width:"100%",background:"#fff",color:"#888",border:"1px solid rgba(10,46,138,0.08)",borderRadius:14,padding:"12px 0",fontSize:14,fontWeight:650,cursor:"pointer"}}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -7435,10 +8532,7 @@ function RulesScreen({ onBack }) {
               <h1 style={{fontSize:10,fontWeight:700,margin:"2px 0 0",letterSpacing:2.5,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
               <p style={{fontSize:11,color:"#6B7280",margin:"3px 0 0"}}>{T[lang].location}</p>
             </div>
-            <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,flexShrink:0,paddingTop:10}}>
-              <img src={bellIcon} alt="Notifications" style={{width:44,height:44}}/>
-              <p style={{fontSize:11,color:"transparent",margin:0,userSelect:"none"}}> </p>
-            </div>
+            <div style={{width:44,paddingTop:10}}/>
           </div>
           <div style={{display:"flex",gap:0,borderTop:`1px solid rgba(0,0,0,0.06)`,marginTop:10}}>
             {[{id:"predictions",label:"🎯 Predictions"},{id:"exact",label:"⚽ Exact Score"}].map(t=>(
@@ -7457,7 +8551,7 @@ function RulesScreen({ onBack }) {
       <div style={{flex:1,overflowY:"auto",overscrollBehavior:"contain",padding:"10px 14px 100px",position:"relative",zIndex:1}}>
 
         {/* Description */}
-        <div style={{background:"rgba(255,255,255,0.32)",backdropFilter:"blur(28px)",WebkitBackdropFilter:"blur(28px)",borderRadius:20,boxShadow:"0 8px 32px rgba(10,46,138,0.08), inset 0 1px 0 rgba(255,255,255,0.95)",border:"1px solid rgba(255,255,255,0.55)",padding:"14px 16px",marginBottom:12}}>
+        <div style={{...UI.card,padding:"14px 16px",marginBottom:12}}>
           <p style={{fontSize:13,fontWeight:700,color:DARK,margin:"0 0 4px"}}>
             {tab==="predictions" ? T[lang].howPredictionsWork : T[lang].howExactScoreWork}
           </p>
@@ -7467,24 +8561,24 @@ function RulesScreen({ onBack }) {
         </div>
 
         {/* Rules table */}
-        <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 8px"}}>{T[lang].pointsPerPrediction}</p>
+        <p style={{...UI.sectionLabel,margin:"0 0 8px"}}>{T[lang].pointsPerPrediction}</p>
         {tab==="predictions" ? (()=>{
           const SectionHeader = ({label,due,color})=>(
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",
-              background:"rgba(255,255,255,0.4)",padding:"7px 16px",borderBottom:"1px solid rgba(0,0,0,0.06)"}}>
+              background:"#F8FAFC",padding:"7px 16px",borderBottom:"1px solid rgba(10,46,138,0.06)"}}>
               <span style={{fontSize:10,fontWeight:800,color,letterSpacing:1.2,textTransform:"uppercase"}}>{label}</span>
               <span style={{fontSize:10,fontWeight:700,color:"#9CA3AF"}}>{due}</span>
             </div>
           );
           const Row = ({r,i,last})=>(
-            <div style={{display:"flex",alignItems:"center",padding:"12px 16px",background:"rgba(255,255,255,0.25)",borderBottom:last?"none":"1px solid rgba(0,0,0,0.05)",gap:12}}>
+            <div style={{display:"flex",alignItems:"center",padding:"12px 16px",background:"#fff",borderBottom:last?"none":"1px solid rgba(10,46,138,0.05)",gap:12}}>
               <div style={{flex:1}}>
                 <p style={{fontSize:13,fontWeight:700,color:DARK,margin:"0 0 2px"}}>
                   {r.phase.split("⚽").flatMap((p,j)=>j===0?[p]:[<span key={j} style={{colorScheme:"light",filter:"saturate(0) contrast(3) brightness(1.1)"}}>⚽</span>,p])}
                 </p>
                 <p style={{fontSize:11,color:"#aaa",margin:0}}>{r.desc}</p>
               </div>
-              <div style={{background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,borderRadius:10,padding:"5px 12px",flexShrink:0}}>
+              <div style={{background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,borderRadius:10,padding:"5px 0",flexShrink:0,width:56,textAlign:"center"}}>
                 <span style={{fontSize:13,fontWeight:900,color:"#fff"}}>+{r.pts}</span>
               </div>
             </div>
@@ -7492,7 +8586,7 @@ function RulesScreen({ onBack }) {
           const task1 = predRules.slice(0,4);
           const task2 = predRules.slice(4);
           return (
-            <div style={{background:"rgba(255,255,255,0.32)",backdropFilter:"blur(28px)",WebkitBackdropFilter:"blur(28px)",borderRadius:20,boxShadow:"0 8px 32px rgba(10,46,138,0.08), inset 0 1px 0 rgba(255,255,255,0.95)",border:"1px solid rgba(255,255,255,0.55)",overflow:"hidden",marginBottom:12}}>
+            <div style={{...UI.card,marginBottom:12}}>
               <SectionHeader label={T[lang].rulesTask1Header} due={T[lang].rulesTask1Due} color={NAVY}/>
               {task1.map((r,i)=><Row key={i} r={r} last={false}/>)}
               <SectionHeader label={T[lang].rulesTask2Header} due={T[lang].rulesTask2Due} color={RED}/>
@@ -7500,16 +8594,16 @@ function RulesScreen({ onBack }) {
             </div>
           );
         })() : (
-          <div style={{background:"rgba(255,255,255,0.32)",backdropFilter:"blur(28px)",WebkitBackdropFilter:"blur(28px)",borderRadius:20,boxShadow:"0 8px 32px rgba(10,46,138,0.08), inset 0 1px 0 rgba(255,255,255,0.95)",border:"1px solid rgba(255,255,255,0.55)",overflow:"hidden",marginBottom:12}}>
+          <div style={{...UI.card,marginBottom:12}}>
             {exactRules.map((r,i)=>(
-              <div key={i} style={{display:"flex",alignItems:"center",padding:"12px 16px",background:"rgba(255,255,255,0.25)",borderBottom:i<exactRules.length-1?"1px solid rgba(0,0,0,0.05)":"none",gap:12}}>
+              <div key={i} style={{display:"flex",alignItems:"center",padding:"12px 16px",background:"#fff",borderBottom:i<exactRules.length-1?"1px solid rgba(10,46,138,0.05)":"none",gap:12}}>
                 <div style={{flex:1}}>
                   <p style={{fontSize:13,fontWeight:700,color:DARK,margin:"0 0 2px"}}>
                     {r.phase.split("⚽").flatMap((p,j)=>j===0?[p]:[<span key={j} style={{colorScheme:"light",filter:"saturate(0) contrast(3) brightness(1.1)"}}>⚽</span>,p])}
                   </p>
                   <p style={{fontSize:11,color:"#aaa",margin:0}}>{r.desc}</p>
                 </div>
-                <div style={{background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,borderRadius:10,padding:"5px 12px",flexShrink:0}}>
+                <div style={{background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,borderRadius:10,padding:"5px 0",flexShrink:0,width:56,textAlign:"center"}}>
                   <span style={{fontSize:13,fontWeight:900,color:"#fff"}}>+{r.pts}</span>
                 </div>
               </div>
@@ -7518,7 +8612,7 @@ function RulesScreen({ onBack }) {
         )}
 
         {/* Example */}
-        <div style={{background:"#E8F0FF",borderRadius:14,padding:"14px 16px",marginBottom:24,border:`1px solid rgba(0,32,91,0.1)`}}>
+        <div style={{...UI.card,background:"#E8F0FF",padding:"14px 16px",marginBottom:24}}>
           <p style={{fontSize:12,fontWeight:700,color:NAVY,margin:"0 0 4px"}}>💡 Exemplu</p>
           <p style={{fontSize:12,color:"#555",margin:0,lineHeight:1.5}}>
             {tab==="predictions"
@@ -7534,11 +8628,11 @@ function RulesScreen({ onBack }) {
 function Toast({ message, emoji, visible }) {
   return (
     <div style={{
-      position:"absolute", bottom: visible ? 90 : 60, left:"50%",
+      position:"fixed", bottom: visible ? 90 : 60, left:"50%",
       transform:"translateX(-50%)",
       background:"rgba(20,20,20,0.92)", borderRadius:14,
       padding:"10px 20px", display:"flex", alignItems:"center", gap:8,
-      zIndex:500, transition:"all 0.3s cubic-bezier(0.34,1.56,0.64,1)",
+      zIndex:3000, transition:"all 0.3s cubic-bezier(0.34,1.56,0.64,1)",
       opacity: visible ? 1 : 0, pointerEvents:"none",
       boxShadow:"0 8px 24px rgba(0,0,0,0.3)"
     }}>
@@ -7573,9 +8667,12 @@ function App() {
     style.textContent = `
       @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
       @keyframes pulse { 0%,100%{transform:scale(1);box-shadow:0 4px 20px rgba(200,16,46,0.25)} 50%{transform:scale(1.025);box-shadow:0 12px 40px rgba(200,16,46,0.7)} }
+      @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
       @keyframes tabPop { 0%{transform:scale(1)} 40%{transform:scale(1.22)} 70%{transform:scale(0.95)} 100%{transform:scale(1)} }
       @keyframes cdSlideIn { 0%{opacity:0;transform:translateY(6px)} 100%{opacity:1;transform:translateY(0)} }
       @keyframes cdTicker { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+      @keyframes barPulse { 0%,100%{opacity:1;width:8%} 50%{opacity:0.5;width:14%} }
+      @keyframes nodeBreath { 0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(10,46,138,0.4)} 50%{transform:scale(1.12);box-shadow:0 0 0 7px rgba(10,46,138,0)} }
       input, textarea, select { font-size: 16px !important; }
     `;
     document.head.appendChild(style);
@@ -7600,7 +8697,10 @@ function App() {
           setAvailableBoards([]);
           setMyBoards([]);
           setBoardsLoading(true);
-          try { localStorage.removeItem('myBoards'); } catch {}
+          try {
+            localStorage.removeItem('myBoards');
+            localStorage.removeItem('activeBoardId');
+          } catch {}
         }
         return u;
       });
@@ -7625,11 +8725,12 @@ function App() {
       if (u) {
         if (event === 'INITIAL_SESSION') {
           const nonRestorable = [SCREENS.SPLASH, SCREENS.LOGIN, SCREENS.RESET_PASSWORD, SCREENS.SET_PASSWORD];
-          const saved = (() => { try { return sessionStorage.getItem('lastScreen'); } catch { return null; } })();
+          const saved = (() => { try { return localStorage.getItem('lastScreen'); } catch { return null; } })();
           setScreen(saved && !nonRestorable.includes(saved) ? saved : SCREENS.HOME);
-        } else {
+        } else if (event === 'SIGNED_IN') {
           setScreen(SCREENS.HOME);
         }
+        // USER_UPDATED, TOKEN_REFRESHED — only update user state, don't navigate
       } else setScreen(SCREENS.SPLASH);
     });
 
@@ -7641,12 +8742,7 @@ function App() {
     if (!user) return;
     const uid = user.id;
 
-    // Predictions + exact scores pentru un board
-    const loadForBoard = async (boardId) => {
-      const [preds, scores] = await Promise.all([
-        loadPredictions(uid, boardId),
-        loadExactScores(uid, boardId),
-      ]);
+    const applyPicks = (boardId, preds, scores, special) => {
       if (preds) {
         setAllInstantPickStates(p => ({
           ...p,
@@ -7659,46 +8755,53 @@ function App() {
         }));
         const hasTask1 = Object.keys(preds.group_rankings || {}).length > 0 || (preds.best3_picks || []).length > 0;
         const hasTask2 = Object.keys(preds.ko_picks || {}).length > 0;
-        if (hasTask1 || hasTask2)
-          setPredictionsComplete(p => ({ ...p, [boardId]: true }));
-        if (hasTask1 || hasTask2)
-          setAllInstantPickDone(p => ({ ...p, [boardId]: true }));
-        if (hasTask2)
-          setAllKoPickDone(p => ({ ...p, [boardId]: true }));
+        if (hasTask1 || hasTask2) setPredictionsComplete(p => ({ ...p, [boardId]: true }));
+        if (hasTask1 || hasTask2) setAllInstantPickDone(p => ({ ...p, [boardId]: true }));
+        if (hasTask2) setAllKoPickDone(p => ({ ...p, [boardId]: true }));
       }
       if (scores && Object.keys(scores).length > 0)
         setExactScoresByBoard(p => ({ ...p, [boardId]: scores }));
+      if (special?.champion)
+        setAllChampionPicks(p => ({ ...p, [boardId]: special.champion }));
+      if (special?.topScorer)
+        setAllTopScorerPicks(p => ({ ...p, [boardId]: special.topScorer }));
       setPredictionsLoaded(p => ({ ...p, [boardId]: true }));
     };
 
-    // Boards + member counts + predicții pentru toate boardurile
-    loadForBoard('global');
+    // Boards + picks loaded in 2 parallel waves (7 total requests vs 10+3N before)
     const refreshBoards = async () => {
-      const [boards, avail] = await Promise.all([
-        loadUserBoards(uid),
-        loadAvailableBoards(uid),
+      const [{ userBoards, availableBoards }, allPicks] = await Promise.all([
+        loadAllBoards(uid),
+        loadAllUserPicks(uid),
       ]);
-      // adminBoards = boards where user is creator (isAdmin=true)
-      const adminBoards = boards.filter(b => b.isAdmin);
-      // participantBoards = boards where user is member (isMember=true)
-      const participantBoards = boards.filter(b => b.isMember);
-      // allMyBoards = Global + boards where user is actually in board_members (isMember)
-      // adminBoards excluded here if not also isMember (creator who left shouldn't appear)
+
+      // Apply picks for global + all user boards
+      const allBoardIds = ['global', ...userBoards.map(b => b.id)];
+      allBoardIds.forEach(id => applyPicks(id, allPicks.predictions[id], allPicks.exactScores[id], allPicks.specialPicks[id]));
+
+      const adminBoards = userBoards.filter(b => b.isAdmin);
+      // boards where creator left as participant — visible in Admin tab + Discover, not in My Boards
+      const adminOnlyBoards = adminBoards.filter(b => !b.isMember);
+      const participantBoards = sortJoinedBoards(userBoards.filter(b => b.isMember));
       const seen = new Set(INITIAL_BOARDS.map(b => b.id));
       const allMyBoards = [...INITIAL_BOARDS];
       for (const b of participantBoards) {
         if (!seen.has(b.id)) { seen.add(b.id); allMyBoards.push(b); }
       }
-      const allIds = [...allMyBoards.map(b => b.id), ...adminBoards.map(b => b.id), ...avail.map(b => b.id)];
+      const allIds = [...allMyBoards.map(b => b.id), ...adminBoards.map(b => b.id), ...availableBoards.map(b => b.id), ...adminOnlyBoards.map(b => b.id)];
       const counts = await fetchMemberCounts(allIds);
       const freshBoards = allMyBoards.map(b => ({ ...b, members: counts[b.id] ?? b.members }));
       setMyBoards(freshBoards);
+      if (!freshBoards.some(b => b.id === activeBoardIdRef.current)) {
+        setActiveBoardId('global');
+      }
       try { localStorage.setItem('myBoards', JSON.stringify(freshBoards)); } catch {}
       setCreatedBoards(adminBoards.map(b => ({ ...b, members: counts[b.id] ?? 0 })));
-      setAvailableBoards(avail.map(b => ({ ...b, members: counts[b.id] ?? 0 })));
-      return boards;
+      // adminOnlyBoards apar și în Discover ca să se poată re-înscrie
+      setAvailableBoards([...availableBoards, ...adminOnlyBoards].map(b => ({ ...b, members: counts[b.id] ?? 0 })));
+      return userBoards;
     };
-    refreshBoards().then(boards => { setBoardsLoading(false); boards.forEach(b => loadForBoard(b.id)); });
+    refreshBoards().then(() => { setBoardsLoading(false); });
 
     // Realtime: actualizează membrii și board-urile când se schimbă ceva
     const boardChannel = supabase
@@ -7716,10 +8819,13 @@ function App() {
     return () => { supabase.removeChannel(boardChannel); };
   }, [user]);
 
-  const isLocalhost = import.meta.env.DEV;
+  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
   const inRecoveryRef = useRef(false);
+  const notificationsBackRef = useRef(SCREENS.HOME);
   const [screen, setScreen] = useState(SCREENS.SPLASH);
+  const [championMode, setChampionMode] = useState("champion");
   const [boardsInitialTab, setBoardsInitialTab] = useState("my");
+  const [boardsSubView, setBoardsSubView] = useState("main");
   const [showDevOverlay, setShowDevOverlay] = useState(false);
   const [simDay, setSimDay] = useState(null);
   const [simHour, setSimHour] = useState(12);
@@ -7744,7 +8850,16 @@ function App() {
   // Predictions complete per board id
   const [predictionsComplete, setPredictionsComplete] = useState({});
   const [predictionsLoaded, setPredictionsLoaded] = useState({});
-  const [activeBoardId, setActiveBoardId] = useState("global");
+  const _cachedActiveBoardId = (() => { try { return localStorage.getItem('activeBoardId') || "global"; } catch { return "global"; } })();
+  const [activeBoardId, setActiveBoardId] = useState(_cachedActiveBoardId);
+  const activeBoardIdRef = useRef(_cachedActiveBoardId);
+  const forgetRemovedBoard = () => {};
+  const rememberRemovedBoard = () => {};
+
+  useEffect(() => {
+    activeBoardIdRef.current = activeBoardId;
+    try { localStorage.setItem('activeBoardId', activeBoardId); } catch {}
+  }, [activeBoardId]);
 
   useEffect(() => {
     if (!user || (screen !== SCREENS.LEADERBOARD && screen !== SCREENS.HOME)) return;
@@ -7765,6 +8880,14 @@ function App() {
     });
   }, [user, screen, myBoards]);
 
+  const [myScoreBreakdowns, setMyScoreBreakdowns] = useState({});
+  useEffect(() => {
+    if (!user || screen !== SCREENS.HOME) return;
+    loadMyScoreBreakdown(user.id, activeBoardId).then(bd => {
+      setMyScoreBreakdowns(prev => ({ ...prev, [activeBoardId]: bd }));
+    });
+  }, [user, screen, activeBoardId]);
+
   const [allInstantPickStates, setAllInstantPickStates] = useState({});
   const [exactScoresByBoard, setExactScoresByBoard] = useState({});
   const exactScores = exactScoresByBoard[activeBoardId] || {};
@@ -7777,6 +8900,8 @@ function App() {
   };
   const [allInstantPickDone, setAllInstantPickDone] = useState({});
   const [allKoPickDone, setAllKoPickDone] = useState({});
+  const [allChampionPicks, setAllChampionPicks] = useState({});
+  const [allTopScorerPicks, setAllTopScorerPicks] = useState({});
   const [bugLog, setBugLog] = useState([]);
   useEffect(()=>{
     const fmt = ()=>new Date().toLocaleTimeString("ro-RO",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
@@ -7797,6 +8922,22 @@ function App() {
   const setInstantPickState = (s) => setAllInstantPickStates(p=>({...p,[activeBoardId]:s}));
   const setInstantPickDone = (v) => setAllInstantPickDone(p=>({...p,[activeBoardId]:v}));
   const setKoPickDone = (v) => setAllKoPickDone(p=>({...p,[activeBoardId]:v}));
+  const championPick = allChampionPicks[activeBoardId]||null;
+  const topScorerPick = allTopScorerPicks[activeBoardId]||null;
+  const setChampionPick = (v) => {
+    setAllChampionPicks(p => {
+      const next = { ...p, [activeBoardId]: v };
+      if (user) saveSpecialPick(user.id, activeBoardId, { champion: v, topScorer: allTopScorerPicks[activeBoardId] || null });
+      return next;
+    });
+  };
+  const setTopScorerPick = (v) => {
+    setAllTopScorerPicks(p => {
+      const next = { ...p, [activeBoardId]: v };
+      if (user) saveSpecialPick(user.id, activeBoardId, { champion: allChampionPicks[activeBoardId] || null, topScorer: v });
+      return next;
+    });
+  };
   const koUnlocked = simDay ? (simDay > 27 || (simDay === 27 && (simHour||0) >= 21)) : new Date() >= new Date(2026,5,27,21,0,0);
   const task1DeadlinePassed = simDay ? (simDay > 11 || (simDay === 11 && (simHour||0) >= 19)) : new Date() >= new Date(2026,5,11,19,0,0);
   const shouldStartAtKo = koUnlocked && instantPickDone && !koPickDone;
@@ -7827,13 +8968,13 @@ function App() {
   // Tournament starts June 11 2026
   const tournamentStarted = simDate ? simDate >= new Date(2026,5,11,19,0,0) : new Date() >= new Date("2026-06-11T19:00:00");
 
-  const noFooter = [SCREENS.SPLASH, SCREENS.LOGIN, SCREENS.INSTANT_PICK, SCREENS.GROUPS_SCHEDULE];
-  const showFooter = !noFooter.includes(screen);
+  const noFooter = [SCREENS.SPLASH, SCREENS.LOGIN, SCREENS.INSTANT_PICK, SCREENS.GROUPS_SCHEDULE, SCREENS.CHAMPION];
+  const showFooter = !noFooter.includes(screen) && !(screen===SCREENS.BOARDS && boardsSubView==="create");
   const _nonSaveable = [SCREENS.SPLASH, SCREENS.LOGIN, SCREENS.RESET_PASSWORD, SCREENS.SET_PASSWORD];
-  if (!_nonSaveable.includes(screen)) { try { sessionStorage.setItem('lastScreen', screen); } catch {} }
-  const footerActive = screen===SCREENS.RULES?SCREENS.RULES:screen===SCREENS.LEADERBOARD?SCREENS.LEADERBOARD:screen===SCREENS.BOARDS?SCREENS.BOARDS:SCREENS.HOME;
+  if (!_nonSaveable.includes(screen)) { try { localStorage.setItem('lastScreen', screen); } catch {} }
+  const footerActive = screen===SCREENS.RULES?SCREENS.RULES:screen===SCREENS.LEADERBOARD?SCREENS.LEADERBOARD:screen===SCREENS.BOARDS?SCREENS.BOARDS:screen===SCREENS.ACCOUNT?SCREENS.ACCOUNT:SCREENS.HOME;
 
-  if (authLoading || (user && boardsLoading)) return <div style={{width:"100%",height:"100%",background:BG}}/>;
+  if (authLoading || (user && boardsLoading)) return <LoadingState title={authLoading ? "Starting Predicto" : "Loading leagues"} body={authLoading ? "Preparing your session..." : "Syncing boards, rankings and picks..."} />;
 
   return (
     <UserCtx.Provider value={user}>
@@ -7864,8 +9005,8 @@ function App() {
           }}/>}
           {screen===SCREENS.SPLASH&&<SplashScreen simDay={simDay} simHour={simHour} simMin={simMin} tournamentStarted={tournamentStarted} onNext={()=>setScreen(SCREENS.LOGIN)} lang={lang} setLang={setLang}/>}
           {screen===SCREENS.LOGIN&&<LoginScreen onNext={()=>{ if(!skipOnboarding) setShowOnboarding(true); setScreen(SCREENS.HOME); }}/>}
-          {screen===SCREENS.HOME&&showOnboarding&&(
-            <OnboardingSheet onDone={(skip)=>{ if(skip) setSkipOnboarding(true); setShowOnboarding(false); setShowFirstAction(true); setTimeout(()=>setShowFirstAction(false), 5000); }}/>
+          {showOnboarding&&(
+            <OnboardingSheet onDone={()=>{ setShowOnboarding(false); if(screen===SCREENS.HOME){setShowFirstAction(true);setTimeout(()=>setShowFirstAction(false),5000);} }}/>
           )}
           {user&&<div style={{display:screen===SCREENS.HOME?'flex':'none',flex:1,flexDirection:'column',overflow:'hidden',minHeight:0}}>
             <HomeScreen
@@ -7874,20 +9015,22 @@ function App() {
               onLeaderboard={()=>setScreen(SCREENS.LEADERBOARD)}
               onBoards={(tab)=>{ setBoardsInitialTab(tab||"my"); setScreen(SCREENS.BOARDS); }}
               onOpenGroups={(week)=>{ setGroupsInitialWeek(week||null); setScreen(SCREENS.GROUPS_SCHEDULE); }}
-              onCopyExactScores={async (targetBoardId)=>{
-                if(!user||!exactScores) return;
-                const todaySim = simDay ?? getRealTournamentDay();
-                const wStart = todaySim<=14?8:todaySim<=21?15:todaySim<=28?22:29;
-                const days = Array.from({length:7},(_,i)=>wStart+i).filter(d=>d>=1&&d<=50);
-                const mm={};
-                CALENDAR_EVENTS.forEach(e=>{mm[e.day]=e.matches;});
-                for(const d of days){
-                  const matches=mm[d]||[];
-                  for(let i=0;i<matches.length;i++){
-                    const sc=exactScores[`${d}-${i}`];
-                    if(sc) await saveExactScore(user.id,targetBoardId,`${d}-${i}`,sc.home,sc.away);
-                  }
+              onCopyExactScores={async (targetBoardId, weekStart)=>{
+                if(!user) return;
+                const scores = exactScoresByBoard[activeBoardId] || {};
+                let entries = Object.entries(scores);
+                if(weekStart != null){
+                  const weekEnd = weekStart + 6;
+                  entries = entries.filter(([k])=>{ const d=parseInt(k,10); return d>=weekStart&&d<=weekEnd; });
                 }
+                if(!entries.length) return;
+                for(const [matchKey,sc] of entries){
+                  await saveExactScore(user.id,targetBoardId,matchKey,sc.home,sc.away);
+                }
+                setExactScoresByBoard(prev => ({
+                  ...prev,
+                  [targetBoardId]: { ...(prev[targetBoardId]||{}), ...Object.fromEntries(entries) }
+                }));
                 showToast("Scores copied!","⚽");
               }}
               onCopyPredictions={async (targetBoardId)=>{
@@ -7898,7 +9041,21 @@ function App() {
                 setAllInstantPickStates(p=>({...p,[targetBoardId]:instantPickState}));
                 showToast("Predictions copied!","✅");
               }}
+              onCopySpecial={async (targetBoardId, mode)=>{
+                if(!user) return;
+                const copyChamp = !mode || mode==="champion" || mode==="special";
+                const copyScorer = !mode || mode==="scorer" || mode==="special";
+                const payload = {};
+                if(copyChamp) payload.champion = championPick;
+                if(copyScorer) payload.topScorer = topScorerPick;
+                await saveSpecialPick(user.id, targetBoardId, payload);
+                if(copyChamp) setAllChampionPicks(p=>({...p,[targetBoardId]:championPick}));
+                if(copyScorer) setAllTopScorerPicks(p=>({...p,[targetBoardId]:topScorerPick}));
+                showToast("Special picks copied!","🏆");
+              }}
               onAccount={()=>setScreen(SCREENS.ACCOUNT)}
+              onNotifications={()=>{ notificationsBackRef.current=SCREENS.HOME; setScreen(SCREENS.NOTIFICATIONS); }}
+              onChampion={(mode)=>{ setChampionMode(mode||"champion"); setScreen(SCREENS.CHAMPION); }}
               myBoards={myBoards}
               predictionsComplete={predictionsComplete}
               instantPickDone={instantPickDone}
@@ -7913,11 +9070,28 @@ function App() {
               showFirstAction={showFirstAction}
               leaderboardData={leaderboardData}
               boardsLoading={boardsLoading}
-              predictionsLoaded={predictionsLoaded}/>
+              predictionsLoaded={predictionsLoaded}
+              championPick={championPick}
+              topScorerPick={topScorerPick}
+              setChampionPick={setChampionPick}
+              setTopScorerPick={setTopScorerPick}
+              myScoreBreakdown={myScoreBreakdowns[activeBoardId]}/>
           </div>}
+          {screen===SCREENS.NOTIFICATIONS&&<NotificationsScreen onBack={()=>setScreen(notificationsBackRef.current)}/>}
+          {screen===SCREENS.PREMIUM&&<PremiumScreen onBack={()=>setScreen(SCREENS.ACCOUNT)}/>}
+          {screen===SCREENS.CHAMPION&&<ChampionScreen
+            onBack={()=>setScreen(SCREENS.HOME)}
+            initialMode={championMode}
+            championPick={championPick}
+            topScorerPick={topScorerPick}
+            setChampionPick={setChampionPick}
+            setTopScorerPick={setTopScorerPick}
+            showToast={showToast}
+            simDay={simDay} simHour={simHour} simMin={simMin}/>}
           {screen===SCREENS.BOARDS&&<BoardsScreen
             initialTab={boardsInitialTab}
-            onBack={()=>setScreen(SCREENS.HOME)}
+            onViewChange={setBoardsSubView}
+            onBack={()=>{ setBoardsSubView("main"); setScreen(SCREENS.HOME); }}
             myBoards={myBoards} setMyBoards={setMyBoards}
             createdBoards={createdBoards} setCreatedBoards={setCreatedBoards}
             availableBoards={availableBoards} setAvailableBoards={setAvailableBoards}
@@ -7927,15 +9101,32 @@ function App() {
               if (!user) return;
               const { data, error } = await createBoard(user.id, boardData);
               if (error) { showToast("Eroare la creare", "❌"); return null; }
+              if (boardData.imageFile) {
+                const imageUrl = await uploadBoardImage(user.id, data.id, boardData.imageFile);
+                if (imageUrl) data.image_url = imageUrl;
+              }
               setCreatedBoards(prev => [...prev, data]);
+              forgetRemovedBoard(data.id);
+              setMyBoards(prev => appendJoinedBoard(prev, { ...data, isMember: true, members: (data.members || 0) + 1 }));
+              setActiveBoardId(data.id);
               return data;
             }}
             onJoinByCode={async (code) => {
               if (!user) return null;
               const { data, error } = await joinBoardByCode(user.id, code);
               if (error) { showToast(error, "❌"); return null; }
-              setMyBoards(prev => [...prev, { ...data, isMember: true, members: (data.members || 0) + 1 }]);
-              setAvailableBoards(prev => prev.filter(b => b.id !== data.id));
+              const bid = data.id;
+              forgetRemovedBoard(bid);
+              setAllInstantPickStates(prev => { const n = {...prev}; delete n[bid]; return n; });
+              setAllInstantPickDone(prev => { const n = {...prev}; delete n[bid]; return n; });
+              setAllKoPickDone(prev => { const n = {...prev}; delete n[bid]; return n; });
+              setExactScoresByBoard(prev => { const n = {...prev}; delete n[bid]; return n; });
+              setPredictionsComplete(prev => { const n = {...prev}; delete n[bid]; return n; });
+              setPredictionsLoaded(prev => ({ ...prev, [bid]: true }));
+              setAllChampionPicks(prev => { const n = {...prev}; delete n[bid]; return n; });
+              setAllTopScorerPicks(prev => { const n = {...prev}; delete n[bid]; return n; });
+              setMyBoards(prev => appendJoinedBoard(prev, { ...data, isMember: true, members: (data.members || 0) + 1 }));
+              setAvailableBoards(prev => prev.filter(b => b.id !== bid));
               return data;
             }}
             onJoin={(boardId)=>{ setActiveBoardId(boardId); setScreen(SCREENS.HOME); }}
@@ -7944,30 +9135,48 @@ function App() {
               await removeParticipation(boardId, user.id);
               const { data, error } = await joinBoardById(user.id, boardId);
               if (error) { showToast(error, "❌"); return; }
+              forgetRemovedBoard(boardId);
               setAllInstantPickStates(prev => { const n = {...prev}; delete n[boardId]; return n; });
               setAllInstantPickDone(prev => { const n = {...prev}; delete n[boardId]; return n; });
+              setAllKoPickDone(prev => { const n = {...prev}; delete n[boardId]; return n; });
               setExactScoresByBoard(prev => { const n = {...prev}; delete n[boardId]; return n; });
               setPredictionsComplete(prev => { const n = {...prev}; delete n[boardId]; return n; });
               setPredictionsLoaded(prev => ({ ...prev, [boardId]: true }));
+              setAllChampionPicks(prev => { const n = {...prev}; delete n[boardId]; return n; });
+              setAllTopScorerPicks(prev => { const n = {...prev}; delete n[boardId]; return n; });
               const board = availableBoards.find(b => b.id === boardId) || createdBoards.find(b => b.id === boardId);
               if (board) {
-                setMyBoards(prev => prev.some(b => b.id === boardId) ? prev : [...prev, { ...board, isMember: true, members: (board.members || 0) + 1 }]);
+                setMyBoards(prev => appendJoinedBoard(prev, { ...board, isMember: true, members: (board.members || 0) + 1 }));
                 setAvailableBoards(prev => prev.filter(b => b.id !== boardId));
               }
             }}
             onDeleteBoard={async (boardId) => {
               const { error } = await deleteBoard(boardId);
               if (error) { showToast("Eroare la ștergere", "❌"); return; }
+              rememberRemovedBoard(boardId);
               setCreatedBoards(prev => prev.filter(b => b.id !== boardId));
-              setMyBoards(prev => prev.filter(b => b.id !== boardId));
+              setMyBoards(prev => {
+                const updated = prev.filter(b => b.id !== boardId);
+                try { localStorage.setItem('myBoards', JSON.stringify(updated)); } catch {}
+                return updated;
+              });
               setAvailableBoards(prev => prev.filter(b => b.id !== boardId));
+              setAllInstantPickStates(prev => { const n = {...prev}; delete n[boardId]; return n; });
+              setAllInstantPickDone(prev => { const n = {...prev}; delete n[boardId]; return n; });
+              setAllKoPickDone(prev => { const n = {...prev}; delete n[boardId]; return n; });
+              setExactScoresByBoard(prev => { const n = {...prev}; delete n[boardId]; return n; });
+              setPredictionsComplete(prev => { const n = {...prev}; delete n[boardId]; return n; });
+              setPredictionsLoaded(prev => { const n = {...prev}; delete n[boardId]; return n; });
+              setAllChampionPicks(prev => { const n = {...prev}; delete n[boardId]; return n; });
+              setAllTopScorerPicks(prev => { const n = {...prev}; delete n[boardId]; return n; });
               if (activeBoardId === boardId) setActiveBoardId('global');
-              showToast("Board șters", "🗑️");
+              showToast("Ligă ștearsă", "🗑️");
             }}
             leaderboardData={leaderboardData}
             onRemoveMember={async (boardId, memberId) => {
               await removeBoardMember(boardId, memberId);
               if (memberId === user?.id) {
+                rememberRemovedBoard(boardId);
                 await removeParticipation(boardId, memberId);
                 setMyBoards(prev => {
                   const updated = prev.filter(b => b.id !== boardId);
@@ -7976,9 +9185,12 @@ function App() {
                 });
                 setAllInstantPickStates(prev => { const n = {...prev}; delete n[boardId]; return n; });
                 setAllInstantPickDone(prev => { const n = {...prev}; delete n[boardId]; return n; });
+                setAllKoPickDone(prev => { const n = {...prev}; delete n[boardId]; return n; });
                 setExactScoresByBoard(prev => { const n = {...prev}; delete n[boardId]; return n; });
                 setPredictionsComplete(prev => { const n = {...prev}; delete n[boardId]; return n; });
                 setPredictionsLoaded(prev => { const n = {...prev}; delete n[boardId]; return n; });
+                setAllChampionPicks(prev => { const n = {...prev}; delete n[boardId]; return n; });
+                setAllTopScorerPicks(prev => { const n = {...prev}; delete n[boardId]; return n; });
                 if (activeBoardId === boardId) setActiveBoardId('global');
               }
             }}/>}
@@ -8058,15 +9270,15 @@ function App() {
                     }
                   }
                 }
-                showToast("Score saved!", "⚽");
+                showToast("Exact Score saved", "⚽");
               }
             }} simDay={simDay} simHour={simHour} simMin={simMin} initialWeek={groupsInitialWeek} onBack={()=>{ setGroupsInitialWeek(null); setScreen(SCREENS.HOME); }}/>}
           {user&&<div style={{display:screen===SCREENS.ACCOUNT?'flex':'none',flex:1,flexDirection:'column',overflow:'hidden',minHeight:0}}>
-            <AccountScreen setLang={setLang} onBoards={()=>{ setBoardsInitialTab("my"); setScreen(SCREENS.BOARDS); }} onSignOut={()=>setScreen(SCREENS.SPLASH)} onShowGuide={()=>{ setShowOnboarding(true); setScreen(SCREENS.HOME); }} user={user}/>
+            <AccountScreen setLang={setLang} onBoards={()=>{ setBoardsInitialTab("my"); setScreen(SCREENS.BOARDS); }} onSignOut={()=>setScreen(SCREENS.SPLASH)} onShowGuide={()=>{ setShowOnboarding(true); }} onPremium={()=>setScreen(SCREENS.PREMIUM)} onNotifications={()=>{ notificationsBackRef.current=SCREENS.ACCOUNT; setScreen(SCREENS.NOTIFICATIONS); }} user={user} isActive={screen===SCREENS.ACCOUNT}/>
           </div>}
         </div>
         <Toast message={toast.message} emoji={toast.emoji} visible={toast.visible}/>
-        {showFooter&&<Footer active={footerActive} onNavigate={key=>{ if(key===SCREENS.BOARDS) setBoardsInitialTab("my"); setScreen(key); }} lang={lang} activeBoardId={activeBoardId} myBoards={myBoards} leaderboardData={leaderboardData} tournamentStarted={tournamentStarted}/>}
+        {showFooter&&<Footer active={footerActive} onNavigate={key=>{ if(key===SCREENS.BOARDS) setBoardsInitialTab("available"); setScreen(key); }} lang={lang} user={user} activeBoardId={activeBoardId} myBoards={myBoards} leaderboardData={leaderboardData} tournamentStarted={tournamentStarted}/>}
         <AdminBugPanel
           user={user}
           allInstantPickStates={allInstantPickStates}
@@ -8085,7 +9297,7 @@ function App() {
             boxShadow:"0 4px 14px rgba(0,0,0,0.5)"
           }}>DEV</button>
         )}
-        {showDevOverlay && (
+        {isLocalhost && showDevOverlay && (
           <div style={{position:"fixed",inset:0,zIndex:9998,display:"flex",flexDirection:"column"}}>
             <button onClick={()=>setShowDevOverlay(false)} style={{
               position:"absolute",top:14,right:16,zIndex:1,
