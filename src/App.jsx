@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import confetti from "canvas-confetti";
 import HCaptcha from "@hcaptcha/react-hcaptcha";
-import trophy from "./assets/hands-trophy.png";
-import varBg from "./assets/var-bg.jpg";
-import predictoLogo from "./assets/predicto-logo.png";
-import specialPickBadge from "./assets/special-pick-badge.png";
+import trophy from "./assets/hands-trophy.webp";
+import trophyHQ from "./assets/hands-trophy-hq.webp";
+import varBg from "./assets/var-bg.webp";
+import predictoLogo from "./assets/predicto-logo.webp";
+import specialPickBadge from "./assets/special-pick-badge.webp";
 import bellIcon from "./assets/bell-icon.svg";
 import { ALL_GROUPS_DATA, FLAGS, TEAM_COLORS, CALENDAR_EVENTS } from "./data/worldcup2026.js";
 import { supabase } from "./supabase.js";
@@ -304,6 +305,77 @@ const T = {
     globalBoard:"Global", noBoards:"No leagues found.",
     viewAll2:"View all", members2:"members", code:"code",
     allMatchesGrp:"All Matches · Gr.",
+    loginCreateAccount:"Create account", loginRecoverAccount:"Recover account",
+    loginCheckEmail:"Check your email", loginNewAccount:"New account",
+    loginNoAccountFor:"No account found for",
+    emailPlaceholder:"email@example.com", passwordMinPlaceholder:"password (min. 6 chars)",
+    passwordPlaceholder:"password", nicknamePlaceholder:"Choose a nickname",
+    confirmPasswordPlaceholder:"confirm password (min. 6 chars)",
+    btnContinue:"Continue →", btnVerifying:"Verifying...",
+    btnCreateAccount:"Create account →", btnCreating:"Creating...",
+    btnSignUpCreate:"Create account →",
+    btnSendReset:"Send reset link →", btnSending:"Sending...",
+    solveCaptcha:"🔒 Solve verification above",
+    checkEmailTitle:"Check your email!", sentLinkTo:"We sent a link to",
+    clickLinkToContinue:"Click the link to continue.",
+    linkSentIfExists:"Link sent if address exists in system.",
+    forgotPassword:"Forgot password", newAccountLink:"New account",
+    errEnterEmail:"Enter your email address.", errEnterPassword:"Enter your password.",
+    errWrongPassword:"Wrong password. Try again or reset it.",
+    errUnexpected:"Unexpected error. Try again.",
+    errChooseNickname:"Choose a nickname.",
+    errPasswordMin6:"Password must be at least 6 characters.",
+    errSendFailed:"Error sending. Try again.",
+    errPasswordsMismatch:"Passwords don't match.",
+    passwordChanged:"Password changed!", passwordSet:"Password set!",
+    redirectingMsg:"Redirecting...",
+    newPasswordTitle:"New password", enterNewPassword:"Enter your new password",
+    newPasswordPlaceholder:"New password", confirmPasswordPlaceholderField:"Confirm password",
+    btnSavePassword:"Save password →", btnSaving:"Saving...",
+    setPasswordTitle:"Set a password",
+    accountCreatedViaLink:"Your account was created via magic link.",
+    setPasswordDesc:"Set a password to log in next time without a link.",
+    deleteAccountTitle:"Delete account",
+    deleteDescPt1:"This will delete ", deleteDescEverything:"everything",
+    deleteDescPt2:": predictions, leagues and scores.",
+    deleteDescIrreversiblePt1:"This action is ", deleteDescIrreversible:"irreversible",
+    enterEmailToConfirm:"Enter your email to confirm:",
+    btnDeleting:"Deleting...", btnDeletePermanently:"Delete permanently",
+    leaveLeagueTitle:"Leave league?", leaveLeagueBody1:"Your points and entries will be removed from",
+    leaveLeagueConfirm:"Leave league",
+    deleteLeagueTitle:"Delete league?", deleteLeagueBody1:"This removes",
+    deleteLeagueBody2:"for everyone in the league.", deleteLeagueConfirm:"Delete league",
+    inviteCodeDetected:"🔑 Invite code detected — tap Join",
+    noBoardsFoundFor:"No boards found for", tryAnotherName:"Try another name or paste the invite code.",
+    loadingPlayers:"Loading players…", noPlayersForTeam:"No players found for this team.",
+    boardsCount:"boards", footerRanking:"Ranking", footerRules:"Rules", footerMore:"More",
+    memberSinceLabel:"Member since",
+    discoverTab:"Discover", joinedStatus:"Joined",
+    leagueNamePlaceholder:"Ex: Office league",
+    joinedEmptyTitle:"No leagues joined", joinedEmptyBody:"Join a league or create your own private one.",
+    availableEmptyTitle:"No leagues available", availableEmptyBody:"Create a new league or enter an invite code.",
+    adminEmptyTitle:"No leagues managed", adminEmptyBody:"Create a league and it will appear here.",
+    hiGreeting:"Hi,", manageLeague:"Manage League", newLeague:"New League",
+    syncingLabel:"syncing", tournamentLive:"🏆 tournament live", kickoffLabel:"· kickoff",
+    lockedUntilJun27:"Locked until Jun 27", specialPick:"Special Pick",
+    winnerTopScorer:"Winner & Top Scorer", reopensJun27:"Reopens Jun 27",
+    specialPickSub:"Team win +3 · Player scored +3",
+    winnerTeam:"Winner Team", pickTeam:"Pick your team",
+    topScorer:"Top Scorer", pickPlayer:"Pick your player",
+    totalLabel:"Total:", availableNow:"Available now",
+    syncingPredictions:"Syncing predictions", trophyLabel:"Trophy",
+    groupsBestThird:"Groups + Best Third", knockoutPhase:"Knockout Phase",
+    moreToCome:"· more to come ·",
+    copyExactScoresTitle:"Copy exact scores", copyWinnerTeamTitle:"Copy Winner Team",
+    copyTopScorerTitle:"Copy Top Scorer", copySpecialTitle:"Copy special picks",
+    copyPredictionsTitle:"Copy predictions",
+    copyExactScoresSub:"Replicate this week's exact scores to another league",
+    copyWinnerTeamSub:"Replicate your Winner Team pick to another league",
+    copyTopScorerSub:"Replicate your Top Scorer pick to another league",
+    copySpecialSub:"Replicate your Winner Team & Top Scorer to another league",
+    copyPredsSub:"Replicate your Group phase predictions to another league",
+    noOtherBoards:"No other boards available",
+    copiedLabel:"✓ Copied", pasteLabel:"Paste",
   },
   ro:{
     location:"SUA, Canada & Mexic", cta:"Fa-ti Predictia",
@@ -387,6 +459,77 @@ const T = {
     globalBoard:"Global", noBoards:"Nicio ligă găsită.",
     viewAll2:"Vezi tot", members2:"membri", code:"cod",
     allMatchesGrp:"Toate Meciurile · Gr.",
+    loginCreateAccount:"Creează cont", loginRecoverAccount:"Recuperare cont",
+    loginCheckEmail:"Verifică emailul", loginNewAccount:"Cont nou",
+    loginNoAccountFor:"Niciun cont găsit pentru",
+    emailPlaceholder:"adresa@email.com", passwordMinPlaceholder:"parolă (min. 6 caractere)",
+    passwordPlaceholder:"parolă", nicknamePlaceholder:"Alege un nickname",
+    confirmPasswordPlaceholder:"confirmă parola (min. 6 caractere)",
+    btnContinue:"Continuă →", btnVerifying:"Se verifică...",
+    btnCreateAccount:"Creează cont →", btnCreating:"Se creează...",
+    btnSignUpCreate:"Creează cont · Sign up →",
+    btnSendReset:"Trimite link de resetare →", btnSending:"Se trimite...",
+    solveCaptcha:"🔒 Rezolvă verificarea mai sus",
+    checkEmailTitle:"Verifică emailul!", sentLinkTo:"Am trimis un link la",
+    clickLinkToContinue:"Click pe link pentru a continua.",
+    linkSentIfExists:"Link trimis dacă adresa există în sistem.",
+    forgotPassword:"Am uitat parola", newAccountLink:"Cont nou",
+    errEnterEmail:"Introdu adresa de email.", errEnterPassword:"Introdu parola.",
+    errWrongPassword:"Parolă incorectă. Încearcă din nou sau resetează parola.",
+    errUnexpected:"Eroare neașteptată. Încearcă din nou.",
+    errChooseNickname:"Alege un nickname.",
+    errPasswordMin6:"Parola trebuie să aibă minim 6 caractere.",
+    errSendFailed:"Eroare la trimitere. Încearcă din nou.",
+    errPasswordsMismatch:"Parolele nu coincid.",
+    passwordChanged:"Parolă schimbată!", passwordSet:"Parolă setată!",
+    redirectingMsg:"Te redirecționăm...",
+    newPasswordTitle:"Parolă nouă", enterNewPassword:"Introdu noua ta parolă",
+    newPasswordPlaceholder:"Parolă nouă", confirmPasswordPlaceholderField:"Confirmă parola",
+    btnSavePassword:"Salvează parola →", btnSaving:"Se salvează...",
+    setPasswordTitle:"Setează o parolă",
+    accountCreatedViaLink:"Contul tău a fost creat prin magic link.",
+    setPasswordDesc:"Setează o parolă pentru a te putea loga data viitoare fără link.",
+    deleteAccountTitle:"Șterge cont",
+    deleteDescPt1:"Aceasta va șterge ", deleteDescEverything:"tot",
+    deleteDescPt2:": predicții, ligi și scoruri.",
+    deleteDescIrreversiblePt1:"Această acțiune este ", deleteDescIrreversible:"ireversibilă",
+    enterEmailToConfirm:"Introdu email-ul pentru confirmare:",
+    btnDeleting:"Se șterge...", btnDeletePermanently:"Șterge definitiv",
+    leaveLeagueTitle:"Ieși din ligă?", leaveLeagueBody1:"Punctele și intrările tale vor fi eliminate din",
+    leaveLeagueConfirm:"Ieși din ligă",
+    deleteLeagueTitle:"Șterge liga?", deleteLeagueBody1:"Aceasta elimină",
+    deleteLeagueBody2:"pentru toți membrii ligii.", deleteLeagueConfirm:"Șterge liga",
+    inviteCodeDetected:"🔑 Cod de invitație detectat — apasă Join",
+    noBoardsFoundFor:"Niciun grup găsit pentru", tryAnotherName:"Încearcă alt nume sau lipește codul de invitație.",
+    loadingPlayers:"Se încarcă jucătorii...", noPlayersForTeam:"Niciun jucător pentru această echipă.",
+    boardsCount:"grupuri", footerRanking:"Clasament", footerRules:"Reguli", footerMore:"Mai mult",
+    memberSinceLabel:"Membru din",
+    discoverTab:"Descoperă", joinedStatus:"Înscris",
+    leagueNamePlaceholder:"Ex: Liga biroului",
+    joinedEmptyTitle:"Nicio ligă alăturată", joinedEmptyBody:"Alătură-te sau creează propria ligă privată.",
+    availableEmptyTitle:"Nicio ligă disponibilă", availableEmptyBody:"Creează o ligă nouă sau introdu un cod de invitație.",
+    adminEmptyTitle:"Nicio ligă administrată", adminEmptyBody:"Creează o ligă și va apărea aici.",
+    hiGreeting:"Salut,", manageLeague:"Administrează Liga", newLeague:"Ligă Nouă",
+    syncingLabel:"sincronizare", tournamentLive:"🏆 turneu live", kickoffLabel:"· start",
+    lockedUntilJun27:"Blocat până pe 27 Iun", specialPick:"Selecție Specială",
+    winnerTopScorer:"Câștigător & Golgheter", reopensJun27:"Se redeschide 27 Iun",
+    specialPickSub:"Echipă câștigătoare +3 · Marcator +3",
+    winnerTeam:"Echipa Câștigătoare", pickTeam:"Alege echipa",
+    topScorer:"Golgheter", pickPlayer:"Alege jucătorul",
+    totalLabel:"Total:", availableNow:"Disponibil acum",
+    syncingPredictions:"Sincronizare predicții", trophyLabel:"Trofeu",
+    groupsBestThird:"Grupe + Best Third", knockoutPhase:"Faza Knockout",
+    moreToCome:"· mai urmează ·",
+    copyExactScoresTitle:"Copiază scoruri exacte", copyWinnerTeamTitle:"Copiază Echipa Câștigătoare",
+    copyTopScorerTitle:"Copiază Golgheter", copySpecialTitle:"Copiază selecțiile speciale",
+    copyPredictionsTitle:"Copiază predicții",
+    copyExactScoresSub:"Replică scorurile exacte ale săptămânii în altă ligă",
+    copyWinnerTeamSub:"Replică selecția ta de echipă câștigătoare în altă ligă",
+    copyTopScorerSub:"Replică selecția ta de golgheter în altă ligă",
+    copySpecialSub:"Replică câștigătorul & golgheterul tău în altă ligă",
+    copyPredsSub:"Replică predicțiile din faza grupelor în altă ligă",
+    noOtherBoards:"Nicio altă ligă disponibilă",
+    copiedLabel:"✓ Copiat", pasteLabel:"Lipește",
   },
   fr:{
     location:"USA, Canada & Mexique", cta:"Faites vos Pronostics",
@@ -470,6 +613,77 @@ const T = {
     globalBoard:"Global", noBoards:"Aucune ligue trouvée.",
     viewAll2:"Voir tout", members2:"membres", code:"code",
     allMatchesGrp:"Tous les Matchs · Gr.",
+    loginCreateAccount:"Créer un compte", loginRecoverAccount:"Récupérer le compte",
+    loginCheckEmail:"Vérifiez votre email", loginNewAccount:"Nouveau compte",
+    loginNoAccountFor:"Aucun compte trouvé pour",
+    emailPlaceholder:"adresse@email.com", passwordMinPlaceholder:"mot de passe (min. 6 caract.)",
+    passwordPlaceholder:"mot de passe", nicknamePlaceholder:"Choisissez un pseudo",
+    confirmPasswordPlaceholder:"confirmer mot de passe (min. 6 caract.)",
+    btnContinue:"Continuer →", btnVerifying:"Vérification...",
+    btnCreateAccount:"Créer un compte →", btnCreating:"Création...",
+    btnSignUpCreate:"Créer un compte →",
+    btnSendReset:"Envoyer le lien →", btnSending:"Envoi...",
+    solveCaptcha:"🔒 Résoudre la vérification ci-dessus",
+    checkEmailTitle:"Vérifiez votre email !", sentLinkTo:"Nous avons envoyé un lien à",
+    clickLinkToContinue:"Cliquez sur le lien pour continuer.",
+    linkSentIfExists:"Lien envoyé si l'adresse existe dans le système.",
+    forgotPassword:"Mot de passe oublié", newAccountLink:"Nouveau compte",
+    errEnterEmail:"Entrez votre adresse email.", errEnterPassword:"Entrez votre mot de passe.",
+    errWrongPassword:"Mot de passe incorrect. Réessayez ou réinitialisez-le.",
+    errUnexpected:"Erreur inattendue. Réessayez.",
+    errChooseNickname:"Choisissez un pseudo.",
+    errPasswordMin6:"Le mot de passe doit comporter au moins 6 caractères.",
+    errSendFailed:"Erreur d'envoi. Réessayez.",
+    errPasswordsMismatch:"Les mots de passe ne correspondent pas.",
+    passwordChanged:"Mot de passe changé !", passwordSet:"Mot de passe défini !",
+    redirectingMsg:"Redirection en cours...",
+    newPasswordTitle:"Nouveau mot de passe", enterNewPassword:"Entrez votre nouveau mot de passe",
+    newPasswordPlaceholder:"Nouveau mot de passe", confirmPasswordPlaceholderField:"Confirmer le mot de passe",
+    btnSavePassword:"Enregistrer le mot de passe →", btnSaving:"Enregistrement...",
+    setPasswordTitle:"Définir un mot de passe",
+    accountCreatedViaLink:"Votre compte a été créé via un lien magique.",
+    setPasswordDesc:"Définissez un mot de passe pour vous connecter sans lien la prochaine fois.",
+    deleteAccountTitle:"Supprimer le compte",
+    deleteDescPt1:"Cela supprimera ", deleteDescEverything:"tout",
+    deleteDescPt2:" : pronostics, ligues et scores.",
+    deleteDescIrreversiblePt1:"Cette action est ", deleteDescIrreversible:"irréversible",
+    enterEmailToConfirm:"Entrez votre email pour confirmer :",
+    btnDeleting:"Suppression...", btnDeletePermanently:"Supprimer définitivement",
+    leaveLeagueTitle:"Quitter la ligue ?", leaveLeagueBody1:"Vos points et entrées seront supprimés de",
+    leaveLeagueConfirm:"Quitter la ligue",
+    deleteLeagueTitle:"Supprimer la ligue ?", deleteLeagueBody1:"Cela supprime",
+    deleteLeagueBody2:"pour tous les membres de la ligue.", deleteLeagueConfirm:"Supprimer la ligue",
+    inviteCodeDetected:"🔑 Code d'invitation détecté — appuyez sur Rejoindre",
+    noBoardsFoundFor:"Aucun groupe trouvé pour", tryAnotherName:"Essayez un autre nom ou collez le code d'invitation.",
+    loadingPlayers:"Chargement des joueurs...", noPlayersForTeam:"Aucun joueur pour cette équipe.",
+    boardsCount:"groupes", footerRanking:"Classement", footerRules:"Règles", footerMore:"Plus",
+    memberSinceLabel:"Membre depuis",
+    discoverTab:"Découvrir", joinedStatus:"Rejoint",
+    leagueNamePlaceholder:"Ex: Ligue du bureau",
+    joinedEmptyTitle:"Aucune ligue rejointe", joinedEmptyBody:"Rejoignez une ligue ou créez la vôtre.",
+    availableEmptyTitle:"Aucune ligue disponible", availableEmptyBody:"Créez une nouvelle ligue ou entrez un code d'invitation.",
+    adminEmptyTitle:"Aucune ligue gérée", adminEmptyBody:"Créez une ligue et elle apparaîtra ici.",
+    hiGreeting:"Salut,", manageLeague:"Gérer la Ligue", newLeague:"Nouvelle Ligue",
+    syncingLabel:"sync", tournamentLive:"🏆 tournoi en direct", kickoffLabel:"· coup d'envoi",
+    lockedUntilJun27:"Bloqué jusqu'au 27 Juin", specialPick:"Sélection Spéciale",
+    winnerTopScorer:"Vainqueur & Meilleur Buteur", reopensJun27:"Rouvre le 27 Juin",
+    specialPickSub:"Équipe gagnante +3 · Buteur +3",
+    winnerTeam:"Équipe Gagnante", pickTeam:"Choisissez votre équipe",
+    topScorer:"Meilleur Buteur", pickPlayer:"Choisissez votre joueur",
+    totalLabel:"Total:", availableNow:"Disponible maintenant",
+    syncingPredictions:"Synchronisation des pronostics", trophyLabel:"Trophée",
+    groupsBestThird:"Groupes + Meilleur 3e", knockoutPhase:"Phase Knockout",
+    moreToCome:"· à venir ·",
+    copyExactScoresTitle:"Copier les scores exacts", copyWinnerTeamTitle:"Copier Équipe Gagnante",
+    copyTopScorerTitle:"Copier Meilleur Buteur", copySpecialTitle:"Copier les sélections spéciales",
+    copyPredictionsTitle:"Copier les pronostics",
+    copyExactScoresSub:"Répliquer les scores exacts de cette semaine dans une autre ligue",
+    copyWinnerTeamSub:"Répliquer votre sélection d'équipe gagnante dans une autre ligue",
+    copyTopScorerSub:"Répliquer votre sélection de meilleur buteur dans une autre ligue",
+    copySpecialSub:"Répliquer votre vainqueur & meilleur buteur dans une autre ligue",
+    copyPredsSub:"Répliquer vos pronostics de la phase de groupes dans une autre ligue",
+    noOtherBoards:"Aucune autre ligue disponible",
+    copiedLabel:"✓ Copié", pasteLabel:"Coller",
   },
 };
 const LangCtx = React.createContext("en");
@@ -4137,6 +4351,7 @@ function PaniniCard({ player, teamName, isSelected, onClick }) {
 }
 
 function ChampionScreen({ onBack, initialMode="champion", championPick, topScorerPick, setChampionPick, setTopScorerPick, showToast, simDay=null, simHour=12, simMin=0 }) {
+  const lang = useLang();
   const allTeams = Object.values(ALL_GROUPS_DATA).flat();
   const tCode = (t) => TEAM_CODE[t]||t.slice(0,3).toUpperCase();
   const showChampion = initialMode !== "scorer";
@@ -4316,9 +4531,9 @@ function ChampionScreen({ onBack, initialMode="champion", championPick, topScore
                     {FLAGS[tsTeam]||"🏳"} {tsTeam} — pick the top scorer
                   </div>
                   {playersLoading ? (
-                    <div style={{textAlign:"center",padding:"24px 0",fontSize:12,color:"#9CA3AF"}}>Loading players…</div>
+                    <div style={{textAlign:"center",padding:"24px 0",fontSize:12,color:"#9CA3AF"}}>{T[lang].loadingPlayers}</div>
                   ) : teamPlayers.length === 0 ? (
-                    <div style={{textAlign:"center",padding:"24px 0",fontSize:12,color:"#9CA3AF"}}>No players found for this team.</div>
+                    <div style={{textAlign:"center",padding:"24px 0",fontSize:12,color:"#9CA3AF"}}>{T[lang].noPlayersForTeam}</div>
                   ) : (
                     <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,paddingBottom:80}}>
                       {teamPlayers.map(player=>{
@@ -4593,7 +4808,7 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
                 : <div style={{width:36,height:36,borderRadius:"50%",background:NAVY,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,color:"#fff",fontWeight:700}}>{initials}</div>
               }
             </button>
-            <p style={{fontSize:11,fontWeight:700,color:"rgba(10,46,138,0.75)",margin:"4px 0 0"}}>Hi, {displayName.split(" ")[0]} 👋</p>
+            <p style={{fontSize:11,fontWeight:700,color:"rgba(10,46,138,0.75)",margin:"4px 0 0"}}>{T[lang].hiGreeting} {displayName.split(" ")[0]} 👋</p>
           </div>
           <div style={{textAlign:"center"}}>
             <img src={predictoLogo} alt="Predicto" decoding="sync" style={{height:36,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
@@ -4649,26 +4864,37 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
         {/* rând 1 — manage + new league */}
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",height:24,marginBottom:3}}>
           <div onClick={e=>{e.stopPropagation();onBoards("my");}} style={{display:"flex",alignItems:"center",justifyContent:"center",minWidth:68,height:24,borderRadius:"0 999px 999px 0",background:"rgba(255,255,255,0.34)",border:"1px solid rgba(10,46,138,0.08)",borderLeft:"none",cursor:"pointer",flexShrink:0,padding:"0 9px 0 12px"}}>
-            <span style={{fontSize:10,fontWeight:650,color:"rgba(10,46,138,0.62)",lineHeight:1}}>Manage League</span>
+            <span style={{fontSize:10,fontWeight:650,color:"rgba(10,46,138,0.62)",lineHeight:1}}>{T[lang].manageLeague}</span>
           </div>
           <div onClick={e=>{e.stopPropagation();onBoards("available");}} style={{display:"flex",alignItems:"center",justifyContent:"center",minWidth:68,height:24,borderRadius:"999px 0 0 999px",background:"rgba(255,255,255,0.34)",border:"1px solid rgba(10,46,138,0.08)",borderRight:"none",cursor:"pointer",flexShrink:0,padding:"0 12px 0 9px"}}>
-            <span style={{fontSize:10,fontWeight:650,color:"rgba(10,46,138,0.62)",lineHeight:1}}>New League</span>
+            <span style={{fontSize:10,fontWeight:650,color:"rgba(10,46,138,0.62)",lineHeight:1}}>{T[lang].newLeague}</span>
           </div>
         </div>
         {/* rând 2 — rank & pts */}
         <div style={{position:"relative",display:"flex",justifyContent:"center",alignItems:"center",height:32,marginBottom:6}}>
           <div onClick={()=>onLeaderboard&&onLeaderboard()} style={{background:"#fff",borderRadius:12,boxShadow:"0 1px 4px rgba(0,0,0,0.05)",border:"1px solid rgba(10,46,138,0.06)",padding:"7px 16px",display:"flex",alignItems:"center",gap:8,cursor:"pointer",WebkitTapHighlightColor:"transparent"}}>
-            <span style={{fontSize:13,fontWeight:800,color:NAVY}}>{rankingLoading ? "..." : `Rank ${me?.rank?`#${me.rank}`:"—"}`}</span>
+            <span style={{fontSize:13,fontWeight:800,color:NAVY}}>{rankingLoading ? "..." : `${T[lang].rank} ${me?.rank?`#${me.rank}`:"—"}`}</span>
             <span style={{width:3,height:3,borderRadius:"50%",background:"#C0C8D8"}}/>
-            <span style={{fontSize:13,fontWeight:800,color:"#D4820A"}}>{rankingLoading ? "syncing" : `${me?.pts??0} pts`}</span>
+            <span style={{fontSize:13,fontWeight:800,color:"#D4820A"}}>{rankingLoading ? T[lang].syncingLabel : `${me?.pts??0} pts`}</span>
           </div>
         </div>
         {/* rând 3 — countdown */}
-        <div style={{display:"flex",justifyContent:"center",alignItems:"center",marginBottom:10}}>
-          {tournamentOver
-            ? <span style={{fontSize:11,fontWeight:700,color:"rgba(10,46,138,0.60)"}}>🏆 tournament live</span>
-            : <span style={{fontSize:11,fontWeight:700,color:"rgba(10,46,138,0.60)"}}>⚽ {cdDays}d {String(cdHours).padStart(2,"0")}h {String(cdMins).padStart(2,"0")}m · kickoff</span>
-          }
+        <div style={{display:"flex",justifyContent:"center",alignItems:"center",gap:7,marginBottom:10}}>
+          {tournamentOver ? (
+            <span style={{fontSize:11,fontWeight:700,color:"rgba(10,46,138,0.60)"}}>{T[lang].tournamentLive}</span>
+          ) : (<>
+            <span style={{display:"flex",gap:3,alignItems:"center"}}>
+              <span style={{width:3,height:3,borderRadius:"50%",background:"rgba(10,46,138,0.30)"}}/>
+              <span style={{width:14,height:2,borderRadius:2,background:"rgba(10,46,138,0.18)"}}/>
+              <span style={{width:3,height:3,borderRadius:"50%",background:"rgba(10,46,138,0.30)"}}/>
+            </span>
+            <span style={{fontSize:11,fontWeight:700,color:"rgba(10,46,138,0.60)"}}>{cdDays}d {String(cdHours).padStart(2,"0")}h {String(cdMins).padStart(2,"0")}m {T[lang].kickoffLabel}</span>
+            <span style={{display:"flex",gap:3,alignItems:"center"}}>
+              <span style={{width:3,height:3,borderRadius:"50%",background:"rgba(10,46,138,0.30)"}}/>
+              <span style={{width:14,height:2,borderRadius:2,background:"rgba(10,46,138,0.18)"}}/>
+              <span style={{width:3,height:3,borderRadius:"50%",background:"rgba(10,46,138,0.30)"}}/>
+            </span>
+          </>)}
         </div>
       </div>
       <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",padding:"0 14px 90px",display:"flex",flexDirection:"column"}}>
@@ -4695,13 +4921,13 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
                   <span style={{fontSize:12,fontWeight:700,color:specialLocked?"#9CA3AF":DARK,whiteSpace:"nowrap"}}>{title}</span>
                 </div>
                 <div style={{fontSize:11,color:specialLocked?"#C0C8D8":done?GREEN:"#9CA3AF",fontWeight:done?600:500,marginTop:1,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
-                  {specialLocked ? "Locked until Jun 27" : value}
+                  {specialLocked ? T[lang].lockedUntilJun27 : value}
                 </div>
                 {meta&&<div style={{fontSize:10,color:"#C0C8D8",fontWeight:700,letterSpacing:0.4,marginTop:1,textTransform:"uppercase"}}>{meta}</div>}
               </div>
               <div style={{display:"flex",alignItems:"center",gap:5,flexShrink:0}}>
                 {done && !specialLocked ? (<>
-                  <span style={{fontSize:11,fontWeight:600,color:GREEN,opacity:0.8}}>Done</span>
+                  <span style={{fontSize:11,fontWeight:600,color:GREEN,opacity:0.8}}>{T[lang].done}</span>
                   <div onClick={e=>{e.stopPropagation();setCopyDone({});setShowCopySheet(mode);}} style={{cursor:"pointer",opacity:0.55,width:9,height:9,display:"flex",alignItems:"center"}}>
                     <svg width="9" height="9" viewBox="0 0 14 14" fill="none"><rect x="4" y="4" width="8" height="8" rx="1.5" stroke={DARK} strokeWidth="1.8"/><path d="M2 10V2h8" stroke={DARK} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
                   </div>
@@ -4713,14 +4939,14 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
           );
           return (<>
             <div style={{margin:"0 2px 6px"}}>
-              <p style={homeSectionLabelStyle}>Special Pick</p>
+              <p style={homeSectionLabelStyle}>{T[lang].specialPick}</p>
             </div>
             <div onClick={()=>onChampion(!champDone?"champion":!tsDone?"scorer":"champion")} style={{...homeTaskCardStyle,marginBottom:6,cursor:"pointer",WebkitTapHighlightColor:"transparent"}}>
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,marginBottom:5}}>
                 <div style={{display:"flex",flexDirection:"column",alignItems:"flex-start",minWidth:0,position:"relative",zIndex:1}}>
-                  <div style={{fontSize:13,fontWeight:700,color:DARK,textAlign:"left",lineHeight:1.15}}>Winner & Top Scorer</div>
+                  <div style={{fontSize:13,fontWeight:700,color:DARK,textAlign:"left",lineHeight:1.15}}>{T[lang].winnerTopScorer}</div>
                   <div style={{fontSize:10,color:specialLocked?"#D4820A":"#C0C8D8",fontWeight:500,marginTop:3,lineHeight:1.2}}>
-                    {specialLocked ? "Reopens Jun 27" : "Team win +3 · Player scored +3"}
+                    {specialLocked ? T[lang].reopensJun27 : T[lang].specialPickSub}
                   </div>
                 </div>
                 {doneCount===0 ? (
@@ -4737,8 +4963,8 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
               </div>
               {taskRow({
                 icon:"🏆",
-                title:"Winner Team",
-                value:champDone?championPick:"Pick your team",
+                title:T[lang].winnerTeam,
+                value:champDone?championPick:T[lang].pickTeam,
                 meta:null,
                 done:champDone,
                 mode:"champion",
@@ -4746,8 +4972,8 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
               <div style={{height:1,background:"#F1F3F7",marginLeft:32}}/>
               {taskRow({
                 icon:"👕",
-                title:"Top Scorer",
-                value:tsDone?topScorerPick.player:"Pick your player",
+                title:T[lang].topScorer,
+                value:tsDone?topScorerPick.player:T[lang].pickPlayer,
                 meta:null,
                 done:tsDone,
                 mode:"scorer",
@@ -4782,7 +5008,7 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
         {/* Connector */}
         <div style={{display:"flex",justifyContent:"center",alignItems:"center",margin:"2px 0 6px",position:"relative"}}>
           <div style={homeConnectorStyle}/>
-          <span style={{position:"absolute",right:2,fontSize:10,fontWeight:700,color:"rgba(10,46,138,0.30)",letterSpacing:"0.2px"}}>Total: {myScoreBreakdown?.specialPts??0} pts</span>
+          <span style={{position:"absolute",right:2,fontSize:10,fontWeight:700,color:"rgba(10,46,138,0.30)",letterSpacing:"0.2px"}}>{T[lang].totalLabel} {myScoreBreakdown?.specialPts??0} pts</span>
         </div>
 
         {/* Card 1 — Predictions + path to trophy */}
@@ -4800,9 +5026,9 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
           const showBadge = koAvailable || (!boardDone && !deadlinePassed && predictionsLoaded[activeId]);
           const boardLabel = activeBoard?.isGlobal?"🌍 Global":(activeBoard?.name||"");
           const predPath = [
-            { label:"Jun 11", stage:"Groups + Best Third", due:T[lang].dueJun11, done:boardDone, locked:false, active:!boardDone&&!deadlinePassed&&!!predictionsLoaded[activeId] },
-            { label:"Jun 27", stage:"Knockout Phase", due:koAvailable?"Available now":T[lang].koDueJun27, done:koPickDone, locked:!koUnlocked||!boardDone, active:!!koAvailable },
-            { label:"Jul 19", stage:"Final", isFinal:true },
+            { label:"Jun 11", stage:T[lang].groupsBestThird, due:T[lang].dueJun11, done:boardDone, locked:false, active:!boardDone&&!deadlinePassed&&!!predictionsLoaded[activeId] },
+            { label:"Jun 27", stage:T[lang].knockoutPhase, due:koAvailable?T[lang].availableNow:T[lang].koDueJun27, done:koPickDone, locked:!koUnlocked||!boardDone, active:!!koAvailable },
+            { label:"Jul 19", stage:T[lang].final, isFinal:true },
           ];
           return (<>
             <div style={{margin:"0 2px 6px"}}>
@@ -4815,7 +5041,7 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
               {predLoading&&(
                 <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:7,color:"#9CA3AF",fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:0.6}}>
                   <span style={{width:10,height:10,borderRadius:"50%",border:"2px solid rgba(10,46,138,0.12)",borderTopColor:NAVY,animation:"spin 0.9s linear infinite"}}/>
-                  Syncing predictions
+                  {T[lang].syncingPredictions}
                 </div>
               )}
 
@@ -4852,7 +5078,7 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
                         <div style={{display:"flex",alignItems:"center",gap:5}}>
                           <span style={{fontSize:11,fontWeight:step.active?600:400,
                             color:step.isFinal?"#D4820A":step.locked?"#C0C8D8":step.done?GREEN:"#9CA3AF",opacity:step.locked?0.5:0.8}}>
-                            {step.isFinal?"Trophy":step.locked?T[lang].locked:step.done?"Done":step.due}
+                            {step.isFinal?T[lang].trophyLabel:step.locked?T[lang].locked:step.done?T[lang].done:step.due}
                           </span>
                           <div onClick={e=>{if(!step.done||step.isFinal)return;e.stopPropagation();setCopyDone({});setShowCopySheet("predictions");}} style={{cursor:step.done&&!step.isFinal?"pointer":"default",opacity:step.done&&!step.isFinal?0.55:0,pointerEvents:step.done&&!step.isFinal?"auto":"none",width:9,height:9,flexShrink:0,display:"flex",alignItems:"center"}}><svg width="9" height="9" viewBox="0 0 14 14" fill="none"><rect x="4" y="4" width="8" height="8" rx="1.5" stroke={DARK} strokeWidth="1.8"/><path d="M2 10V2h8" stroke={DARK} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg></div>
                         </div>
@@ -4868,7 +5094,7 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
         {/* Connector */}
         <div style={{display:"flex",justifyContent:"center",alignItems:"center",margin:"2px 0 6px",position:"relative"}}>
           <div style={homeConnectorStyle}/>
-          <span style={{position:"absolute",right:2,fontSize:10,fontWeight:700,color:"rgba(10,46,138,0.30)",letterSpacing:"0.2px"}}>Total: {myScoreBreakdown?.predPts??0} pts</span>
+          <span style={{position:"absolute",right:2,fontSize:10,fontWeight:700,color:"rgba(10,46,138,0.30)",letterSpacing:"0.2px"}}>{T[lang].totalLabel} {myScoreBreakdown?.predPts??0} pts</span>
         </div>
 
         {/* Card 2 — Exact Score + path to trophy */}
@@ -4940,7 +5166,7 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
                         <div style={{display:"flex",alignItems:"center",gap:5}}>
                           <span style={{fontSize:11,fontWeight:active?600:400,
                             color:w.isFinal?"#D4820A":w.locked&&!isPast?"#C0C8D8":done?GREEN:"#9CA3AF",opacity:w.locked&&!isPast?0.5:0.8}}>
-                            {w.isFinal?"Trophy":w.locked&&!isPast?T[lang].locked:done?T[lang].weekComplete:isPast?`${w.scored}/${w.total}`:`${w.scored}/${w.total}`}
+                            {w.isFinal?T[lang].trophyLabel:w.locked&&!isPast?T[lang].locked:done?T[lang].weekComplete:isPast?`${w.scored}/${w.total}`:`${w.scored}/${w.total}`}
                           </span>
                           <div onClick={e=>{if(!done||w.isFinal)return;e.stopPropagation();setCopyDone({});setCopyWeekStart(w.weekStart);setShowCopySheet("scores");}} style={{cursor:done&&!w.isFinal?"pointer":"default",opacity:done&&!w.isFinal?0.55:0,pointerEvents:done&&!w.isFinal?"auto":"none",width:9,height:9,flexShrink:0,display:"flex",alignItems:"center"}}><svg width="9" height="9" viewBox="0 0 14 14" fill="none"><rect x="4" y="4" width="8" height="8" rx="1.5" stroke={DARK} strokeWidth="1.8"/><path d="M2 10V2h8" stroke={DARK} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg></div>
                         </div>
@@ -4956,12 +5182,12 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
         {/* Connector */}
         <div style={{display:"flex",justifyContent:"center",alignItems:"center",margin:"2px 0 6px",position:"relative"}}>
           <div style={homeConnectorStyle}/>
-          <span style={{position:"absolute",right:2,fontSize:10,fontWeight:700,color:"rgba(10,46,138,0.30)",letterSpacing:"0.2px"}}>Total: {myScoreBreakdown?.exactPts??0} pts</span>
+          <span style={{position:"absolute",right:2,fontSize:10,fontWeight:700,color:"rgba(10,46,138,0.30)",letterSpacing:"0.2px"}}>{T[lang].totalLabel} {myScoreBreakdown?.exactPts??0} pts</span>
         </div>
 
         {/* Footer teaser */}
         <div style={{margin:"0 2px 6px",paddingBottom:16}}>
-          <p style={homeSectionLabelStyle}>· more to come ·</p>
+          <p style={homeSectionLabelStyle}>{T[lang].moreToCome}</p>
         </div>
 
           </div>
@@ -4989,26 +5215,26 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
                 <path d="M2 10V2h8" stroke={GREEN} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
               <span style={{fontSize:15,fontWeight:800,color:"#fff"}}>
-                {showCopySheet==="scores"?"Copy exact scores":showCopySheet==="champion"?"Copy Winner Team":showCopySheet==="scorer"?"Copy Top Scorer":showCopySheet==="special"?"Copy special picks":"Copy predictions"}
+                {showCopySheet==="scores"?T[lang].copyExactScoresTitle:showCopySheet==="champion"?T[lang].copyWinnerTeamTitle:showCopySheet==="scorer"?T[lang].copyTopScorerTitle:showCopySheet==="special"?T[lang].copySpecialTitle:T[lang].copyPredictionsTitle}
               </span>
             </div>
             <p style={{fontSize:12,color:"rgba(255,255,255,0.45)",margin:"4px 0 0"}}>
               {showCopySheet==="scores"
-                ?"Replicate this week's exact scores to another league"
+                ?T[lang].copyExactScoresSub
                 :showCopySheet==="champion"
-                ?"Replicate your Winner Team pick to another league"
+                ?T[lang].copyWinnerTeamSub
                 :showCopySheet==="scorer"
-                ?"Replicate your Top Scorer pick to another league"
+                ?T[lang].copyTopScorerSub
                 :showCopySheet==="special"
-                ?"Replicate your Winner Team & Top Scorer to another league"
-                :"Replicate your Group phase predictions to another league"}
+                ?T[lang].copySpecialSub
+                :T[lang].copyPredsSub}
             </p>
           </div>
           {/* Board list */}
           <div style={{overflowY:"auto",flex:1,padding:"10px 16px 0"}}>
             {myBoards.filter(b=>b.id!==activeId).length===0?(
               <div style={{textAlign:"center",padding:"24px 0",color:"rgba(255,255,255,0.35)",fontSize:13}}>
-                No other boards available
+                {T[lang].noOtherBoards}
               </div>
             ):myBoards.filter(b=>b.id!==activeId).map(b=>(
               <div key={b.id}
@@ -5024,7 +5250,7 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
                 <span style={{fontSize:22,display:"inline-block",width:30,flexShrink:0}}>{b.emoji||"⚽"}</span>
                 <span style={{flex:1,fontSize:13,fontWeight:700,color:"#fff"}}>{b.name}</span>
                 {copyDone[b.id]?(
-                  <span style={{fontSize:12,fontWeight:700,color:GREEN}}>✓ Copied</span>
+                  <span style={{fontSize:12,fontWeight:700,color:GREEN}}>{T[lang].copiedLabel}</span>
                 ):(
                   <div style={{background:`linear-gradient(135deg,${GREEN},#007A36)`,borderRadius:8,
                     padding:"5px 12px",display:"flex",alignItems:"center",gap:5}}>
@@ -5032,7 +5258,7 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
                       <rect x="4" y="4" width="8" height="8" rx="1.5" stroke="#fff" strokeWidth="1.8"/>
                       <path d="M2 10V2h8" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
-                    <span style={{fontSize:12,fontWeight:700,color:"#fff"}}>Paste</span>
+                    <span style={{fontSize:12,fontWeight:700,color:"#fff"}}>{T[lang].pasteLabel}</span>
                   </div>
                 )}
               </div>
@@ -5217,25 +5443,25 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
   const isJoined = id => myBoards.some(b=>b.id===id);
   const boardCopy = {
     manageTabs: [
-      {key:"my",label:"My Leagues"},
-      {key:"available",label:"Discover"},
-      {key:"admin",label:"Admin"},
+      {key:"my",label:T[lang].joinedBoards},
+      {key:"available",label:T[lang].discoverTab},
+      {key:"admin",label:T[lang].adminLabel},
     ],
-    namePlaceholder: "Ex: Office league",
-    passwordPlaceholder: "Password for joining...",
-    searchPlaceholder: "Search or enter invite code...",
-    joinedEmptyTitle: "No joined leagues",
-    joinedEmptyBody: "Join a league or create your own private one.",
-    availableEmptyTitle: "No leagues available",
-    availableEmptyBody: "Create a new league or enter an invite code.",
-    adminEmptyTitle: "No leagues managed yet",
-    adminEmptyBody: "Create a league and it will appear here.",
+    namePlaceholder: T[lang].leagueNamePlaceholder,
+    passwordPlaceholder: T[lang].enterPassword,
+    searchPlaceholder: T[lang].searchOrCode,
+    joinedEmptyTitle: T[lang].joinedEmptyTitle,
+    joinedEmptyBody: T[lang].joinedEmptyBody,
+    availableEmptyTitle: T[lang].availableEmptyTitle,
+    availableEmptyBody: T[lang].availableEmptyBody,
+    adminEmptyTitle: T[lang].adminEmptyTitle,
+    adminEmptyBody: T[lang].adminEmptyBody,
   };
 
   if(view==="create") return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,position:"relative",overflow:"hidden"}}>
       <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.055,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
-      <HeaderShell onBack={()=>changeView("main")}>{editBoard ? "Edit League" : "Create League"}</HeaderShell>
+      <HeaderShell onBack={()=>changeView("main")}>{editBoard ? T[lang].editBoard : T[lang].createBoard}</HeaderShell>
       <div style={{flex:1,overflowY:"auto",padding:"16px 20px 24px",position:"relative",zIndex:1}}>
         {/* Name */}
         <Card style={createPanelStyle}>
@@ -5418,7 +5644,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
             ))}
           </div>
         }>
-        Leagues
+        {T[lang].boards}
       </HeaderShell>
       {/* Password modal */}
       {joinPrompt&&(
@@ -5448,7 +5674,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
                 }
               }}
                 style={{flex:2,padding:"13px 0",borderRadius:12,fontSize:14}}>
-                Join 🏆
+                {T[lang].joinBtn} 🏆
               </Button>
             </div>
           </div>
@@ -5457,9 +5683,9 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
       {leaveConfirmBoard && (
         <ConfirmSheet
           icon="⚠️"
-          title="Leave league?"
-          body={<>Your points and entries will be removed from <strong style={{color:DARK}}>{leaveConfirmBoard.name}</strong>.</>}
-          confirmLabel="Leave league"
+          title={T[lang].leaveLeagueTitle}
+          body={<>{T[lang].leaveLeagueBody1} <strong style={{color:DARK}}>{leaveConfirmBoard.name}</strong>.</>}
+          confirmLabel={T[lang].leaveLeagueConfirm}
           onCancel={()=>setLeaveConfirmBoard(null)}
           onConfirm={async()=>{
               if(onRemoveMember) await onRemoveMember(leaveConfirmBoard.id, user?.id);
@@ -5470,9 +5696,9 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
       {deleteConfirmBoard && (
         <ConfirmSheet
           icon="🗑️"
-          title="Delete league?"
-          body={<>This removes <strong style={{color:DARK}}>{deleteConfirmBoard.name}</strong> for everyone in the league.</>}
-          confirmLabel="Delete league"
+          title={T[lang].deleteLeagueTitle}
+          body={<>{T[lang].deleteLeagueBody1} <strong style={{color:DARK}}>{deleteConfirmBoard.name}</strong> {T[lang].deleteLeagueBody2}</>}
+          confirmLabel={T[lang].deleteLeagueConfirm}
           onCancel={()=>setDeleteConfirmBoard(null)}
           onConfirm={async()=>{
               if(onDeleteBoard) await onDeleteBoard(deleteConfirmBoard.id);
@@ -5499,7 +5725,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
                         <p style={{fontSize:13,fontWeight:700,color:DARK,margin:0}}>{latest.name}</p>
                         <p style={{fontSize:11,color:"#aaa",margin:"2px 0 0"}}>👥 {latest.members}{latest.max?"/"+latest.max:""} members</p>
                       </div>
-                      <span style={{fontSize:11,fontWeight:700,color:b.isAdmin&&!b.isMember?"#F59E0B":NAVY,flexShrink:0}}>{b.isAdmin&&!b.isMember?"👑 Admin":"✓ Joined"}</span>
+                      <span style={{fontSize:11,fontWeight:700,color:b.isAdmin&&!b.isMember?"#F59E0B":NAVY,flexShrink:0}}>{b.isAdmin&&!b.isMember?"👑 Admin":`✓ ${T[lang].joinedStatus}`}</span>
                       {!b.isGlobal&&b.isMember&&<Button variant="danger" onClick={e=>{e.stopPropagation();setLeaveConfirmBoard(b);}} style={{fontSize:13,flexShrink:0}}>🗑️</Button>}
                     </div>
                     {bi<arr.length-1&&<div style={{height:1,background:"rgba(0,0,0,0.05)",margin:"0 14px"}}/>}
@@ -5522,7 +5748,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
           return (<>
             <Card style={{marginBottom:12}}>
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 14px 8px"}}>
-                <span style={{fontSize:11,color:"#bbb"}}>{allAvail.length} boards</span>
+                <span style={{fontSize:11,color:"#bbb"}}>{allAvail.length} {T[lang].boardsCount}</span>
                 <Button onClick={()=>{ setEditBoard(null); setCName(""); setCPassword(""); setCEmoji(""); setCMaxPlayers(10); setCSlots(3); setCPrizes(["","",""]); changeView("create"); }}
                   style={{padding:"6px 11px",fontSize:11}}>
                   + {T[lang].createBoard}
@@ -5536,14 +5762,14 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
                     <Button onClick={()=>{ const found=[...availBoards,...createdBoards].find(b=>b.code===boardSearch.trim().toUpperCase()||b.id===boardSearch.trim()); if(found){joinBoard(found);setBoardSearch("");setCodeError("");}else setCodeError("Code not found."); }}>Join</Button>
                   ):(<span onClick={()=>setBoardSearch("")} style={{fontSize:13,color:"#bbb",cursor:"pointer"}}>✕</span>))}
                 </InputPanel>
-                {isCode&&<p style={{fontSize:11,color:NAVY,margin:"6px 0 0",fontWeight:600}}>🔑 Invite code detected — tap Join</p>}
+                {isCode&&<p style={{fontSize:11,color:NAVY,margin:"6px 0 0",fontWeight:600}}>{T[lang].inviteCodeDetected}</p>}
                 {codeError&&<p style={{fontSize:11,color:RED,margin:"6px 0 0"}}>{codeError}</p>}
               </div>
               <div style={{height:1,background:"rgba(0,0,0,0.06)"}}/>
               {allAvail.length===0
                 ? <div style={{padding:14}}><EmptyState icon="🏆" title={boardCopy.availableEmptyTitle} body={boardCopy.availableEmptyBody} /></div>
                 : filtered.length===0&&boardSearch.trim()
-                  ? <div style={{padding:14}}><EmptyState icon="🔍" title={`No boards found for "${boardSearch}"`} body="Try another name or paste the invite code." /></div>
+                  ? <div style={{padding:14}}><EmptyState icon="🔍" title={`${T[lang].noBoardsFoundFor} "${boardSearch}"`} body={T[lang].tryAnotherName} /></div>
                   : filtered.map((b,bi)=>(
                     <div key={b.id}>
                       <div style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px"}}>
@@ -5554,7 +5780,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
                           <p style={{fontSize:13,fontWeight:700,color:DARK,margin:0}}>{b.name}</p>
                           <p style={{fontSize:11,color:"#aaa",margin:"2px 0 0"}}>👥 {b.members}{b.max?"/"+b.max:""}{b.password?" · 🔒":""}</p>
                         </div>
-                        <Button onClick={()=>joinBoard(b)}>Join</Button>
+                        <Button onClick={()=>joinBoard(b)}>{T[lang].joinBtn}</Button>
                       </div>
                       {bi<filtered.length-1&&<div style={{height:1,background:"rgba(0,0,0,0.05)",margin:"0 14px"}}/>}
                     </div>
@@ -5657,11 +5883,11 @@ const _footerIcons = {
 };
 function Footer({ active, onNavigate, lang, user }) {
   const tabs = [
-    {key:SCREENS.HOME,        label:"Home"},
-    {key:SCREENS.LEADERBOARD, label:"Ranking"},
-    {key:SCREENS.RULES,       label:"Rules"},
-    {key:SCREENS.BOARDS,      label:"Leagues"},
-    {key:SCREENS.ACCOUNT,     label:"More"},
+    {key:SCREENS.HOME,        label:T[lang].footerHome},
+    {key:SCREENS.LEADERBOARD, label:T[lang].footerRanking},
+    {key:SCREENS.RULES,       label:T[lang].footerRules},
+    {key:SCREENS.BOARDS,      label:T[lang].boards},
+    {key:SCREENS.ACCOUNT,     label:T[lang].footerMore},
   ];
   const avatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
   const displayName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "—";
@@ -6287,7 +6513,7 @@ function SplashScreen({ onNext, lang, setLang, simDay, simHour=12, simMin=0, tou
       </div>
       {/* Background trophy image */}
       <img
-        src={trophy}
+        src={trophyHQ}
         alt="FIFA World Cup Trophy"
         style={{
           position: "absolute",
@@ -6542,7 +6768,7 @@ function CaptchaWidget({ id, onSolved }) {
   return <ImageCaptcha key={id} onSolved={onSolved} />;
 }
 
-function LoginScreen({ onNext }) {
+function LoginScreen({ onNext, onBack }) {
   const lang = useLang();
   const [step, setStep] = useState("credentials"); // "credentials" | "newuser" | "sent"
   const [email, setEmail] = useState("");
@@ -6579,8 +6805,8 @@ function LoginScreen({ onNext }) {
   const resetLoginCaptcha = () => { setCaptchaSolved(!CAPTCHA_ENABLED); setCaptchaToken(null); };
 
   const handleContinue = async () => {
-    if (!email.trim()) { setError("Introdu adresa de email."); return; }
-    if (!password.trim()) { setError("Introdu parola."); return; }
+    if (!email.trim()) { setError(T[lang].errEnterEmail); return; }
+    if (!password.trim()) { setError(T[lang].errEnterPassword); return; }
     setLoading(true); setError("");
     try {
       const { error: signInErr } = await supabase.auth.signInWithPassword({
@@ -6592,19 +6818,19 @@ function LoginScreen({ onNext }) {
       const exists = await checkEmailExists(email.trim());
       if (exists === true) {
         resetLoginCaptcha();
-        setError("Parolă incorectă. Încearcă din nou sau resetează parola.");
+        setError(T[lang].errWrongPassword);
       } else {
         setCaptchaSolved(!CAPTCHA_ENABLED);
         setCaptchaToken(null);
         goToNewuser();
       }
-    } catch { setError("Eroare neașteptată. Încearcă din nou."); resetLoginCaptcha(); }
+    } catch { setError(T[lang].errUnexpected); resetLoginCaptcha(); }
     finally { setLoading(false); }
   };
 
   const handleCreateAccount = async () => {
-    if (!nickname.trim()) { setError("Alege un nickname."); return; }
-    if (password.length < 6) { setError("Parola trebuie să aibă minim 6 caractere."); return; }
+    if (!nickname.trim()) { setError(T[lang].errChooseNickname); return; }
+    if (password.length < 6) { setError(T[lang].errPasswordMin6); return; }
     setLoading(true); setError("");
     const { error: otpErr } = await supabase.auth.signUp({
       email: email.trim(), password,
@@ -6617,9 +6843,9 @@ function LoginScreen({ onNext }) {
   };
 
   const handleSignup = async () => {
-    if (!email.trim()) { setError("Introdu adresa de email."); return; }
-    if (!nickname.trim()) { setError("Alege un nickname."); return; }
-    if (password.length < 6) { setError("Parola trebuie să aibă minim 6 caractere."); return; }
+    if (!email.trim()) { setError(T[lang].errEnterEmail); return; }
+    if (!nickname.trim()) { setError(T[lang].errChooseNickname); return; }
+    if (password.length < 6) { setError(T[lang].errPasswordMin6); return; }
     setLoading(true); setError("");
     const { error: err } = await supabase.auth.signUp({
       email: email.trim(), password,
@@ -6631,13 +6857,13 @@ function LoginScreen({ onNext }) {
   };
 
   const handleForgotPassword = async () => {
-    if (!email.trim()) { setError("Introdu adresa de email."); return; }
+    if (!email.trim()) { setError(T[lang].errEnterEmail); return; }
     setLoading(true); setError("");
     const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
       redirectTo: window.location.origin, ...(captchaToken && { captchaToken })
     });
     setLoading(false);
-    if (error) { setError("Eroare la trimitere. Încearcă din nou."); return; }
+    if (error) { setError(T[lang].errSendFailed); return; }
     setSentFrom("forgot");
     setStep("sent");
   };
@@ -6646,37 +6872,36 @@ function LoginScreen({ onNext }) {
   const forgotCanSend = email.trim() && captchaSolved;
   const signupCanCreate = email.trim() && nickname.trim() && password.length >= 6 && captchaSolved;
 
-  const bgImg = <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.055,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>;
-  const header = (icon, title) => (
-    <div style={{position:"relative",zIndex:1,background:"linear-gradient(180deg,#CCDAFF 0%,#E2EBFF 40%,#F8F8F8 100%)",padding:"12px 28px 16px",display:"flex",flexDirection:"column",alignItems:"center"}}>
-      <img src={predictoLogo} alt="Predicto" decoding="sync" style={{height:36,width:"auto",objectFit:"contain",display:"block",margin:"0 auto",position:"relative",left:3}}/>
-      <h1 style={{fontSize:10,fontWeight:700,margin:"2px 0 0",letterSpacing:2.5,lineHeight:1,background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>WORLD CUP 2026</h1>
-      <h2 style={{fontSize:20,fontWeight:800,color:DARK,margin:"10px 0 0",textAlign:"center"}}>{title}</h2>
+  const loginBg = "linear-gradient(180deg,#CCDAFF 0%,#E4EDFF 40%,#EEF2FF 100%)";
+  const bgImg = (
+    <div style={{position:"absolute",inset:0,zIndex:0,pointerEvents:"none"}}>
+      <img src={trophyHQ} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"10%",objectFit:"cover",objectPosition:"center top",opacity:0.09,filter:"grayscale(1) contrast(1.4)"}}/>
+      <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,rgba(204,218,255,0.0) 0%,rgba(238,242,255,0.7) 60%,rgba(238,242,255,1) 100%)"}}/>
     </div>
   );
 
   // ── Sign up ───────────────────────────────────────────────────────────────
   if (step === "signup") return (
-    <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,position:"relative",overflow:"hidden"}}>
+    <div style={{flex:1,display:"flex",flexDirection:"column",background:loginBg,position:"relative",overflow:"hidden"}}>
       {bgImg}
-      {header("✨", "Creează cont")}
+      <HeaderShell onBack={()=>{setStep("credentials");setError("");}}>{T[lang].loginCreateAccount}</HeaderShell>
       <div style={{flex:1,padding:"24px 24px 32px",display:"flex",flexDirection:"column",position:"relative",zIndex:1}}>
         <div style={{background:"#fff",borderRadius:14,boxShadow:"0 8px 22px rgba(0,0,0,0.07)",padding:"14px 16px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
           <span style={{fontSize:15}}>✉️</span>
-          <input value={email} onChange={e=>setEmail(e.target.value)} placeholder="adresa@email.com"
+          <input value={email} onChange={e=>setEmail(e.target.value)} placeholder={T[lang].emailPlaceholder}
             type="email" autoCapitalize="none" autoFocus
             style={{flex:1,border:"none",outline:"none",fontSize:15,color:DARK,background:"transparent"}}/>
         </div>
         <div style={{background:"#fff",borderRadius:14,boxShadow:"0 8px 22px rgba(0,0,0,0.07)",padding:"14px 16px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
           <span style={{fontSize:15}}>🔒</span>
           <input value={password} onChange={e=>setPassword(e.target.value)}
-            placeholder="parolă (min. 6 caractere)" type="password"
+            placeholder={T[lang].passwordMinPlaceholder} type="password"
             style={{flex:1,border:"none",outline:"none",fontSize:15,color:DARK,background:"transparent"}}/>
         </div>
         <div style={{background:"#fff",borderRadius:14,boxShadow:"0 8px 22px rgba(0,0,0,0.07)",padding:"14px 16px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
           <span style={{fontSize:15}}>👤</span>
           <input value={nickname} onChange={e=>setNickname(e.target.value)}
-            placeholder="Alege un nickname" type="text" autoCapitalize="words"
+            placeholder={T[lang].nicknamePlaceholder} type="text" autoCapitalize="words"
             style={{flex:1,border:"none",outline:"none",fontSize:15,color:DARK,background:"transparent"}}/>
         </div>
         {CAPTCHA_ENABLED && email.trim() && password.length >= 6 && nickname.trim() && !captchaSolved && (
@@ -6692,11 +6917,7 @@ function LoginScreen({ onNext }) {
             cursor: signupCanCreate ? "pointer" : "not-allowed",
             opacity: loading ? 0.7 : 1, marginBottom:10, transition:"all 0.2s"
           }}>
-          {loading ? "Se creează..." : !signupCanCreate && !captchaSolved && email.trim() && password.length >= 6 && nickname.trim() ? "🔒 Rezolvă verificarea mai sus" : "Creează cont →"}
-        </button>
-        <button onClick={()=>{setStep("credentials");setError("");}}
-          style={{width:"100%",background:"transparent",color:"#aaa",border:"1px solid #ddd",borderRadius:14,padding:"13px 0",fontSize:14,fontWeight:600,cursor:"pointer"}}>
-          ← Înapoi
+          {loading ? T[lang].btnCreating : !signupCanCreate && !captchaSolved && email.trim() && password.length >= 6 && nickname.trim() ? T[lang].solveCaptcha : T[lang].btnCreateAccount}
         </button>
       </div>
     </div>
@@ -6704,13 +6925,13 @@ function LoginScreen({ onNext }) {
 
   // ── Forgot password ───────────────────────────────────────────────────────
   if (step === "forgot") return (
-    <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,position:"relative",overflow:"hidden"}}>
+    <div style={{flex:1,display:"flex",flexDirection:"column",background:loginBg,position:"relative",overflow:"hidden"}}>
       {bgImg}
-      {header("🔑", "Recuperare cont")}
+      <HeaderShell onBack={()=>{setStep("credentials");setError("");}}>{T[lang].loginRecoverAccount}</HeaderShell>
       <div style={{flex:1,padding:"24px 24px 32px",display:"flex",flexDirection:"column",position:"relative",zIndex:1}}>
         <div style={{background:"#fff",borderRadius:14,boxShadow:"0 8px 22px rgba(0,0,0,0.07)",padding:"14px 16px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
           <span style={{fontSize:15}}>✉️</span>
-          <input value={email} onChange={e=>setEmail(e.target.value)} placeholder="adresa@email.com"
+          <input value={email} onChange={e=>setEmail(e.target.value)} placeholder={T[lang].emailPlaceholder}
             type="email" autoCapitalize="none" autoFocus
             style={{flex:1,border:"none",outline:"none",fontSize:15,color:DARK,background:"transparent"}}/>
         </div>
@@ -6731,12 +6952,7 @@ function LoginScreen({ onNext }) {
             opacity: loading ? 0.7 : 1,
             marginBottom:10, transition:"all 0.2s"
           }}>
-          {loading ? "Se trimite..." : !captchaSolved ? "🔒 Rezolvă verificarea mai sus" : "Trimite link de resetare →"}
-        </button>
-
-        <button onClick={()=>{setStep("credentials");setError("");}}
-          style={{width:"100%",background:"transparent",color:"#aaa",border:"1px solid #ddd",borderRadius:14,padding:"13px 0",fontSize:14,fontWeight:600,cursor:"pointer"}}>
-          ← Înapoi
+          {loading ? T[lang].btnSending : !captchaSolved ? T[lang].solveCaptcha : T[lang].btnSendReset}
         </button>
       </div>
     </div>
@@ -6744,32 +6960,30 @@ function LoginScreen({ onNext }) {
 
   // ── Sent ──────────────────────────────────────────────────────────────────
   if (step === "sent") return (
-    <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"0 32px",textAlign:"center",background:BG,position:"relative",overflow:"hidden"}}>
+    <div style={{flex:1,display:"flex",flexDirection:"column",background:loginBg,position:"relative",overflow:"hidden"}}>
       {bgImg}
-      <div style={{position:"relative",zIndex:1}}>
+      <HeaderShell onBack={()=>setStep("credentials")}>{T[lang].loginCheckEmail}</HeaderShell>
+      <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"0 32px",textAlign:"center",position:"relative",zIndex:1}}>
         <div style={{fontSize:56,marginBottom:16}}>📧</div>
-        <h2 style={{fontSize:20,fontWeight:800,color:DARK,margin:"0 0 10px"}}>Verifică emailul!</h2>
+        <h2 style={{fontSize:20,fontWeight:800,color:DARK,margin:"0 0 10px"}}>{T[lang].checkEmailTitle}</h2>
         <p style={{fontSize:14,color:"#aaa",lineHeight:1.6,margin:"0 0 24px"}}>
-          Am trimis un link la<br/><strong style={{color:DARK}}>{email}</strong><br/>
-          <span style={{fontSize:12}}>Click pe link pentru a continua.</span>
-          {sentFrom==="forgot"&&<><br/><span style={{fontSize:11,color:"#bbb"}}>Link trimis dacă adresa există în sistem.</span></>}
+          {T[lang].sentLinkTo}<br/><strong style={{color:DARK}}>{email}</strong><br/>
+          <span style={{fontSize:12}}>{T[lang].clickLinkToContinue}</span>
+          {sentFrom==="forgot"&&<><br/><span style={{fontSize:11,color:"#bbb"}}>{T[lang].linkSentIfExists}</span></>}
         </p>
-        <button onClick={()=>setStep("credentials")} style={{background:"transparent",border:"1px solid #ddd",borderRadius:10,padding:"10px 20px",fontSize:13,color:"#aaa",cursor:"pointer"}}>
-          ← Înapoi
-        </button>
       </div>
     </div>
   );
 
   // ── Cont nou ──────────────────────────────────────────────────────────────
   if (step === "newuser") return (
-    <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,position:"relative",overflow:"hidden"}}>
+    <div style={{flex:1,display:"flex",flexDirection:"column",background:loginBg,position:"relative",overflow:"hidden"}}>
       {bgImg}
-      {header("👋", "Cont nou")}
+      <HeaderShell onBack={()=>{setStep("credentials");setError("");}}>{T[lang].loginNewAccount}</HeaderShell>
       <div style={{flex:1,padding:"24px 24px 32px",display:"flex",flexDirection:"column",position:"relative",zIndex:1}}>
         {/* No account found card */}
         <div style={{background:"#fff",borderRadius:14,boxShadow:"0 8px 22px rgba(0,0,0,0.07)",padding:"12px 16px",marginBottom:16}}>
-          <p style={{fontSize:12,color:"#aaa",margin:"0 0 2px"}}>No account found for</p>
+          <p style={{fontSize:12,color:"#aaa",margin:"0 0 2px"}}>{T[lang].loginNoAccountFor}</p>
           <p style={{fontSize:15,fontWeight:700,color:DARK,margin:0}}>{email}</p>
         </div>
 
@@ -6777,7 +6991,7 @@ function LoginScreen({ onNext }) {
         <div style={{background:"#fff",borderRadius:14,boxShadow:"0 8px 22px rgba(0,0,0,0.07)",padding:"14px 16px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
           <span style={{fontSize:15}}>🔒</span>
           <input value={password} onChange={e=>setPassword(e.target.value)}
-            placeholder="parolă (min. 6 caractere)" type="password" autoFocus
+            placeholder={T[lang].passwordMinPlaceholder} type="password" autoFocus
             style={{flex:1,border:"none",outline:"none",fontSize:15,color:DARK,background:"transparent"}}/>
         </div>
 
@@ -6785,7 +6999,7 @@ function LoginScreen({ onNext }) {
         <div style={{background:"#fff",borderRadius:14,boxShadow:"0 8px 22px rgba(0,0,0,0.07)",padding:"14px 16px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
           <span style={{fontSize:15}}>👤</span>
           <input value={nickname} onChange={e=>setNickname(e.target.value)}
-            placeholder="Alege un nickname" type="text" autoCapitalize="words"
+            placeholder={T[lang].nicknamePlaceholder} type="text" autoCapitalize="words"
             style={{flex:1,border:"none",outline:"none",fontSize:15,color:DARK,background:"transparent"}}/>
         </div>
 
@@ -6806,12 +7020,7 @@ function LoginScreen({ onNext }) {
             opacity: loading ? 0.7 : 1,
             marginBottom:10, transition:"all 0.2s"
           }}>
-          {loading ? "Se trimite..." : CAPTCHA_ENABLED && !captchaSolved ? "🔒 Rezolvă verificarea mai sus" : "Creează cont · Sign up →"}
-        </button>
-
-        <button onClick={()=>{setStep("credentials");setError("");}}
-          style={{width:"100%",background:"transparent",color:"#aaa",border:"1px solid #ddd",borderRadius:14,padding:"13px 0",fontSize:14,fontWeight:600,cursor:"pointer"}}>
-          ← Înapoi
+          {loading ? T[lang].btnSending : CAPTCHA_ENABLED && !captchaSolved ? T[lang].solveCaptcha : T[lang].btnSignUpCreate}
         </button>
       </div>
     </div>
@@ -6819,13 +7028,13 @@ function LoginScreen({ onNext }) {
 
   // ── Credentials (step 1) ──────────────────────────────────────────────────
   return (
-    <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,position:"relative",overflow:"hidden"}}>
+    <div style={{flex:1,display:"flex",flexDirection:"column",background:loginBg,position:"relative",overflow:"hidden"}}>
       {bgImg}
-      {header("🏆", T[lang].joinTheGame)}
-      <div style={{flex:1,padding:"36px 24px 32px",display:"flex",flexDirection:"column",position:"relative",zIndex:1}}>
+      <HeaderShell onBack={onBack}>{T[lang].joinTheGame}</HeaderShell>
+      <div style={{flex:1,padding:"24px 24px 32px",display:"flex",flexDirection:"column",position:"relative",zIndex:1}}>
         <div style={{background:"#fff",borderRadius:14,boxShadow:"0 8px 22px rgba(0,0,0,0.07)",padding:"14px 16px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
           <span style={{fontSize:15}}>✉️</span>
-          <input value={email} onChange={e=>setEmail(e.target.value)} placeholder="adresa@email.com"
+          <input value={email} onChange={e=>setEmail(e.target.value)} placeholder={T[lang].emailPlaceholder}
             type="email" autoCapitalize="none"
             style={{flex:1,border:"none",outline:"none",fontSize:15,color:DARK,background:"transparent"}}/>
         </div>
@@ -6833,7 +7042,7 @@ function LoginScreen({ onNext }) {
           <span style={{fontSize:15}}>🔒</span>
           <input value={password} onChange={e=>setPassword(e.target.value)}
             onKeyDown={e=>e.key==="Enter"&&handleContinue()}
-            placeholder="parolă" type={showPwd?"text":"password"}
+            placeholder={T[lang].passwordPlaceholder} type={showPwd?"text":"password"}
             style={{flex:1,border:"none",outline:"none",fontSize:15,color:DARK,background:"transparent"}}/>
           <span onClick={()=>setShowPwd(p=>!p)}
             style={{cursor:"pointer",color:"#bbb",userSelect:"none",display:"flex",alignItems:"center",padding:"0 2px",flexShrink:0}}>
@@ -6849,16 +7058,16 @@ function LoginScreen({ onNext }) {
         {error && <p style={{fontSize:12,color:RED,margin:"0 0 8px",textAlign:"center"}}>{error}</p>}
         <button onClick={handleContinue} disabled={loading || (CAPTCHA_ENABLED && !captchaSolved)}
           style={{width:"100%",background:(CAPTCHA_ENABLED && !captchaSolved)?"#e0e0e0":`linear-gradient(135deg,${NAVY},#001840)`,color:(CAPTCHA_ENABLED && !captchaSolved)?"#bbb":"#fff",border:"none",borderRadius:14,padding:"15px 0",fontSize:15,fontWeight:700,cursor:(CAPTCHA_ENABLED && !captchaSolved)?"not-allowed":"pointer",opacity:loading?0.7:1,marginBottom:8}}>
-          {loading ? "Se verifică..." : (CAPTCHA_ENABLED && !captchaSolved) ? "🔒 Rezolvă verificarea mai sus" : "Continuă →"}
+          {loading ? T[lang].btnVerifying : (CAPTCHA_ENABLED && !captchaSolved) ? T[lang].solveCaptcha : T[lang].btnContinue}
         </button>
         <div style={{display:"flex",justifyContent:"space-between",padding:"4px 2px 0"}}>
           <p onClick={goToForgot}
             style={{fontSize:12,color:"#aaa",margin:0,cursor:"pointer",textDecoration:"underline"}}>
-            Am uitat parola
+            {T[lang].forgotPassword}
           </p>
           <p onClick={goToSignup}
             style={{fontSize:12,color:NAVY,margin:0,cursor:"pointer",textDecoration:"underline",fontWeight:600}}>
-            Cont nou
+            {T[lang].newAccountLink}
           </p>
         </div>
       </div>
@@ -6867,6 +7076,7 @@ function LoginScreen({ onNext }) {
 }
 
 function ResetPasswordScreen({ onDone }) {
+  const lang = useLang();
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
@@ -6874,8 +7084,8 @@ function ResetPasswordScreen({ onDone }) {
   const [done, setDone] = useState(false);
 
   const handleReset = async () => {
-    if (password.length < 6) { setError("Parola trebuie să aibă minim 6 caractere."); return; }
-    if (password !== confirm) { setError("Parolele nu coincid."); return; }
+    if (password.length < 6) { setError(T[lang].errPasswordMin6); return; }
+    if (password !== confirm) { setError(T[lang].errPasswordsMismatch); return; }
     setLoading(true); setError("");
     const { error } = await supabase.auth.updateUser({ password, data: { has_password: true } });
     setLoading(false);
@@ -6889,30 +7099,30 @@ function ResetPasswordScreen({ onDone }) {
       {done ? (
         <>
           <div style={{fontSize:56,marginBottom:16}}>✅</div>
-          <h2 style={{fontSize:20,fontWeight:800,color:DARK,margin:"0 0 8px"}}>Parolă schimbată!</h2>
-          <p style={{fontSize:13,color:"#aaa"}}>Te redirecționăm...</p>
+          <h2 style={{fontSize:20,fontWeight:800,color:DARK,margin:"0 0 8px"}}>{T[lang].passwordChanged}</h2>
+          <p style={{fontSize:13,color:"#aaa"}}>{T[lang].redirectingMsg}</p>
         </>
       ) : (
         <>
           <div style={{fontSize:48,marginBottom:16}}>🔑</div>
-          <h2 style={{fontSize:20,fontWeight:800,color:DARK,margin:"0 0 8px"}}>Parolă nouă</h2>
-          <p style={{fontSize:13,color:"#aaa",margin:"0 0 24px"}}>Introdu noua ta parolă</p>
+          <h2 style={{fontSize:20,fontWeight:800,color:DARK,margin:"0 0 8px"}}>{T[lang].newPasswordTitle}</h2>
+          <p style={{fontSize:13,color:"#aaa",margin:"0 0 24px"}}>{T[lang].enterNewPassword}</p>
           <div style={{width:"100%",maxWidth:340}}>
             <div style={{background:"#fff",borderRadius:14,boxShadow:"0 8px 22px rgba(0,0,0,0.07)",padding:"14px 16px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
               <span style={{fontSize:15}}>🔒</span>
-              <input value={password} onChange={e=>setPassword(e.target.value)} placeholder="Parolă nouă" type="password"
+              <input value={password} onChange={e=>setPassword(e.target.value)} placeholder={T[lang].newPasswordPlaceholder} type="password"
                 style={{flex:1,border:"none",outline:"none",fontSize:15,color:DARK,background:"transparent"}}/>
             </div>
             <div style={{background:"#fff",borderRadius:14,boxShadow:"0 8px 22px rgba(0,0,0,0.07)",padding:"14px 16px",marginBottom:14,display:"flex",alignItems:"center",gap:10}}>
               <span style={{fontSize:15}}>🔒</span>
-              <input value={confirm} onChange={e=>setConfirm(e.target.value)} placeholder="Confirmă parola"
+              <input value={confirm} onChange={e=>setConfirm(e.target.value)} placeholder={T[lang].confirmPasswordPlaceholderField}
                 onKeyDown={e=>e.key==="Enter"&&handleReset()} type="password"
                 style={{flex:1,border:"none",outline:"none",fontSize:15,color:DARK,background:"transparent"}}/>
             </div>
             {error && <p style={{fontSize:12,color:RED,margin:"0 0 8px",textAlign:"center"}}>{error}</p>}
             <button onClick={handleReset} disabled={loading||!password||!confirm}
               style={{width:"100%",background:password&&confirm?`linear-gradient(135deg,${NAVY},#001840)`:"#e0e0e0",color:"#fff",border:"none",borderRadius:14,padding:"15px 0",fontSize:15,fontWeight:700,cursor:"pointer",opacity:loading?0.7:1}}>
-              {loading ? "Se salvează..." : "Salvează parola →"}
+              {loading ? T[lang].btnSaving : T[lang].btnSavePassword}
             </button>
           </div>
         </>
@@ -6922,6 +7132,7 @@ function ResetPasswordScreen({ onDone }) {
 }
 
 function SetPasswordScreen({ onDone }) {
+  const lang = useLang();
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
@@ -6929,8 +7140,8 @@ function SetPasswordScreen({ onDone }) {
   const [done, setDone] = useState(false);
 
   const handleSet = async () => {
-    if (password.length < 6) { setError("Parola trebuie să aibă minim 6 caractere."); return; }
-    if (password !== confirm) { setError("Parolele nu coincid."); return; }
+    if (password.length < 6) { setError(T[lang].errPasswordMin6); return; }
+    if (password !== confirm) { setError(T[lang].errPasswordsMismatch); return; }
     setLoading(true); setError("");
     const { error } = await supabase.auth.updateUser({ password, data: { has_password: true } });
     setLoading(false);
@@ -6944,31 +7155,31 @@ function SetPasswordScreen({ onDone }) {
       {done ? (
         <>
           <div style={{fontSize:56,marginBottom:16}}>✅</div>
-          <h2 style={{fontSize:20,fontWeight:800,color:DARK,margin:"0 0 8px"}}>Parolă setată!</h2>
-          <p style={{fontSize:13,color:"#aaa"}}>Te redirecționăm...</p>
+          <h2 style={{fontSize:20,fontWeight:800,color:DARK,margin:"0 0 8px"}}>{T[lang].passwordSet}</h2>
+          <p style={{fontSize:13,color:"#aaa"}}>{T[lang].redirectingMsg}</p>
         </>
       ) : (
         <>
           <div style={{fontSize:48,marginBottom:16}}>🔐</div>
-          <h2 style={{fontSize:20,fontWeight:800,color:DARK,margin:"0 0 8px"}}>Setează o parolă</h2>
-          <p style={{fontSize:13,color:"#888",margin:"0 0 6px"}}>Contul tău a fost creat prin magic link.</p>
-          <p style={{fontSize:13,color:"#aaa",margin:"0 0 24px"}}>Setează o parolă pentru a te putea loga data viitoare fără link.</p>
+          <h2 style={{fontSize:20,fontWeight:800,color:DARK,margin:"0 0 8px"}}>{T[lang].setPasswordTitle}</h2>
+          <p style={{fontSize:13,color:"#888",margin:"0 0 6px"}}>{T[lang].accountCreatedViaLink}</p>
+          <p style={{fontSize:13,color:"#aaa",margin:"0 0 24px"}}>{T[lang].setPasswordDesc}</p>
           <div style={{width:"100%",maxWidth:340}}>
             <div style={{background:"#fff",borderRadius:14,boxShadow:"0 8px 22px rgba(0,0,0,0.07)",padding:"14px 16px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
               <span style={{fontSize:15}}>🔒</span>
-              <input value={password} onChange={e=>setPassword(e.target.value)} placeholder="Parolă nouă" type="password"
+              <input value={password} onChange={e=>setPassword(e.target.value)} placeholder={T[lang].newPasswordPlaceholder} type="password"
                 style={{flex:1,border:"none",outline:"none",fontSize:15,color:DARK,background:"transparent"}}/>
             </div>
             <div style={{background:"#fff",borderRadius:14,boxShadow:"0 8px 22px rgba(0,0,0,0.07)",padding:"14px 16px",marginBottom:14,display:"flex",alignItems:"center",gap:10}}>
               <span style={{fontSize:15}}>🔒</span>
-              <input value={confirm} onChange={e=>setConfirm(e.target.value)} placeholder="Confirmă parola"
+              <input value={confirm} onChange={e=>setConfirm(e.target.value)} placeholder={T[lang].confirmPasswordPlaceholderField}
                 onKeyDown={e=>e.key==="Enter"&&handleSet()} type="password"
                 style={{flex:1,border:"none",outline:"none",fontSize:15,color:DARK,background:"transparent"}}/>
             </div>
             {error && <p style={{fontSize:12,color:RED,margin:"0 0 8px",textAlign:"center"}}>{error}</p>}
             <button onClick={handleSet} disabled={loading||!password||!confirm}
               style={{width:"100%",background:password&&confirm?`linear-gradient(135deg,${NAVY},#001840)`:"#e0e0e0",color:"#fff",border:"none",borderRadius:14,padding:"15px 0",fontSize:15,fontWeight:700,cursor:"pointer",opacity:loading?0.7:1}}>
-              {loading ? "Se salvează..." : "Salvează parola →"}
+              {loading ? T[lang].btnSaving : T[lang].btnSavePassword}
             </button>
           </div>
         </>
@@ -8381,8 +8592,9 @@ function StatsScreen() {
 function AccountScreen({ setLang, onBoards, onSignOut, onShowGuide, onPremium, onNotifications, user, isActive=true, onAvatarUpdate }) {
   const lang = useLang();
   const displayName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "—";
+  const localeMap = { en:"en-US", ro:"ro-RO", fr:"fr-FR" };
   const memberSince = user?.created_at
-    ? new Date(user.created_at).toLocaleDateString("ro-RO", { month: "long", year: "numeric" })
+    ? new Date(user.created_at).toLocaleDateString(localeMap[lang]||"en-US", { month: "long", year: "numeric" })
     : "";
   const [deleteMode, setDeleteMode] = useState(false);
   const [deleteEmail, setDeleteEmail] = useState("");
@@ -8476,7 +8688,7 @@ function AccountScreen({ setLang, onBoards, onSignOut, onShowGuide, onPremium, o
             </div>
             <div>
               <p style={{fontSize:13,color:"#888",margin:0}}>{user?.email}</p>
-              {memberSince && <p style={{fontSize:11,color:"#aaa",margin:"2px 0 0"}}>Member since {memberSince}</p>}
+              {memberSince && <p style={{fontSize:11,color:"#aaa",margin:"2px 0 0"}}>{T[lang].memberSinceLabel} {memberSince}</p>}
             </div>
           </div>
         </div>
@@ -8495,7 +8707,7 @@ function AccountScreen({ setLang, onBoards, onSignOut, onShowGuide, onPremium, o
           ))}
           <p onClick={()=>setDeleteMode(true)}
             style={{textAlign:"center",fontSize:12,color:RED,margin:"8px 0 4px",cursor:"pointer",textDecoration:"underline",opacity:0.7}}>
-            Delete account
+            {T[lang].deleteAccountTitle}
           </p>
         </div>
       </div>
@@ -8510,24 +8722,24 @@ function AccountScreen({ setLang, onBoards, onSignOut, onShowGuide, onPremium, o
               ×
             </button>
             <div style={{fontSize:40,textAlign:"center",marginBottom:12}}>⚠️</div>
-            <h3 style={{fontSize:18,fontWeight:800,color:DARK,textAlign:"center",margin:"0 0 8px"}}>Delete account</h3>
+            <h3 style={{fontSize:18,fontWeight:800,color:DARK,textAlign:"center",margin:"0 0 8px"}}>{T[lang].deleteAccountTitle}</h3>
             <p style={{fontSize:13,color:"#888",textAlign:"center",margin:"0 0 20px",lineHeight:1.5}}>
-              This will delete <strong>everything</strong>: predictions, leagues and scores.<br/>This action is <strong>irreversible</strong>.
+              {T[lang].deleteDescPt1}<strong>{T[lang].deleteDescEverything}</strong>{T[lang].deleteDescPt2}<br/>{T[lang].deleteDescIrreversiblePt1}<strong>{T[lang].deleteDescIrreversible}</strong>.
             </p>
-            <p style={{fontSize:12,fontWeight:700,color:DARK,margin:"0 0 6px"}}>Enter your email to confirm:</p>
+            <p style={{fontSize:12,fontWeight:700,color:DARK,margin:"0 0 6px"}}>{T[lang].enterEmailToConfirm}</p>
             <InputPanel style={{marginBottom:12}}>
               <input value={deleteEmail} onChange={e=>{setDeleteEmail(e.target.value);setDeleteError("");}}
-                placeholder="Email" type="email" autoCapitalize="none"
+                placeholder={T[lang].emailPlaceholder} type="email" autoCapitalize="none"
                 style={{flex:1,border:"none",outline:"none",fontSize:14,color:DARK,background:"transparent"}}/>
             </InputPanel>
             {deleteError && <p style={{fontSize:12,color:RED,margin:"0 0 8px",textAlign:"center"}}>{deleteError}</p>}
             <button onClick={handleDeleteAccount} disabled={deleteLoading||!deleteEmail.trim()}
               style={{width:"100%",background:deleteEmail.trim()?RED:"#e0e0e0",color:"#fff",border:"none",borderRadius:14,padding:"14px 0",fontSize:15,fontWeight:700,cursor:"pointer",marginBottom:10,opacity:deleteLoading?0.7:1}}>
-              {deleteLoading ? "Deleting..." : "Delete permanently"}
+              {deleteLoading ? T[lang].btnDeleting : T[lang].btnDeletePermanently}
             </button>
             <button onClick={closeDeleteModal}
               style={{width:"100%",background:"#fff",color:"#888",border:"1px solid rgba(10,46,138,0.08)",borderRadius:14,padding:"12px 0",fontSize:14,fontWeight:650,cursor:"pointer"}}>
-              Cancel
+              {T[lang].cancel}
             </button>
           </div>
         </div>
@@ -9140,7 +9352,7 @@ function App() {
             setScreen(SCREENS.SPLASH);
           }}/>}
           {screen===SCREENS.SPLASH&&<SplashScreen simDay={simDay} simHour={simHour} simMin={simMin} tournamentStarted={tournamentStarted} onNext={()=>setScreen(SCREENS.LOGIN)} lang={lang} setLang={setLang}/>}
-          {screen===SCREENS.LOGIN&&<LoginScreen onNext={()=>{ if(!skipOnboarding) setShowOnboarding(true); setScreen(SCREENS.HOME); }}/>}
+          {screen===SCREENS.LOGIN&&<LoginScreen onBack={()=>setScreen(SCREENS.SPLASH)} onNext={()=>{ if(!skipOnboarding) setShowOnboarding(true); setScreen(SCREENS.HOME); }}/>}
           {showOnboarding&&(
             <OnboardingSheet onDone={()=>{ setShowOnboarding(false); if(screen===SCREENS.HOME){setShowFirstAction(true);setTimeout(()=>setShowFirstAction(false),5000);} }}/>
           )}
