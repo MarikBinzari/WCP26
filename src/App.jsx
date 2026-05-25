@@ -390,6 +390,7 @@ const T = {
     alreadyPremiumTitle:"You're already Premium for us",
     alreadyPremiumBody:"Thank you for being part of Predicto. You get the full experience, on us.",
     best3Short:"Best Third",
+    cdDayAbbr:"d", cdHourAbbr:"h", cdMinAbbr:"m",
     pickChampionHeader:"Pick Champion", pickTopScorerHeader:"Pick Top Scorer",
     picksLockedTitle:"Picks locked until Knockout Phase",
     picksLockedBody:"Opens Jun 27 after the last group match. Your current picks are saved.",
@@ -577,6 +578,7 @@ const T = {
     topScorerSaved:"Golgheter salvat", winnerTeamSaved:"Echipa câștigătoare salvată",
     winnerTeamCleared:"Echipa câștigătoare ștearsă", changeLabel:"Schimbă",
     pickChampionPopup:"🏆 Alege Campionul", pickTeamPopup:"👕 Alege Echipa",
+    cdDayAbbr:"z", cdHourAbbr:"h", cdMinAbbr:"m",
   },
   fr:{
     location:"USA, Canada & Mexique", cta:"Faites vos Pronostics",
@@ -753,6 +755,7 @@ const T = {
     topScorerSaved:"Meilleur buteur sauvegardé", winnerTeamSaved:"Équipe gagnante sauvegardée",
     winnerTeamCleared:"Équipe gagnante effacée", changeLabel:"Changer",
     pickChampionPopup:"🏆 Choisir le Champion", pickTeamPopup:"👕 Choisir l'Équipe",
+    cdDayAbbr:"j", cdHourAbbr:"h", cdMinAbbr:"m",
   },
 };
 const LangCtx = React.createContext("en");
@@ -4957,7 +4960,7 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
               <span style={{width:14,height:2,borderRadius:2,background:"rgba(10,46,138,0.18)"}}/>
               <span style={{width:3,height:3,borderRadius:"50%",background:"rgba(10,46,138,0.30)"}}/>
             </span>
-            <span style={{fontSize:11,fontWeight:700,color:"rgba(10,46,138,0.60)"}}>{cdDays}d {String(cdHours).padStart(2,"0")}h {String(cdMins).padStart(2,"0")}m {T[lang].kickoffLabel}</span>
+            <span style={{fontSize:11,fontWeight:700,color:"rgba(10,46,138,0.60)"}}>{cdDays}{T[lang].cdDayAbbr} {String(cdHours).padStart(2,"0")}{T[lang].cdHourAbbr} {String(cdMins).padStart(2,"0")}{T[lang].cdMinAbbr} {T[lang].kickoffLabel}</span>
             <span style={{display:"flex",gap:3,alignItems:"center"}}>
               <span style={{width:3,height:3,borderRadius:"50%",background:"rgba(10,46,138,0.30)"}}/>
               <span style={{width:14,height:2,borderRadius:2,background:"rgba(10,46,138,0.18)"}}/>
