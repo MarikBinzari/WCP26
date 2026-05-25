@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import confetti from "canvas-confetti";
+import HCaptcha from "@hcaptcha/react-hcaptcha";
 import trophy from "./assets/hands-trophy.png";
 import varBg from "./assets/var-bg.jpg";
 import predictoLogo from "./assets/predicto-logo.png";
@@ -10,6 +11,11 @@ import { supabase } from "./supabase.js";
 import { savePredictions, saveExactScore, createBoard, joinBoardByCode, joinBoardById, loadLeaderboard, loadMyScoreBreakdown, fetchScoringRules, fetchMemberCounts, removeBoardMember, removeParticipation, deleteBoard, loadBoardMembers, checkDbHealth, checkEmailExists, loadLiveScores, subscribeLiveScores, loadPlayers, loadPlayersByTeam, seedPlayersFromApi, saveSpecialPick, uploadAvatar, uploadBoardImage, loadAllBoards, loadAllUserPicks } from "./db.js";
 
 const TEAM_CODE = {"Mexico":"MEX","South Africa":"RSA","South Korea":"KOR","Czechia":"CZE","Canada":"CAN","Switzerland":"SUI","Qatar":"QAT","Bosnia-Herzegovina":"BIH","Brazil":"BRA","Morocco":"MAR","Scotland":"SCO","Haiti":"HAI","USA":"USA","Paraguay":"PAR","Australia":"AUS","Turkiye":"TUR","Germany":"GER","Ecuador":"ECU","Ivory Coast":"CIV","Curacao":"CUW","Netherlands":"NED","Japan":"JPN","Tunisia":"TUN","Sweden":"SWE","Belgium":"BEL","Iran":"IRI","Egypt":"EGY","New Zealand":"NZL","Spain":"ESP","Uruguay":"URU","Saudi Arabia":"KSA","Cape Verde":"CPV","France":"FRA","Senegal":"SEN","Norway":"NOR","Iraq":"IRQ","Argentina":"ARG","Austria":"AUT","Algeria":"ALG","Jordan":"JOR","Portugal":"POR","Colombia":"COL","Uzbekistan":"UZB","DR Congo":"COD","England":"ENG","Croatia":"CRO","Panama":"PAN","Ghana":"GHA"};
+
+// "hcaptcha" | "emoji" | "none"
+const CAPTCHA_PROVIDER = import.meta.env.VITE_CAPTCHA_PROVIDER ?? "hcaptcha";
+const CAPTCHA_ENABLED = CAPTCHA_PROVIDER !== "none";
+const IS_LOCALHOST = typeof window !== "undefined" && window.location.hostname === "localhost";
 
 const BG = "#EEF2FF";
 const SHADOW_OUT = "4px 4px 12px rgba(0,0,0,0.08), -3px -3px 8px #ffffff";
@@ -6296,7 +6302,14 @@ function SplashScreen({ onNext, lang, setLang, simDay, simHour=12, simMin=0, tou
           opacity: 0.9,
         }}
       />
-      <div style={{flex:1}}/>
+      <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",padding:"0 24px"}}>
+        {IS_LOCALHOST && (
+          <div style={{background:"rgba(0,0,0,0.55)",borderRadius:16,padding:"16px 20px",textAlign:"center",backdropFilter:"blur(6px)"}}>
+            <p style={{fontSize:13,fontWeight:700,color:"#FCD34D",margin:"0 0 4px"}}>⚠️ Dev mode — localhost</p>
+            <p style={{fontSize:12,color:"rgba(255,255,255,0.7)",margin:0}}>hCaptcha nu funcționează pe localhost.<br/>Accesează via <strong style={{color:"#fff"}}>IP:5174</strong> din rețea.</p>
+          </div>
+        )}
+      </div>
       <div style={{margin:"0 20px 14px",background:"rgba(0,32,91,0.6)",borderRadius:20,padding:"16px 8px 12px",display:"flex",position:"relative",zIndex:10}}>
         {tournamentStarted ? (
           <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4}}>
@@ -6497,6 +6510,37 @@ function ImageCaptcha({ onSolved }) {
   );
 }
 
+function HCaptchaWidget({ id, onSolved }) {
+  const [verified, setVerified] = useState(false);
+  const captchaRef = useRef(null);
+  const handleVerify = (token) => {
+    setVerified(true);
+    setTimeout(() => onSolved(token), 300);
+  };
+  if (verified) return (
+    <div style={{background:"#f0fdf4",borderRadius:14,padding:"12px 16px",display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
+      <span style={{fontSize:20}}>✅</span>
+      <p style={{fontSize:13,fontWeight:700,color:"#16a34a",margin:0}}>Verificare completă</p>
+    </div>
+  );
+  return (
+    <div style={{marginBottom:10,borderRadius:14,overflow:"hidden",boxShadow:"0 8px 22px rgba(0,0,0,0.07)"}}>
+      <HCaptcha
+        key={id}
+        ref={captchaRef}
+        sitekey={import.meta.env.VITE_HCAPTCHA_SITE_KEY || "10000000-ffff-ffff-ffff-000000000001"}
+        onVerify={handleVerify}
+        theme="light"
+      />
+    </div>
+  );
+}
+
+function CaptchaWidget({ id, onSolved }) {
+  if (CAPTCHA_PROVIDER === "hcaptcha") return <HCaptchaWidget id={id} onSolved={onSolved} />;
+  return <ImageCaptcha key={id} onSolved={onSolved} />;
+}
+
 function LoginScreen({ onNext }) {
   const lang = useLang();
   const [step, setStep] = useState("credentials"); // "credentials" | "newuser" | "sent"
@@ -6505,8 +6549,8 @@ function LoginScreen({ onNext }) {
   const [nickname, setNickname] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [captchaNeeded, setCaptchaNeeded] = useState(false);
-  const [captchaSolved, setCaptchaSolved] = useState(false);
+  const [captchaSolved, setCaptchaSolved] = useState(!CAPTCHA_ENABLED);
+  const [captchaToken, setCaptchaToken] = useState(null);
   const [showPwd, setShowPwd] = useState(false);
   const [sentFrom, setSentFrom] = useState("");
 
@@ -6515,8 +6559,8 @@ function LoginScreen({ onNext }) {
 
   const goToNewuser = () => {
     setPassword("");
-    setCaptchaNeeded(true);
-    setCaptchaSolved(false);
+    setCaptchaSolved(!CAPTCHA_ENABLED);
+    setCaptchaToken(null);
     setStep("newuser");
   };
 
@@ -6524,36 +6568,40 @@ function LoginScreen({ onNext }) {
     setEmail("");
     setPassword("");
     setNickname("");
-    setCaptchaNeeded(true);
-    setCaptchaSolved(false);
+    setCaptchaSolved(!CAPTCHA_ENABLED);
+    setCaptchaToken(null);
     setError("");
     setStep("signup");
   };
 
   const goToForgot = () => {
-    setCaptchaNeeded(true);
-    setCaptchaSolved(false);
+    setCaptchaSolved(!CAPTCHA_ENABLED);
+    setCaptchaToken(null);
     setError("");
     setStep("forgot");
   };
+
+  const resetLoginCaptcha = () => { setCaptchaSolved(!CAPTCHA_ENABLED); setCaptchaToken(null); };
 
   const handleContinue = async () => {
     if (!email.trim()) { setError("Introdu adresa de email."); return; }
     if (!password.trim()) { setError("Introdu parola."); return; }
     setLoading(true); setError("");
     try {
-      const { error: signInErr } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
-      if (!signInErr) { setLoading(false); return; } // success — onAuthStateChange handles navigation
+      const { error: signInErr } = await supabase.auth.signInWithPassword({
+        email: email.trim(), password,
+        options: captchaToken ? { captchaToken } : undefined
+      });
+      if (!signInErr) { setLoading(false); return; }
 
-      // Distinguish wrong password (user exists) vs no account
+      resetLoginCaptcha();
       const exists = await checkEmailExists(email.trim());
       if (exists === true) {
         setError("Parolă incorectă. Încearcă din nou sau resetează parola.");
       } else {
-        // exists===false (confirmed no account) or exists===null (RPC not set up → show newuser anyway)
         goToNewuser();
       }
-    } catch { setError("Eroare neașteptată. Încearcă din nou."); }
+    } catch { setError("Eroare neașteptată. Încearcă din nou."); resetLoginCaptcha(); }
     finally { setLoading(false); }
   };
 
@@ -6563,7 +6611,7 @@ function LoginScreen({ onNext }) {
     setLoading(true); setError("");
     const { error: otpErr } = await supabase.auth.signUp({
       email: email.trim(), password,
-      options: { data: { full_name: nickname.trim() }, emailRedirectTo: window.location.origin }
+      options: { data: { full_name: nickname.trim() }, emailRedirectTo: window.location.origin, ...(captchaToken && { captchaToken }) }
     });
     setLoading(false);
     if (otpErr) { setError(otpErr.message); return; }
@@ -6578,7 +6626,7 @@ function LoginScreen({ onNext }) {
     setLoading(true); setError("");
     const { error: err } = await supabase.auth.signUp({
       email: email.trim(), password,
-      options: { data: { full_name: nickname.trim() }, emailRedirectTo: window.location.origin }
+      options: { data: { full_name: nickname.trim() }, emailRedirectTo: window.location.origin, ...(captchaToken && { captchaToken }) }
     });
     setLoading(false);
     if (err) { setError(err.message); return; }
@@ -6589,7 +6637,7 @@ function LoginScreen({ onNext }) {
     if (!email.trim()) { setError("Introdu adresa de email."); return; }
     setLoading(true); setError("");
     const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-      redirectTo: window.location.origin
+      redirectTo: window.location.origin, ...(captchaToken && { captchaToken })
     });
     setLoading(false);
     if (error) { setError("Eroare la trimitere. Încearcă din nou."); return; }
@@ -6597,9 +6645,9 @@ function LoginScreen({ onNext }) {
     setStep("sent");
   };
 
-  const canCreate = nickname.trim() && password.length >= 6 && (!captchaNeeded || captchaSolved);
+  const canCreate = nickname.trim() && password.length >= 6 && captchaSolved;
   const forgotCanSend = email.trim() && captchaSolved;
-  const signupCanCreate = email.trim() && nickname.trim() && password.length >= 6 && (!captchaNeeded || captchaSolved);
+  const signupCanCreate = email.trim() && nickname.trim() && password.length >= 6 && captchaSolved;
 
   const bgImg = <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.055,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>;
   const header = (icon, title) => (
@@ -6628,10 +6676,10 @@ function LoginScreen({ onNext }) {
             placeholder="Alege un nickname" type="text" autoCapitalize="words"
             style={{flex:1,border:"none",outline:"none",fontSize:15,color:DARK,background:"transparent"}}/>
         </div>
-        {captchaNeeded && email.trim() && nickname.trim() && (
-          <ImageCaptcha key="signup-captcha" onSolved={() => setCaptchaSolved(true)} />
+        {CAPTCHA_ENABLED && email.trim() && nickname.trim() && !captchaSolved && (
+          <CaptchaWidget id="signup-captcha" onSolved={(token) => { setCaptchaSolved(true); if (token) setCaptchaToken(token); }} />
         )}
-        {(!captchaNeeded || captchaSolved) && (
+        {captchaSolved && (
           <div style={{background:"#fff",borderRadius:14,boxShadow:"0 8px 22px rgba(0,0,0,0.07)",padding:"14px 16px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
             <span style={{fontSize:15}}>🔒</span>
             <input value={password} onChange={e=>setPassword(e.target.value)}
@@ -6672,7 +6720,9 @@ function LoginScreen({ onNext }) {
             style={{flex:1,border:"none",outline:"none",fontSize:15,color:DARK,background:"transparent"}}/>
         </div>
 
-        <ImageCaptcha key="forgot-captcha" onSolved={() => setCaptchaSolved(true)} />
+        {CAPTCHA_ENABLED && !captchaSolved && (
+          <CaptchaWidget id="forgot-captcha" onSolved={(token) => { setCaptchaSolved(true); if (token) setCaptchaToken(token); }} />
+        )}
 
         {error && <p style={{fontSize:12,color:RED,margin:"0 0 8px",textAlign:"center"}}>{error}</p>}
 
@@ -6736,13 +6786,11 @@ function LoginScreen({ onNext }) {
             style={{flex:1,border:"none",outline:"none",fontSize:15,color:DARK,background:"transparent"}}/>
         </div>
 
-        {/* Captcha — apare după 2 magic link-uri trimise */}
-        {captchaNeeded && (
-          <ImageCaptcha key="newuser-captcha" onSolved={() => setCaptchaSolved(true)} />
+        {CAPTCHA_ENABLED && !captchaSolved && (
+          <CaptchaWidget id="newuser-captcha" onSolved={(token) => { setCaptchaSolved(true); if (token) setCaptchaToken(token); }} />
         )}
 
-        {/* Parolă — apare întotdeauna (pre-completată dacă a fost introdusă pe step 1) */}
-        {(!captchaNeeded || captchaSolved) && (
+        {captchaSolved && (
           <div style={{background:"#fff",borderRadius:14,boxShadow:"0 8px 22px rgba(0,0,0,0.07)",padding:"14px 16px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
             <span style={{fontSize:15}}>🔒</span>
             <input value={password} onChange={e=>setPassword(e.target.value)}
@@ -6764,7 +6812,7 @@ function LoginScreen({ onNext }) {
             opacity: loading ? 0.7 : 1,
             marginBottom:10, transition:"all 0.2s"
           }}>
-          {loading ? "Se trimite..." : captchaNeeded && !captchaSolved ? "🔒 Rezolvă verificarea mai sus" : "Creează cont · Sign up →"}
+          {loading ? "Se trimite..." : CAPTCHA_ENABLED && !captchaSolved ? "🔒 Rezolvă verificarea mai sus" : "Creează cont · Sign up →"}
         </button>
 
         <button onClick={()=>{setStep("credentials");setError("");}}
@@ -6801,10 +6849,13 @@ function LoginScreen({ onNext }) {
             }
           </span>
         </div>
+        {CAPTCHA_ENABLED && !captchaSolved && (
+          <CaptchaWidget id="login-captcha" onSolved={(token) => { setCaptchaSolved(true); if (token) setCaptchaToken(token); }} />
+        )}
         {error && <p style={{fontSize:12,color:RED,margin:"0 0 8px",textAlign:"center"}}>{error}</p>}
-        <button onClick={handleContinue} disabled={loading}
-          style={{width:"100%",background:`linear-gradient(135deg,${NAVY},#001840)`,color:"#fff",border:"none",borderRadius:14,padding:"15px 0",fontSize:15,fontWeight:700,cursor:"pointer",opacity:loading?0.7:1,marginBottom:8}}>
-          {loading ? "Se verifică..." : "Continuă →"}
+        <button onClick={handleContinue} disabled={loading || (CAPTCHA_ENABLED && !captchaSolved)}
+          style={{width:"100%",background: (CAPTCHA_ENABLED && !captchaSolved) ? "#e0e0e0" : `linear-gradient(135deg,${NAVY},#001840)`,color: (CAPTCHA_ENABLED && !captchaSolved) ? "#bbb" : "#fff",border:"none",borderRadius:14,padding:"15px 0",fontSize:15,fontWeight:700,cursor: (CAPTCHA_ENABLED && !captchaSolved) ? "not-allowed" : "pointer",opacity:loading?0.7:1,marginBottom:8}}>
+          {loading ? "Se verifică..." : (CAPTCHA_ENABLED && !captchaSolved) ? "🔒 Rezolvă verificarea mai sus" : "Continuă →"}
         </button>
         <div style={{display:"flex",justifyContent:"space-between",padding:"4px 2px 0"}}>
           <p onClick={goToForgot}
