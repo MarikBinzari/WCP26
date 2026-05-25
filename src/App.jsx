@@ -6524,13 +6524,14 @@ function HCaptchaWidget({ id, onSolved }) {
     </div>
   );
   return (
-    <div style={{marginBottom:10,borderRadius:14,overflow:"hidden",boxShadow:"0 8px 22px rgba(0,0,0,0.07)"}}>
+    <div style={{marginBottom:10,display:"flex",justifyContent:"center"}}>
       <HCaptcha
         key={id}
         ref={captchaRef}
         sitekey={import.meta.env.VITE_HCAPTCHA_SITE_KEY || "10000000-ffff-ffff-ffff-000000000001"}
         onVerify={handleVerify}
         theme="light"
+        size="normal"
       />
     </div>
   );
@@ -6559,8 +6560,6 @@ function LoginScreen({ onNext }) {
 
   const goToNewuser = () => {
     setPassword("");
-    setCaptchaSolved(!CAPTCHA_ENABLED);
-    setCaptchaToken(null);
     setStep("newuser");
   };
 
@@ -6568,15 +6567,11 @@ function LoginScreen({ onNext }) {
     setEmail("");
     setPassword("");
     setNickname("");
-    setCaptchaSolved(!CAPTCHA_ENABLED);
-    setCaptchaToken(null);
     setError("");
     setStep("signup");
   };
 
   const goToForgot = () => {
-    setCaptchaSolved(!CAPTCHA_ENABLED);
-    setCaptchaToken(null);
     setError("");
     setStep("forgot");
   };
@@ -6594,11 +6589,13 @@ function LoginScreen({ onNext }) {
       });
       if (!signInErr) { setLoading(false); return; }
 
-      resetLoginCaptcha();
       const exists = await checkEmailExists(email.trim());
       if (exists === true) {
+        resetLoginCaptcha();
         setError("Parolă incorectă. Încearcă din nou sau resetează parola.");
       } else {
+        setCaptchaSolved(!CAPTCHA_ENABLED);
+        setCaptchaToken(null);
         goToNewuser();
       }
     } catch { setError("Eroare neașteptată. Încearcă din nou."); resetLoginCaptcha(); }
@@ -6671,21 +6668,19 @@ function LoginScreen({ onNext }) {
             style={{flex:1,border:"none",outline:"none",fontSize:15,color:DARK,background:"transparent"}}/>
         </div>
         <div style={{background:"#fff",borderRadius:14,boxShadow:"0 8px 22px rgba(0,0,0,0.07)",padding:"14px 16px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
+          <span style={{fontSize:15}}>🔒</span>
+          <input value={password} onChange={e=>setPassword(e.target.value)}
+            placeholder="parolă (min. 6 caractere)" type="password"
+            style={{flex:1,border:"none",outline:"none",fontSize:15,color:DARK,background:"transparent"}}/>
+        </div>
+        <div style={{background:"#fff",borderRadius:14,boxShadow:"0 8px 22px rgba(0,0,0,0.07)",padding:"14px 16px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
           <span style={{fontSize:15}}>👤</span>
           <input value={nickname} onChange={e=>setNickname(e.target.value)}
             placeholder="Alege un nickname" type="text" autoCapitalize="words"
             style={{flex:1,border:"none",outline:"none",fontSize:15,color:DARK,background:"transparent"}}/>
         </div>
-        {CAPTCHA_ENABLED && email.trim() && nickname.trim() && !captchaSolved && (
+        {CAPTCHA_ENABLED && email.trim() && password.length >= 6 && nickname.trim() && !captchaSolved && (
           <CaptchaWidget id="signup-captcha" onSolved={(token) => { setCaptchaSolved(true); if (token) setCaptchaToken(token); }} />
-        )}
-        {captchaSolved && (
-          <div style={{background:"#fff",borderRadius:14,boxShadow:"0 8px 22px rgba(0,0,0,0.07)",padding:"14px 16px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
-            <span style={{fontSize:15}}>🔒</span>
-            <input value={password} onChange={e=>setPassword(e.target.value)}
-              placeholder="parolă (min. 6 caractere)" type="password"
-              style={{flex:1,border:"none",outline:"none",fontSize:15,color:DARK,background:"transparent"}}/>
-          </div>
         )}
         {error && <p style={{fontSize:12,color:RED,margin:"0 0 8px",textAlign:"center"}}>{error}</p>}
         <button onClick={handleSignup} disabled={loading || !signupCanCreate}
@@ -6697,7 +6692,7 @@ function LoginScreen({ onNext }) {
             cursor: signupCanCreate ? "pointer" : "not-allowed",
             opacity: loading ? 0.7 : 1, marginBottom:10, transition:"all 0.2s"
           }}>
-          {loading ? "Se creează..." : "Creează cont →"}
+          {loading ? "Se creează..." : !signupCanCreate && !captchaSolved && email.trim() && password.length >= 6 && nickname.trim() ? "🔒 Rezolvă verificarea mai sus" : "Creează cont →"}
         </button>
         <button onClick={()=>{setStep("credentials");setError("");}}
           style={{width:"100%",background:"transparent",color:"#aaa",border:"1px solid #ddd",borderRadius:14,padding:"13px 0",fontSize:14,fontWeight:600,cursor:"pointer"}}>
@@ -6778,25 +6773,24 @@ function LoginScreen({ onNext }) {
           <p style={{fontSize:15,fontWeight:700,color:DARK,margin:0}}>{email}</p>
         </div>
 
+        {/* Parolă */}
+        <div style={{background:"#fff",borderRadius:14,boxShadow:"0 8px 22px rgba(0,0,0,0.07)",padding:"14px 16px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
+          <span style={{fontSize:15}}>🔒</span>
+          <input value={password} onChange={e=>setPassword(e.target.value)}
+            placeholder="parolă (min. 6 caractere)" type="password" autoFocus
+            style={{flex:1,border:"none",outline:"none",fontSize:15,color:DARK,background:"transparent"}}/>
+        </div>
+
         {/* Nickname */}
         <div style={{background:"#fff",borderRadius:14,boxShadow:"0 8px 22px rgba(0,0,0,0.07)",padding:"14px 16px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
           <span style={{fontSize:15}}>👤</span>
           <input value={nickname} onChange={e=>setNickname(e.target.value)}
-            placeholder="Alege un nickname" type="text" autoCapitalize="words" autoFocus
+            placeholder="Alege un nickname" type="text" autoCapitalize="words"
             style={{flex:1,border:"none",outline:"none",fontSize:15,color:DARK,background:"transparent"}}/>
         </div>
 
-        {CAPTCHA_ENABLED && !captchaSolved && (
+        {CAPTCHA_ENABLED && password.length >= 6 && nickname.trim() && !captchaSolved && (
           <CaptchaWidget id="newuser-captcha" onSolved={(token) => { setCaptchaSolved(true); if (token) setCaptchaToken(token); }} />
-        )}
-
-        {captchaSolved && (
-          <div style={{background:"#fff",borderRadius:14,boxShadow:"0 8px 22px rgba(0,0,0,0.07)",padding:"14px 16px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
-            <span style={{fontSize:15}}>🔒</span>
-            <input value={password} onChange={e=>setPassword(e.target.value)}
-              placeholder="parolă (min. 6 caractere)" type="password"
-              style={{flex:1,border:"none",outline:"none",fontSize:15,color:DARK,background:"transparent"}}/>
-          </div>
         )}
 
         {error && <p style={{fontSize:12,color:RED,margin:"0 0 8px",textAlign:"center"}}>{error}</p>}
@@ -6854,7 +6848,7 @@ function LoginScreen({ onNext }) {
         )}
         {error && <p style={{fontSize:12,color:RED,margin:"0 0 8px",textAlign:"center"}}>{error}</p>}
         <button onClick={handleContinue} disabled={loading || (CAPTCHA_ENABLED && !captchaSolved)}
-          style={{width:"100%",background: (CAPTCHA_ENABLED && !captchaSolved) ? "#e0e0e0" : `linear-gradient(135deg,${NAVY},#001840)`,color: (CAPTCHA_ENABLED && !captchaSolved) ? "#bbb" : "#fff",border:"none",borderRadius:14,padding:"15px 0",fontSize:15,fontWeight:700,cursor: (CAPTCHA_ENABLED && !captchaSolved) ? "not-allowed" : "pointer",opacity:loading?0.7:1,marginBottom:8}}>
+          style={{width:"100%",background:(CAPTCHA_ENABLED && !captchaSolved)?"#e0e0e0":`linear-gradient(135deg,${NAVY},#001840)`,color:(CAPTCHA_ENABLED && !captchaSolved)?"#bbb":"#fff",border:"none",borderRadius:14,padding:"15px 0",fontSize:15,fontWeight:700,cursor:(CAPTCHA_ENABLED && !captchaSolved)?"not-allowed":"pointer",opacity:loading?0.7:1,marginBottom:8}}>
           {loading ? "Se verifică..." : (CAPTCHA_ENABLED && !captchaSolved) ? "🔒 Rezolvă verificarea mai sus" : "Continuă →"}
         </button>
         <div style={{display:"flex",justifyContent:"space-between",padding:"4px 2px 0"}}>
@@ -8712,7 +8706,97 @@ const _isRecoveryUrl = (() => {
   } catch { return false; }
 })();
 
+function DesktopBlocker() {
+  return (
+    <div style={{
+      position:"fixed",inset:0,zIndex:99999,
+      background:"linear-gradient(135deg,#00153E 0%,#001840 40%,#0A0A1A 100%)",
+      display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
+      overflow:"hidden",
+    }}>
+      {/* Stars background */}
+      <div style={{position:"absolute",inset:0,overflow:"hidden",pointerEvents:"none"}}>
+        {Array.from({length:40}).map((_,i)=>(
+          <div key={i} style={{
+            position:"absolute",
+            width: i%3===0 ? 3 : i%3===1 ? 2 : 1,
+            height: i%3===0 ? 3 : i%3===1 ? 2 : 1,
+            borderRadius:"50%",
+            background:"#fff",
+            opacity: 0.2 + (i%5)*0.12,
+            left:`${(i*37+13)%100}%`,
+            top:`${(i*53+7)%100}%`,
+          }}/>
+        ))}
+      </div>
+
+      {/* Trophy faded bg */}
+      <img src={trophy} alt="" style={{
+        position:"absolute",right:"-10%",bottom:"-5%",
+        width:"55%",opacity:0.06,pointerEvents:"none",
+        filter:"grayscale(1) brightness(2)",
+      }}/>
+
+      {/* Logo */}
+      <img src={predictoLogo} alt="Predicto" style={{
+        height:48,width:"auto",objectFit:"contain",marginBottom:8,position:"relative",zIndex:1,
+      }}/>
+      <p style={{
+        fontSize:10,fontWeight:700,letterSpacing:3,
+        background:"linear-gradient(100deg,#CC0022 0%,#003399 50%,#007733 100%)",
+        WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",
+        backgroundClip:"text",margin:"0 0 48px",
+      }}>WORLD CUP 2026</p>
+
+      {/* Phone icon */}
+      <div style={{
+        width:72,height:120,borderRadius:16,border:"3px solid rgba(255,255,255,0.25)",
+        display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"flex-end",
+        padding:"0 0 10px",marginBottom:32,position:"relative",zIndex:1,
+        boxShadow:"0 0 40px rgba(200,16,46,0.3)",
+      }}>
+        <div style={{width:24,height:3,borderRadius:4,background:"rgba(255,255,255,0.4)"}}/>
+        <div style={{
+          position:"absolute",top:10,left:"50%",transform:"translateX(-50%)",
+          width:20,height:4,borderRadius:4,background:"rgba(255,255,255,0.2)",
+        }}/>
+        <span style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-55%)",fontSize:28}}>⚽</span>
+      </div>
+
+      <h1 style={{
+        fontSize:22,fontWeight:900,color:"#fff",margin:"0 0 10px",
+        textAlign:"center",letterSpacing:0.5,position:"relative",zIndex:1,
+      }}>Mobile Only</h1>
+      <p style={{
+        fontSize:14,color:"rgba(255,255,255,0.5)",textAlign:"center",
+        margin:"0 0 40px",lineHeight:1.6,maxWidth:280,position:"relative",zIndex:1,
+      }}>
+        Predicto e construit pentru mobil.<br/>
+        Deschide pe telefon pentru experiența completă.
+      </p>
+
+      <div style={{
+        background:"rgba(255,255,255,0.06)",borderRadius:14,
+        padding:"12px 24px",border:"1px solid rgba(255,255,255,0.1)",
+        display:"flex",alignItems:"center",gap:10,position:"relative",zIndex:1,
+      }}>
+        <span style={{fontSize:18}}>📱</span>
+        <span style={{fontSize:13,color:"rgba(255,255,255,0.6)",fontWeight:500}}>
+          {window.location.host}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 function App() {
+  const [isDesktop, setIsDesktop] = useState(() => window.innerWidth > 768);
+  useEffect(() => {
+    const check = () => setIsDesktop(window.innerWidth > 768);
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
   useEffect(()=>{
     const style = document.createElement("style");
     style.textContent = `
@@ -9031,6 +9115,7 @@ function App() {
     <UserCtx.Provider value={user}>
     <LangCtx.Provider value={lang}>
     <div style={{width:"100%",height:"100%",background:BG,display:"flex",flexDirection:"column",position:"relative",fontFamily:"-apple-system,'SF Pro Display',sans-serif"}}>
+        {isDesktop && <DesktopBlocker />}
         {screen===SCREENS.HOME&&<img src={trophy} alt="" style={{position:"fixed",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.09,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>}
         <div style={{flex:1,overflow:"hidden",display:"flex",flexDirection:"column"}}>
           {screen==="dev"&&<DevPanel
