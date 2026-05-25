@@ -140,13 +140,16 @@ function EmptyState({ icon="•", title, body }) {
     </Card>
   );
 }
-function LoadingState({ title="Loading", body="Syncing your latest data..." }) {
+function LoadingState({ title, body }) {
+  const lang = useLang();
+  const t = title ?? T[lang].loadingTitle;
+  const b = body ?? T[lang].loadingSession;
   return (
     <div style={{position:"fixed",inset:0,background:BG,display:"flex",alignItems:"center",justifyContent:"center",padding:24}}>
       <Card style={{width:"100%",maxWidth:320,padding:"26px 18px",textAlign:"center"}}>
         <div style={{width:34,height:34,borderRadius:"50%",border:"3px solid rgba(10,46,138,0.12)",borderTopColor:NAVY,margin:"0 auto 12px",animation:"spin 0.9s linear infinite"}}/>
-        <div style={{fontSize:14,fontWeight:800,color:DARK,marginBottom:4}}>{title}</div>
-        <div style={{fontSize:12,color:"#9CA3AF",lineHeight:1.45}}>{body}</div>
+        <div style={{fontSize:14,fontWeight:800,color:DARK,marginBottom:4}}>{t}</div>
+        <div style={{fontSize:12,color:"#9CA3AF",lineHeight:1.45}}>{b}</div>
       </Card>
     </div>
   );
@@ -376,6 +379,13 @@ const T = {
     copyPredsSub:"Replicate your Group phase predictions to another league",
     noOtherBoards:"No other boards available",
     copiedLabel:"✓ Copied", pasteLabel:"Paste",
+    loadingTitle:"Starting Predicto", loadingLeagues:"Loading leagues",
+    loadingSession:"Preparing your session...", loadingBoards:"Syncing boards, rankings and picks...",
+    rulesTabPredictions:"🎯 Predictions", rulesTabExact:"⚽ Exact Score",
+    rulesExampleTitle:"💡 Example",
+    rulesExamplePred:"If you get the winner right in 10 group matches → 10 × 30 = 300 pts. Every correct prediction counts!",
+    rulesExampleExact:"If you get the exact score in 3 matches → 3 × 90 = 270 pts. Correct result only → 30 pts per match.",
+    guideViewNext:"View next", guideClose:"Close",
   },
   ro:{
     location:"SUA, Canada & Mexic", cta:"Fa-ti Predictia",
@@ -530,6 +540,13 @@ const T = {
     copyPredsSub:"Replică predicțiile din faza grupelor în altă ligă",
     noOtherBoards:"Nicio altă ligă disponibilă",
     copiedLabel:"✓ Copiat", pasteLabel:"Lipește",
+    loadingTitle:"Se pornește Predicto", loadingLeagues:"Se încarcă ligile",
+    loadingSession:"Se pregătește sesiunea...", loadingBoards:"Sincronizare ligi, clasamente și selecții...",
+    rulesTabPredictions:"🎯 Predicții", rulesTabExact:"⚽ Scor Exact",
+    rulesExampleTitle:"💡 Exemplu",
+    rulesExamplePred:"Dacă prezici corect câștigătorul în 10 meciuri de grupe → 10 × 30 = 300 pts. Fiecare predicție corectă contează!",
+    rulesExampleExact:"Dacă prezici scorul exact în 3 meciuri → 3 × 90 = 270 pts. Rezultat corect doar → 30 pts per meci.",
+    guideViewNext:"Înainte", guideClose:"Închide",
   },
   fr:{
     location:"USA, Canada & Mexique", cta:"Faites vos Pronostics",
@@ -684,6 +701,13 @@ const T = {
     copyPredsSub:"Répliquer vos pronostics de la phase de groupes dans une autre ligue",
     noOtherBoards:"Aucune autre ligue disponible",
     copiedLabel:"✓ Copié", pasteLabel:"Coller",
+    loadingTitle:"Démarrage de Predicto", loadingLeagues:"Chargement des ligues",
+    loadingSession:"Préparation de votre session...", loadingBoards:"Synchronisation des ligues, classements et sélections...",
+    rulesTabPredictions:"🎯 Pronostics", rulesTabExact:"⚽ Score Exact",
+    rulesExampleTitle:"💡 Exemple",
+    rulesExamplePred:"Si vous trouvez le bon vainqueur dans 10 matchs de groupes → 10 × 30 = 300 pts. Chaque pronostic correct compte !",
+    rulesExampleExact:"Si vous trouvez le score exact dans 3 matchs → 3 × 90 = 270 pts. Résultat correct seulement → 30 pts par match.",
+    guideViewNext:"Suivant", guideClose:"Fermer",
   },
 };
 const LangCtx = React.createContext("en");
@@ -6666,7 +6690,7 @@ function OnboardingSheet({ onDone }) {
             </div>
             <button onClick={()=>{ if(isLast) onDone(false); else setSlide(s=>s+1); }}
               style={{background:"none",border:"none",color:"rgba(255,255,255,0.85)",fontSize:14,fontWeight:700,cursor:"pointer",padding:"6px",display:"flex",alignItems:"center",gap:5,lineHeight:1,WebkitTapHighlightColor:"transparent"}}>
-              {isLast?"Close":"View next"}<span style={{fontSize:20}}>{isLast?"":"→"}</span>
+              {isLast?T[lang].guideClose:T[lang].guideViewNext}<span style={{fontSize:20}}>{isLast?"":"→"}</span>
             </button>
           </div>
         </div>
@@ -8792,7 +8816,7 @@ function RulesScreen({ onBack }) {
             <div style={{width:44,paddingTop:10}}/>
           </div>
           <div style={{display:"flex",gap:0,borderTop:`1px solid rgba(0,0,0,0.06)`,marginTop:10}}>
-            {[{id:"predictions",label:"🎯 Predictions"},{id:"exact",label:"⚽ Exact Score"}].map(t=>(
+            {[{id:"predictions",label:T[lang].rulesTabPredictions},{id:"exact",label:T[lang].rulesTabExact}].map(t=>(
               <button key={t.id} onClick={()=>setTab(t.id)}
                 style={{flex:1,background:"transparent",border:"none",cursor:"pointer",padding:"12px 0",
                   fontSize:12,fontWeight:700,color:tab===t.id?NAVY:"#aaa",
@@ -8870,11 +8894,9 @@ function RulesScreen({ onBack }) {
 
         {/* Example */}
         <div style={{...UI.card,background:"#E8F0FF",padding:"14px 16px",marginBottom:24}}>
-          <p style={{fontSize:12,fontWeight:700,color:NAVY,margin:"0 0 4px"}}>💡 Exemplu</p>
+          <p style={{fontSize:12,fontWeight:700,color:NAVY,margin:"0 0 4px"}}>{T[lang].rulesExampleTitle}</p>
           <p style={{fontSize:12,color:"#555",margin:0,lineHeight:1.5}}>
-            {tab==="predictions"
-              ? "If you get the winner right in 10 group matches → 10 × 30 = 300 pts. Every correct prediction counts!"
-              : "If you get the exact score in 3 matches → 3 × 90 = 270 pts. Correct result only → 30 pts per match."}
+            {tab==="predictions" ? T[lang].rulesExamplePred : T[lang].rulesExampleExact}
           </p>
         </div>
       </div>
@@ -9180,7 +9202,8 @@ function App() {
   const [simStarted, setSimStarted] = useState(false);
   // Simulated current date used across app
   const simDate = simDay ? new Date(2026,5,simDay,simHour,simMin,0) : null;
-  const [lang, setLang] = useState("en");
+  const [lang, setLang] = useState(() => { try { return localStorage.getItem('predicto_lang')||"en"; } catch { return "en"; } });
+  useEffect(()=>{ try { localStorage.setItem('predicto_lang', lang); } catch {} }, [lang]);
   const _cachedBoards = (() => { try { const s = localStorage.getItem('myBoards'); return s ? JSON.parse(s) : []; } catch { return []; } })();
   const [myBoards, setMyBoards] = useState(_cachedBoards);
   const [boardsLoading, setBoardsLoading] = useState(_cachedBoards.length === 0);
@@ -9321,7 +9344,7 @@ function App() {
   if (!_nonSaveable.includes(screen)) { try { localStorage.setItem('lastScreen', screen); } catch {} }
   const footerActive = screen===SCREENS.RULES?SCREENS.RULES:screen===SCREENS.LEADERBOARD?SCREENS.LEADERBOARD:screen===SCREENS.BOARDS?SCREENS.BOARDS:screen===SCREENS.ACCOUNT?SCREENS.ACCOUNT:SCREENS.HOME;
 
-  if (authLoading || (user && boardsLoading)) return <LoadingState title={authLoading ? "Starting Predicto" : "Loading leagues"} body={authLoading ? "Preparing your session..." : "Syncing boards, rankings and picks..."} />;
+  if (authLoading || (user && boardsLoading)) return <LoadingState title={authLoading ? T[lang].loadingTitle : T[lang].loadingLeagues} body={authLoading ? T[lang].loadingSession : T[lang].loadingBoards} />;
 
   return (
     <UserCtx.Provider value={user}>
