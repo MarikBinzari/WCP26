@@ -544,6 +544,32 @@ export async function uploadAvatar(userId, file) {
   return urlWithBust
 }
 
+// ─── SCORE BREAKDOWN (per user per board) ────────────────────────────────────
+export async function loadMyScoreBreakdown(userId, boardId) {
+  const [specialRes, boardRes] = await Promise.all([
+    supabase
+      .from('special_picks')
+      .select('champion_pts, top_scorer_pts')
+      .eq('user_id', userId)
+      .eq('board_id', boardId)
+      .maybeSingle(),
+    supabase
+      .from('board_scores')
+      .select('pred_pts, exact_pts, total_pts')
+      .eq('user_id', userId)
+      .eq('board_id', boardId)
+      .maybeSingle(),
+  ])
+  const total = boardRes.data?.total_pts ?? 0
+  const pred  = boardRes.data?.pred_pts  ?? total  // fallback: total dacă coloana nu există încă
+  const exact = boardRes.data?.exact_pts ?? 0
+  return {
+    specialPts: (specialRes.data?.champion_pts ?? 0) + (specialRes.data?.top_scorer_pts ?? 0),
+    predPts:    pred,
+    exactPts:   exact,
+  }
+}
+
 // ─── LEADERBOARD ──────────────────────────────────────────────────────────────
 export async function loadLeaderboard(boardId, search = null, userId = null) {
   const [rpcRes, profileRes] = await Promise.all([
