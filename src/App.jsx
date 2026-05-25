@@ -386,6 +386,10 @@ const T = {
     rulesExamplePred:"If you get the winner right in 10 group matches → 10 × 30 = 300 pts. Every correct prediction counts!",
     rulesExampleExact:"If you get the exact score in 3 matches → 3 × 90 = 270 pts. Correct result only → 30 pts per match.",
     guideViewNext:"View next", guideClose:"Close",
+    noNotificationsYet:"No notifications yet",
+    alreadyPremiumTitle:"You're already Premium for us",
+    alreadyPremiumBody:"Thank you for being part of Predicto. You get the full experience, on us.",
+    best3Short:"Best Third",
   },
   ro:{
     location:"SUA, Canada & Mexic", cta:"Fa-ti Predictia",
@@ -420,17 +424,17 @@ const T = {
     matchesToPredict:"meciuri de prezis", startMatches:"Începe Meciurile →",
     viewOnly:"Doar Vizualizare", winnerArrow:"Câștigător →",
     groups:"grupe", group:"Grupă",
-    best3Title:"🥉 Best Third", selectTeams:"Selectează 8 echipe de pe locul 3...",
+    best3Title:"🥉 Cel mai bun loc 3", selectTeams:"Selectează 8 echipe de pe locul 3...",
     thirdPlaceRanking:"Clasament Locul 3 · sortat după puncte", team:"Echipă",
-    knockout:"Knockout →", selectMore:"Mai selectează",
+    knockout:"Eliminatorii →", selectMore:"Mai selectează",
     boards:"Ligi", createBoard:"Creează Ligă", editBoard:"Editează Liga",
     boardName:"Nume grup", joinBoard:"Alătură-te", enterCode:"Introdu codul",
     invalidCode:"Cod invalid. Verifică și încearcă din nou.",
     rules:"Reguli", howPredictionsWork:"Cum funcționează Predicțiile?",
     howExactScoreWork:"Cum funcționează Scorul Exact?",
-    predictionsDesc:"Două etape: clasează cele 12 grupe + alege 8 echipe best-third înainte de 11 Iun. Bracket-ul knockout se deblochează pe 27 Iun după ultimul meci din grupe.",
-    rulesTask1Header:"Task 1 · Grupe & Best Third", rulesTask1Due:"Termen 11 Iun",
-    rulesTask2Header:"Task 2 · Faza Knockout", rulesTask2Due:"Disponibil din 27 Iun",
+    predictionsDesc:"Două etape: clasează cele 12 grupe + alege 8 echipe de pe locul 3 înainte de 11 Iun. Faza eliminatorie se deblochează pe 27 Iun după ultimul meci din grupe.",
+    rulesTask1Header:"Task 1 · Grupe & Cel mai bun loc 3", rulesTask1Due:"Termen 11 Iun",
+    rulesTask2Header:"Task 2 · Faza Eliminatorie", rulesTask2Due:"Disponibil din 27 Iun",
     exactDesc:"Prezice scorul exact al fiecărui meci în fiecare săptămână. Se deschide duminicile după 20:00.",
     exactScore:"SCOR EXACT", confirmScore:"Confirmă Scorul",
     save:"Salvează", cancel:"Anulează", del:"Șterge", done:"Gata",
@@ -441,15 +445,15 @@ const T = {
     backLabel:"Înapoi", groupComplete:"Complet", yourPredictedStandings:"Clasamentul tău prezis",
     yourPredictions:"Predicțiile tale", maxPossiblePoints:"Total maxim posibil",
     possiblePts:"pts posibile", selectScore:"Selectează scorul prezis",
-    customScore:"Alt scor", saveScore:"Salvează ✓", modifyBtn:"← Modifică", bestThirdBtn:"Best Third →",
+    customScore:"Alt scor", saveScore:"Salvează ✓", modifyBtn:"← Modifică", bestThirdBtn:"Locul 3 →",
     notStarted:"Neînceput", winner:"Câștigător", scheduledMatches:"Meciuri Programate",
     realLabel:"Real", predictedLabel:"Prezis", noMatchesScheduled:"Nu sunt meciuri programate",
     finished:"Terminat", prediction:"Predicție",
     noMembersYet:"Niciun membru încă", searchOrCode:"Caută sau introdu codul...",
     joinBtn:"Alătură-te", noBoardsFor:"Nicio ligă găsită pentru",
     dontShowAgain:"Nu mai arăta",
-    onb0Title:"Predicții în Două Etape", onb0Sub:"Grupe + Best Third · Knockout",
-    onb0Desc:"Etapa 1 (înainte de 11 Iun): Clasează cele 12 grupe și alege 8 echipe best-third. Etapa 2: Bracket-ul knockout se deblochează pe 27 Iun după ultimul meci din grupe.",
+    onb0Title:"Predicții în Două Etape", onb0Sub:"Grupe + Locul 3 · Eliminatorii",
+    onb0Desc:"Etapa 1 (înainte de 11 Iun): Clasează cele 12 grupe și alege 8 echipe de pe locul 3. Etapa 2: Faza eliminatorie se deblochează pe 27 Iun după ultimul meci din grupe.",
     onb0Next:"Arată-mi scorurile →",
     onb1Title:"Scor Exact Săptămânal", onb1Sub:"Se deschide duminică la 8:00",
     onb1Desc:"Prezice scorul exact al meciurilor săptămânii pentru puncte bonus. Meciuri noi în fiecare duminică.",
@@ -459,7 +463,7 @@ const T = {
     onb2Next:null,
     getStarted:"Începe",
     rulesDesc1:"Echipa care câștigă grupa", rulesDesc2:"Echipa pe locul 2", rulesDesc3:"Echipa pe locul 3",
-    rulesDescBest3:"Echipă best-3rd care avansează", rulesDescMatch:"Câștigătorul meciului", rulesDescFinal:"Câștigătorul turneului",
+    rulesDescBest3:"Echipă de pe locul 3 care avansează", rulesDescMatch:"Câștigătorul meciului", rulesDescFinal:"Câștigătorul turneului",
     boardPassword:"Parolă Grup", maxPlayers:"Jucători max", prizedSlots:"Locuri premiate", prizesLabel:"Premii",
     membersLabel:"Membri", adminLabel:"Admin", remove:"Elimină", saveChanges:"Salvează Modificările ✓",
     createBoard2:"Creează Ligă 🏆", boardAdmin:"Admin Ligă", incorrectPassword:"Parolă incorectă. Încearcă din nou.",
@@ -547,6 +551,10 @@ const T = {
     rulesExamplePred:"Dacă prezici corect câștigătorul în 10 meciuri de grupe → 10 × 30 = 300 pts. Fiecare predicție corectă contează!",
     rulesExampleExact:"Dacă prezici scorul exact în 3 meciuri → 3 × 90 = 270 pts. Rezultat corect doar → 30 pts per meci.",
     guideViewNext:"Înainte", guideClose:"Închide",
+    noNotificationsYet:"Nu există notificări încă",
+    alreadyPremiumTitle:"Ești deja Premium pentru noi",
+    alreadyPremiumBody:"Mulțumim că faci parte din Predicto. Ai acces complet la toate funcțiile.",
+    best3Short:"Locul 3",
   },
   fr:{
     location:"USA, Canada & Mexique", cta:"Faites vos Pronostics",
@@ -589,9 +597,9 @@ const T = {
     invalidCode:"Code invalide. Veuillez vérifier et réessayer.",
     rules:"Règles", howPredictionsWork:"Comment fonctionnent les Pronostics ?",
     howExactScoreWork:"Comment fonctionne le Score Exact ?",
-    predictionsDesc:"Deux phases : classez les 12 groupes + choisissez 8 équipes meilleur 3e avant le 11 Juin. Le bracket knockout se déverrouille le 27 Juin après le dernier match de groupes.",
+    predictionsDesc:"Deux phases : classez les 12 groupes + choisissez 8 équipes meilleur 3e avant le 11 Juin. Les éliminatoires se déverrouillent le 27 Juin après le dernier match de groupes.",
     rulesTask1Header:"Tâche 1 · Groupes & Meilleur 3e", rulesTask1Due:"Date limite 11 Juin",
-    rulesTask2Header:"Tâche 2 · Phase Knockout", rulesTask2Due:"Disponible dès le 27 Juin",
+    rulesTask2Header:"Tâche 2 · Phase Éliminatoire", rulesTask2Due:"Disponible dès le 27 Juin",
     exactDesc:"Prédisez le score exact de chaque match chaque semaine. Déverrouillé le dimanche après 20h.",
     exactScore:"SCORE EXACT", confirmScore:"Confirmer le Score",
     save:"Enregistrer", cancel:"Annuler", del:"Supprimer", done:"Terminé",
@@ -609,8 +617,8 @@ const T = {
     noMembersYet:"Aucun membre encore", searchOrCode:"Chercher ou entrer le code...",
     joinBtn:"Rejoindre", noBoardsFor:"Aucune ligue trouvée pour",
     dontShowAgain:"Ne plus afficher",
-    onb0Title:"Deux Phases de Pronostics", onb0Sub:"Groupes + Meilleur 3e · Knockout",
-    onb0Desc:"Phase 1 (avant le 11 Juin) : Classez les 12 groupes et choisissez 8 équipes meilleur 3e. Phase 2 : Le bracket knockout se déverrouille le 27 Juin après le dernier match de groupes.",
+    onb0Title:"Deux Phases de Pronostics", onb0Sub:"Groupes + Meilleur 3e · Éliminatoires",
+    onb0Desc:"Phase 1 (avant le 11 Juin) : Classez les 12 groupes et choisissez 8 équipes meilleur 3e. Phase 2 : Les éliminatoires se déverrouillent le 27 Juin après le dernier match de groupes.",
     onb0Next:"Montrez-moi les scores →",
     onb1Title:"Score Exact Hebdomadaire", onb1Sub:"Déverrouillé chaque dimanche à 8h",
     onb1Desc:"Prédisez le score exact des matchs de la semaine pour des points bonus. Nouveaux matchs chaque dimanche.",
@@ -708,6 +716,10 @@ const T = {
     rulesExamplePred:"Si vous trouvez le bon vainqueur dans 10 matchs de groupes → 10 × 30 = 300 pts. Chaque pronostic correct compte !",
     rulesExampleExact:"Si vous trouvez le score exact dans 3 matchs → 3 × 90 = 270 pts. Résultat correct seulement → 30 pts par match.",
     guideViewNext:"Suivant", guideClose:"Fermer",
+    noNotificationsYet:"Aucune notification pour l'instant",
+    alreadyPremiumTitle:"Vous êtes déjà Premium pour nous",
+    alreadyPremiumBody:"Merci de faire partie de Predicto. Vous bénéficiez de l'expérience complète.",
+    best3Short:"Meilleur 3e",
   },
 };
 const LangCtx = React.createContext("en");
@@ -3338,7 +3350,7 @@ function InstantPickScreen({ onBack, onComplete, onKoComplete, onModify, savedSt
           );
         })()}
         <div style={{width:1,height:28,background:"rgba(255,255,255,0.2)",flexShrink:0}}/>
-        {[{id:"best3",name:"Best Third"},{id:"R32",name:"Round of 32"},{id:"R16",name:"Round of 16"},{id:"QF",name:"Quarter"},{id:"SF",name:"Semi"},{id:"F",name:"Final"}].map(ph=>{
+        {[{id:"best3",name:T[lang].best3Short},{id:"R32",name:"Round of 32"},{id:"R16",name:"Round of 16"},{id:"QF",name:"Quarter"},{id:"SF",name:"Semi"},{id:"F",name:"Final"}].map(ph=>{
           const isActive=ph.id===activePhaseId;
           const accessible=phaseAccessible(ph.id);
           return (
@@ -3586,7 +3598,7 @@ function InstantPickScreen({ onBack, onComplete, onKoComplete, onModify, savedSt
         { icon:"⚽", label:"Grupe · 1st loc",  pts:PRED_SCORING.group1st, count:12, max:PRED_MAX.groups/3,  color:NAVY },
         { icon:"⚽", label:"Grupe · 2nd loc",  pts:PRED_SCORING.group2nd, count:12, max:PRED_MAX.groups/3,  color:NAVY },
         { icon:"⚽", label:"Grupe · 3rd loc",  pts:PRED_SCORING.group3rd, count:12, max:PRED_MAX.groups/3,  color:NAVY },
-        { icon:"🥉", label:"Best Third",        pts:PRED_SCORING.best3,    count:8,  max:PRED_MAX.best3,     color:"#7B2FBE" },
+        { icon:"🥉", label:T[lang].best3Short,    pts:PRED_SCORING.best3,    count:8,  max:PRED_MAX.best3,     color:"#7B2FBE" },
         { icon:"🏆", label:"Round of 32",       pts:PRED_SCORING.r32,      count:16, max:PRED_MAX.r32,       color:RED },
         { icon:"🏆", label:"Round of 16",       pts:PRED_SCORING.r16,      count:8,  max:PRED_MAX.r16,       color:RED },
         { icon:"🏆", label:"Quarter-Finals",    pts:PRED_SCORING.qf,       count:4,  max:PRED_MAX.qf,        color:RED },
@@ -4257,8 +4269,8 @@ function PremiumScreen({ onBack }) {
       <div style={{flex:1,display:"flex",flexDirection:"column",padding:"16px 14px",overflow:"hidden",position:"relative",zIndex:1}}>
         <div style={{background:"#fff",borderRadius:20,boxShadow:"0 2px 16px rgba(10,46,138,0.07)",flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:12,padding:"32px 24px"}}>
           <span style={{fontSize:48}}>⭐</span>
-          <p style={{fontSize:18,fontWeight:800,color:NAVY,margin:0,textAlign:"center"}}>You're already Premium for us</p>
-          <p style={{fontSize:13,color:"#888",margin:0,textAlign:"center",lineHeight:1.6}}>Thank you for being part of Predicto.<br/>You get the full experience, on us.</p>
+          <p style={{fontSize:18,fontWeight:800,color:NAVY,margin:0,textAlign:"center"}}>{T[lang].alreadyPremiumTitle}</p>
+          <p style={{fontSize:13,color:"#888",margin:0,textAlign:"center",lineHeight:1.6}}>{T[lang].alreadyPremiumBody}</p>
         </div>
       </div>
     </div>
@@ -4292,7 +4304,7 @@ function NotificationsScreen({ onBack }) {
       </div>
       <div style={{flex:1,display:"flex",flexDirection:"column",padding:"16px 14px",overflow:"hidden"}}>
         <div style={{background:"#fff",borderRadius:20,boxShadow:"0 2px 16px rgba(10,46,138,0.07)",flex:1,display:"flex",alignItems:"center",justifyContent:"center"}}>
-          <p style={{fontSize:13,color:"rgba(0,0,0,0.3)",fontWeight:500}}>No notifications yet</p>
+          <p style={{fontSize:13,color:"rgba(0,0,0,0.3)",fontWeight:500}}>{T[lang].noNotificationsYet}</p>
         </div>
       </div>
     </div>
