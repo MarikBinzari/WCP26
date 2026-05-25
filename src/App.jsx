@@ -390,6 +390,17 @@ const T = {
     alreadyPremiumTitle:"You're already Premium for us",
     alreadyPremiumBody:"Thank you for being part of Predicto. You get the full experience, on us.",
     best3Short:"Best Third",
+    pickChampionHeader:"Pick Champion", pickTopScorerHeader:"Pick Top Scorer",
+    picksLockedTitle:"Picks locked until Knockout Phase",
+    picksLockedBody:"Opens Jun 27 after the last group match. Your current picks are saved.",
+    championPickLabel:"Champion Pick", chooseWinner:"Choose your winner",
+    selectedLabel:"selected", tapTeamBelow:"Tap a team below",
+    clearLabel:"Clear", allTeams:"All teams",
+    topScorerPickLabel:"Top Scorer Pick", startWithTeam:"Start with a team",
+    pickTeamDots:"Pick a team...", pickTopScorerSub:"pick the top scorer",
+    topScorerSaved:"Top Scorer saved", winnerTeamSaved:"Winner Team saved",
+    winnerTeamCleared:"Winner Team cleared", changeLabel:"Change",
+    pickChampionPopup:"🏆 Pick Champion", pickTeamPopup:"👕 Pick Team",
   },
   ro:{
     location:"SUA, Canada & Mexic", cta:"Fa-ti Predictia",
@@ -555,6 +566,17 @@ const T = {
     alreadyPremiumTitle:"Ești deja Premium pentru noi",
     alreadyPremiumBody:"Mulțumim că faci parte din Predicto. Ai acces complet la toate funcțiile.",
     best3Short:"Locul 3",
+    pickChampionHeader:"Alege Campionul", pickTopScorerHeader:"Alege Golgheterul",
+    picksLockedTitle:"Selecții blocate până la Faza Eliminatorie",
+    picksLockedBody:"Se deschide pe 27 Iun după ultimul meci din grupe. Selecțiile actuale sunt salvate.",
+    championPickLabel:"Selecție Campion", chooseWinner:"Alege câștigătorul",
+    selectedLabel:"selectat", tapTeamBelow:"Apasă o echipă mai jos",
+    clearLabel:"Șterge", allTeams:"Toate echipele",
+    topScorerPickLabel:"Selecție Golgheter", startWithTeam:"Începe cu o echipă",
+    pickTeamDots:"Alege o echipă...", pickTopScorerSub:"alege golgheterul",
+    topScorerSaved:"Golgheter salvat", winnerTeamSaved:"Echipa câștigătoare salvată",
+    winnerTeamCleared:"Echipa câștigătoare ștearsă", changeLabel:"Schimbă",
+    pickChampionPopup:"🏆 Alege Campionul", pickTeamPopup:"👕 Alege Echipa",
   },
   fr:{
     location:"USA, Canada & Mexique", cta:"Faites vos Pronostics",
@@ -720,6 +742,17 @@ const T = {
     alreadyPremiumTitle:"Vous êtes déjà Premium pour nous",
     alreadyPremiumBody:"Merci de faire partie de Predicto. Vous bénéficiez de l'expérience complète.",
     best3Short:"Meilleur 3e",
+    pickChampionHeader:"Choisir le Champion", pickTopScorerHeader:"Choisir le Meilleur Buteur",
+    picksLockedTitle:"Sélections bloquées jusqu'aux Éliminatoires",
+    picksLockedBody:"Ouvre le 27 Juin après le dernier match de groupes. Vos sélections actuelles sont sauvegardées.",
+    championPickLabel:"Sélection Champion", chooseWinner:"Choisissez votre vainqueur",
+    selectedLabel:"sélectionné", tapTeamBelow:"Appuyez sur une équipe ci-dessous",
+    clearLabel:"Effacer", allTeams:"Toutes les équipes",
+    topScorerPickLabel:"Sélection Meilleur Buteur", startWithTeam:"Commencez par une équipe",
+    pickTeamDots:"Choisissez une équipe...", pickTopScorerSub:"choisissez le meilleur buteur",
+    topScorerSaved:"Meilleur buteur sauvegardé", winnerTeamSaved:"Équipe gagnante sauvegardée",
+    winnerTeamCleared:"Équipe gagnante effacée", changeLabel:"Changer",
+    pickChampionPopup:"🏆 Choisir le Champion", pickTeamPopup:"👕 Choisir l'Équipe",
   },
 };
 const LangCtx = React.createContext("en");
@@ -4410,8 +4443,8 @@ function ChampionScreen({ onBack, initialMode="champion", championPick, topScore
     if (isLocked) return;
     const next = championPick===team ? null : team;
     setChampionPick(next);
-    if(next) finishPick("Winner Team saved", FLAGS[team]||"🏆");
-    else showToast&&showToast("Winner Team cleared", "↺");
+    if(next) finishPick(T[lang].winnerTeamSaved, FLAGS[team]||"🏆");
+    else showToast&&showToast(T[lang].winnerTeamCleared, "↺");
   };
   const [tsTeam, setTsTeam] = useState(topScorerPick?.team||null);
   const [champPopup, setChampPopup] = useState(false);
@@ -4437,7 +4470,7 @@ function ChampionScreen({ onBack, initialMode="champion", championPick, topScore
           <div style={{display:"flex",alignItems:"center",gap:10,padding:"28px 14px 28px"}}>
             <button onClick={onBack} style={{background:"rgba(255,255,255,0.12)",border:"none",borderRadius:10,width:34,height:34,color:"#fff",fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>‹</button>
             <div style={{flex:1,textAlign:"center"}}>
-              <div style={{fontSize:18,fontWeight:800,color:"#fff"}}>{showChampion?"Pick Champion":"Pick Top Scorer"}</div>
+              <div style={{fontSize:18,fontWeight:800,color:"#fff"}}>{showChampion?T[lang].pickChampionHeader:T[lang].pickTopScorerHeader}</div>
             </div>
             <div style={{width:34,flexShrink:0}}/>
           </div>
@@ -4452,8 +4485,8 @@ function ChampionScreen({ onBack, initialMode="champion", championPick, topScore
           <div style={{background:"rgba(10,46,138,0.07)",border:"1.5px solid rgba(10,46,138,0.14)",borderRadius:14,padding:"12px 16px",marginBottom:16,display:"flex",alignItems:"center",gap:10}}>
             <span style={{fontSize:20}}>🔒</span>
             <div>
-              <div style={{fontSize:13,fontWeight:700,color:NAVY}}>Picks locked until Knockout Phase</div>
-              <div style={{fontSize:11,color:"#6B7280",marginTop:2}}>Opens Jun 27 after the last group match. Your current picks are saved.</div>
+              <div style={{fontSize:13,fontWeight:700,color:NAVY}}>{T[lang].picksLockedTitle}</div>
+              <div style={{fontSize:11,color:"#6B7280",marginTop:2}}>{T[lang].picksLockedBody}</div>
             </div>
           </div>
         )}
@@ -4466,17 +4499,17 @@ function ChampionScreen({ onBack, initialMode="champion", championPick, topScore
                 <span style={{fontSize:46,lineHeight:1}}>{championPick ? (FLAGS[championPick]||"🏳") : "🏆"}</span>
               </div>
               <div style={{flex:1,minWidth:0}}>
-                <div style={{...pickLabelStyle,color:"#D4820A"}}>Champion Pick</div>
+                <div style={{...pickLabelStyle,color:"#D4820A"}}>{T[lang].championPickLabel}</div>
                 <div style={{fontSize:22,fontWeight:900,color:DARK,marginTop:4,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
-                  {championPick || "Choose your winner"}
+                  {championPick || T[lang].chooseWinner}
                 </div>
                 <div style={{fontSize:12,color:"#9CA3AF",fontWeight:600,marginTop:3}}>
-                  {championPick ? `${tCode(championPick)} selected` : "Tap a team below"}
+                  {championPick ? `${tCode(championPick)} ${T[lang].selectedLabel}` : T[lang].tapTeamBelow}
                 </div>
               </div>
               {championPick&&(
                 <button onClick={()=>selectChampion(championPick)} style={{border:"none",background:"#F3F4F6",borderRadius:10,padding:"8px 10px",fontSize:11,fontWeight:800,color:"#6B7280",cursor:"pointer",flexShrink:0}}>
-                  Clear
+                  {T[lang].clearLabel}
                 </button>
               )}
             </div>
@@ -4496,7 +4529,7 @@ function ChampionScreen({ onBack, initialMode="champion", championPick, topScore
             })}
           </div>
 
-          <div style={{...pickLabelStyle,margin:"2px 2px 8px"}}>All teams</div>
+          <div style={{...pickLabelStyle,margin:"2px 2px 8px"}}>{T[lang].allTeams}</div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:8,opacity:isLocked?0.5:1,pointerEvents:isLocked?"none":"auto"}}>
             {otherChampionTeams.map(team=>{
               const isSel = championPick===team;
@@ -4519,12 +4552,12 @@ function ChampionScreen({ onBack, initialMode="champion", championPick, topScore
         {showScorer&&<div style={{...pickCardStyle,padding:"18px",opacity:isLocked?0.7:1}}>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,marginBottom:14}}>
             <div style={{minWidth:0}}>
-              <div style={{...pickLabelStyle,color:"#D4820A"}}>Top Scorer Pick</div>
+              <div style={{...pickLabelStyle,color:"#D4820A"}}>{T[lang].topScorerPickLabel}</div>
               <div style={{fontSize:18,fontWeight:850,color:DARK,marginTop:3,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
-                {topScorerPick?.player || "Choose your player"}
+                {topScorerPick?.player || T[lang].pickPlayer}
               </div>
               <div style={{fontSize:11,color:"#9CA3AF",fontWeight:600,marginTop:2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
-                {topScorerPick?.team ? `${FLAGS[topScorerPick.team]||"🏳"} ${topScorerPick.team}` : "Start with a team"}
+                {topScorerPick?.team ? `${FLAGS[topScorerPick.team]||"🏳"} ${topScorerPick.team}` : T[lang].startWithTeam}
               </div>
             </div>
             {topScorerPick?.player&&<div style={{width:30,height:30,borderRadius:"50%",background:GREEN,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:900,color:"#fff",flexShrink:0}}>✓</div>}
@@ -4540,7 +4573,7 @@ function ChampionScreen({ onBack, initialMode="champion", championPick, topScore
                 <div style={{fontSize:11,color:"#9CA3AF",fontWeight:600}}>{tCode(tsTeam)}</div>
               </div>
             ):(
-              <span style={{flex:1,fontSize:12,color:"#9CA3AF",fontWeight:600}}>Pick a team...</span>
+              <span style={{flex:1,fontSize:12,color:"#9CA3AF",fontWeight:600}}>{T[lang].pickTeamDots}</span>
             )}
             <span style={{fontSize:18,color:"#C0C8D8",fontWeight:700,lineHeight:1}}>›</span>
           </div>
@@ -4564,7 +4597,7 @@ function ChampionScreen({ onBack, initialMode="champion", championPick, topScore
                 /* Grid de selectie */
                 <>
                   <div style={{fontSize:11,fontWeight:600,color:"#9CA3AF",marginBottom:14,textAlign:"center",letterSpacing:0.3}}>
-                    {FLAGS[tsTeam]||"🏳"} {tsTeam} — pick the top scorer
+                    {FLAGS[tsTeam]||"🏳"} {tsTeam} — {T[lang].pickTopScorerSub}
                   </div>
                   {playersLoading ? (
                     <div style={{textAlign:"center",padding:"24px 0",fontSize:12,color:"#9CA3AF"}}>{T[lang].loadingPlayers}</div>
@@ -4583,7 +4616,7 @@ function ChampionScreen({ onBack, initialMode="champion", championPick, topScore
                             isSelected={isSel}
                             onClick={isLocked ? undefined : ()=>{
                               setTopScorerPick({team:tsTeam,player:name});
-                              finishPick("Top Scorer saved", FLAGS[tsTeam]||"👕");
+                              finishPick(T[lang].topScorerSaved, FLAGS[tsTeam]||"👕");
                             }}
                           />
                         );
@@ -4606,11 +4639,11 @@ function ChampionScreen({ onBack, initialMode="champion", championPick, topScore
           display:"flex",alignItems:"center",gap:12}}>
           <button onClick={()=>setTopScorerPick(null)}
             style={{background:"rgba(255,255,255,0.12)",border:"1px solid rgba(255,255,255,0.2)",borderRadius:10,padding:"7px 14px",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",flexShrink:0}}>
-            Change
+            {T[lang].changeLabel}
           </button>
           <span style={{fontSize:24,lineHeight:1,flexShrink:0}}>{FLAGS[topScorerPick.team]||"🏳"}</span>
           <div style={{flex:1,minWidth:0}}>
-            <div style={{fontSize:10,fontWeight:700,color:"#FFD700",letterSpacing:1,textTransform:"uppercase"}}>Top Scorer</div>
+            <div style={{fontSize:10,fontWeight:700,color:"#FFD700",letterSpacing:1,textTransform:"uppercase"}}>{T[lang].topScorer}</div>
             <div style={{fontSize:15,fontWeight:900,color:"#fff",marginTop:1,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{topScorerPick.player}</div>
           </div>
           <div style={{width:34,height:34,borderRadius:"50%",background:"#FFD700",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
@@ -4645,10 +4678,10 @@ function ChampionScreen({ onBack, initialMode="champion", championPick, topScore
             </div>
             {/* header */}
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 20px 12px",flexShrink:0,borderBottom:"1px solid rgba(255,255,255,0.07)",position:"relative",zIndex:1}}>
-              <span style={{fontSize:15,fontWeight:800,color:"#fff"}}>🏆 Pick Champion</span>
+              <span style={{fontSize:15,fontWeight:800,color:"#fff"}}>{T[lang].pickChampionPopup}</span>
               <button onClick={()=>setChampPopup(false)}
                 style={{background:"rgba(255,255,255,0.1)",border:"none",borderRadius:8,padding:"5px 14px",color:"rgba(255,255,255,0.6)",fontSize:13,cursor:"pointer"}}>
-                Close
+                {T[lang].guideClose}
               </button>
             </div>
             {/* scrollable team list */}
@@ -4698,10 +4731,10 @@ function ChampionScreen({ onBack, initialMode="champion", championPick, topScore
               <div style={{width:36,height:4,borderRadius:2,background:"rgba(255,255,255,0.35)"}}/>
             </div>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 20px 12px",flexShrink:0,borderBottom:"1px solid rgba(255,255,255,0.07)"}}>
-              <span style={{fontSize:15,fontWeight:800,color:"#fff"}}>👕 Pick Team</span>
+              <span style={{fontSize:15,fontWeight:800,color:"#fff"}}>{T[lang].pickTeamPopup}</span>
               <button onClick={()=>setTsPopup(false)}
                 style={{background:"rgba(255,255,255,0.1)",border:"none",borderRadius:8,padding:"5px 14px",color:"rgba(255,255,255,0.6)",fontSize:13,cursor:"pointer"}}>
-                Close
+                {T[lang].guideClose}
               </button>
             </div>
             <div style={{overflowY:"auto",WebkitOverflowScrolling:"touch",flex:1,padding:"12px 16px 40px"}}>
@@ -4720,7 +4753,7 @@ function ChampionScreen({ onBack, initialMode="champion", championPick, topScore
                 })}
               </div>
 
-              <div style={{fontSize:10,fontWeight:800,color:"rgba(255,255,255,0.35)",letterSpacing:0.8,textTransform:"uppercase",margin:"0 2px 8px"}}>All teams</div>
+              <div style={{fontSize:10,fontWeight:800,color:"rgba(255,255,255,0.35)",letterSpacing:0.8,textTransform:"uppercase",margin:"0 2px 8px"}}>{T[lang].allTeams}</div>
               <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:8}}>
               {otherChampionTeams.map(team=>{
                 const isSel = tsTeam===team;
