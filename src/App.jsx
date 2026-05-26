@@ -7297,7 +7297,7 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
       <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.055,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
       <div style={{flex:1,display:"flex",flexDirection:"column",background:"linear-gradient(to bottom, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0.10) 28%, rgba(255,255,255,0.02) 48%, transparent 65%)",borderRadius:26,margin:"10px 14px 0",boxShadow:"0 8px 32px rgba(10,46,138,0.10), inset 0 1px 0 rgba(255,255,255,0.80)",border:"1px solid rgba(255,255,255,0.22)",overflow:"hidden",position:"relative",willChange:"transform",transform:"translateZ(0)"}}>
         {/* Blur layer */}
-        <div style={{position:"absolute",inset:0,backdropFilter:"blur(28px)",WebkitBackdropFilter:"blur(28px)",WebkitMaskImage:"linear-gradient(to bottom, black 0%, black 44%, transparent 64%)",maskImage:"linear-gradient(to bottom, black 0%, black 44%, transparent 64%)",pointerEvents:"none",zIndex:0}}/>
+        <div style={{position:"absolute",inset:0,backdropFilter:"blur(10px)",WebkitBackdropFilter:"blur(10px)",WebkitMaskImage:"linear-gradient(to bottom, black 0%, black 18%, transparent 36%)",maskImage:"linear-gradient(to bottom, black 0%, black 18%, transparent 36%)",pointerEvents:"none",zIndex:0}}/>
         {/* Gloss highlight */}
         <div style={{position:"absolute",top:0,left:0,right:0,height:"45%",background:"linear-gradient(135deg, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0.06) 40%, transparent 65%)",pointerEvents:"none",zIndex:0}}/>
         <div style={{padding:"12px 14px 0",flexShrink:0,position:"relative",zIndex:2}}>
@@ -7351,7 +7351,7 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
             </div>
           );
         })()}
-      <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",display:"flex",flexDirection:"column"}}>
+      <div style={{flex:1,overflowY:"auto",overflowX:"hidden",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",display:"flex",flexDirection:"column"}}>
       {/* Search bar */}
       <div style={{padding:"12px 20px 4px"}}>
         <div style={UI.inputPanel}>
@@ -7377,64 +7377,122 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
               <div style={{fontSize:28,marginBottom:8}}>🔍</div>
               <div style={{fontSize:13,fontWeight:700,color:DARK}}>{T[lang].noPlayerFound} "{search}"</div>
             </Card>
-          ):filtered.map((u,i)=>{
-            // Rank badge — only show medal if that rank has a prize
-            const hasPrize = !!u.prize;
-            const rankBadge = hasPrize && u.rank===1 ? "🥇"
-              : hasPrize && u.rank===2 ? "🥈"
-              : hasPrize && u.rank===3 ? "🥉"
-              : hasPrize && u.rank===4 ? "🏅"
-              : hasPrize && u.rank===5 ? "🎖️"
-              : null;
-            const rankColor = hasPrize&&u.rank===1?"#FFD700":hasPrize&&u.rank===2?"#C0C0C0":hasPrize&&u.rank===3?"#CD7F32":hasPrize&&u.rank===4?"#5856D6":hasPrize&&u.rank===5?"#5856D6":"#bbb";
-            return (
-            <div key={u.rank} style={{display:"flex",alignItems:"center",
-              ...UI.card,
-              background:u.isMe?"#E8F0FF":"#fff",
-              border:u.isMe?`1.5px solid ${NAVY}`:UI.card.border,
-              borderRadius:12,padding:"8px 12px",gap:10,marginBottom:6}}>
-              {/* Rank indicator */}
-              <div style={{width:26,textAlign:"center",flexShrink:0}}>
-                {rankBadge ? (
-                  <span style={{fontSize:20}}>{rankBadge}</span>
-                ) : (
-                  <div style={{width:26,height:26,borderRadius:7,
+          ) : !search.trim() ? (()=>{
+            const PODIUM_COLORS = {1:"#FFD700",2:"#C0C0C0",3:"#CD7F32"};
+            const PLATFORM_H   = {1:80,2:58,3:42};
+            const AVATAR_SIZE  = {1:66,2:54,3:46};
+
+            const PodiumSlot = ({u,rank})=>{
+              if(!u) return <div style={{flex:1,minWidth:0}}/>;
+              const color   = PODIUM_COLORS[rank];
+              const medal   = rank===1?"🥇":rank===2?"🥈":"🥉";
+              const size    = AVATAR_SIZE[rank];
+              const initials= u.name?.split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2)||"?";
+              return (
+                <div style={{flex:1,minWidth:0,display:"flex",flexDirection:"column",alignItems:"center",overflow:"hidden"}}>
+                  <div style={{fontSize:rank===1?26:22,marginBottom:4,lineHeight:1}}>{medal}</div>
+                  <div style={{width:size,height:size,borderRadius:"50%",border:`3px solid ${color}`,
+                    overflow:"hidden",background:u.isMe?`${NAVY}22`:"rgba(0,0,0,0.07)",
+                    display:"flex",alignItems:"center",justifyContent:"center",marginBottom:5,flexShrink:0}}>
+                    {u.avatarUrl
+                      ?<img src={u.avatarUrl} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                      :<span style={{fontSize:rank===1?17:14,fontWeight:800,color:u.isMe?NAVY:"#555"}}>{initials}</span>}
+                  </div>
+                  <div style={{fontSize:11,fontWeight:800,color:u.isMe?NAVY:DARK,textAlign:"center",
+                    width:"100%",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",
+                    padding:"0 4px",marginBottom:3}}>{u.name}</div>
+                  <div style={{fontSize:rank===1?15:13,fontWeight:900,color:color,marginBottom:8}}>{u.pts}p</div>
+                  <div style={{width:"100%",height:PLATFORM_H[rank],
+                    background:`linear-gradient(180deg,${color}cc 0%,${color}77 100%)`,
+                    borderRadius:"8px 8px 0 0",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                    <span style={{fontSize:16,fontWeight:900,color:"rgba(255,255,255,0.95)"}}>#{rank}</span>
+                  </div>
+                </div>
+              );
+            };
+
+            const LeaderRow = ({u})=>{
+              const rankColor = u.rank===4?"#5856D6":u.rank===5?"#5856D6":"#bbb";
+              const initials  = u.name?.split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2)||"?";
+              return (
+                <div style={{display:"flex",alignItems:"center",background:u.isMe?"#E8F0FF":"#fff",
+                  border:u.isMe?`1.5px solid ${NAVY}`:"1px solid rgba(0,0,0,0.07)",
+                  borderRadius:12,padding:"8px 12px",gap:10,marginBottom:6}}>
+                  <div style={{width:28,height:28,borderRadius:8,flexShrink:0,
                     background:u.isMe?`${NAVY}22`:"rgba(0,0,0,0.05)",
-                    display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto"}}>
-                    <span style={{fontSize:10,fontWeight:700,color:u.isMe?NAVY:rankColor}}>#{u.rank}</span>
+                    display:"flex",alignItems:"center",justifyContent:"center"}}>
+                    <span style={{fontSize:10,fontWeight:800,color:u.isMe?NAVY:rankColor}}>#{u.rank}</span>
+                  </div>
+                  <div style={{width:32,height:32,borderRadius:"50%",flexShrink:0,overflow:"hidden",
+                    background:u.isMe?`${NAVY}22`:"rgba(0,0,0,0.07)",
+                    display:"flex",alignItems:"center",justifyContent:"center"}}>
+                    {u.avatarUrl
+                      ?<img src={u.avatarUrl} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                      :<span style={{fontSize:11,fontWeight:700,color:u.isMe?NAVY:"#888"}}>{initials}</span>}
+                  </div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <span style={{fontSize:13,fontWeight:700,color:u.isMe?NAVY:DARK}}>{u.name}</span>
+                  </div>
+                  {u.prize&&(
+                    <div style={{background:"rgba(0,0,0,0.04)",borderRadius:20,padding:"3px 10px",flexShrink:0}}>
+                      <span style={{fontSize:11,fontWeight:800,color:rankColor}}>🎁 {u.prize}</span>
+                    </div>
+                  )}
+                  <span style={{fontSize:13,fontWeight:800,color:u.isMe?NAVY:"#888",flexShrink:0}}>{u.pts}p</span>
+                </div>
+              );
+            };
+
+            return (
+              <>
+                {/* Podium */}
+                <div style={{display:"flex",alignItems:"flex-end",gap:4,margin:"12px 0 0"}}>
+                  <PodiumSlot u={filtered[1]||null} rank={2}/>
+                  <PodiumSlot u={filtered[0]||null} rank={1}/>
+                  <PodiumSlot u={filtered[2]||null} rank={3}/>
+                </div>
+                {/* Rest */}
+                {filtered.length>3&&(
+                  <div style={{marginTop:16}}>
+                    {filtered.slice(3).map(u=><LeaderRow key={u.rank} u={u}/>)}
                   </div>
                 )}
-              </div>
-              {/* Avatar */}
-              {!u.empty && (
+              </>
+            );
+          })() : filtered.map((u)=>{
+            const rankColor = u.rank===1?"#FFD700":u.rank===2?"#C0C0C0":u.rank===3?"#CD7F32":"#bbb";
+            const rankBadge = u.rank===1?"🥇":u.rank===2?"🥈":u.rank===3?"🥉":null;
+            const initials  = u.name?.split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2)||"?";
+            return (
+              <div key={u.rank} style={{display:"flex",alignItems:"center",background:u.isMe?"#E8F0FF":"#fff",
+                border:u.isMe?`1.5px solid ${NAVY}`:"1px solid rgba(0,0,0,0.07)",
+                borderRadius:12,padding:"8px 12px",gap:10,marginBottom:6}}>
+                <div style={{width:26,textAlign:"center",flexShrink:0}}>
+                  {rankBadge?<span style={{fontSize:20}}>{rankBadge}</span>:(
+                    <div style={{width:26,height:26,borderRadius:7,background:u.isMe?`${NAVY}22`:"rgba(0,0,0,0.05)",
+                      display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto"}}>
+                      <span style={{fontSize:10,fontWeight:700,color:u.isMe?NAVY:rankColor}}>#{u.rank}</span>
+                    </div>
+                  )}
+                </div>
                 <div style={{width:32,height:32,borderRadius:"50%",flexShrink:0,overflow:"hidden",
                   background:u.isMe?`${NAVY}22`:"rgba(0,0,0,0.07)",
                   display:"flex",alignItems:"center",justifyContent:"center"}}>
                   {u.avatarUrl
-                    ? <img src={u.avatarUrl} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
-                    : <span style={{fontSize:11,fontWeight:700,color:u.isMe?NAVY:"#888"}}>
-                        {u.name.split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2)}
-                      </span>
-                  }
+                    ?<img src={u.avatarUrl} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                    :<span style={{fontSize:11,fontWeight:700,color:u.isMe?NAVY:"#888"}}>{initials}</span>}
                 </div>
-              )}
-              <div style={{flex:1,minWidth:0}}>
-                {u.empty
-                  ? <span style={{fontSize:12,color:"#ccc",fontStyle:"italic"}}>{T[lang].openSlot}</span>
-                  : <span style={{fontSize:13,fontWeight:700,color:u.isMe?NAVY:DARK}}>{u.name}</span>
-                }
+                <div style={{flex:1,minWidth:0}}>
+                  <span style={{fontSize:13,fontWeight:700,color:u.isMe?NAVY:DARK}}>{u.name}</span>
+                </div>
+                {u.prize&&(
+                  <div style={{background:u.rank===1?"rgba(255,215,0,0.15)":u.rank===2?"rgba(192,192,192,0.15)":"rgba(205,127,50,0.12)",
+                    borderRadius:20,padding:"3px 10px",border:`1px solid ${rankColor}33`,flexShrink:0}}>
+                    <span style={{fontSize:11,fontWeight:800,color:rankColor}}>🎁 {u.prize}</span>
+                  </div>
+                )}
+                <span style={{fontSize:13,fontWeight:800,color:u.isMe?NAVY:"#888",flexShrink:0,marginLeft:4}}>{u.pts}p</span>
               </div>
-              {/* Prize pill — prominent */}
-              {!u.empty&&u.prize&&(
-                <div style={{background:u.rank===1?"rgba(255,215,0,0.15)":u.rank===2?"rgba(192,192,192,0.15)":"rgba(205,127,50,0.12)",
-                  borderRadius:20,padding:"3px 10px",border:`1px solid ${rankColor}33`,flexShrink:0}}>
-                  <span style={{fontSize:11,fontWeight:800,color:rankColor}}>🎁 {u.prize}</span>
-                </div>
-              )}
-              <span style={{fontSize:13,fontWeight:800,color:u.isMe?NAVY:"#888",flexShrink:0,marginLeft:4}}>
-                {u.empty?"—":`${u.pts}p`}
-              </span>
-            </div>
             );
           })}
         </div>
