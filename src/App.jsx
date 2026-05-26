@@ -4871,7 +4871,7 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
   };
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:"transparent",overflow:"hidden",position:"relative"}}>
-      <div style={{flex:1,display:"flex",flexDirection:"column",background:"linear-gradient(to bottom, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0.10) 28%, rgba(255,255,255,0.02) 48%, transparent 65%)",borderRadius:26,margin:"10px 14px 0",boxShadow:"0 8px 32px rgba(10,46,138,0.10), inset 0 1px 0 rgba(255,255,255,0.80)",border:"1px solid rgba(255,255,255,0.22)",overflow:"hidden",position:"relative",willChange:"transform",transform:"translateZ(0)"}}>
+      <div style={{flex:1,display:"flex",flexDirection:"column",background:"linear-gradient(to bottom, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0.10) 28%, rgba(255,255,255,0.02) 48%, transparent 65%)",borderRadius:26,margin:"10px 14px 0",boxShadow:"0 4px 16px rgba(10,46,138,0.04), inset 0 1px 0 rgba(255,255,255,0.40)",border:"1px solid rgba(255,255,255,0.08)",overflow:"hidden",position:"relative",willChange:"transform",transform:"translateZ(0)"}}>
         {/* Blur layer — fades from top */}
         <div style={{position:"absolute",inset:0,backdropFilter:"blur(28px)",WebkitBackdropFilter:"blur(28px)",WebkitMaskImage:"linear-gradient(to bottom, black 0%, black 44%, transparent 64%)",maskImage:"linear-gradient(to bottom, black 0%, black 44%, transparent 64%)",pointerEvents:"none",zIndex:0}}/>
         {/* Gloss highlight */}
@@ -5979,9 +5979,9 @@ function Footer({ active, onNavigate, lang, user }) {
   return (
     <div style={{position:"fixed",bottom:0,left:0,right:0,padding:"0 14px",paddingBottom:"env(safe-area-inset-bottom, 10px)",zIndex:1000}}>
       <div style={{
-        background:"#fff",
-        backdropFilter:"blur(18px)",
-        WebkitBackdropFilter:"blur(18px)",
+        background:"rgba(255,255,255,0.78)",
+        backdropFilter:"blur(20px)",
+        WebkitBackdropFilter:"blur(20px)",
         borderRadius:16,
         boxShadow:"0 2px 14px rgba(0,0,0,0.07)",
         border:"1.5px solid rgba(255,255,255,0.72)",
@@ -9767,6 +9767,19 @@ function App() {
           </div>}
         </div>
         <Toast message={toast.message} emoji={toast.emoji} visible={toast.visible}/>
+        {showFooter&&(
+          <div style={{
+            position:"fixed",
+            bottom:0,
+            left:14,
+            right:14,
+            height:"calc(100px + env(safe-area-inset-bottom, 10px))",
+            zIndex:999,
+            pointerEvents:"none",
+            borderRadius:"16px 16px 0 0",
+            background:"linear-gradient(to bottom, transparent 0%, rgba(238,242,255,0.35) 30%, rgba(238,242,255,0.70) 58%, rgba(238,242,255,0.88) 78%, transparent 100%)",
+          }}/>
+        )}
         {showFooter&&<Footer active={footerActive} onNavigate={key=>{ if(key===SCREENS.BOARDS) setBoardsInitialTab("available"); setScreen(key); }} lang={lang} user={user} activeBoardId={activeBoardId} myBoards={myBoards} leaderboardData={leaderboardData} tournamentStarted={tournamentStarted}/>}
         <AdminBugPanel
           user={user}
