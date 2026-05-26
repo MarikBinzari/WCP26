@@ -4225,9 +4225,10 @@ function GroupRankingScreen({ group, teams, existingRanking, onConfirm, onAutoSa
 }
 
 // ── CIRCLE TAB ────────────────────────────────────────────────────────────────
-function CircleTab({ label, imageUrl, name, isActive, onClick, lightBg=false, distance=0, rank, members }) {
+function CircleTab({ label, imageUrl, name, isActive, onClick, lightBg=false, distance=0, rank, members, done=false }) {
   const scale = isActive ? 1.32 : Math.max(0.58, 1 - distance * 0.2);
   const opacity = isActive ? 1 : Math.max(0.32, 1 - distance * 0.28);
+  const activeColor = isActive && done ? GREEN : NAVY;
   return (
     <div onClick={onClick} style={{
       display:"flex",flexDirection:"column",alignItems:"center",gap:5,
@@ -4240,11 +4241,11 @@ function CircleTab({ label, imageUrl, name, isActive, onClick, lightBg=false, di
         width:44, height:44,
         borderRadius:"50%",
         background:isActive?"#fff":lightBg?"rgba(0,0,0,0.05)":"rgba(255,255,255,0.1)",
-        border:isActive?`2px solid ${NAVY}`:"1px solid rgba(0,0,0,0.10)",
+        border:isActive?`2px solid ${activeColor}`:"1px solid rgba(0,0,0,0.10)",
         display:"flex",alignItems:"center",justifyContent:"center",
         fontSize:22, overflow:"hidden",
-        boxShadow:isActive?`0 0 0 4px ${NAVY}18, 0 4px 14px rgba(10,46,138,0.18)`:"none",
-        transition:"all 0.25s",
+        boxShadow:isActive?`0 0 0 4px ${activeColor}28, 0 4px 14px ${activeColor}30`:"none",
+        transition:"all 0.4s ease",
       }}>
         {imageUrl
           ? <img src={imageUrl} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
@@ -4253,9 +4254,9 @@ function CircleTab({ label, imageUrl, name, isActive, onClick, lightBg=false, di
       <span style={{
         fontSize:isActive?10:9,
         fontWeight:isActive?800:600,
-        color:isActive?NAVY:lightBg?"rgba(0,0,0,0.55)":"rgba(255,255,255,0.6)",
+        color:isActive?activeColor:lightBg?"rgba(0,0,0,0.55)":"rgba(255,255,255,0.6)",
         maxWidth:52,textAlign:"center",lineHeight:1.2,
-        transition:"all 0.25s",
+        transition:"all 0.4s ease",
       }}>{name}</span>
     </div>
   );
@@ -4851,6 +4852,10 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
   const cdSecs=simDay?Math.max(0,Math.floor((cdDiff%60000)/1000)):cdS;
   const tournamentOver = cdDiff<=0;
   const meInTop3 = top3.some(u=>u.isMe);
+  const _deadlinePassed = simDay ? (simDay > 11 || (simDay === 11 && (simHour||0) >= 19)) : new Date() >= new Date(2026,5,11,19,0,0);
+  const _boardDone = _deadlinePassed ? (instantPickDone || predictionsComplete[activeId]) : instantPickDone;
+  const allTasksDone = _boardDone && (!koUnlocked || koPickDone);
+  console.log('[BoardGreen]', { instantPickDone, predictionsComplete, activeId, _deadlinePassed, _boardDone, koUnlocked, koPickDone, allTasksDone });
   const homeSectionLabelStyle = { ...UI.sectionLabel, fontSize:12, fontWeight:750, color:"rgba(10,46,138,0.55)", textAlign:"center", letterSpacing:1.2 };
   const homeTaskCardStyle = {
     ...UI.card,
@@ -4913,12 +4918,13 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
             <div style={{flex:1,display:"flex",justifyContent:"center",alignItems:"center",...(isCenter?{transform:"translateY(-6px)",zIndex:2}:{})}}>
               <CircleTab label={item.label} imageUrl={item.image_url||undefined} name={item.isGlobal?"Global":item.name.split(" ")[0]}
                 isActive={isCenter} onClick={handleTap} lightBg distance={dist}
-                rank={isCenter?myRank:undefined} members={isCenter?memberCount:undefined}/>
+                rank={isCenter?myRank:undefined} members={isCenter?memberCount:undefined}
+                done={isCenter&&allTasksDone}/>
             </div>
           );
         };
         return (
-          <div style={{margin:"18px 14px 0",background:"#fff",borderRadius:16,boxShadow:"0 2px 10px rgba(0,0,0,0.06)",border:"1px solid rgba(10,46,138,0.06)",display:"flex",alignItems:"center",padding:"8px 4px",overflow:"visible",flexShrink:0}}>
+          <div style={{margin:"18px 14px 0",background:"#fff",borderRadius:16,boxShadow:"0 2px 10px rgba(0,0,0,0.06)",border:`1px solid ${allTasksDone?GREEN+"44":"rgba(10,46,138,0.06)"}`,display:"flex",alignItems:"center",padding:"8px 4px",overflow:"visible",flexShrink:0}}>
             <button onClick={()=>{ const np=sliderPos+1; if(np<allSliderItems.length){setSliderPos(np);setActiveId(allSliderItems[np].id);} }}
               style={{background:"none",border:"none",padding:"0 16px",cursor:"pointer",fontSize:22,fontWeight:700,color:NAVY,opacity:sliderPos<allSliderItems.length-1?0.65:0.12,WebkitTapHighlightColor:"transparent",lineHeight:1,transition:"opacity 0.2s",flexShrink:0}}>‹</button>
             <div onTouchStart={handleSliderTouchStart} onTouchEnd={handleSliderTouchEnd}
@@ -5028,8 +5034,10 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
                     </div>
                   </div>
                 ) : (
-                  <div style={{width:36,height:36,borderRadius:"50%",border:`1.5px solid ${allDone?GREEN:NAVY}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,background:allDone?`${GREEN}22`:"rgba(10,46,138,0.06)",position:"relative",zIndex:1}}>
-                    <span style={{fontSize:11,fontWeight:700,color:allDone?GREEN:NAVY}}>{doneCount}/2</span>
+                  <div style={{position:"relative",width:36,height:36,flexShrink:0,zIndex:1}}>
+                    <div style={{position:"absolute",inset:0,borderRadius:"50%",border:`1.5px solid ${allDone?GREEN:NAVY}`,display:"flex",alignItems:"center",justifyContent:"center",background:allDone?`${GREEN}22`:"rgba(10,46,138,0.06)",...(!allDone?{animation:"nodeBreath 3s ease-in-out infinite"}:{})}}>
+                      <span style={{fontSize:11,fontWeight:700,color:allDone?GREEN:NAVY}}>{doneCount}/2</span>
+                    </div>
                   </div>
                 )}
               </div>
@@ -5130,14 +5138,16 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
                     padding:"4px 6px 4px 4px",margin:"0 -6px 0 -4px",
                     cursor:stepClick?"pointer":"default"}}>
                     <div style={{display:"flex",flexDirection:"column",alignItems:"center",width:18,flexShrink:0}}>
-                      {step.active ? (
-                        <PulseNode color={NAVY}><div style={{width:5,height:5,borderRadius:"50%",background:"#fff"}}/></PulseNode>
-                      ) : (
-                        <div style={{width:18,height:18,borderRadius:"50%",background:nodeColor,display:"flex",alignItems:"center",justifyContent:"center",
-                          boxShadow:step.isFinal?"0 0 0 3px rgba(240,160,32,0.25), 0 2px 8px rgba(240,160,32,0.4)":step.done?`0 0 0 3px ${GREEN}33`:"none",flexShrink:0}}>
-                          {step.isFinal?<span style={{fontSize:9}}>★</span>:step.done?<div style={{width:5,height:5,borderRadius:"50%",background:"#fff"}}/>:step.locked?<span style={{fontSize:8}}>🔒</span>:null}
+                      <div style={{position:"relative",width:18,height:18,flexShrink:0}}>
+                        <div style={{position:"absolute",inset:0,borderRadius:"50%",
+                          background:step.active?"#fff":step.done?`${GREEN}22`:nodeColor,
+                          border:step.active?`1.5px solid ${NAVY}`:step.done?`1.5px solid ${GREEN}`:"none",
+                          display:"flex",alignItems:"center",justifyContent:"center",
+                          boxShadow:step.isFinal?"0 0 0 3px rgba(240,160,32,0.25), 0 2px 8px rgba(240,160,32,0.4)":"none",
+                          ...(step.active?{animation:"nodeBreath 3s ease-in-out infinite"}:{})}}>
+                          {step.isFinal?<span style={{fontSize:9}}>★</span>:step.done?<div style={{width:5,height:5,borderRadius:"50%",background:GREEN}}/>:step.active?<div style={{width:5,height:5,borderRadius:"50%",background:NAVY}}/>:step.locked?<span style={{fontSize:8}}>🔒</span>:null}
                         </div>
-                      )}
+                      </div>
                       {!isLast&&<div style={{width:2,flex:1,minHeight:22,marginTop:2,background:step.done?GREEN:"#e8e8e8",borderRadius:1}}/>}
                     </div>
                     <div style={{flex:1,paddingBottom:isLast?0:4}}>
@@ -5216,14 +5226,16 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
                     opacity:(isPast&&!done)?0.6:1}}
                     onClick={e=>{e.stopPropagation();(!w.locked||isPast)&&!w.isFinal&&onOpenGroups&&onOpenGroups(w.weekStart);}}>
                     <div style={{display:"flex",flexDirection:"column",alignItems:"center",width:18,flexShrink:0}}>
-                      {active ? (
-                        <PulseNode color={NAVY}><div style={{width:5,height:5,borderRadius:"50%",background:"#fff"}}/></PulseNode>
-                      ) : (
-                        <div style={{width:18,height:18,borderRadius:"50%",background:nodeColor,display:"flex",alignItems:"center",justifyContent:"center",
-                          boxShadow:w.isFinal?"0 0 0 3px rgba(240,160,32,0.25), 0 2px 8px rgba(240,160,32,0.4)":done?`0 0 0 3px ${GREEN}33`:"none",flexShrink:0}}>
-                          {w.isFinal?<span style={{fontSize:9}}>★</span>:done?<div style={{width:5,height:5,borderRadius:"50%",background:"#fff"}}/>:w.locked&&!isPast?<span style={{fontSize:8}}>🔒</span>:null}
+                      <div style={{position:"relative",width:18,height:18,flexShrink:0}}>
+                        <div style={{position:"absolute",inset:0,borderRadius:"50%",
+                          background:active?"#fff":done?`${GREEN}22`:nodeColor,
+                          border:active?`1.5px solid ${NAVY}`:done?`1.5px solid ${GREEN}`:"none",
+                          display:"flex",alignItems:"center",justifyContent:"center",
+                          boxShadow:w.isFinal?"0 0 0 3px rgba(240,160,32,0.25), 0 2px 8px rgba(240,160,32,0.4)":"none",
+                          ...(active?{animation:"nodeBreath 3s ease-in-out infinite"}:{})}}>
+                          {w.isFinal?<span style={{fontSize:9}}>★</span>:done?<div style={{width:5,height:5,borderRadius:"50%",background:GREEN}}/>:active?<div style={{width:5,height:5,borderRadius:"50%",background:NAVY}}/>:w.locked&&!isPast?<span style={{fontSize:8}}>🔒</span>:null}
                         </div>
-                      )}
+                      </div>
                       {!isLast&&<div style={{width:2,flex:1,minHeight:16,marginTop:2,borderRadius:1,background:"#e8e8e8",position:"relative",overflow:"hidden"}}>
                         <div style={{position:"absolute",top:0,left:0,right:0,height:`${w.locked?0:pct}%`,background:done?GREEN:active?NAVY+"99":"#bbb",borderRadius:1,transition:"height 0.4s"}}/>
                       </div>}
