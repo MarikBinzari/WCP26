@@ -363,12 +363,14 @@ const T = {
     lockedUntilJun27:"Locked until Jun 27", specialPick:"Special Pick",
     winnerTopScorer:"Winner & Top Scorer", reopensJun27:"Reopens Jun 27",
     specialPickSub:"Team win +3 · Player scored +3",
+    predCardTitle:"Bracket Prediction", predCardSub:"Every right pick counts",
+    exactCardTitle:"Exact Scores", exactCardSub:"Aim for perfect — every goal counts",
     winnerTeam:"Winner Team", pickTeam:"Pick your team",
     topScorer:"Top Scorer", pickPlayer:"Pick your player",
     totalLabel:"Total:", availableNow:"Available now",
     syncingPredictions:"Syncing predictions", trophyLabel:"Trophy",
     groupsBestThird:"Groups + Best Third", knockoutPhase:"Knockout Phase",
-    moreToCome:"· more to come ·",
+    moreToCome:"· more to come ·", nextTask:"Next task", continueHere:"CONTINUE HERE",
     copyExactScoresTitle:"Copy exact scores", copyWinnerTeamTitle:"Copy Winner Team",
     copyTopScorerTitle:"Copy Top Scorer", copySpecialTitle:"Copy special picks",
     copyPredictionsTitle:"Copy predictions",
@@ -540,12 +542,14 @@ const T = {
     lockedUntilJun27:"Blocat până pe 27 Iun", specialPick:"Selecție Specială",
     winnerTopScorer:"Câștigător & Golgheter", reopensJun27:"Se redeschide 27 Iun",
     specialPickSub:"Echipă câștigătoare +3 · Marcator +3",
+    predCardTitle:"Predicții bracket", predCardSub:"Fiecare alegere corectă contează",
+    exactCardTitle:"Scoruri exacte", exactCardSub:"Fii precis — fiecare gol contează",
     winnerTeam:"Echipa Câștigătoare", pickTeam:"Alege echipa",
     topScorer:"Golgheter", pickPlayer:"Alege jucătorul",
     totalLabel:"Total:", availableNow:"Disponibil acum",
     syncingPredictions:"Sincronizare predicții", trophyLabel:"Trofeu",
     groupsBestThird:"Grupe + Best Third", knockoutPhase:"Faza Knockout",
-    moreToCome:"· mai urmează ·",
+    moreToCome:"· mai urmează ·", nextTask:"Următorul task", continueHere:"CONTINUĂ AICI",
     copyExactScoresTitle:"Copiază scoruri exacte", copyWinnerTeamTitle:"Copiază Echipa Câștigătoare",
     copyTopScorerTitle:"Copiază Golgheter", copySpecialTitle:"Copiază selecțiile speciale",
     copyPredictionsTitle:"Copiază predicții",
@@ -717,12 +721,14 @@ const T = {
     lockedUntilJun27:"Bloqué jusqu'au 27 Juin", specialPick:"Sélection Spéciale",
     winnerTopScorer:"Vainqueur & Meilleur Buteur", reopensJun27:"Rouvre le 27 Juin",
     specialPickSub:"Équipe gagnante +3 · Buteur +3",
+    predCardTitle:"Bracket de pronostics", predCardSub:"Chaque bon choix compte",
+    exactCardTitle:"Scores exacts", exactCardSub:"Visez parfait — chaque but compte",
     winnerTeam:"Équipe Gagnante", pickTeam:"Choisissez votre équipe",
     topScorer:"Meilleur Buteur", pickPlayer:"Choisissez votre joueur",
     totalLabel:"Total:", availableNow:"Disponible maintenant",
     syncingPredictions:"Synchronisation des pronostics", trophyLabel:"Trophée",
     groupsBestThird:"Groupes + Meilleur 3e", knockoutPhase:"Phase Knockout",
-    moreToCome:"· à venir ·",
+    moreToCome:"· à venir ·", nextTask:"Tâche suivante", continueHere:"CONTINUEZ ICI",
     copyExactScoresTitle:"Copier les scores exacts", copyWinnerTeamTitle:"Copier Équipe Gagnante",
     copyTopScorerTitle:"Copier Meilleur Buteur", copySpecialTitle:"Copier les sélections spéciales",
     copyPredictionsTitle:"Copier les pronostics",
@@ -1016,7 +1022,7 @@ function CalendarSlider() {
                   background:`linear-gradient(135deg,${RED},${GREEN})`,marginTop:2}}/>
               )}
               {has&&locked&&!isSel&&(
-                <span style={{fontSize:8,marginTop:1}}>🔒</span>
+                <span style={{fontSize:11,marginTop:1}}>🔒</span>
               )}
               {isStart&&!isSel&&(
                 <div style={{position:"absolute",top:-5,right:-2,background:RED,
@@ -1416,10 +1422,11 @@ function KnockoutTab({ knockoutPicks, setKnockoutPicks, best3picks, groupRank, o
           {groups.map(([pA,pB],i)=>{
             const done=!!knockoutPicks[pA.id]&&(pB?!!knockoutPicks[pB.id]:true);
             return (
-              <div key={i} onClick={()=>setGroupIdx(i)} style={{
+              <button key={i} onClick={()=>setGroupIdx(i)} style={{
                 width:gi===i?22:8,height:8,borderRadius:4,cursor:"pointer",
                 transition:"all 0.3s",
-                background:gi===i?NAVY:done?GREEN:"#ddd"
+                background:gi===i?NAVY:done?GREEN:"#ddd",
+                border:"none",padding:0,flexShrink:0,
               }}/>
             );
           })}
@@ -1476,7 +1483,7 @@ function KnockoutTab({ knockoutPicks, setKnockoutPicks, best3picks, groupRank, o
                 background:pickA&&pickB?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:BG,
                 boxShadow:SHADOW_OUT,display:"flex",flexDirection:"column",alignItems:"center",gap:5,transition:"all 0.25s"}}>
                 <span style={{fontSize:18,opacity:pickA?1:0.2}}>{pickA?FLAGS[pickA]||"🏳":"❓"}</span>
-                <span style={{fontSize:8,fontWeight:700,color:pickA&&pickB?"rgba(255,255,255,0.45)":"#ddd"}}>vs</span>
+                <span style={{fontSize:11,fontWeight:700,color:pickA&&pickB?"rgba(255,255,255,0.45)":"#ddd"}}>vs</span>
                 <span style={{fontSize:18,opacity:pickB?1:0.2}}>{pB?(pickB?FLAGS[pickB]||"🏳":"❓"):"—"}</span>
               </div>
             </div>
@@ -1600,7 +1607,7 @@ function GrupeTab({ groupRank, setRank, onComplete }) {
               <div style={{display:"flex",gap:6}}>
                 {[1,2,3,4].map(pos=>(
                   <div key={pos} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:4,background:pos<=2?"rgba(0,32,91,0.05)":"transparent",borderRadius:8,padding:"6px 4px"}}>
-                    <span style={{fontSize:7,fontWeight:700,color:pos===1?GREEN:pos===2?NAVY:"#ccc",textTransform:"uppercase"}}>{pos===1?"1st":pos===2?"2nd":pos===3?"3rd":"4th"}</span>
+                    <span style={{fontSize:10,fontWeight:700,color:pos===1?GREEN:pos===2?NAVY:"#ccc",textTransform:"uppercase"}}>{pos===1?"1st":pos===2?"2nd":pos===3?"3rd":"4th"}</span>
                     <span style={{fontSize:18}}>{FLAGS[r[pos]]||"?"}</span>
                     <span style={{fontSize:11,fontWeight:600,color:DARK}}>{r[pos]?.substring(0,3)||"?"}</span>
                   </div>
@@ -1640,13 +1647,13 @@ function GrupeTab({ groupRank, setRank, onComplete }) {
             const pos=Object.entries(rank).find(([,v])=>v===t)?.[0];
             const isRanked=!!pos;
             return (
-              <div key={t} onClick={()=>handleTeamClick(t)}
-                style={{display:"flex",flexDirection:"column",alignItems:"center",gap:3,cursor:"pointer",transition:"all 0.2s",opacity:isRanked?0.35:1}}>
+              <button key={t} onClick={()=>handleTeamClick(t)}
+                style={{display:"flex",flexDirection:"column",alignItems:"center",gap:3,cursor:"pointer",transition:"all 0.2s",opacity:isRanked?0.35:1,border:"none",background:"transparent",WebkitTapHighlightColor:"transparent",padding:0,fontFamily:"inherit"}}>
                 <div style={{width:42,height:42,borderRadius:"50%",background:isRanked?"rgba(255,255,255,0.04)":"rgba(255,255,255,0.12)",border:isRanked?"2px solid rgba(255,255,255,0.12)":"2px solid rgba(255,255,255,0.5)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,transition:"all 0.2s"}}>
                   {FLAGS[t]}
                 </div>
                 <span style={{fontSize:11,fontWeight:800,color:isRanked?"rgba(255,255,255,0.25)":"#fff",letterSpacing:0.3}}>{t.substring(0,3).toUpperCase()}</span>
-              </div>
+              </button>
             );
           })}
         </div>
@@ -2715,7 +2722,7 @@ function MatchSwipeCard({ home, away, onPick, onFlash, groupLabel, matchNum, tot
         )}
 
         {/* ── HOME TEAM — top-left ── */}
-        <div onClick={()=>pick("home")} style={{
+        <div onClick={()=>pick("home")} role="button" tabIndex={0} onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();pick("home");}}} style={{
           position:"absolute", top:"9%", left:"4%",
           zIndex:5, cursor:"pointer",
           display:"flex", flexDirection:"column", alignItems:"flex-start", gap:10,
@@ -2808,7 +2815,7 @@ function MatchSwipeCard({ home, away, onPick, onFlash, groupLabel, matchNum, tot
         </div>
 
         {/* ── AWAY TEAM — bottom-right ── */}
-        <div onClick={()=>pick("away")} style={{
+        <div onClick={()=>pick("away")} role="button" tabIndex={0} onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();pick("away");}}} style={{
           position:"absolute", bottom:"18%", right:"4%",
           zIndex:5, cursor:"pointer",
           display:"flex", flexDirection:"column", alignItems:"flex-end", gap:10,
@@ -2844,7 +2851,7 @@ function MatchSwipeCard({ home, away, onPick, onFlash, groupLabel, matchNum, tot
           position:"absolute", zIndex:6, bottom:20, left:14, right:14,
           display:"flex", justifyContent:"space-between", alignItems:"flex-end",
         }}>
-          <div onClick={()=>pick("home")} style={{
+          <button onClick={()=>pick("home")} style={{
             cursor:"pointer",
             background:"rgba(0,0,0,0.65)", backdropFilter:"blur(12px)",
             borderRadius:14, padding:"8px 14px",
@@ -2852,13 +2859,14 @@ function MatchSwipeCard({ home, away, onPick, onFlash, groupLabel, matchNum, tot
             transform:swipeLeft?`scale(${1+leftPct*0.05}) translateY(${-leftPct*4}px)`:"scale(1)",
             transition:"transform 0.08s",
             boxShadow:swipeLeft?`0 0 22px ${homeColors[0]}88`:"0 2px 12px rgba(0,0,0,0.6)",
+            WebkitTapHighlightColor:"transparent", fontFamily:"inherit", textAlign:"left",
           }}>
-            <div style={{fontSize:8,color:"rgba(255,255,255,0.35)",fontWeight:700,letterSpacing:1.5,marginBottom:3}}>← SWIPE</div>
+            <div style={{fontSize:11,color:"rgba(255,255,255,0.35)",fontWeight:700,letterSpacing:1.5,marginBottom:3}}>← SWIPE</div>
             <div style={{fontSize:15,fontWeight:900,color:"#fff"}}>{home}</div>
-          </div>
+          </button>
 
           {!isKo&&(
-            <div onClick={()=>pick("draw")} style={{cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
+            <button onClick={()=>pick("draw")} style={{cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:4,border:"none",background:"transparent",padding:0,fontFamily:"inherit",WebkitTapHighlightColor:"transparent"}}>
               <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:1,animation:"xPulse 2.5s ease-in-out infinite"}}>
                 <span style={{fontSize:13,color:"rgba(255,255,255,0.55)",lineHeight:1}}>↑</span>
                 <span style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,0.45)",letterSpacing:1,textTransform:"uppercase"}}>egal</span>
@@ -2868,10 +2876,10 @@ function MatchSwipeCard({ home, away, onPick, onFlash, groupLabel, matchNum, tot
                 border:"1.5px solid rgba(255,215,0,0.5)",boxShadow:"0 2px 16px rgba(255,215,0,0.2)"}}>
                 <span style={{fontSize:22,fontWeight:900,color:"#FFD700",textShadow:"0 2px 12px rgba(0,0,0,0.8)",lineHeight:1}}>X</span>
               </div>
-            </div>
+            </button>
           )}
 
-          <div onClick={()=>pick("away")} style={{
+          <button onClick={()=>pick("away")} style={{
             cursor:"pointer",
             background:"rgba(0,0,0,0.65)", backdropFilter:"blur(12px)",
             borderRadius:14, padding:"8px 14px", textAlign:"right",
@@ -2879,10 +2887,11 @@ function MatchSwipeCard({ home, away, onPick, onFlash, groupLabel, matchNum, tot
             transform:swipeRight?`scale(${1+rightPct*0.05}) translateY(${-rightPct*4}px)`:"scale(1)",
             transition:"transform 0.08s",
             boxShadow:swipeRight?`0 0 22px ${awayColors[0]}88`:"0 2px 12px rgba(0,0,0,0.6)",
+            WebkitTapHighlightColor:"transparent", fontFamily:"inherit",
           }}>
-            <div style={{fontSize:8,color:"rgba(255,255,255,0.35)",fontWeight:700,letterSpacing:1.5,marginBottom:3}}>SWIPE →</div>
+            <div style={{fontSize:11,color:"rgba(255,255,255,0.35)",fontWeight:700,letterSpacing:1.5,marginBottom:3}}>SWIPE →</div>
             <div style={{fontSize:15,fontWeight:900,color:"#fff"}}>{away}</div>
-          </div>
+          </button>
         </div>
 
         {canGoBack&&(
@@ -2894,7 +2903,7 @@ function MatchSwipeCard({ home, away, onPick, onFlash, groupLabel, matchNum, tot
             backdropFilter:"blur(6px)",
           }}>
             <span style={{fontSize:13}}>←</span>
-            <span style={{fontSize:9,fontWeight:700,textTransform:"uppercase",letterSpacing:1}}>{T[lang].backLabel}</span>
+            <span style={{fontSize:11,fontWeight:700,textTransform:"uppercase",letterSpacing:1}}>{T[lang].backLabel}</span>
           </button>
         )}
       </div>
@@ -3086,12 +3095,12 @@ function GroupIntroScreen({ group, teams: teamsProp, isKo, onStart, hideHeader=f
                             <div style={{padding:"7px 10px",borderBottom:"1px solid rgba(0,0,0,0.05)",display:"flex",alignItems:"center",gap:8,background:hWon?GREEN+"15":"transparent"}}>
                               <span style={{fontSize:20,lineHeight:1}}>{FLAGS[h]||"🏳"}</span>
                               <span style={{fontSize:12,fontWeight:700,color:hWon?GREEN:DARK,flex:1}}>{h||"TBD"}</span>
-                              {hWon&&<span style={{fontSize:9,fontWeight:900,color:GREEN}}>✓</span>}
+                              {hWon&&<span style={{fontSize:11,fontWeight:900,color:GREEN}}>✓</span>}
                             </div>
                             <div style={{padding:"7px 10px",display:"flex",alignItems:"center",gap:8,background:aWon?GREEN+"15":"transparent"}}>
                               <span style={{fontSize:20,lineHeight:1}}>{FLAGS[a]||"🏳"}</span>
                               <span style={{fontSize:12,fontWeight:700,color:aWon?GREEN:DARK,flex:1}}>{a||"TBD"}</span>
-                              {aWon&&<span style={{fontSize:9,fontWeight:900,color:GREEN}}>✓</span>}
+                              {aWon&&<span style={{fontSize:11,fontWeight:900,color:GREEN}}>✓</span>}
                             </div>
                           </div>
                         );
@@ -3107,19 +3116,19 @@ function GroupIntroScreen({ group, teams: teamsProp, isKo, onStart, hideHeader=f
                       <div style={{background:`${col}12`,borderRadius:8,border:`1.5px dashed ${col}66`,padding:"6px 8px",minWidth:70,textAlign:"center",flexShrink:0}}>
                         {(w1||w2)?(
                           <>
-                            <span style={{fontSize:8,color:"#bbb",display:"block",marginBottom:5}}>→ {nextRoundLabel}</span>
+                            <span style={{fontSize:11,color:"#bbb",display:"block",marginBottom:5}}>→ {nextRoundLabel}</span>
                             {[w1,w2].map((w,wi)=>w?(
                               <div key={wi} style={{display:"flex",alignItems:"center",gap:5,justifyContent:"center",marginBottom:wi===0?4:0,background:`${col}18`,borderRadius:6,padding:"3px 6px"}}>
                                 <span style={{fontSize:18,lineHeight:1}}>{FLAGS[w]||"🏳"}</span>
                                 <span style={{fontSize:10,fontWeight:900,color:col,letterSpacing:0.5}}>{code(w)}</span>
                               </div>
                             ):(
-                              <div key={wi} style={{fontSize:9,color:"#ccc",marginBottom:wi===0?4:0,padding:"3px 0"}}>??</div>
+                              <div key={wi} style={{fontSize:11,color:"#ccc",marginBottom:wi===0?4:0,padding:"3px 0"}}>??</div>
                             ))}
                           </>
                         ):(
                           <>
-                            <span style={{fontSize:9,color:"#bbb",display:"block",marginBottom:2}}>{T[lang].winnerArrow}</span>
+                            <span style={{fontSize:11,color:"#bbb",display:"block",marginBottom:2}}>{T[lang].winnerArrow}</span>
                             <span style={{fontSize:10,fontWeight:800,color:col,lineHeight:1.2}}>{nextRoundLabel}</span>
                           </>
                         )}
@@ -3366,7 +3375,7 @@ function InstantPickScreen({ onBack, onComplete, onKoComplete, onModify, savedSt
           const grupeActive=stage==="groups";
           const grupeDone=allGroupsDone;
           return (
-            <div onClick={()=>{
+            <button onClick={()=>{
               if(stage!=="groups"){ setStage("groups"); setShowGroupsSlider(true); }
               else setShowGroupsSlider(v=>!v);
             }} style={{
@@ -3375,14 +3384,14 @@ function InstantPickScreen({ onBack, onComplete, onKoComplete, onModify, savedSt
               border:`1.5px solid ${grupeActive?"rgba(255,255,255,0.45)":"transparent"}`,
               display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"space-between",
               cursor:"pointer",position:"relative",
-              opacity:1,
+              opacity:1,WebkitTapHighlightColor:"transparent",
             }}>
-              <span style={{fontSize:6,color:"rgba(255,255,255,0.85)",fontWeight:800,letterSpacing:0.3,lineHeight:1,textAlign:"center"}}>Groups</span>
+              <span style={{fontSize:9,color:"rgba(255,255,255,0.85)",fontWeight:800,letterSpacing:0.3,lineHeight:1,textAlign:"center"}}>Groups</span>
               <span style={{fontSize:10,lineHeight:1}}>
                 {grupeDone?"✓":grupeActive?"●":"○"}
               </span>
               {showGroupsSlider&&<span style={{position:"absolute",bottom:-6,left:"50%",transform:"translateX(-50%)",width:0,height:0,borderLeft:"5px solid transparent",borderRight:"5px solid transparent",borderTop:`5px solid rgba(255,255,255,0.4)`}}/>}
-            </div>
+            </button>
           );
         })()}
         <div style={{width:1,height:28,background:"rgba(255,255,255,0.2)",flexShrink:0}}/>
@@ -3390,19 +3399,19 @@ function InstantPickScreen({ onBack, onComplete, onKoComplete, onModify, savedSt
           const isActive=ph.id===activePhaseId;
           const accessible=phaseAccessible(ph.id);
           return (
-            <div key={ph.id} onClick={()=>goToPhase(ph.id)} style={{flex:1,height:36,borderRadius:9,background:isActive?"rgba(255,255,255,0.22)":"rgba(255,255,255,0.06)",border:`1.5px solid ${isActive?"rgba(255,255,255,0.45)":"transparent"}`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"space-between",padding:"4px 2px 3px",opacity:accessible||isActive?1:0.4,cursor:accessible?"pointer":"default"}}>
-              <span style={{fontSize:6,color:"rgba(255,255,255,0.85)",fontWeight:800,letterSpacing:0.3,lineHeight:1,textAlign:"center"}}>{ph.name}</span>
+            <button key={ph.id} onClick={()=>goToPhase(ph.id)} disabled={!accessible&&!isActive} style={{flex:1,height:36,borderRadius:9,background:isActive?"rgba(255,255,255,0.22)":"rgba(255,255,255,0.06)",border:`1.5px solid ${isActive?"rgba(255,255,255,0.45)":"transparent"}`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"space-between",padding:"4px 2px 3px",opacity:accessible||isActive?1:0.4,cursor:accessible?"pointer":"default",WebkitTapHighlightColor:"transparent"}}>
+              <span style={{fontSize:9,color:"rgba(255,255,255,0.85)",fontWeight:800,letterSpacing:0.3,lineHeight:1,textAlign:"center"}}>{ph.name}</span>
               <span style={{fontSize:10,lineHeight:1}}>{ph.id==="best3"&&best3Done?"✓":koRoundDone(ph.id)?"✓":isActive?"●":accessible?"○":"🔒"}</span>
-            </div>
+            </button>
           );
         })}
       </div>
       {/* Groups slider — expandable */}
       {showGroupsSlider&&(
         <div style={{display:"flex",alignItems:"center",gap:5,padding:"0 10px 10px",borderTop:"1px solid rgba(255,255,255,0.1)"}}>
-          <div onClick={()=>navigateGroup(-1)} style={{flexShrink:0,width:16,height:34,display:"flex",alignItems:"center",justifyContent:"center",cursor:groupIdx>0?"pointer":"default",opacity:groupIdx>0?0.6:0.2,transition:"opacity 0.15s"}}>
+          <button onClick={()=>navigateGroup(-1)} disabled={groupIdx===0} style={{flexShrink:0,width:16,height:34,display:"flex",alignItems:"center",justifyContent:"center",cursor:groupIdx>0?"pointer":"default",opacity:groupIdx>0?0.6:0.2,transition:"opacity 0.15s",background:"none",border:"none",WebkitTapHighlightColor:"transparent"}}>
             <svg width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M6 1L1 6L6 11" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-          </div>
+          </button>
           <div style={{flex:1,overflow:"hidden",height:38}}>
             <div ref={sliderScrollRef} style={{width:"100%",height:"calc(100% + 20px)",overflowX:"scroll",overflowY:"hidden",WebkitOverflowScrolling:"touch"}}>
             <div style={{display:"flex",gap:5,alignItems:"center",height:38}}>
@@ -3410,27 +3419,27 @@ function InstantPickScreen({ onBack, onComplete, onKoComplete, onModify, savedSt
                 const isCurrent=stage==="groups"&&i===groupIdx;
                 const isDone=groupRankings[g]&&groupRankings[g].every(t=>t!==null);
                 return (
-                  <div key={g} onClick={()=>{setGroupIdx(i);setStage("groups");}} style={{
+                  <button key={g} onClick={()=>{setGroupIdx(i);setStage("groups");}} style={{
                     flexShrink:0,width:38,height:34,borderRadius:9,
                     background:isCurrent?"#fff":isDone?"rgba(255,255,255,0.28)":"rgba(255,255,255,0.1)",
                     display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:1,
-                    fontSize:isCurrent?15:12,fontWeight:900,
+                    fontSize:isCurrent?15:12,fontWeight:900, border:"none",
                     color:isCurrent?NAVY:"rgba(255,255,255,0.75)",
                     cursor:"pointer",position:"relative",
-                    transition:"all 0.22s",
+                    transition:"all 0.22s", WebkitTapHighlightColor:"transparent",
                     boxShadow:isCurrent?"0 2px 10px rgba(0,0,0,0.3)":"none",
                   }}>
                     {g}
-                    {isDone&&<span style={{fontSize:8,lineHeight:1,color:isCurrent?GREEN:"#4ade80",fontWeight:900}}>✓</span>}
-                  </div>
+                    {isDone&&<span style={{fontSize:11,lineHeight:1,color:isCurrent?GREEN:"#4ade80",fontWeight:900}}>✓</span>}
+                  </button>
                 );
               })}
             </div>
             </div>
           </div>
-          <div onClick={()=>navigateGroup(1)} style={{flexShrink:0,width:16,height:34,display:"flex",alignItems:"center",justifyContent:"center",cursor:groupIdx<GROUPS.length-1?"pointer":"default",opacity:groupIdx<GROUPS.length-1?0.6:0.2,transition:"opacity 0.15s"}}>
+          <button onClick={()=>navigateGroup(1)} disabled={groupIdx>=GROUPS.length-1} style={{flexShrink:0,width:16,height:34,display:"flex",alignItems:"center",justifyContent:"center",cursor:groupIdx<GROUPS.length-1?"pointer":"default",opacity:groupIdx<GROUPS.length-1?0.6:0.2,transition:"opacity 0.15s",background:"none",border:"none",WebkitTapHighlightColor:"transparent"}}>
             <svg width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1L6 6L1 11" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-          </div>
+          </button>
         </div>
       )}
     </div>
@@ -3469,7 +3478,7 @@ function InstantPickScreen({ onBack, onComplete, onKoComplete, onModify, savedSt
         {/* ── SELECTED — advancing teams ── */}
         <div style={{background:"#f0f2f8",borderBottom:"1px solid rgba(0,0,0,0.08)",
           padding:"10px 14px",minHeight:70}}>
-          <div style={{fontSize:9,color:"rgba(0,0,0,0.38)",fontWeight:800,
+          <div style={{fontSize:11,color:"rgba(0,0,0,0.38)",fontWeight:800,
             letterSpacing:1.5,marginBottom:8}}>{effectiveViewMode?"ADVANCING":"ADVANCING · TAP TO REMOVE"}</div>
           {best3.length===0 ? (
             <div style={{fontSize:12,color:"rgba(0,0,0,0.25)",fontStyle:"italic",paddingBottom:4}}>
@@ -3478,18 +3487,19 @@ function InstantPickScreen({ onBack, onComplete, onKoComplete, onModify, savedSt
           ) : (
             <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
               {best3.map(team=>(
-                <div key={team} onClick={()=>!effectiveViewMode&&setBest3(prev=>prev.filter(t=>t!==team))}
+                <button key={team} onClick={()=>!effectiveViewMode&&setBest3(prev=>prev.filter(t=>t!==team))}
                   style={{
                     display:"flex",alignItems:"center",gap:5,
                     padding:"4px 10px 4px 6px",borderRadius:20,
                     background:`${GREEN}18`,border:`1.5px solid ${GREEN}`,
                     cursor:effectiveViewMode?"default":"pointer",transition:"all 0.15s",
+                    WebkitTapHighlightColor:"transparent",
                   }}>
                   <span style={{fontSize:18,lineHeight:1}}>{FLAGS[team]||"🏳"}</span>
                   <span style={{fontSize:11,fontWeight:800,color:NAVY,
                     textTransform:"uppercase"}}>{C3[team]||team.slice(0,3).toUpperCase()}</span>
                   <span style={{fontSize:10,color:GREEN,fontWeight:900,marginLeft:1}}>✓</span>
-                </div>
+                </button>
               ))}
             </div>
           )}
@@ -3625,7 +3635,7 @@ function InstantPickScreen({ onBack, onComplete, onKoComplete, onModify, savedSt
           <div style={{textAlign:"center"}}>
             <div style={{fontSize:pos===1?13:10,fontWeight:900,color:"#fff",
               textTransform:"uppercase",letterSpacing:0.3,lineHeight:1.2}}>{team==="TBD"?"?":team.split(" ")[0]}</div>
-            <div style={{fontSize:8,color:"rgba(255,255,255,0.5)",fontWeight:600,marginTop:2}}>{label}</div>
+            <div style={{fontSize:11,color:"rgba(255,255,255,0.5)",fontWeight:600,marginTop:2}}>{label}</div>
           </div>
         </div>
       );
@@ -3657,9 +3667,9 @@ function InstantPickScreen({ onBack, onComplete, onKoComplete, onModify, savedSt
                 <div style={{fontSize:18,fontWeight:900,color:"#fff"}}>{T[lang].yourPredictions}</div>
               </div>
               <div style={{background:"rgba(255,215,0,0.2)",borderRadius:12,padding:"6px 12px",border:"1px solid rgba(255,215,0,0.4)"}}>
-                <div style={{fontSize:9,color:"rgba(255,215,0,0.7)",fontWeight:700,letterSpacing:1,textAlign:"center"}}>MAX</div>
+                <div style={{fontSize:11,color:"rgba(255,215,0,0.7)",fontWeight:700,letterSpacing:1,textAlign:"center"}}>MAX</div>
                 <div style={{fontSize:18,fontWeight:900,color:"#FFD700",lineHeight:1}}>{PRED_MAX.total}</div>
-                <div style={{fontSize:8,color:"rgba(255,215,0,0.6)",fontWeight:600,textAlign:"center"}}>{T[lang].possiblePts}</div>
+                <div style={{fontSize:11,color:"rgba(255,215,0,0.6)",fontWeight:600,textAlign:"center"}}>{T[lang].possiblePts}</div>
               </div>
             </div>
             {/* Podium */}
@@ -4043,7 +4053,7 @@ function GroupRankingScreen({ group, teams, existingRanking, onConfirm, onAutoSa
               alignItems:"center", justifyContent:"space-between",
               padding:"4px 2px 3px", opacity:0.4,
             }}>
-              <span style={{fontSize:7,color:"rgba(255,255,255,0.8)",fontWeight:800,
+              <span style={{fontSize:10,color:"rgba(255,255,255,0.8)",fontWeight:800,
                 letterSpacing:0.3,lineHeight:1,textAlign:"center"}}>{phase.name}</span>
               <span style={{fontSize:10,lineHeight:1}}>🔒</span>
             </div>
@@ -4086,7 +4096,7 @@ function GroupRankingScreen({ group, teams, existingRanking, onConfirm, onAutoSa
                   }}>{pos+1}</div>
                 )}
                 <span style={{fontSize:24, lineHeight:1}}>{FLAGS[team]||"🏳"}</span>
-                <span style={{fontSize:9, fontWeight:800,
+                <span style={{fontSize:11, fontWeight:800,
                   color: isPlaced ? NAVY : "rgba(0,0,0,0.5)",
                   letterSpacing:0.5, textTransform:"uppercase"}}>
                   {CODE[team]||team.slice(0,3).toUpperCase()}
@@ -4148,7 +4158,7 @@ function GroupRankingScreen({ group, teams, existingRanking, onConfirm, onAutoSa
                   <div style={{flex:1, cursor:viewMode?"default":"pointer"}} onClick={()=>!viewMode&&handleSlotClick(idx)}>
                     <div style={{fontSize:13, fontWeight:800, color:"#111",
                       letterSpacing:0.3, textTransform:"uppercase"}}>{team}</div>
-                    <div style={{fontSize:9.5, color:idx===0?GREEN:idx===1?"#4a90e2":idx===2?"#CD7F32":"rgba(0,0,0,0.35)",
+                    <div style={{fontSize:11, color:idx===0?GREEN:idx===1?"#4a90e2":idx===2?"#CD7F32":"rgba(0,0,0,0.35)",
                       marginTop:1, fontWeight:600}}>
                       {idx===0?"Group Winner · Advances":idx===1?"Runner-up · Advances":idx===2?"Possible 3rd Place":"Eliminated"}
                     </div>
@@ -4404,11 +4414,11 @@ function PaniniCard({ player, teamName, isSelected, onClick }) {
 
         {/* Bottom name bar */}
         <div style={{position:'absolute',bottom:0,left:0,right:0,zIndex:4,background:primary,padding:'4px 3px 3px',minHeight:22}}>
-          <div style={{fontSize:8,fontWeight:900,color:'#fff',textAlign:'center',textTransform:'uppercase',letterSpacing:0.4,lineHeight:1.2,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>
+          <div style={{fontSize:10,fontWeight:900,color:'#fff',textAlign:'center',textTransform:'uppercase',letterSpacing:0.4,lineHeight:1.2,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>
             {lastName}
           </div>
           {posLbl&&(
-            <div style={{fontSize:6.5,color:secondary&&secondary!=='#FFFFFF'?secondary:'rgba(255,255,255,0.75)',textAlign:'center',fontWeight:700,letterSpacing:0.8,textTransform:'uppercase',lineHeight:1.2}}>
+            <div style={{fontSize:9,color:secondary&&secondary!=='#FFFFFF'?secondary:'rgba(255,255,255,0.75)',textAlign:'center',fontWeight:700,letterSpacing:0.8,textTransform:'uppercase',lineHeight:1.2}}>
               {posLbl}
             </div>
           )}
@@ -4527,7 +4537,7 @@ function ChampionScreen({ onBack, initialMode="champion", championPick, topScore
                   style={{background:isSel?NAVY:"#fff",borderRadius:16,border:`1.5px solid ${isSel?NAVY:"rgba(240,160,32,0.20)"}`,boxShadow:isSel?"0 4px 14px rgba(10,46,138,0.16)":"0 2px 10px rgba(0,0,0,0.05)",padding:"12px 6px",minHeight:94,cursor:isLocked?"default":"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:7,position:"relative",overflow:"hidden"}}>
                   <span style={{fontSize:34,lineHeight:1}}>{FLAGS[team]||"🏳"}</span>
                   <span style={{fontSize:11,fontWeight:900,color:isSel?"#fff":DARK,lineHeight:1.15,textAlign:"center",maxWidth:"100%",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{team}</span>
-                  <span style={{fontSize:9,fontWeight:900,color:isSel?"rgba(255,255,255,0.55)":"#D4820A",letterSpacing:0.5}}>{tCode(team)}</span>
+                  <span style={{fontSize:11,fontWeight:900,color:isSel?"rgba(255,255,255,0.55)":"#D4820A",letterSpacing:0.5}}>{tCode(team)}</span>
                 </button>
               );
             })}
@@ -4544,7 +4554,7 @@ function ChampionScreen({ onBack, initialMode="champion", championPick, topScore
                   <span style={{fontSize:24,lineHeight:1,flexShrink:0}}>{FLAGS[team]||"🏳"}</span>
                   <span style={{flex:1,minWidth:0}}>
                     <span style={{display:"block",fontSize:11,fontWeight:850,color:isSel?NAVY:DARK,lineHeight:1.15,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{team}</span>
-                    <span style={{display:"block",fontSize:9,fontWeight:800,color:"#C0C8D8",letterSpacing:0.5,marginTop:3}}>{tCode(team)}</span>
+                    <span style={{display:"block",fontSize:11,fontWeight:800,color:"#C0C8D8",letterSpacing:0.5,marginTop:3}}>{tCode(team)}</span>
                   </span>
                 </button>
               );
@@ -4568,8 +4578,8 @@ function ChampionScreen({ onBack, initialMode="champion", championPick, topScore
           </div>
 
           {/* shirt button — opens team picker */}
-          <div onClick={isLocked ? undefined : ()=>setTsPopup(true)}
-            style={{display:"flex",alignItems:"center",gap:12,cursor:isLocked?"default":"pointer",padding:"12px 14px",borderRadius:14,background:"#F8FAFC",border:"1px solid rgba(10,46,138,0.06)"}}>
+          <button onClick={isLocked ? undefined : ()=>setTsPopup(true)}
+            style={{width:"100%",display:"flex",alignItems:"center",gap:12,cursor:isLocked?"default":"pointer",padding:"12px 14px",borderRadius:14,background:"#F8FAFC",border:"1px solid rgba(10,46,138,0.06)",WebkitTapHighlightColor:"transparent"}}>
             <span style={{fontSize:38,lineHeight:1,flexShrink:0}}>👕</span>
             {tsTeam?(
               <div style={{flex:1,minWidth:0,textAlign:"left"}}>
@@ -4580,7 +4590,7 @@ function ChampionScreen({ onBack, initialMode="champion", championPick, topScore
               <span style={{flex:1,fontSize:12,color:"#9CA3AF",fontWeight:600}}>{T[lang].pickTeamDots}</span>
             )}
             <span style={{fontSize:18,color:"#C0C8D8",fontWeight:700,lineHeight:1}}>›</span>
-          </div>
+          </button>
 
           {/* Players — grid or selected view */}
           {tsTeam&&(
@@ -4693,17 +4703,17 @@ function ChampionScreen({ onBack, initialMode="champion", championPick, topScore
               {allTeams.map(team=>{
                 const isSel = championPick===team;
                 return (
-                  <div key={team} onClick={()=>{ setChampionPick(isSel?null:team); setChampPopup(false); }}
-                    style={{display:"flex",alignItems:"center",gap:14,padding:"12px 20px",
+                  <button key={team} onClick={()=>{ setChampionPick(isSel?null:team); setChampPopup(false); }}
+                    style={{width:"100%",display:"flex",alignItems:"center",gap:14,padding:"12px 20px",
                       background:isSel?"rgba(10,46,138,0.35)":"transparent",
-                      borderBottom:"1px solid rgba(255,255,255,0.05)",cursor:"pointer"}}>
+                      borderBottom:"1px solid rgba(255,255,255,0.05)",cursor:"pointer",border:"none",WebkitTapHighlightColor:"transparent"}}>
                     <span style={{fontSize:28,lineHeight:1,flexShrink:0}}>{FLAGS[team]||"🏳"}</span>
                     <div style={{flex:1}}>
                       <div style={{fontSize:14,fontWeight:isSel?700:500,color:isSel?"#fff":"rgba(255,255,255,0.85)"}}>{team}</div>
                       <div style={{fontSize:11,color:"rgba(255,255,255,0.35)",fontWeight:600,letterSpacing:0.5}}>{tCode(team)}</div>
                     </div>
                     {isSel&&<span style={{fontSize:16,color:GREEN,fontWeight:800}}>✓</span>}
-                  </div>
+                  </button>
                 );
               })}
             </div>
@@ -4748,10 +4758,10 @@ function ChampionScreen({ onBack, initialMode="champion", championPick, topScore
                   return (
                     <button key={`ts-featured-${team}`} onClick={()=>{ setTsTeam(team); setTsPopup(false); }}
                       style={{background:isSel?NAVY:"rgba(255,255,255,0.08)",borderRadius:14,border:`1.5px solid ${isSel?NAVY:"rgba(255,255,255,0.08)"}`,padding:"11px 5px",minHeight:88,cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:6,position:"relative"}}>
-                      {isSel&&<span style={{position:"absolute",top:6,right:6,width:17,height:17,borderRadius:"50%",background:GREEN,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:900,color:"#fff"}}>✓</span>}
+                      {isSel&&<span style={{position:"absolute",top:6,right:6,width:17,height:17,borderRadius:"50%",background:GREEN,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:900,color:"#fff"}}>✓</span>}
                       <span style={{fontSize:30,lineHeight:1}}>{FLAGS[team]||"🏳"}</span>
                       <span style={{fontSize:10,fontWeight:800,color:"#fff",lineHeight:1.15,textAlign:"center",maxWidth:"100%",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{team}</span>
-                      <span style={{fontSize:8,fontWeight:800,color:"rgba(255,255,255,0.35)",letterSpacing:0.5}}>{tCode(team)}</span>
+                      <span style={{fontSize:11,fontWeight:800,color:"rgba(255,255,255,0.35)",letterSpacing:0.5}}>{tCode(team)}</span>
                     </button>
                   );
                 })}
@@ -4766,11 +4776,11 @@ function ChampionScreen({ onBack, initialMode="champion", championPick, topScore
                     style={{display:"flex",alignItems:"center",gap:9,padding:"10px",
                       background:isSel?"rgba(10,46,138,0.55)":"rgba(255,255,255,0.06)",
                       border:`1.5px solid ${isSel?NAVY:"rgba(255,255,255,0.04)"}`,borderRadius:12,cursor:"pointer",textAlign:"left",position:"relative",overflow:"hidden"}}>
-                    {isSel&&<span style={{position:"absolute",top:6,right:6,width:16,height:16,borderRadius:"50%",background:GREEN,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:900,color:"#fff"}}>✓</span>}
+                    {isSel&&<span style={{position:"absolute",top:6,right:6,width:16,height:16,borderRadius:"50%",background:GREEN,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:900,color:"#fff"}}>✓</span>}
                     <span style={{fontSize:23,lineHeight:1,flexShrink:0}}>{FLAGS[team]||"🏳"}</span>
                     <div style={{flex:1,minWidth:0}}>
                       <div style={{fontSize:11,fontWeight:700,color:"#fff",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{team}</div>
-                      <div style={{fontSize:9,color:"rgba(255,255,255,0.35)",fontWeight:700,letterSpacing:0.5,marginTop:3}}>{tCode(team)}</div>
+                      <div style={{fontSize:11,color:"rgba(255,255,255,0.35)",fontWeight:700,letterSpacing:0.5,marginTop:3}}>{tCode(team)}</div>
                     </div>
                   </button>
                 );
@@ -4814,6 +4824,9 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
     const idx = myBoards.findIndex(b=>b.id===activeId);
     if(idx>=0) setSliderPos(idx);
   },[activeId,myBoards]);
+  useEffect(()=>{
+    if(scrollContainerRef.current) scrollContainerRef.current.scrollTop = 0;
+  },[activeId]);
   const handleSliderTouchStart = (e)=>{ sliderTouchRef.current = e.touches[0].clientX; };
   const handleSliderTouchEnd = (e)=>{
     if(sliderTouchRef.current===null) return;
@@ -4907,6 +4920,20 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
   const exactWeekTotal = _exWkTotal(exactWeekStart);
   const exactWeekScored = _exWkScored(exactWeekStart);
   const exactWeekDone = exactWeekTotal>0 && exactWeekScored===exactWeekTotal;
+  const _exSimNow = simDay ? new Date(2026,5,simDay,simHour||12,simMin||0,0) : new Date();
+  const _exJune = (d) => new Date(2026,5,d,8,0,0);
+  const exactWeekUnlocked = exactWeekStart===8 ? true
+    : exactWeekStart===15 ? _exSimNow >= _exJune(14)
+    : exactWeekStart===22 ? _exSimNow >= _exJune(21)
+    : _exSimNow >= _exJune(28);
+  const _specialPhase1Locked = _exSimNow >= new Date(2026,5,11,19,0,0);
+  const _specialPhase2Open   = _exSimNow >= new Date(2026,5,27,21,0,0);
+  const specialLocked = _specialPhase1Locked && !_specialPhase2Open;
+  const nextTask =
+    (!specialLocked && (!champDone || !tsDone)) ? 0 :
+    !_boardDone ? 1 :
+    (!exactWeekDone && exactWeekUnlocked) ? 2 :
+    null;
   const exKey = `${activeId}-${exactWeekStart}`;
   useEffect(()=>{
     if(!exactWeekDone){ _exNotDone.add(exKey); return; }
@@ -5007,12 +5034,12 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
       <div style={{position:"relative",marginTop:-4,flexShrink:0}}>
         {/* rând 1 — manage + new league */}
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",height:24,marginBottom:3}}>
-          <div onClick={e=>{e.stopPropagation();onBoards("my");}} style={{display:"flex",alignItems:"center",justifyContent:"center",minWidth:68,height:24,cursor:"pointer",flexShrink:0,padding:"0 9px 0 12px"}}>
+          <button onClick={e=>{e.stopPropagation();onBoards("my");}} style={{display:"flex",alignItems:"center",justifyContent:"center",minWidth:68,height:24,cursor:"pointer",flexShrink:0,padding:"0 9px 0 12px",border:"none",background:"transparent",fontFamily:"inherit",WebkitTapHighlightColor:"transparent"}}>
             <span style={{fontSize:10,fontWeight:650,color:"rgba(10,46,138,0.45)",lineHeight:1}}>{T[lang].manageLeague}</span>
-          </div>
-          <div onClick={e=>{e.stopPropagation();onBoards("available");}} style={{display:"flex",alignItems:"center",justifyContent:"center",minWidth:68,height:24,cursor:"pointer",flexShrink:0,padding:"0 12px 0 9px"}}>
+          </button>
+          <button onClick={e=>{e.stopPropagation();onBoards("available");}} style={{display:"flex",alignItems:"center",justifyContent:"center",minWidth:68,height:24,cursor:"pointer",flexShrink:0,padding:"0 12px 0 9px",border:"none",background:"transparent",fontFamily:"inherit",WebkitTapHighlightColor:"transparent"}}>
             <span style={{fontSize:10,fontWeight:650,color:"rgba(10,46,138,0.45)",lineHeight:1}}>{T[lang].newLeague}</span>
-          </div>
+          </button>
         </div>
         {/* ticker */}
         {(()=>{
@@ -5062,9 +5089,9 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
               <div style={{display:"flex",alignItems:"center",gap:5,flexShrink:0}}>
                 {done && !specialLocked ? (<>
                   <span style={{fontSize:11,fontWeight:600,color:GREEN,opacity:0.8}}>{T[lang].done}</span>
-                  <div onClick={e=>{e.stopPropagation();setCopyDone({});setShowCopySheet(mode);}} style={{cursor:"pointer",opacity:0.55,width:9,height:9,display:"flex",alignItems:"center"}}>
+                  <button onClick={e=>{e.stopPropagation();setCopyDone({});setShowCopySheet(mode);}} style={{cursor:"pointer",opacity:0.55,width:9,height:9,display:"flex",alignItems:"center",border:"none",background:"transparent",padding:0,flexShrink:0}}>
                     <svg width="9" height="9" viewBox="0 0 14 14" fill="none"><rect x="4" y="4" width="8" height="8" rx="1.5" stroke={DARK} strokeWidth="1.8"/><path d="M2 10V2h8" stroke={DARK} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                  </div>
+                  </button>
                 </>) : (
                   <span style={{fontSize:18,color:"#C0C8D8",fontWeight:700,lineHeight:1}}>›</span>
                 )}
@@ -5075,7 +5102,8 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
             <div style={{margin:"0 2px 6px"}}>
               <p style={homeSectionLabelStyle}>{T[lang].specialPick}</p>
             </div>
-            <div onClick={()=>onChampion(!champDone?"champion":!tsDone?"scorer":"champion")} style={{...homeTaskCardStyle,marginBottom:6,cursor:"pointer",WebkitTapHighlightColor:"transparent"}}>
+            <button onClick={()=>onChampion(!champDone?"champion":!tsDone?"scorer":"champion")} style={{display:"block",width:"100%",textAlign:"left",...homeTaskCardStyle,marginBottom:6,cursor:"pointer",WebkitTapHighlightColor:"transparent",fontFamily:"inherit",...(nextTask===0?{border:"1.5px solid rgba(10,46,138,0.15)",animation:"cardHighlight 1s ease-out 1 forwards"}:{})}}>
+              {nextTask===0&&<div style={{fontSize:9,fontWeight:800,color:"rgba(10,46,138,0.45)",letterSpacing:1.5,textTransform:"uppercase",marginBottom:5,textAlign:"center"}}>{T[lang].continueHere}</div>}
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,marginBottom:5}}>
                 <div style={{display:"flex",flexDirection:"column",alignItems:"flex-start",minWidth:0,position:"relative",zIndex:1}}>
                   <div style={{fontSize:13,fontWeight:700,color:DARK,textAlign:"left",lineHeight:1.15}}>{T[lang].winnerTopScorer}</div>
@@ -5085,13 +5113,13 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
                 </div>
                 {doneCount===0 ? (
                   <div style={{position:"relative",width:36,height:36,flexShrink:0,zIndex:1}}>
-                    <div style={{position:"absolute",inset:0,borderRadius:"50%",background:"#fff",border:`1.5px solid ${NAVY}`,display:"flex",alignItems:"center",justifyContent:"center",animation:"nodeBreath 3s ease-in-out infinite"}}>
+                    <div style={{position:"absolute",inset:0,borderRadius:"50%",background:"#fff",border:`1.5px solid ${NAVY}`,display:"flex",alignItems:"center",justifyContent:"center",...(nextTask!==0?{animation:"nodeBreath 3s ease-in-out infinite"}:{})}}>
                       <span style={{fontSize:11,fontWeight:700,color:NAVY}}>0/2</span>
                     </div>
                   </div>
                 ) : (
                   <div style={{position:"relative",width:36,height:36,flexShrink:0,zIndex:1}}>
-                    <div style={{position:"absolute",inset:0,borderRadius:"50%",border:`1.5px solid ${allDone?GREEN:NAVY}`,display:"flex",alignItems:"center",justifyContent:"center",background:allDone?`${GREEN}22`:"rgba(10,46,138,0.06)",...(!allDone?{animation:"nodeBreath 3s ease-in-out infinite"}:{})}}>
+                    <div style={{position:"absolute",inset:0,borderRadius:"50%",border:`1.5px solid ${allDone?GREEN:NAVY}`,display:"flex",alignItems:"center",justifyContent:"center",background:allDone?`${GREEN}22`:"rgba(10,46,138,0.06)",...(!allDone&&nextTask!==0?{animation:"nodeBreath 3s ease-in-out infinite"}:{})}}>
                       <span style={{fontSize:11,fontWeight:700,color:allDone?GREEN:NAVY}}>{doneCount}/2</span>
                     </div>
                   </div>
@@ -5114,30 +5142,7 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
                 done:tsDone,
                 mode:"scorer",
               })}
-            </div>
-            <div onClick={onChampion}
-              style={{display:"none",background:"#fff",borderRadius:16,boxShadow:"0 2px 14px rgba(0,0,0,0.07)",
-                border:`1.5px solid ${allDone?GREEN+"44":"transparent"}`,
-                padding:"16px",cursor:"pointer",position:"relative",marginBottom:6}}>
-              <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:8}}>
-                <div style={{width:44,height:44,borderRadius:12,background:allDone?`linear-gradient(135deg,${GREEN},#007A36)`:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,display:"flex",alignItems:"center",justifyContent:"center"}}>
-                  <span style={{fontSize:22}}>{allDone?"✓":"🏆"}</span>
-                </div>
-                <div style={{textAlign:"center"}}>
-                  <div style={{fontSize:13,fontWeight:700,color:DARK}}>Champion & Top Scorer</div>
-                  {allDone?(
-                    <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,marginTop:3}}>
-                      <span style={{fontSize:11,color:GREEN,fontWeight:600}}>{FLAGS[championPick]||"🏳"} {tCode(championPick)}</span>
-                      <span style={{fontSize:10,color:"#C0C8D8"}}>·</span>
-                      <span style={{fontSize:11,color:GREEN,fontWeight:600}}>{FLAGS[topScorerPick.team]||"🏳"} {topScorerPick.player}</span>
-                    </div>
-                  ):(
-                    <div style={{fontSize:11,color:"#9CA3AF",marginTop:3}}>Choose your team and favorite player</div>
-                  )}
-                </div>
-                <span style={{fontSize:12,color:"#C0C8D8",fontWeight:600,letterSpacing:0.5}}>TAP TO SELECT ›</span>
-              </div>
-            </div>
+            </button>
           </>);
         })()}
 
@@ -5171,9 +5176,14 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
               <p style={{...homeSectionLabelStyle,color:isLocked?"#C0C8D8":"rgba(10,46,138,0.55)"}}>{T[lang].predictions}</p>
             </div>
             <div style={{...homeTaskCardStyle,
-              border:`1.5px solid ${allDone?GREEN+"44":"transparent"}`,
+              border:`1.5px solid ${allDone?GREEN+"44":nextTask===1?"rgba(10,46,138,0.15)":"transparent"}`,
               opacity:isLocked?0.6:1,
-              ...(showFirstAction&&!boardDone&&!deadlinePassed?{animation:"pulse 1.5s ease-in-out 3"}:{})}}>
+              ...(nextTask===1?{animation:"cardHighlight 1s ease-out 1 forwards"}:showFirstAction&&!boardDone&&!deadlinePassed?{animation:"pulse 1.5s ease-in-out 3"}:{})}}>
+              {nextTask===1&&<div style={{fontSize:9,fontWeight:800,color:"rgba(10,46,138,0.45)",letterSpacing:1.5,textTransform:"uppercase",marginBottom:5,textAlign:"center"}}>{T[lang].continueHere}</div>}
+              <div style={{marginBottom:10,textAlign:"left"}}>
+                <div style={{fontSize:13,fontWeight:700,color:isLocked?"#C0C8D8":DARK,lineHeight:1.15,textAlign:"left"}}>{T[lang].predCardTitle}</div>
+                <div style={{fontSize:10,color:"#C0C8D8",fontWeight:500,marginTop:3,lineHeight:1.2,textAlign:"left"}}>{T[lang].predCardSub}</div>
+              </div>
               {predLoading&&(
                 <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:7,color:"#9CA3AF",fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:0.6}}>
                   <span style={{width:10,height:10,borderRadius:"50%",border:"2px solid rgba(10,46,138,0.12)",borderTopColor:NAVY,animation:"spin 0.9s linear infinite"}}/>
@@ -5189,9 +5199,10 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
                   else if(i===1&&koAvailable) onPredictKo&&onPredictKo(activeId);
                 };
                 return (
-                  <div key={i} onClick={stepClick} style={{display:"flex",gap:10,borderRadius:10,
+                  <button key={i} onClick={stepClick} style={{display:"flex",gap:10,borderRadius:10,width:"100%",
                     background:step.isFinal?"linear-gradient(90deg,rgba(240,160,32,0.08),transparent)":step.locked?"rgba(0,0,0,0.025)":"transparent",
                     padding:"4px 6px 4px 4px",margin:"0 -6px 0 -4px",
+                    border:"none",fontFamily:"inherit",WebkitTapHighlightColor:"transparent",textAlign:"left",
                     cursor:stepClick?"pointer":"default"}}>
                     <div style={{display:"flex",flexDirection:"column",alignItems:"center",width:18,flexShrink:0}}>
                       <div style={{position:"relative",width:18,height:18,flexShrink:0}}>
@@ -5200,8 +5211,8 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
                           border:step.active?`1.5px solid ${NAVY}`:step.done?`1.5px solid ${GREEN}`:"none",
                           display:"flex",alignItems:"center",justifyContent:"center",
                           boxShadow:step.isFinal?"0 0 0 3px rgba(240,160,32,0.25), 0 2px 8px rgba(240,160,32,0.4)":"none",
-                          ...(step.active?{animation:"nodeBreath 3s ease-in-out infinite"}:{})}}>
-                          {step.isFinal?<span style={{fontSize:9}}>★</span>:step.done?<div style={{width:5,height:5,borderRadius:"50%",background:GREEN}}/>:step.active?<div style={{width:5,height:5,borderRadius:"50%",background:NAVY}}/>:step.locked?<span style={{fontSize:8}}>🔒</span>:null}
+                          ...(step.active&&nextTask!==1?{animation:"nodeBreath 3s ease-in-out infinite"}:{})}}>
+                          {step.isFinal?<span style={{fontSize:11}}>★</span>:step.done?<div style={{width:5,height:5,borderRadius:"50%",background:GREEN}}/>:step.active?<div style={{width:5,height:5,borderRadius:"50%",background:NAVY}}/>:step.locked?<span style={{fontSize:11}}>🔒</span>:null}
                         </div>
                       </div>
                       {!isLast&&<div style={{width:2,flex:1,minHeight:22,marginTop:2,background:step.done?GREEN:"#e8e8e8",borderRadius:1}}/>}
@@ -5218,11 +5229,11 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
                             color:step.isFinal?"#D4820A":step.locked?"#C0C8D8":step.done?GREEN:"#9CA3AF",opacity:step.locked?0.5:0.8}}>
                             {step.isFinal?T[lang].trophyLabel:step.locked?T[lang].locked:step.done?T[lang].done:step.due}
                           </span>
-                          <div onClick={e=>{if(!step.done||step.isFinal)return;e.stopPropagation();setCopyDone({});setShowCopySheet("predictions");}} style={{cursor:step.done&&!step.isFinal?"pointer":"default",opacity:step.done&&!step.isFinal?0.55:0,pointerEvents:step.done&&!step.isFinal?"auto":"none",width:9,height:9,flexShrink:0,display:"flex",alignItems:"center"}}><svg width="9" height="9" viewBox="0 0 14 14" fill="none"><rect x="4" y="4" width="8" height="8" rx="1.5" stroke={DARK} strokeWidth="1.8"/><path d="M2 10V2h8" stroke={DARK} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg></div>
+                          <button onClick={e=>{if(!step.done||step.isFinal)return;e.stopPropagation();setCopyDone({});setShowCopySheet("predictions");}} style={{cursor:step.done&&!step.isFinal?"pointer":"default",opacity:step.done&&!step.isFinal?0.55:0,pointerEvents:step.done&&!step.isFinal?"auto":"none",width:9,height:9,flexShrink:0,display:"flex",alignItems:"center",border:"none",background:"transparent",padding:0}}><svg width="9" height="9" viewBox="0 0 14 14" fill="none"><rect x="4" y="4" width="8" height="8" rx="1.5" stroke={DARK} strokeWidth="1.8"/><path d="M2 10V2h8" stroke={DARK} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg></button>
                         </div>
                       </div>
                     </div>
-                  </div>
+                  </button>
                 );
               })}
             </div>
@@ -5266,7 +5277,12 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
             <div style={{margin:"0 2px 6px"}}>
               <p style={homeSectionLabelStyle}>{T[lang].exactScores}</p>
             </div>
-            <div onClick={()=>onOpenGroups&&onOpenGroups()} style={{...homeTaskCardStyle,cursor:"pointer"}}>
+            <button onClick={()=>onOpenGroups&&onOpenGroups()} style={{display:"block",width:"100%",textAlign:"left",...homeTaskCardStyle,cursor:"pointer",fontFamily:"inherit",WebkitTapHighlightColor:"transparent",...(nextTask===2?{border:"1.5px solid rgba(10,46,138,0.15)",animation:"cardHighlight 1s ease-out 1 forwards"}:{})}}>
+              {nextTask===2&&<div style={{fontSize:9,fontWeight:800,color:"rgba(10,46,138,0.45)",letterSpacing:1.5,textTransform:"uppercase",marginBottom:5,textAlign:"center"}}>{T[lang].continueHere}</div>}
+              <div style={{marginBottom:10,textAlign:"left"}}>
+                <div style={{fontSize:13,fontWeight:700,color:DARK,lineHeight:1.15,textAlign:"left"}}>{T[lang].exactCardTitle}</div>
+                <div style={{fontSize:10,color:"#C0C8D8",fontWeight:500,marginTop:3,lineHeight:1.2,textAlign:"left"}}>{T[lang].exactCardSub}</div>
+              </div>
               {steps.map((w,i)=>{
                 const pct = w.total?Math.round((w.scored/w.total)*100):0;
                 const done = !w.locked && pct===100;
@@ -5275,10 +5291,11 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
                 const nodeColor = w.isFinal?"#F0A020":done?GREEN:isPast?"#aaa":active?NAVY:"#ddd";
                 const isLast = i===steps.length-1;
                 return (
-                  <div key={i} data-week={w.weekStart} style={{display:"flex",gap:10,cursor:(w.locked&&!isPast)?"default":"pointer",
-                    borderRadius:10,
+                  <button key={i} data-week={w.weekStart} style={{display:"flex",gap:10,cursor:(w.locked&&!isPast)?"default":"pointer",
+                    borderRadius:10,width:"100%",
                     background:w.isFinal?"linear-gradient(90deg,rgba(240,160,32,0.08),transparent)":w.locked&&!isPast?"rgba(0,0,0,0.025)":"transparent",
                     padding:"4px 6px 4px 4px",margin:"0 -6px 0 -4px",
+                    border:"none",fontFamily:"inherit",WebkitTapHighlightColor:"transparent",textAlign:"left",
                     opacity:(isPast&&!done)?0.6:1}}
                     onClick={e=>{e.stopPropagation();(!w.locked||isPast)&&!w.isFinal&&onOpenGroups&&onOpenGroups(w.weekStart);}}>
                     <div style={{display:"flex",flexDirection:"column",alignItems:"center",width:18,flexShrink:0}}>
@@ -5288,8 +5305,8 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
                           border:active?`1.5px solid ${NAVY}`:done?`1.5px solid ${GREEN}`:"none",
                           display:"flex",alignItems:"center",justifyContent:"center",
                           boxShadow:w.isFinal?"0 0 0 3px rgba(240,160,32,0.25), 0 2px 8px rgba(240,160,32,0.4)":"none",
-                          ...(active?{animation:"nodeBreath 3s ease-in-out infinite"}:{})}}>
-                          {w.isFinal?<span style={{fontSize:9}}>★</span>:done?<div style={{width:5,height:5,borderRadius:"50%",background:GREEN}}/>:active?<div style={{width:5,height:5,borderRadius:"50%",background:NAVY}}/>:w.locked&&!isPast?<span style={{fontSize:8}}>🔒</span>:null}
+                          ...(active&&nextTask!==2?{animation:"nodeBreath 3s ease-in-out infinite"}:{})}}>
+                          {w.isFinal?<span style={{fontSize:11}}>★</span>:done?<div style={{width:5,height:5,borderRadius:"50%",background:GREEN}}/>:active?<div style={{width:5,height:5,borderRadius:"50%",background:NAVY}}/>:w.locked&&!isPast?<span style={{fontSize:11}}>🔒</span>:null}
                         </div>
                       </div>
                       {!isLast&&<div style={{width:2,flex:1,minHeight:16,marginTop:2,borderRadius:1,background:"#e8e8e8",position:"relative",overflow:"hidden"}}>
@@ -5308,14 +5325,14 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
                             color:w.isFinal?"#D4820A":w.locked&&!isPast?"#C0C8D8":done?GREEN:"#9CA3AF",opacity:w.locked&&!isPast?0.5:0.8}}>
                             {w.isFinal?T[lang].trophyLabel:w.locked&&!isPast?T[lang].locked:done?T[lang].weekComplete:isPast?`${w.scored}/${w.total}`:`${w.scored}/${w.total}`}
                           </span>
-                          <div onClick={e=>{if(!done||w.isFinal)return;e.stopPropagation();setCopyDone({});setCopyWeekStart(w.weekStart);setShowCopySheet("scores");}} style={{cursor:done&&!w.isFinal?"pointer":"default",opacity:done&&!w.isFinal?0.55:0,pointerEvents:done&&!w.isFinal?"auto":"none",width:9,height:9,flexShrink:0,display:"flex",alignItems:"center"}}><svg width="9" height="9" viewBox="0 0 14 14" fill="none"><rect x="4" y="4" width="8" height="8" rx="1.5" stroke={DARK} strokeWidth="1.8"/><path d="M2 10V2h8" stroke={DARK} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg></div>
+                          <button onClick={e=>{if(!done||w.isFinal)return;e.stopPropagation();setCopyDone({});setCopyWeekStart(w.weekStart);setShowCopySheet("scores");}} style={{cursor:done&&!w.isFinal?"pointer":"default",opacity:done&&!w.isFinal?0.55:0,pointerEvents:done&&!w.isFinal?"auto":"none",width:9,height:9,flexShrink:0,display:"flex",alignItems:"center",border:"none",background:"transparent",padding:0}}><svg width="9" height="9" viewBox="0 0 14 14" fill="none"><rect x="4" y="4" width="8" height="8" rx="1.5" stroke={DARK} strokeWidth="1.8"/><path d="M2 10V2h8" stroke={DARK} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg></button>
                         </div>
                       </div>
                     </div>
-                  </div>
+                  </button>
                 );
               })}
-            </div>
+            </button>
           </>);
         })()}
 
@@ -6691,7 +6708,7 @@ function SplashScreen({ onNext, lang, setLang, simDay, simHour=12, simMin=0, tou
             <div key={l} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",position:"relative"}}>
               <span style={{fontSize:30,fontWeight:800,color:"#fff",lineHeight:1}}>{String(v).padStart(2,"0")}</span>
               {i<3&&<span style={{position:"absolute",right:-2,top:2,fontSize:20,color:"rgba(255,255,255,0.25)"}}>:</span>}
-              <span style={{fontSize:8,color:"rgba(255,255,255,0.5)",textTransform:"uppercase",letterSpacing:1.5,marginTop:6}}>{T[lang][l]||l}</span>
+              <span style={{fontSize:11,color:"rgba(255,255,255,0.5)",textTransform:"uppercase",letterSpacing:1.5,marginTop:6}}>{T[lang][l]||l}</span>
             </div>
           ))
         )}
@@ -8016,7 +8033,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
                           return (
                             <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,minWidth:70}}>
                               {/* Real score */}
-                              {isLive&&<span style={{fontSize:7,fontWeight:900,color:RED}}>●</span>}
+                              {isLive&&<span style={{fontSize:9,fontWeight:900,color:RED}}>●</span>}
                               <div style={{background:isFinished?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:"rgba(0,0,0,0.06)",
                                 borderRadius:8,padding:"5px 12px",width:"100%",textAlign:"center"}}>
                                 <span style={{fontSize:14,fontWeight:900,color:isLive?RED:hasLive?"#fff":"#bbb"}}>{scoreDisplay}</span>
@@ -8465,7 +8482,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                                   {grp.next && <NextBox label={grp.next} col={stageColors[grp.next.includes("QF")?"QF":grp.next.includes("SF")?"SF":grp.next.includes("Final")?"Final":"QF"]||"#888"}/>}
                                   {grp.finalMatch && (
                                     <div style={{display:"flex",flexDirection:"column",gap:4,alignItems:"center"}}>
-                                      <span style={{fontSize:8,fontWeight:700,color:color}}>{grp.label}</span>
+                                      <span style={{fontSize:11,fontWeight:700,color:color}}>{grp.label}</span>
                                       <MatchBox h={grp.finalMatch.h} a={grp.finalMatch.a} col={color}/>
                                     </div>
                                   )}
@@ -8616,7 +8633,8 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                                 <div key={idx2} role={canEdit?"button":undefined} tabIndex={canEdit?0:undefined}
                                   style={{background:"#fff",borderBottom:idx2<allGM.length-1?"1px solid rgba(0,0,0,0.05)":"none",
                                   padding:"10px 14px",display:"flex",alignItems:"center",gap:8}}
-                                  onClick={()=>canEdit&&onMatchClick&&onMatchClick(m,m.day,m._i)}>
+                                  onClick={()=>canEdit&&onMatchClick&&onMatchClick(m,m.day,m._i)}
+                                  onKeyDown={canEdit?e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();onMatchClick&&onMatchClick(m,m.day,m._i);}}:undefined}>
                                   <span style={{fontSize:18}}>{m.homeFlag}</span>
                                   <span style={{flex:1,fontSize:12,fontWeight:600,color:isPastM?"#bbb":DARK}}>{m.home.length>7?m.home.split(" ")[0]:m.home}</span>
                                   <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
@@ -8686,6 +8704,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                         {(()=>{ return (
                         <div role="button" tabIndex={isPastDay2?undefined:0}
                           onClick={()=>!isMatchPast(m.day||sel,m.time,simDay,simHour)&&!isPastDay2&&onMatchClick&&onMatchClick(m,sel,m._i)}
+                          onKeyDown={isPastDay2?undefined:e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();if(!isMatchPast(m.day||sel,m.time,simDay,simHour))onMatchClick&&onMatchClick(m,sel,m._i);}}}
                           style={{display:"flex",alignItems:"center",padding:"10px 14px",cursor:isPastDay2?"default":"pointer",gap:6,opacity:isPastDay2?0.6:1}}>
                           <span style={{fontSize:18,flexShrink:0}}>{m.homeFlag}</span>
                           <span style={{flex:1,fontSize:11,fontWeight:600,color:DARK}}>{m.home.length>7?m.home.split(" ")[0]:m.home}</span>

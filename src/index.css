@@ -58,6 +58,12 @@
   scrollbar-width: none;
 }
 
+@keyframes cardHighlight {
+  0%   { box-shadow: 0 0 0 0   rgba(10,46,138,0.18); }
+  55%  { box-shadow: 0 0 0 8px rgba(10,46,138,0.07); }
+  100% { box-shadow: 0 0 0 0   rgba(10,46,138,0.00); }
+}
+
 @keyframes slideUpIn {
   from { transform: translateY(110%); opacity: 0; }
   to   { transform: translateY(0);    opacity: 1; }
