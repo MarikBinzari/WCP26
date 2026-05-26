@@ -58,6 +58,11 @@
   scrollbar-width: none;
 }
 
+@keyframes slideUpIn {
+  from { transform: translateY(110%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
 @keyframes nodeBreath {
   0%, 100% { transform: scale(1);    box-shadow: 0 0 0 3px rgba(0,32,91,0.18), 0 0 0 6px rgba(0,32,91,0.06); }
   50%       { transform: scale(1.22); box-shadow: 0 0 0 5px rgba(0,32,91,0.22), 0 0 0 11px rgba(0,32,91,0.07); }

@@ -4784,6 +4784,12 @@ function ChampionScreen({ onBack, initialMode="champion", championPick, topScore
   );
 }
 
+// module-level sets — persist across HomeScreen remounts
+const _champNotDone = new Set();   const _champScrolled = new Set();
+const _tsNotDone = new Set();      const _tsScrolled = new Set();
+const _pickNotDone = new Set();    const _pickScrolled = new Set();
+const _exNotDone = new Set();      const _exScrolled = new Set();
+
 // ── HOME ────────────────────────────────────────────────────────────────────
 function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateBoard, onOpenGroups, onCopyPredictions, onCopyExactScores, onCopySpecial, onAccount, onNotifications, onChampion, myBoards, predictionsComplete, instantPickDone, koPickDone, koUnlocked, exactScores, activeBoardId, setActiveBoardId, tournamentStarted, simDay, simHour, simMin, createdBoards=[], showFirstAction, leaderboardData={}, boardsLoading=false, predictionsLoaded={}, championPick=null, topScorerPick=null, setChampionPick=()=>{}, setTopScorerPick=()=>{}, myScoreBreakdown=null }) {
   const lang = useLang();
@@ -4799,6 +4805,11 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
   const allSliderItems = myBoards;
   const [sliderPos, setSliderPos] = useState(()=>Math.max(0,myBoards.findIndex(b=>b.id===activeBoardId)));
   const sliderTouchRef = useRef(null);
+  const scrollContainerRef = useRef(null);
+  const scorerRowRef = useRef(null);
+  const predPathRef = useRef(null);
+  const exactScoreRef = useRef(null);
+  const moreToComeRef = useRef(null);
   useEffect(()=>{
     const idx = myBoards.findIndex(b=>b.id===activeId);
     if(idx>=0) setSliderPos(idx);
@@ -4818,6 +4829,11 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
   const [cdUnitIdx, setCdUnitIdx] = useState(0);
   useEffect(()=>{
     const t = setInterval(()=>setCdUnitIdx(p=>(p+1)%3), 2200);
+    return ()=>clearInterval(t);
+  },[]);
+  const [tickerIdx, setTickerIdx] = useState(0);
+  useEffect(()=>{
+    const t = setInterval(()=>setTickerIdx(p=>(p+1)%3), 5000);
     return ()=>clearInterval(t);
   },[]);
   const activeBoard = myBoards.find(b=>b.id===activeId)||myBoards[0];
@@ -4855,7 +4871,57 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
   const _deadlinePassed = simDay ? (simDay > 11 || (simDay === 11 && (simHour||0) >= 19)) : new Date() >= new Date(2026,5,11,19,0,0);
   const _boardDone = _deadlinePassed ? (instantPickDone || predictionsComplete[activeId]) : instantPickDone;
   const allTasksDone = _boardDone && (!koUnlocked || koPickDone);
-  console.log('[BoardGreen]', { instantPickDone, predictionsComplete, activeId, _deadlinePassed, _boardDone, koUnlocked, koPickDone, allTasksDone });
+  const champDone = !!championPick;
+  const tsDone = !!(topScorerPick?.player);
+  const scrollTo = (ref) => {
+    const el = ref.current;
+    const container = scrollContainerRef.current;
+    if (!el || !container) return;
+    const diff = el.getBoundingClientRect().top - container.getBoundingClientRect().top;
+    container.scrollBy({ top: diff - 12, behavior: 'smooth' });
+  };
+  useEffect(()=>{
+    if(!champDone){ _champNotDone.add(activeId); return; }
+    if(!_champNotDone.has(activeId)||_champScrolled.has(activeId)) return;
+    _champScrolled.add(activeId);
+    setTimeout(()=>scrollTo(scorerRowRef), 600);
+  },[champDone,activeId]);
+  useEffect(()=>{
+    if(!tsDone){ _tsNotDone.add(activeId); return; }
+    if(!_tsNotDone.has(activeId)||_tsScrolled.has(activeId)) return;
+    _tsScrolled.add(activeId);
+    setTimeout(()=>scrollTo(predPathRef), 600);
+  },[tsDone,activeId]);
+  useEffect(()=>{
+    if(!instantPickDone){ _pickNotDone.add(activeId); return; }
+    if(!_pickNotDone.has(activeId)||_pickScrolled.has(activeId)) return;
+    _pickScrolled.add(activeId);
+    setTimeout(()=>scrollTo(exactScoreRef), 700);
+  },[instantPickDone,activeId]);
+  const _exWkMM = (()=>{ const mm={}; CALENDAR_EVENTS.forEach(e=>{mm[e.day]=e.matches;}); return mm; })();
+  const _exWkDays = (s)=>Array.from({length:7},(_,i)=>s+i).filter(d=>d>=1&&d<=50);
+  const _exWkTotal = (s)=>_exWkDays(s).reduce((a,d)=>a+(_exWkMM[d]||[]).length,0);
+  const _exWkScored = (s)=>_exWkDays(s).reduce((a,d)=>a+(_exWkMM[d]||[]).filter((_,i)=>(exactScores||{})[`${d}-${i}`]).length,0);
+  const todaySimEx = simDay ?? getRealTournamentDay();
+  const exactWeekStart = todaySimEx<=14?8:todaySimEx<=21?15:todaySimEx<=28?22:29;
+  const exactWeekTotal = _exWkTotal(exactWeekStart);
+  const exactWeekScored = _exWkScored(exactWeekStart);
+  const exactWeekDone = exactWeekTotal>0 && exactWeekScored===exactWeekTotal;
+  const exKey = `${activeId}-${exactWeekStart}`;
+  useEffect(()=>{
+    if(!exactWeekDone){ _exNotDone.add(exKey); return; }
+    if(!_exNotDone.has(exKey)||_exScrolled.has(exKey)) return;
+    _exScrolled.add(exKey);
+    const nextWeeks=[8,15,22,29];
+    const nextIdx=nextWeeks.indexOf(exactWeekStart)+1;
+    setTimeout(()=>{
+      if(nextIdx<nextWeeks.length){
+        const container=scrollContainerRef.current;
+        const el=container?.querySelector(`[data-week="${nextWeeks[nextIdx]}"]`);
+        if(el&&container){ const diff=el.getBoundingClientRect().top-container.getBoundingClientRect().top; container.scrollBy({top:diff-12,behavior:'smooth'}); }
+      } else { scrollTo(moreToComeRef); }
+    }, 700);
+  },[exactWeekDone,exKey]);
   const homeSectionLabelStyle = { ...UI.sectionLabel, fontSize:12, fontWeight:750, color:"rgba(10,46,138,0.55)", textAlign:"center", letterSpacing:1.2 };
   const homeTaskCardStyle = {
     ...UI.card,
@@ -4924,7 +4990,7 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
           );
         };
         return (
-          <div style={{margin:"18px 14px 0",background:"#fff",borderRadius:16,boxShadow:"0 2px 10px rgba(0,0,0,0.06)",border:`1px solid ${allTasksDone?GREEN+"44":"rgba(10,46,138,0.06)"}`,display:"flex",alignItems:"center",padding:"8px 4px",overflow:"visible",flexShrink:0}}>
+          <div style={{margin:"18px 14px 0",background:"transparent",borderRadius:16,border:`1.5px solid ${allTasksDone?GREEN+"66":"transparent"}`,display:"flex",alignItems:"center",padding:"8px 4px",overflow:"visible",flexShrink:0,transition:"border-color 0.4s ease"}}>
             <button onClick={()=>{ const np=sliderPos+1; if(np<allSliderItems.length){setSliderPos(np);setActiveId(allSliderItems[np].id);} }}
               style={{background:"none",border:"none",padding:"0 16px",cursor:"pointer",fontSize:22,fontWeight:700,color:NAVY,opacity:sliderPos<allSliderItems.length-1?0.65:0.12,WebkitTapHighlightColor:"transparent",lineHeight:1,transition:"opacity 0.2s",flexShrink:0}}>‹</button>
             <div onTouchStart={handleSliderTouchStart} onTouchEnd={handleSliderTouchEnd}
@@ -4938,44 +5004,34 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
           </div>
         );
       })()}
-      <div style={{position:"relative",marginTop:0,flexShrink:0}}>
+      <div style={{position:"relative",marginTop:-4,flexShrink:0}}>
         {/* rând 1 — manage + new league */}
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",height:24,marginBottom:3}}>
-          <div onClick={e=>{e.stopPropagation();onBoards("my");}} style={{display:"flex",alignItems:"center",justifyContent:"center",minWidth:68,height:24,borderRadius:"0 999px 999px 0",background:"rgba(255,255,255,0.34)",border:"1px solid rgba(10,46,138,0.08)",borderLeft:"none",cursor:"pointer",flexShrink:0,padding:"0 9px 0 12px"}}>
-            <span style={{fontSize:10,fontWeight:650,color:"rgba(10,46,138,0.62)",lineHeight:1}}>{T[lang].manageLeague}</span>
+          <div onClick={e=>{e.stopPropagation();onBoards("my");}} style={{display:"flex",alignItems:"center",justifyContent:"center",minWidth:68,height:24,cursor:"pointer",flexShrink:0,padding:"0 9px 0 12px"}}>
+            <span style={{fontSize:10,fontWeight:650,color:"rgba(10,46,138,0.45)",lineHeight:1}}>{T[lang].manageLeague}</span>
           </div>
-          <div onClick={e=>{e.stopPropagation();onBoards("available");}} style={{display:"flex",alignItems:"center",justifyContent:"center",minWidth:68,height:24,borderRadius:"999px 0 0 999px",background:"rgba(255,255,255,0.34)",border:"1px solid rgba(10,46,138,0.08)",borderRight:"none",cursor:"pointer",flexShrink:0,padding:"0 12px 0 9px"}}>
-            <span style={{fontSize:10,fontWeight:650,color:"rgba(10,46,138,0.62)",lineHeight:1}}>{T[lang].newLeague}</span>
-          </div>
-        </div>
-        {/* rând 2 — rank & pts */}
-        <div style={{position:"relative",display:"flex",justifyContent:"center",alignItems:"center",height:32,marginBottom:6}}>
-          <div onClick={()=>onLeaderboard&&onLeaderboard()} style={{background:"#fff",borderRadius:12,boxShadow:"0 1px 4px rgba(0,0,0,0.05)",border:"1px solid rgba(10,46,138,0.06)",padding:"7px 16px",display:"flex",alignItems:"center",gap:8,cursor:"pointer",WebkitTapHighlightColor:"transparent"}}>
-            <span style={{fontSize:13,fontWeight:800,color:NAVY}}>{rankingLoading ? "..." : `${T[lang].rank} ${me?.rank?`#${me.rank}`:"—"}`}</span>
-            <span style={{width:3,height:3,borderRadius:"50%",background:"#C0C8D8"}}/>
-            <span style={{fontSize:13,fontWeight:800,color:"#D4820A"}}>{rankingLoading ? T[lang].syncingLabel : `${me?.pts??0} pts`}</span>
+          <div onClick={e=>{e.stopPropagation();onBoards("available");}} style={{display:"flex",alignItems:"center",justifyContent:"center",minWidth:68,height:24,cursor:"pointer",flexShrink:0,padding:"0 12px 0 9px"}}>
+            <span style={{fontSize:10,fontWeight:650,color:"rgba(10,46,138,0.45)",lineHeight:1}}>{T[lang].newLeague}</span>
           </div>
         </div>
-        {/* rând 3 — countdown */}
-        <div style={{display:"flex",justifyContent:"center",alignItems:"center",gap:7,marginBottom:10}}>
-          {tournamentOver ? (
-            <span style={{fontSize:11,fontWeight:700,color:"rgba(10,46,138,0.60)"}}>{T[lang].tournamentLive}</span>
-          ) : (<>
-            <span style={{display:"flex",gap:3,alignItems:"center"}}>
-              <span style={{width:3,height:3,borderRadius:"50%",background:"rgba(10,46,138,0.30)"}}/>
-              <span style={{width:14,height:2,borderRadius:2,background:"rgba(10,46,138,0.18)"}}/>
-              <span style={{width:3,height:3,borderRadius:"50%",background:"rgba(10,46,138,0.30)"}}/>
-            </span>
-            <span style={{fontSize:11,fontWeight:700,color:"rgba(10,46,138,0.60)"}}>{cdDays}{T[lang].cdDayAbbr} {String(cdHours).padStart(2,"0")}{T[lang].cdHourAbbr} {String(cdMins).padStart(2,"0")}{T[lang].cdMinAbbr} {T[lang].kickoffLabel}</span>
-            <span style={{display:"flex",gap:3,alignItems:"center"}}>
-              <span style={{width:3,height:3,borderRadius:"50%",background:"rgba(10,46,138,0.30)"}}/>
-              <span style={{width:14,height:2,borderRadius:2,background:"rgba(10,46,138,0.18)"}}/>
-              <span style={{width:3,height:3,borderRadius:"50%",background:"rgba(10,46,138,0.30)"}}/>
-            </span>
-          </>)}
-        </div>
+        {/* ticker */}
+        {(()=>{
+          const tickerMsgs = [
+            me?.rank ? `Your Rank #${me.rank} · ${me.pts||0} pts` : `Your Rank — · 0 pts`,
+            tournamentOver ? T[lang].tournamentLive : `${cdDays}${T[lang].cdDayAbbr} ${String(cdHours).padStart(2,"0")}${T[lang].cdHourAbbr} ${String(cdMins).padStart(2,"0")}${T[lang].cdMinAbbr} ${T[lang].kickoffLabel}`,
+            membersLabel ? `${membersLabel} ${T[lang].membersLabel?.toLowerCase()||"members"}` : null,
+          ].filter(Boolean);
+          const msg = tickerMsgs[tickerIdx % tickerMsgs.length];
+          return (
+            <div style={{display:"flex",justifyContent:"center",alignItems:"center",marginBottom:6,height:16,overflow:"hidden",position:"relative"}}>
+              <span key={tickerIdx} style={{fontSize:11,fontWeight:700,color:"rgba(10,46,138,0.50)",animation:"slideUpIn 0.4s cubic-bezier(0.22,1,0.36,1)",display:"inline-block",whiteSpace:"nowrap"}}>
+                {msg}
+              </span>
+            </div>
+          );
+        })()}
       </div>
-      <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",padding:"0 14px 90px",display:"flex",flexDirection:"column"}}>
+      <div ref={scrollContainerRef} style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",padding:"0 14px 90px",marginTop:-2,display:"flex",flexDirection:"column"}}>
         <div style={{position:"relative",borderRadius:18,padding:"14px 0 14px",flex:1}}>
           <div style={{position:"absolute",inset:0,borderRadius:18,background:"rgba(255,255,255,0.15)",WebkitMaskImage:"linear-gradient(to bottom,black 0%,black 55%,transparent 100%)",maskImage:"linear-gradient(to bottom,black 0%,black 55%,transparent 100%)",pointerEvents:"none"}}/>
           <div style={{position:"relative",zIndex:1}}>
@@ -5049,7 +5105,7 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
                 done:champDone,
                 mode:"champion",
               })}
-              <div style={{height:1,background:"#F1F3F7",marginLeft:32}}/>
+              <div ref={scorerRowRef} style={{height:1,background:"#F1F3F7",marginLeft:32}}/>
               {taskRow({
                 icon:"👕",
                 title:T[lang].topScorer,
@@ -5086,7 +5142,7 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
         })()}
 
         {/* Connector */}
-        <div style={{display:"flex",justifyContent:"center",alignItems:"center",margin:"2px 0 6px",position:"relative"}}>
+        <div ref={predPathRef} style={{display:"flex",justifyContent:"center",alignItems:"center",margin:"2px 0 6px",position:"relative"}}>
           <div style={homeConnectorStyle}/>
           <span style={{position:"absolute",right:2,fontSize:10,fontWeight:700,color:"rgba(10,46,138,0.30)",letterSpacing:"0.2px"}}>{T[lang].totalLabel} {myScoreBreakdown?.specialPts??0} pts</span>
         </div>
@@ -5174,7 +5230,7 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
         })()}
 
         {/* Connector */}
-        <div style={{display:"flex",justifyContent:"center",alignItems:"center",margin:"2px 0 6px",position:"relative"}}>
+        <div ref={exactScoreRef} style={{display:"flex",justifyContent:"center",alignItems:"center",margin:"2px 0 6px",position:"relative"}}>
           <div style={homeConnectorStyle}/>
           <span style={{position:"absolute",right:2,fontSize:10,fontWeight:700,color:"rgba(10,46,138,0.30)",letterSpacing:"0.2px"}}>{T[lang].totalLabel} {myScoreBreakdown?.predPts??0} pts</span>
         </div>
@@ -5219,7 +5275,7 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
                 const nodeColor = w.isFinal?"#F0A020":done?GREEN:isPast?"#aaa":active?NAVY:"#ddd";
                 const isLast = i===steps.length-1;
                 return (
-                  <div key={i} style={{display:"flex",gap:10,cursor:(w.locked&&!isPast)?"default":"pointer",
+                  <div key={i} data-week={w.weekStart} style={{display:"flex",gap:10,cursor:(w.locked&&!isPast)?"default":"pointer",
                     borderRadius:10,
                     background:w.isFinal?"linear-gradient(90deg,rgba(240,160,32,0.08),transparent)":w.locked&&!isPast?"rgba(0,0,0,0.025)":"transparent",
                     padding:"4px 6px 4px 4px",margin:"0 -6px 0 -4px",
@@ -5270,7 +5326,7 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
         </div>
 
         {/* Footer teaser */}
-        <div style={{margin:"0 2px 6px",paddingBottom:16}}>
+        <div ref={moreToComeRef} style={{margin:"0 2px 6px",paddingBottom:16}}>
           <p style={homeSectionLabelStyle}>{T[lang].moreToCome}</p>
         </div>
 
@@ -5979,7 +6035,7 @@ function Footer({ active, onNavigate, lang, user }) {
   return (
     <div style={{position:"fixed",bottom:0,left:0,right:0,padding:"0 14px",paddingBottom:"env(safe-area-inset-bottom, 10px)",zIndex:1000}}>
       <div style={{
-        background:"rgba(255,255,255,0.78)",
+        background:"#EEF2FF",
         backdropFilter:"blur(20px)",
         WebkitBackdropFilter:"blur(20px)",
         borderRadius:16,
@@ -7363,9 +7419,8 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
             </div>
           );
         })()}
-      <div style={{flex:1,overflowY:"auto",overflowX:"hidden",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",display:"flex",flexDirection:"column"}}>
-      {/* Search bar */}
-      <div style={{padding:"12px 20px 4px"}}>
+      {/* Search bar — sticky, outside scroll */}
+      <div style={{padding:"12px 20px 4px",flexShrink:0}}>
         <div style={UI.inputPanel}>
           <span style={{fontSize:14,opacity:0.4}}>🔍</span>
           <input value={search} onChange={e=>setSearch(e.target.value)}
@@ -7375,6 +7430,7 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
           {search&&<span onClick={()=>setSearch("")} style={{fontSize:14,color:"#bbb",cursor:"pointer"}}>✕</span>}
         </div>
       </div>
+      <div style={{flex:1,overflowY:"auto",overflowX:"hidden",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",display:"flex",flexDirection:"column"}}>
 
       {leaders.length === 0 ? (
         <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"0 32px",textAlign:"center"}}>
@@ -7680,6 +7736,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
 
   const homeRef = useRef(null);
   const awayRef = useRef(null);
+  const exactScrollRef = useRef(null);
 
   useEffect(()=>{
     if(scorePick){
@@ -7795,7 +7852,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
         </div>
       </div>
 
-      <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",padding:"14px 20px 100px",position:"relative",zIndex:1}}>
+      <div ref={exactScrollRef} style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",padding:"14px 20px 100px",position:"relative",zIndex:1}}>
         {/* Weekly Calendar with clickable matches */}
         <WeeklyCalendar weekStart={weekStart} setWeekStart={handleWeekChange} weeks={weeks} weekIdx={weekIdx}
           selDay={selDay} onDaySelect={handleDaySelect} scores={scores} scoresVersion={_v}
@@ -7966,7 +8023,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
                               </div>
                               {/* Prediction */}
                               <div style={{display:"flex",alignItems:"center",gap:4}}>
-                                <span style={{fontSize:8,color:"#bbb",fontWeight:600}}>tu:</span>
+                                <span style={{fontSize:11,color:"#bbb",fontWeight:600}}>tu:</span>
                                 {predBox}
                               </div>
                             </div>
@@ -7996,11 +8053,12 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
 
                     {/* Edit prediction */}
                     {!isMatchPast(m.day, m.time, simDay, simHour) && !isLive && !isFinished && sc && isWeekUnlocked(m.day, simDay, simHour, simMin) && todaySim <= m.day && (
-                      <div onClick={()=>setScorePick({match:m,day:m.day,idx:m.idx,key:m.key})}
-                        style={{padding:"6px 12px",borderTop:"1px solid rgba(0,0,0,0.05)",
-                          display:"flex",alignItems:"center",justifyContent:"center",gap:4,cursor:"pointer"}}>
+                      <button onClick={()=>setScorePick({match:m,day:m.day,idx:m.idx,key:m.key})}
+                        style={{width:"100%",padding:"6px 12px",borderTop:"1px solid rgba(0,0,0,0.05)",
+                          background:"none",border:"none",borderTop:"1px solid rgba(0,0,0,0.05)",
+                          display:"flex",alignItems:"center",justifyContent:"center",gap:4,cursor:"pointer",WebkitTapHighlightColor:"transparent"}}>
                         <span style={{fontSize:12,color:"#bbb",fontWeight:600}}>✏️ Edit Prediction</span>
-                      </div>
+                      </button>
                     )}
                   </div>
                 );
@@ -8052,7 +8110,24 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
                 const h = homeRef.current ? Math.max(0,Math.min(9,Math.round(homeRef.current.scrollTop/52))) : pickerHome;
                 const a = awayRef.current ? Math.max(0,Math.min(9,Math.round(awayRef.current.scrollTop/52))) : pickerAway;
                 setScores(s=>({...s,[scorePick.key]:{home:h,away:a}}));
+                const _day = scorePick.day;
+                const _idx = scorePick.idx;
+                const _dayMatches = mm0[_day]||[];
                 setScorePick(null);
+                // Scroll to next unscored match (only if day has more than 2 matches)
+                setTimeout(()=>{
+                  if(_dayMatches.length<=2) return;
+                  let nextKey=null;
+                  for(let i=_idx+1;i<_dayMatches.length;i++){
+                    if(!scores[`${_day}-${i}`]){ nextKey=`${_day}-${i}`; break; }
+                  }
+                  if(!nextKey) return;
+                  const container=exactScrollRef.current;
+                  const el=container?.querySelector(`[data-match-key="${nextKey}"]`);
+                  if(!el||!container) return;
+                  const diff=el.getBoundingClientRect().top-container.getBoundingClientRect().top;
+                  container.scrollBy({top:diff-80,behavior:'smooth'});
+                },350);
               }}
                 style={{background:"#FF9500",border:"none",borderRadius:10,padding:"6px 14px",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer"}}>
                 ✓ Save
@@ -8158,12 +8233,12 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
               <span style={{fontSize:13,fontWeight:fw,color:tc,lineHeight:1}}>{day>30?day-30:day}</span>
               {has&&(
                 locked
-                  ? <span style={{fontSize:8,lineHeight:1,marginTop:2}}>🔒</span>
+                  ? <span style={{fontSize:11,lineHeight:1,marginTop:2}}>🔒</span>
                   : allPredicted
-                    ? <span style={{fontSize:7,color:GREEN,fontWeight:900,marginTop:2,lineHeight:1}}>✓</span>
+                    ? <span style={{fontSize:10,color:GREEN,fontWeight:900,marginTop:2,lineHeight:1}}>✓</span>
                     : <div style={{width:4,height:4,borderRadius:"50%",background:isPast?"#ccc":isS?NAVY:RED,marginTop:3}}/>
               )}
-              {isS&&!isSel&&!allPredicted&&<div style={{position:"absolute",top:-6,right:-2,background:RED,borderRadius:4,padding:"1px 4px",fontSize:7,fontWeight:800,color:"#fff"}}>START</div>}
+              {isS&&!isSel&&!allPredicted&&<div style={{position:"absolute",top:-6,right:-2,background:RED,borderRadius:4,padding:"1px 4px",fontSize:9,fontWeight:800,color:"#fff"}}>START</div>}
             </div>
           );
         })}
@@ -8211,18 +8286,18 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                       {(()=>{
                         const isActive = activeStage==="Groups";
                         return (
-                          <div onClick={()=>handleStageClick("Groups")} style={{
+                          <button onClick={()=>handleStageClick("Groups")} style={{
                             flexShrink:0, height:34, borderRadius:9, padding:"0 14px",
                             background:isActive?"#fff":hasGroupMatches?"rgba(255,255,255,0.28)":"rgba(255,255,255,0.1)",
                             display:"flex",alignItems:"center",justifyContent:"center",
-                            fontSize:13, fontWeight:900,
+                            fontSize:13, fontWeight:900, border:"none",
                             color:isActive?NAVY:"rgba(255,255,255,0.75)",
                             cursor:"pointer", position:"relative",
                             boxShadow:isActive?"0 2px 10px rgba(0,0,0,0.3)":"none",
-                            transition:"all 0.22s",
+                            transition:"all 0.22s", WebkitTapHighlightColor:"transparent",
                           }}>
                             Grupe
-                          </div>
+                          </button>
                         );
                       })()}
                       {/* KO stage tabs */}
@@ -8230,18 +8305,18 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                         const isActive = activeStage===s.id;
                         const hasMatchToday = groups.includes(s.id);
                         return (
-                          <div key={s.id} onClick={()=>handleStageClick(s.id)} style={{
+                          <button key={s.id} onClick={()=>handleStageClick(s.id)} style={{
                             flexShrink:0, width:44, height:34, borderRadius:9,
                             background:isActive?"#fff":hasMatchToday?"rgba(255,255,255,0.28)":"rgba(255,255,255,0.1)",
                             display:"flex",alignItems:"center",justifyContent:"center",
-                            fontSize:isActive?13:11, fontWeight:900,
+                            fontSize:isActive?13:11, fontWeight:900, border:"none",
                             color:isActive?NAVY:"rgba(255,255,255,0.75)",
                             cursor:"pointer",
                             boxShadow:isActive?"0 2px 10px rgba(0,0,0,0.3)":"none",
-                            transition:"all 0.22s",
+                            transition:"all 0.22s", WebkitTapHighlightColor:"transparent",
                           }}>
                             {s.label}
-                          </div>
+                          </button>
                         );
                       })}
                     </div>
@@ -8252,19 +8327,19 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                           const hasMatchToday = groups.includes(g);
                           const isActive = activeGrp===g;
                           return (
-                            <div key={g} onClick={()=>setSelGroup(g)} style={{
+                            <button key={g} onClick={()=>setSelGroup(g)} style={{
                               flexShrink:0, width:38, height:34, borderRadius:9,
                               background:isActive?"#fff":hasMatchToday?"rgba(255,255,255,0.28)":"rgba(255,255,255,0.1)",
                               display:"flex",alignItems:"center",justifyContent:"center",
-                              fontSize:isActive?15:12, fontWeight:900,
+                              fontSize:isActive?15:12, fontWeight:900, border:"none",
                               color:isActive?NAVY:"rgba(255,255,255,0.75)",
                               cursor:"pointer", position:"relative",
                               boxShadow:isActive?"0 2px 10px rgba(0,0,0,0.3)":"none",
-                              transition:"all 0.22s",
+                              transition:"all 0.22s", WebkitTapHighlightColor:"transparent",
                             }}>
                               {g}
                               {hasMatchToday&&<div style={{position:"absolute",bottom:2,left:"50%",transform:"translateX(-50%)",width:5,height:5,borderRadius:"50%",background:isActive?NAVY:"rgba(255,255,255,0.5)"}}/>}
-                            </div>
+                            </button>
                           );
                         })}
                       </div>
@@ -8320,7 +8395,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                               <div style={{padding:"6px 10px",borderBottom:`1px solid rgba(0,0,0,0.05)`}}>
                                 <div style={{display:"flex",alignItems:"center",gap:6}}>
                                   <div style={{width:18,height:18,borderRadius:4,background:grayed?"#eee":`${col}22`,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
-                                    <span style={{fontSize:7,fontWeight:800,color:grayed?"#bbb":col}}>?</span>
+                                    <span style={{fontSize:10,fontWeight:800,color:grayed?"#bbb":col}}>?</span>
                                   </div>
                                   <span style={{fontSize:12,fontWeight:600,color:grayed?"#bbb":DARK}}>{h}</span>
                                 </div>
@@ -8328,7 +8403,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                               <div style={{padding:"6px 10px"}}>
                                 <div style={{display:"flex",alignItems:"center",gap:6}}>
                                   <div style={{width:18,height:18,borderRadius:4,background:grayed?"#eee":`${col}22`,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
-                                    <span style={{fontSize:7,fontWeight:800,color:grayed?"#bbb":col}}>?</span>
+                                    <span style={{fontSize:10,fontWeight:800,color:grayed?"#bbb":col}}>?</span>
                                   </div>
                                   <span style={{fontSize:12,fontWeight:600,color:grayed?"#bbb":DARK}}>{a}</span>
                                 </div>
@@ -8343,11 +8418,11 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                               <span style={{fontSize:12,fontWeight:800,color:col}}>{label}</span>
                               <div style={{marginTop:4,display:"flex",alignItems:"center",justifyContent:"center",gap:4}}>
                                 <div style={{width:20,height:20,borderRadius:5,background:"rgba(0,0,0,0.06)",display:"flex",alignItems:"center",justifyContent:"center"}}>
-                                  <span style={{fontSize:8,color:"#bbb",fontWeight:700}}>??</span>
+                                  <span style={{fontSize:11,color:"#bbb",fontWeight:700}}>??</span>
                                 </div>
-                                <span style={{fontSize:8,color:"#bbb"}}>vs</span>
+                                <span style={{fontSize:11,color:"#bbb"}}>vs</span>
                                 <div style={{width:20,height:20,borderRadius:5,background:"rgba(0,0,0,0.06)",display:"flex",alignItems:"center",justifyContent:"center"}}>
-                                  <span style={{fontSize:8,color:"#bbb",fontWeight:700}}>??</span>
+                                  <span style={{fontSize:11,color:"#bbb",fontWeight:700}}>??</span>
                                 </div>
                               </div>
                             </div>
@@ -8538,20 +8613,21 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                               const isPastM = m.day < nowDM || (m.day === nowDM && matchHourM <= nowHM);
                               const canEdit=!isLive2&&!isFT2&&!isPastM&&isWeekUnlocked(m.day,simDay,simHour,simMin);
                               return (
-                                <div key={idx2} style={{background:"#fff",borderBottom:idx2<allGM.length-1?"1px solid rgba(0,0,0,0.05)":"none",
+                                <div key={idx2} role={canEdit?"button":undefined} tabIndex={canEdit?0:undefined}
+                                  style={{background:"#fff",borderBottom:idx2<allGM.length-1?"1px solid rgba(0,0,0,0.05)":"none",
                                   padding:"10px 14px",display:"flex",alignItems:"center",gap:8}}
                                   onClick={()=>canEdit&&onMatchClick&&onMatchClick(m,m.day,m._i)}>
                                   <span style={{fontSize:18}}>{m.homeFlag}</span>
                                   <span style={{flex:1,fontSize:12,fontWeight:600,color:isPastM?"#bbb":DARK}}>{m.home.length>7?m.home.split(" ")[0]:m.home}</span>
                                   <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
                                     <span style={{fontSize:11,fontWeight:600,color:"#bbb"}}>{m.day} Iun · {m.time}</span>
-                                    {isPastM?<span style={{fontSize:7,color:"#ccc",fontWeight:700}}>{T[lang].finished}</span>
-                                      :isLive2?<span style={{fontSize:7,fontWeight:800,color:RED,animation:"blink 1s infinite"}}>● LIVE</span>
-                                      :<span style={{fontSize:7,color:"#bbb",fontWeight:700}}>{isFT2?"Final":"● Live"}</span>}
+                                    {isPastM?<span style={{fontSize:10,color:"#ccc",fontWeight:700}}>{T[lang].finished}</span>
+                                      :isLive2?<span style={{fontSize:10,fontWeight:800,color:RED,animation:"blink 1s infinite"}}>● LIVE</span>
+                                      :<span style={{fontSize:10,color:"#bbb",fontWeight:700}}>{isFT2?"Final":"● Live"}</span>}
                                     <div style={{background:hasScore2?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:"rgba(0,0,0,0.07)",borderRadius:6,padding:"3px 10px",minWidth:46,textAlign:"center"}}>
                                       <span style={{fontSize:12,fontWeight:900,color:hasScore2?"#fff":"#bbb"}}>{hasScore2?`${liveScore2.home}-${liveScore2.away}`:"-"}</span>
                                     </div>
-                                    <span style={{fontSize:7,fontWeight:700,color:"#bbb",textTransform:"uppercase",letterSpacing:0.5}}>{T[lang].prediction}</span>
+                                    <span style={{fontSize:10,fontWeight:700,color:"#bbb",textTransform:"uppercase",letterSpacing:0.5}}>{T[lang].prediction}</span>
                                     {!isWeekUnlocked(m.day,simDay,simHour,simMin)?<span style={{fontSize:12,color:"#ccc"}}>🔒</span>
                                       :sc2?<div style={{background:canEdit?`rgba(0,32,91,0.1)`:"rgba(0,0,0,0.06)",border:canEdit?`1.5px solid ${NAVY}`:"none",borderRadius:6,padding:"2px 8px",minWidth:46,textAlign:"center",opacity:isPastM?0.5:1}}>
                                           <span style={{fontSize:11,fontWeight:900,color:canEdit?NAVY:"#888"}}>{scH(sc2)}-{scA(sc2)}</span>
@@ -8576,6 +8652,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                   sm.map((m0,i)=>{
                     const m = {...m0, _i:i};
                     const key=`${sel}-${i}`;
+                    // key used below for data-match-key
                     const sc = scores&&scores[key];
                     const live = LIVE_SCORES[key];
                     const mH2 = parseInt((m.time||"23:00").split(":")[0]);
@@ -8595,7 +8672,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                     const resultMatch = predRes&&realRes&&predRes===realRes&&isFT;
                     const isPastDay2 = !!(simDay && sel < simDay);
                     return (
-                      <div key={i} style={{borderBottom:i<sm.length-1?"1px solid rgba(0,0,0,0.06)":"none",background:"#fff"}}>
+                      <div key={i} data-match-key={key} style={{borderBottom:i<sm.length-1?"1px solid rgba(0,0,0,0.06)":"none",background:"#fff"}}>
                         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",
                           padding:"4px 14px",background:isLive?"rgba(0,32,91,0.06)":isFT?"rgba(0,154,68,0.05)":"rgba(0,0,0,0.02)"}}>
                           <span style={{fontSize:11,fontWeight:600,color:"#aaa"}}>{m.time} · Gr.{m.group}</span>
@@ -8607,17 +8684,18 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                           {isNS2&&<span style={{fontSize:11,color:"#ccc"}}>{T[lang].notStarted}</span>}
                         </div>
                         {(()=>{ return (
-                        <div onClick={()=>!isMatchPast(m.day||sel,m.time,simDay,simHour)&&!isPastDay2&&onMatchClick&&onMatchClick(m,sel,m._i)}
+                        <div role="button" tabIndex={isPastDay2?undefined:0}
+                          onClick={()=>!isMatchPast(m.day||sel,m.time,simDay,simHour)&&!isPastDay2&&onMatchClick&&onMatchClick(m,sel,m._i)}
                           style={{display:"flex",alignItems:"center",padding:"10px 14px",cursor:isPastDay2?"default":"pointer",gap:6,opacity:isPastDay2?0.6:1}}>
                           <span style={{fontSize:18,flexShrink:0}}>{m.homeFlag}</span>
                           <span style={{flex:1,fontSize:11,fontWeight:600,color:DARK}}>{m.home.length>7?m.home.split(" ")[0]:m.home}</span>
                           <div style={{flexShrink:0,display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
-                            {isLive?<span style={{fontSize:7,fontWeight:800,color:RED,animation:"blink 1s infinite"}}>● LIVE</span>
-                              :<span style={{fontSize:7,fontWeight:700,color:"#bbb",textTransform:"uppercase",letterSpacing:0.5}}>{isFT?"Final":"● Live"}</span>}
+                            {isLive?<span style={{fontSize:10,fontWeight:800,color:RED,animation:"blink 1s infinite"}}>● LIVE</span>
+                              :<span style={{fontSize:10,fontWeight:700,color:"#bbb",textTransform:"uppercase",letterSpacing:0.5}}>{isFT?"Final":"● Live"}</span>}
                             <div style={{background:isLive?"rgba(0,0,0,0.06)":hasScore?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:"rgba(0,0,0,0.08)",borderRadius:6,padding:"4px 10px",minWidth:54,textAlign:"center"}}>
                               <span style={{fontSize:13,fontWeight:900,color:isLive?RED:hasScore?"#fff":"#bbb"}}>{isLive?(hasScore?`${live.home}-${live.away}`:"0-0"):hasScore?`${live.home}-${live.away}`:"-"}</span>
                             </div>
-                            <span style={{fontSize:7,fontWeight:700,color:"#bbb",textTransform:"uppercase",letterSpacing:0.5}}>{T[lang].prediction}</span>
+                            <span style={{fontSize:10,fontWeight:700,color:"#bbb",textTransform:"uppercase",letterSpacing:0.5}}>{T[lang].prediction}</span>
                             {(()=>{
                               const isPast = isMatchPast(sel, m.time, simDay, simHour);
                               const canPredict = !isLive && !isFT && !isPast && isWeekUnlocked(sel||0, simDay, simHour, simMin);
@@ -9771,13 +9849,12 @@ function App() {
           <div style={{
             position:"fixed",
             bottom:0,
-            left:14,
-            right:14,
-            height:"calc(100px + env(safe-area-inset-bottom, 10px))",
+            left:0,
+            right:0,
+            height:"calc(110px + env(safe-area-inset-bottom, 10px))",
             zIndex:999,
             pointerEvents:"none",
-            borderRadius:"16px 16px 0 0",
-            background:"linear-gradient(to bottom, transparent 0%, rgba(238,242,255,0.35) 30%, rgba(238,242,255,0.70) 58%, rgba(238,242,255,0.88) 78%, transparent 100%)",
+            background:"linear-gradient(to bottom, transparent 0%, rgba(238,242,255,0.3) 35%, rgba(238,242,255,0.65) 60%, rgba(238,242,255,0.88) 80%)",
           }}/>
         )}
         {showFooter&&<Footer active={footerActive} onNavigate={key=>{ if(key===SCREENS.BOARDS) setBoardsInitialTab("available"); setScreen(key); }} lang={lang} user={user} activeBoardId={activeBoardId} myBoards={myBoards} leaderboardData={leaderboardData} tournamentStarted={tournamentStarted}/>}
