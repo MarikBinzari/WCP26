@@ -9564,7 +9564,7 @@ function App() {
   return (
     <UserCtx.Provider value={user}>
     <LangCtx.Provider value={lang}>
-    <div style={{width:"100%",height:"100%",background:BG,display:"flex",flexDirection:"column",position:"relative",fontFamily:"-apple-system,'SF Pro Display',sans-serif"}}>
+    <div style={{width:"100%",height:"100%",background:BG,display:"flex",flexDirection:"column",position:"relative",fontFamily:"-apple-system,'SF Pro Display',sans-serif",paddingTop:"env(safe-area-inset-top, 0px)",boxSizing:"border-box"}}>
         {isDesktop && <DesktopBlocker />}
         {screen===SCREENS.HOME&&<img src={trophy} alt="" style={{position:"fixed",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.09,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>}
         <div style={{flex:1,overflow:"hidden",display:"flex",flexDirection:"column"}}>
@@ -9973,7 +9973,7 @@ function InstallBanner() {
       position:"fixed", bottom:0, left:0, right:0, zIndex:99999,
       background:"#fff", borderTop:"1px solid rgba(10,46,138,0.12)",
       boxShadow:"0 -4px 24px rgba(0,0,0,0.12)",
-      padding:"16px 20px 32px", display:"flex", alignItems:"flex-start", gap:12,
+      padding:"16px 20px 0", paddingBottom:"calc(16px + env(safe-area-inset-bottom, 0px))", display:"flex", alignItems:"flex-start", gap:12,
     }}>
       <img src="/icon-192.png" alt="" style={{width:48,height:48,borderRadius:12,flexShrink:0}} />
       <div style={{flex:1}}>
