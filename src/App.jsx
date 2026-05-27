@@ -9927,9 +9927,79 @@ function App() {
             />
           </div>
         )}
+      <InstallBanner />
     </div>
     </LangCtx.Provider>
     </UserCtx.Provider>
+  );
+}
+
+function InstallBanner() {
+  const [show, setShow] = React.useState(false);
+  const [isIOS, setIsIOS] = React.useState(false);
+  const [deferredPrompt, setDeferredPrompt] = React.useState(null);
+
+  React.useEffect(() => {
+    if (localStorage.getItem("pwa-dismissed")) return;
+    const standalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone;
+    if (standalone) return;
+
+    const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+    if (ios) {
+      setIsIOS(true);
+      setShow(true);
+      return;
+    }
+
+    const handler = (e) => { e.preventDefault(); setDeferredPrompt(e); setShow(true); };
+    window.addEventListener("beforeinstallprompt", handler);
+    return () => window.removeEventListener("beforeinstallprompt", handler);
+  }, []);
+
+  const dismiss = () => { localStorage.setItem("pwa-dismissed", "1"); setShow(false); };
+
+  const install = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === "accepted") dismiss();
+    else setShow(false);
+  };
+
+  if (!show) return null;
+
+  return (
+    <div style={{
+      position:"fixed", bottom:0, left:0, right:0, zIndex:99999,
+      background:"#fff", borderTop:"1px solid rgba(10,46,138,0.12)",
+      boxShadow:"0 -4px 24px rgba(0,0,0,0.12)",
+      padding:"16px 20px 32px", display:"flex", alignItems:"flex-start", gap:12,
+    }}>
+      <img src="/icon-192.png" alt="" style={{width:48,height:48,borderRadius:12,flexShrink:0}} />
+      <div style={{flex:1}}>
+        <div style={{fontWeight:700,fontSize:15,color:"#0A2E8A",marginBottom:4}}>Predicto WCP26</div>
+        {isIOS ? (
+          <div style={{fontSize:13,color:"#555",lineHeight:1.5}}>
+            Apasă <strong>Share</strong> <span style={{fontSize:16}}>⎙</span> apoi <strong>"Add to Home Screen"</strong> pentru a instala aplicația.
+          </div>
+        ) : (
+          <div style={{fontSize:13,color:"#555",lineHeight:1.5,marginBottom:10}}>
+            Instalează aplicația pe telefonul tău.
+          </div>
+        )}
+        {!isIOS && (
+          <button onClick={install} style={{
+            marginTop:8, padding:"8px 20px", borderRadius:10,
+            background:"#0A2E8A", color:"#fff", border:"none",
+            fontWeight:700, fontSize:14, cursor:"pointer",
+          }}>Instalează</button>
+        )}
+      </div>
+      <button onClick={dismiss} style={{
+        background:"none", border:"none", color:"#999",
+        fontSize:22, cursor:"pointer", padding:"0 4px", lineHeight:1,
+      }}>✕</button>
+    </div>
   );
 }
 
