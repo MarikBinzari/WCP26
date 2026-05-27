@@ -5127,7 +5127,6 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
             <div style={{background:"#fff",borderRadius:20,padding:"14px",boxShadow:"0 4px 16px rgba(0,0,0,0.06)",display:"flex",flexDirection:"column"}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10}}>
                 <span style={{fontSize:14,fontWeight:800,color:"#111"}}>{T[lang].thisWeekLabel||"This Week"}</span>
-                <div style={{width:30,height:30,borderRadius:"50%",background:"rgba(10,46,138,0.07)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,flexShrink:0}}>📅</div>
               </div>
               <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",padding:"4px 0 10px"}}>
                 {(()=>{
