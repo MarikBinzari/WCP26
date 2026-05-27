@@ -9239,9 +9239,10 @@ function DesktopBlocker() {
 }
 
 function App() {
-  const [isDesktop, setIsDesktop] = useState(() => window.innerWidth > 768);
+  const isTouchDevice = () => navigator.maxTouchPoints > 0 || 'ontouchstart' in window;
+  const [isDesktop, setIsDesktop] = useState(() => window.innerWidth > 768 && !isTouchDevice());
   useEffect(() => {
-    const check = () => setIsDesktop(window.innerWidth > 768);
+    const check = () => setIsDesktop(window.innerWidth > 768 && !isTouchDevice());
     window.addEventListener("resize", check);
     return () => window.removeEventListener("resize", check);
   }, []);
