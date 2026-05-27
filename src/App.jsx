@@ -5130,7 +5130,16 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
                 <div style={{width:30,height:30,borderRadius:"50%",background:"rgba(10,46,138,0.07)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,flexShrink:0}}>📅</div>
               </div>
               <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",padding:"4px 0 10px"}}>
-                <span style={{fontSize:44,lineHeight:1}}>📆</span>
+                {(()=>{
+                  const d = simDay ? new Date(2026,5,simDay,simHour||12) : new Date();
+                  const months=["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+                  return (
+                    <div style={{width:52,height:52,borderRadius:12,background:NAVY,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",boxShadow:`0 4px 12px rgba(10,46,138,0.3)`}}>
+                      <div style={{fontSize:9,fontWeight:800,color:"rgba(255,255,255,0.65)",letterSpacing:1}}>{months[d.getMonth()]}</div>
+                      <div style={{fontSize:26,fontWeight:900,color:"#fff",lineHeight:1.1}}>{d.getDate()}</div>
+                    </div>
+                  );
+                })()}
               </div>
               <div style={{fontSize:11,color:"#6B7280",textAlign:"center",marginBottom:10,lineHeight:1.5}}>
                 {exactWeekUnlocked
