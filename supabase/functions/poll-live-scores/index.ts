@@ -252,7 +252,9 @@ Deno.serve(async () => {
   const upserts: {
     match_key: string; status: string;
     home_score: number | null; away_score: number | null;
-    live_min: number | null; updated_at: string
+    live_min: number | null; updated_at: string;
+    first_half_start?: string | null;
+    second_half_start?: string | null;
   }[] = []
 
   // ── WC 2026 matches ────────────────────────────────────────────────────────
@@ -281,8 +283,12 @@ Deno.serve(async () => {
         const awayScore = m.score?.fullTime?.away ?? null
 
         let liveMin: number | null = null
-        if (status === 'LIVE' && m.utcDate) {
-          liveMin = Math.max(1, Math.min(90, Math.floor((now.getTime() - new Date(m.utcDate).getTime()) / 60000)))
+        if (status === 'LIVE') {
+          if (m.minute != null) {
+            liveMin = m.minute + (m.injuryTime ?? 0)
+          } else if (m.utcDate) {
+            liveMin = Math.max(1, Math.min(90, Math.floor((now.getTime() - new Date(m.utcDate).getTime()) / 60000)))
+          }
         }
 
         upserts.push({
@@ -321,10 +327,18 @@ Deno.serve(async () => {
         const clHome = final.score?.fullTime?.home ?? final.score?.regularTime?.home ?? null
         const clAway = final.score?.fullTime?.away ?? final.score?.regularTime?.away ?? null
 
-        // Compute minute from utcDate (timezone-independent, works for free tier)
+        // Minute: use API value if available, else compute from elapsed time
         let clMin: number | null = null
-        if (clStatus === 'LIVE' && final.utcDate) {
-          clMin = Math.max(1, Math.min(90, Math.floor((now.getTime() - new Date(final.utcDate).getTime()) / 60000)))
+        if (clStatus === 'HT') {
+          clMin = 45
+        } else if (clStatus === 'LIVE') {
+          if (final.minute != null) {
+            // API provides exact minute (+ injuryTime if in stoppage)
+            clMin = final.minute + (final.injuryTime ?? 0)
+          } else if (final.utcDate) {
+            const elapsed = Math.floor((now.getTime() - new Date(final.utcDate).getTime()) / 60000)
+            clMin = elapsed > 62 ? Math.max(46, elapsed - 24) : Math.max(1, Math.min(45, elapsed - 6))
+          }
         }
 
         upserts.push({
