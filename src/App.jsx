@@ -8736,10 +8736,12 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                     const _nowH   = simDay!=null?(simHour||0):new Date().getHours();
                     const _nowM   = simDay!=null?(simMin||0):new Date().getMinutes();
                     const _kick = mH2*60+mM2, _now2 = _nowH*60+_nowM;
-                    const isFT = live?.status==="FT" || (sel||0)<_nowDay || (sel===_nowDay && _now2>_kick+115);
-                    const isLive = !isFT && (live?.status==="LIVE" || (live?.status!=="NS" && sel===_nowDay && _now2>=_kick && _now2<=_kick+115));
-                    const isNS2 = !isFT && !isLive;
-                    const liveMin2 = isLive ? (live?.min != null ? live.min : Math.min(90,_now2-_kick)) : 0;
+                    const dbStatus = live?.status;
+                    const isFT = dbStatus==="FT" || (!dbStatus && ((sel||0)<_nowDay || (sel===_nowDay && _now2>_kick+115)));
+                    const isHT = !isFT && dbStatus==="HT";
+                    const isLive = !isFT && !isHT && (dbStatus==="LIVE" || (!dbStatus && dbStatus!=="NS" && sel===_nowDay && _now2>=_kick && _now2<=_kick+115));
+                    const isNS2 = !isFT && !isHT && !isLive;
+                    const liveMin2 = isLive ? (live?.min != null ? live.min : Math.min(90,_now2-_kick)) : isHT ? 45 : 0;
                     const hasScore = live && live.home !== undefined && live.home !== null;
                     const exactMatch = sc&&hasScore&&isFT&&scH(sc)===live.home&&scA(sc)===live.away;
                     const predRes = sc?scH(sc)>scA(sc)?"H":scH(sc)<scA(sc)?"A":"D":null;
@@ -8755,6 +8757,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                             <span style={{width:5,height:5,borderRadius:"50%",background:RED,display:"inline-block"}}/>
                             LIVE {liveMin2}'
                           </span>}
+                          {isHT&&<span style={{fontSize:11,fontWeight:800,color:"#F59E0B"}}>HT · Pauză</span>}
                           {isFT&&<span style={{fontSize:11,fontWeight:700,color:GREEN}}>FT</span>}
                           {isNS2&&<span style={{fontSize:11,color:"#ccc"}}>{T[lang].notStarted}</span>}
                         </div>
@@ -8767,9 +8770,10 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                           <span style={{flex:1,fontSize:11,fontWeight:600,color:DARK}}>{m.home.length>7?m.home.split(" ")[0]:m.home}</span>
                           <div style={{flexShrink:0,display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
                             {isLive?<span style={{fontSize:10,fontWeight:800,color:RED,animation:"blink 1s infinite"}}>● LIVE</span>
-                              :<span style={{fontSize:10,fontWeight:700,color:"#bbb",textTransform:"uppercase",letterSpacing:0.5}}>{isFT?"Final":"● Live"}</span>}
-                            <div style={{background:isLive?"rgba(0,0,0,0.06)":hasScore?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:"rgba(0,0,0,0.08)",borderRadius:6,padding:"4px 10px",minWidth:54,textAlign:"center"}}>
-                              <span style={{fontSize:13,fontWeight:900,color:isLive?RED:hasScore?"#fff":"#bbb"}}>{isLive?(hasScore?`${live.home}-${live.away}`:"0-0"):hasScore?`${live.home}-${live.away}`:"-"}</span>
+                              :isHT?<span style={{fontSize:10,fontWeight:800,color:"#F59E0B"}}>⏸ HT</span>
+                              :<span style={{fontSize:10,fontWeight:700,color:"#bbb",textTransform:"uppercase",letterSpacing:0.5}}>{isFT?"Final":"-"}</span>}
+                            <div style={{background:(isLive||isHT)?"rgba(0,0,0,0.06)":hasScore?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:"rgba(0,0,0,0.08)",borderRadius:6,padding:"4px 10px",minWidth:54,textAlign:"center"}}>
+                              <span style={{fontSize:13,fontWeight:900,color:(isLive||isHT)?RED:hasScore?"#fff":"#bbb"}}>{(isLive||isHT)?(hasScore?`${live.home}-${live.away}`:"0-0"):hasScore?`${live.home}-${live.away}`:"-"}</span>
                             </div>
                             <span style={{fontSize:10,fontWeight:700,color:"#bbb",textTransform:"uppercase",letterSpacing:0.5}}>{T[lang].prediction}</span>
                             {(()=>{

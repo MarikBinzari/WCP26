@@ -274,7 +274,8 @@ Deno.serve(async () => {
 
         let status = 'NS'
         if (m.status === 'FINISHED' || m.status === 'AWARDED') status = 'FT'
-        else if (['IN_PLAY', 'PAUSED', 'EXTRA_TIME', 'PENALTY_SHOOTOUT'].includes(m.status)) status = 'LIVE'
+        else if (m.status === 'PAUSED') status = 'HT'
+        else if (['IN_PLAY', 'EXTRA_TIME', 'PENALTY_SHOOTOUT'].includes(m.status)) status = 'LIVE'
 
         const homeScore = m.score?.fullTime?.home ?? null
         const awayScore = m.score?.fullTime?.away ?? null
@@ -314,7 +315,8 @@ Deno.serve(async () => {
       if (final) {
         let clStatus = 'NS'
         if (final.status === 'FINISHED' || final.status === 'AWARDED') clStatus = 'FT'
-        else if (['IN_PLAY', 'PAUSED', 'EXTRA_TIME', 'PENALTY_SHOOTOUT'].includes(final.status)) clStatus = 'LIVE'
+        else if (final.status === 'PAUSED') clStatus = 'HT'
+        else if (['IN_PLAY', 'EXTRA_TIME', 'PENALTY_SHOOTOUT'].includes(final.status)) clStatus = 'LIVE'
 
         const clHome = final.score?.fullTime?.home ?? final.score?.regularTime?.home ?? null
         const clAway = final.score?.fullTime?.away ?? final.score?.regularTime?.away ?? null
