@@ -8557,11 +8557,13 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                                   const _nd=simDay ?? getRealTournamentDay();
                                   const _nh=simDay!=null?(simHour||0):new Date().getHours();
                                   const _kick=_mH*60, _now=_nh*60;
-                                  const isFT2 = m.day<_nd || (m.day===_nd && _now>_kick+115);
-                                  const isLive2 = !isFT2 && live2?.status==="LIVE" || (!isFT2 && live2?.status!=="NS" && m.day===_nd && _now>=_kick && _now<=_kick+115);
-                                  const liveScore2 = live2&&live2.home!=null ? live2 : (isLive2?{home:0,away:0}:null);
+                                  const db2ko=live2?.status;
+                                  const isFT2 = db2ko==="FT" || (!db2ko && (m.day<_nd || (m.day===_nd && _now>_kick+115)));
+                                  const isHT2 = !isFT2 && db2ko==="HT";
+                                  const isLive2 = !isFT2 && !isHT2 && (db2ko==="LIVE" || (!db2ko && db2ko!=="NS" && m.day===_nd && _now>=_kick && _now<=_kick+115));
+                                  const liveScore2 = live2&&live2.home!=null ? live2 : ((isLive2||isHT2)?{home:0,away:0}:null);
                                   const isPastM = m.day<_nd || (m.day===_nd && _mH<=_nh);
-                                  const canEdit=!isLive2&&!isFT2&&!isPastM&&isWeekUnlocked(m.day,simDay,simHour,simMin);
+                                  const canEdit=!isLive2&&!isHT2&&!isFT2&&!isPastM&&isWeekUnlocked(m.day,simDay,simHour,simMin);
                                   return (
                                     <div key={idx2} style={{background:"#fff",borderBottom:idx2<koMatches.length-1?"1px solid rgba(0,0,0,0.05)":"none",
                                       padding:"10px 14px",display:"flex",alignItems:"center",gap:8,cursor:canEdit?"pointer":"default"}}
@@ -8677,15 +8679,17 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                               const _nh=simDay!=null?(simHour||0):new Date().getHours();
                               const _nm=simDay!=null?(simMin||0):new Date().getMinutes();
                               const _kick=_mH*60+_mM, _now=_nh*60+_nm;
-                              const isFT2 = m.day<_nd || (m.day===_nd && _now>_kick+115);
-                              const isLive2 = !isFT2 && live2?.status==="LIVE" || (!isFT2 && live2?.status!=="NS" && m.day===_nd && _now>=_kick && _now<=_kick+115);
-                              const liveScore2 = live2&&live2.home!==null&&live2.home!==undefined ? live2 : (isLive2?{home:0,away:0}:null);
+                              const db2=live2?.status;
+                              const isFT2 = db2==="FT" || (!db2 && (m.day<_nd || (m.day===_nd && _now>_kick+115)));
+                              const isHT2 = !isFT2 && db2==="HT";
+                              const isLive2 = !isFT2 && !isHT2 && (db2==="LIVE" || (!db2 && db2!=="NS" && m.day===_nd && _now>=_kick && _now<=_kick+115));
+                              const liveScore2 = live2&&live2.home!==null&&live2.home!==undefined ? live2 : ((isLive2||isHT2)?{home:0,away:0}:null);
                               const hasScore2 = !!liveScore2;
                               const matchHourM=parseInt((m.time||"23:00").split(":")[0]);
                               const nowDM = simDay ?? getRealTournamentDay();
                               const nowHM = simDay ? (simHour||0) : new Date().getHours();
                               const isPastM = m.day < nowDM || (m.day === nowDM && matchHourM <= nowHM);
-                              const canEdit=!isLive2&&!isFT2&&!isPastM&&isWeekUnlocked(m.day,simDay,simHour,simMin);
+                              const canEdit=!isLive2&&!isHT2&&!isFT2&&!isPastM&&isWeekUnlocked(m.day,simDay,simHour,simMin);
                               return (
                                 <div key={idx2} role={canEdit?"button":undefined} tabIndex={canEdit?0:undefined}
                                   style={{background:"#fff",borderBottom:idx2<allGM.length-1?"1px solid rgba(0,0,0,0.05)":"none",
@@ -8698,7 +8702,8 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                                     <span style={{fontSize:11,fontWeight:600,color:"#bbb"}}>{m.day} Iun · {m.time}</span>
                                     {isPastM?<span style={{fontSize:10,color:"#ccc",fontWeight:700}}>{T[lang].finished}</span>
                                       :isLive2?<span style={{fontSize:10,fontWeight:800,color:RED,animation:"blink 1s infinite"}}>● LIVE</span>
-                                      :<span style={{fontSize:10,color:"#bbb",fontWeight:700}}>{isFT2?"Final":"● Live"}</span>}
+                                      :isHT2?<span style={{fontSize:10,fontWeight:800,color:"#F59E0B"}}>⏸ HT</span>
+                                      :<span style={{fontSize:10,color:"#bbb",fontWeight:700}}>{isFT2?"Final":"-"}</span>}
                                     <div style={{background:hasScore2?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:"rgba(0,0,0,0.07)",borderRadius:6,padding:"3px 10px",minWidth:46,textAlign:"center"}}>
                                       <span style={{fontSize:12,fontWeight:900,color:hasScore2?"#fff":"#bbb"}}>{hasScore2?`${liveScore2.home}-${liveScore2.away}`:"-"}</span>
                                     </div>
