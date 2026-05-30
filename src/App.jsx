@@ -8783,16 +8783,24 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                             <span style={{fontSize:10,fontWeight:700,color:"#bbb",textTransform:"uppercase",letterSpacing:0.5}}>{T[lang].prediction}</span>
                             {(()=>{
                               const isPast = isMatchPast(sel, m.time, simDay, simHour);
-                              const canPredict = !isLive && !isFT && !isPast && isWeekUnlocked(sel||0, simDay, simHour, simMin);
-                              // If predicted — always show score
+                              const canPredict = !isLive && !isHT && !isFT && !isPast && isWeekUnlocked(sel||0, simDay, simHour, simMin);
+                              // Comparatie live: scorul prezis vs scorul curent
+                              const liveHas = (isLive||isHT) && hasScore;
+                              const predRes2 = sc ? (scH(sc)>scA(sc)?"H":scH(sc)<scA(sc)?"A":"D") : null;
+                              const liveRes2 = liveHas ? (live.home>live.away?"H":live.home<live.away?"A":"D") : null;
+                              const liveExact = liveHas && sc && scH(sc)===live.home && scA(sc)===live.away;
+                              const liveWin = !liveExact && liveHas && predRes2 && predRes2===liveRes2;
+                              const liveLose = liveHas && predRes2 && predRes2!==liveRes2;
                               if(sc) {
+                                const liveBg = liveExact?`linear-gradient(135deg,${GREEN},#007A36)`:liveWin?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:liveLose?`linear-gradient(135deg,${RED},#EF3340)`:"rgba(0,0,0,0.06)";
                                 return (
                                   <div onClick={canPredict?e=>{e.stopPropagation();onMatchClick&&onMatchClick(m,sel,m._i);}:undefined}
-                                    style={{background:isLive?"rgba(0,0,0,0.06)":exactMatch?`linear-gradient(135deg,${GREEN},#007A36)`:resultMatch?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:(isPast||isFT)?`linear-gradient(135deg,${RED},#EF3340)`:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,
+                                    style={{background:(isLive||isHT)?liveBg:exactMatch?`linear-gradient(135deg,${GREEN},#007A36)`:resultMatch?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:(isPast||isFT)?`linear-gradient(135deg,${RED},#EF3340)`:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,
                                       borderRadius:6,padding:"3px 10px",minWidth:54,textAlign:"center",
                                       display:"flex",alignItems:"center",justifyContent:"center",gap:3,
                                       cursor:canPredict?"pointer":"default"}}>
-                                    <span style={{fontSize:12,fontWeight:900,color:isLive?RED:"#fff",...(isLive?{}:{})}}>{scH(sc)}-{scA(sc)}</span>
+                                    <span style={{fontSize:12,fontWeight:900,color:"#fff"}}>{scH(sc)}-{scA(sc)}</span>
+                                    {(isLive||isHT)&&liveHas&&(liveExact?<span style={{fontSize:12}}>🎯</span>:liveWin?<span style={{fontSize:12}}>✓</span>:<span style={{fontSize:12}}>✗</span>)}
                                     {(isFT||isPast)&&(exactMatch?<span style={{fontSize:12}}>🎯</span>:resultMatch?<span style={{fontSize:12}}>✓</span>:<span style={{fontSize:12}}>✗</span>)}
                                   </div>
                                 );
