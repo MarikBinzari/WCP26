@@ -7,9 +7,9 @@ import varBg from "./assets/var-bg.webp";
 import predictoLogo from "./assets/predicto-logo.webp";
 import specialPickBadge from "./assets/special-pick-badge.webp";
 import bellIcon from "./assets/bell-icon.svg";
-import { ALL_GROUPS_DATA, FLAGS, TEAM_COLORS, CALENDAR_EVENTS } from "./data/worldcup2026.js";
+import { ALL_GROUPS_DATA, FLAGS, TEAM_COLORS, CALENDAR_EVENTS, CL_FINAL } from "./data/worldcup2026.js";
 import { supabase } from "./supabase.js";
-import { savePredictions, saveExactScore, createBoard, joinBoardByCode, joinBoardById, loadLeaderboard, loadMyScoreBreakdown, fetchScoringRules, fetchMemberCounts, removeBoardMember, removeParticipation, deleteBoard, loadBoardMembers, checkDbHealth, checkEmailExists, loadLiveScores, subscribeLiveScores, loadPlayers, loadPlayersByTeam, seedPlayersFromApi, saveSpecialPick, uploadAvatar, uploadBoardImage, loadAllBoards, loadAllUserPicks } from "./db.js";
+import { savePredictions, saveExactScore, createBoard, joinBoardByCode, joinBoardById, loadLeaderboard, loadMyScoreBreakdown, fetchScoringRules, fetchMemberCounts, removeBoardMember, removeParticipation, deleteBoard, loadBoardMembers, checkDbHealth, checkEmailExists, loadLiveScores, subscribeLiveScores, loadPlayers, loadPlayersByTeam, seedPlayersFromApi, saveSpecialPick, uploadAvatar, uploadBoardImage, loadAllBoards, loadAllUserPicks, loadNotifReads, markNotifRead, loadSystemNotifications } from "./db.js";
 
 const TEAM_CODE = {"Mexico":"MEX","South Africa":"RSA","South Korea":"KOR","Czechia":"CZE","Canada":"CAN","Switzerland":"SUI","Qatar":"QAT","Bosnia-Herzegovina":"BIH","Brazil":"BRA","Morocco":"MAR","Scotland":"SCO","Haiti":"HAI","USA":"USA","Paraguay":"PAR","Australia":"AUS","Turkiye":"TUR","Germany":"GER","Ecuador":"ECU","Ivory Coast":"CIV","Curacao":"CUW","Netherlands":"NED","Japan":"JPN","Tunisia":"TUN","Sweden":"SWE","Belgium":"BEL","Iran":"IRI","Egypt":"EGY","New Zealand":"NZL","Spain":"ESP","Uruguay":"URU","Saudi Arabia":"KSA","Cape Verde":"CPV","France":"FRA","Senegal":"SEN","Norway":"NOR","Iraq":"IRQ","Argentina":"ARG","Austria":"AUT","Algeria":"ALG","Jordan":"JOR","Portugal":"POR","Colombia":"COL","Uzbekistan":"UZB","DR Congo":"COD","England":"ENG","Croatia":"CRO","Panama":"PAN","Ghana":"GHA"};
 
@@ -25,6 +25,7 @@ const DARK = "#3D3D3D";
 const NAVY = "#0A2E8A";
 const RED = "#C8102E";
 const GREEN = "#009A44";
+
 
 const SCREENS = {
   SPLASH:"splash", LOGIN:"login", HOME:"home",
@@ -799,15 +800,16 @@ const WEEK_UNLOCKED = {
   22: now >= june(21),         // Sun June 21
   29: now >= june(28),         // Sun June 28
 };
-// Returns the current day in tournament encoding (June N=N, July N=N+30).
-// Returns 0 before the tournament months so no matches appear as past.
+// Returns the current day in tournament encoding.
+// May N = N-31 (day -6..0 for May 25-31), June N = N, July N = N+30.
 const getRealTournamentDay = () => {
   const now = new Date();
   const y = now.getFullYear(), mo = now.getMonth(), d = now.getDate();
-  if (y < 2026 || (y === 2026 && mo < 5)) return 0;  // before June 2026
-  if (y === 2026 && mo === 5) return d;               // June 2026
-  if (y === 2026 && mo === 6) return d + 30;          // July 2026
-  return 999;                                         // after tournament
+  if (y < 2026 || (y === 2026 && mo < 4)) return -99; // before May 2026
+  if (y === 2026 && mo === 4) return d - 31;           // May 2026: 25→-6, 30→-1, 31→0
+  if (y === 2026 && mo === 5) return d;                // June 2026
+  if (y === 2026 && mo === 6) return d + 30;           // July 2026
+  return 999;                                          // after tournament
 };
 
 const isMatchPast = (matchDay, matchTime, simDay=null, simHour=12) => {
@@ -927,7 +929,8 @@ function useLiveScores(simDay, simHour, simMin) {
   return { ...computed, ...dbScores };
 }
 
-const toLabel = (d) => d > 30 ? `${d-30} July` : `${d} June`;
+// Day encoding: May N = N-31 (−6..0), June N = N (1-30), July N = N+30 (31-61)
+const toLabel = (d) => d <= 0 ? `${d+31} May` : d > 30 ? `${d-30} Jul` : `${d} Jun`;
 
 function useCountdown() {
   const target = new Date("2026-06-11T18:00:00");
@@ -4325,8 +4328,18 @@ function PremiumScreen({ onBack }) {
 }
 
 // ── NOTIFICATIONS ────────────────────────────────────────────────────────────
-function NotificationsScreen({ onBack }) {
+function NotificationsScreen({ onBack, notifs=[], readIds=[], onMarkRead=()=>{} }) {
   const lang = useLang();
+  const user = useUser();
+  const [openNotif, setOpenNotif] = React.useState(null);
+
+  const openAndMarkRead = (n) => {
+    if (!readIds.includes(n.id)) {
+      onMarkRead(n.id);
+      if (user) markNotifRead(user.id, n.id);
+    }
+    setOpenNotif(n);
+  };
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",position:"relative"}}>
       <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.09,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
@@ -4349,11 +4362,35 @@ function NotificationsScreen({ onBack }) {
           </div>
         </div>
       </div>
-      <div style={{flex:1,display:"flex",flexDirection:"column",padding:"16px 14px",overflow:"hidden"}}>
-        <div style={{background:"#fff",borderRadius:20,boxShadow:"0 2px 16px rgba(10,46,138,0.07)",flex:1,display:"flex",alignItems:"center",justifyContent:"center"}}>
-          <p style={{fontSize:13,color:"rgba(0,0,0,0.3)",fontWeight:500}}>{T[lang].noNotificationsYet}</p>
-        </div>
+
+      <div style={{flex:1,display:"flex",flexDirection:"column",padding:"16px 14px",overflowY:"auto",WebkitOverflowScrolling:"touch"}}>
+        {notifs.length === 0 ? (
+          <div style={{background:"#fff",borderRadius:20,boxShadow:"0 2px 16px rgba(10,46,138,0.07)",flex:1,display:"flex",alignItems:"center",justifyContent:"center"}}>
+            <p style={{fontSize:13,color:"rgba(0,0,0,0.3)",fontWeight:500}}>{T[lang].noNotificationsYet}</p>
+          </div>
+        ) : (
+          notifs.map(n => {
+            const isRead = readIds.includes(n.id);
+            return (
+              <div key={n.id} onClick={()=>openAndMarkRead(n)} style={{background:"#fff",borderRadius:16,boxShadow:"0 2px 14px rgba(10,46,138,0.07)",border:"1px solid rgba(10,46,138,0.06)",padding:"14px 18px",marginBottom:10,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                <span style={{fontSize:14,fontWeight:isRead?400:700,color:isRead?"#6B7280":NAVY}}>{n.title}</span>
+                <span style={{fontSize:18,color:"#C7C7CC",marginLeft:8}}>›</span>
+              </div>
+            );
+          })
+        )}
       </div>
+
+      {openNotif && (
+        <div onClick={()=>setOpenNotif(null)} style={{position:"fixed",inset:0,zIndex:10000,background:"rgba(0,0,0,0.45)",display:"flex",alignItems:"center",justifyContent:"center",padding:"0 28px"}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:20,padding:"24px 22px 20px",width:"100%",maxWidth:340,boxShadow:"0 8px 40px rgba(0,0,0,0.18)",position:"relative"}}>
+            <button onClick={()=>setOpenNotif(null)} style={{position:"absolute",top:12,right:14,background:"none",border:"none",fontSize:20,color:"#9CA3AF",cursor:"pointer",lineHeight:1,padding:4}}>✕</button>
+            <div style={{fontSize:11,color:"#9CA3AF",marginBottom:6}}>{openNotif.date}</div>
+            <div style={{fontSize:16,fontWeight:700,color:NAVY,marginBottom:10}}>{openNotif.title}</div>
+            <p style={{fontSize:14,color:"#374151",lineHeight:1.6,margin:0}}>{openNotif.body}</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -4801,7 +4838,7 @@ const _pickNotDone = new Set();    const _pickScrolled = new Set();
 const _exNotDone = new Set();      const _exScrolled = new Set();
 
 // ── HOME ────────────────────────────────────────────────────────────────────
-function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateBoard, onOpenGroups, onCopyPredictions, onCopyExactScores, onCopySpecial, onAccount, onNotifications, onChampion, myBoards, predictionsComplete, instantPickDone, koPickDone, koUnlocked, exactScores, activeBoardId, setActiveBoardId, tournamentStarted, simDay, simHour, simMin, createdBoards=[], showFirstAction, leaderboardData={}, boardsLoading=false, predictionsLoaded={}, championPick=null, topScorerPick=null, setChampionPick=()=>{}, setTopScorerPick=()=>{}, myScoreBreakdown=null }) {
+function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateBoard, onOpenGroups, onCopyPredictions, onCopyExactScores, onCopySpecial, onAccount, onNotifications, onChampion, myBoards, predictionsComplete, instantPickDone, koPickDone, koUnlocked, exactScores, activeBoardId, setActiveBoardId, tournamentStarted, simDay, simHour, simMin, createdBoards=[], showFirstAction, leaderboardData={}, boardsLoading=false, predictionsLoaded={}, championPick=null, topScorerPick=null, setChampionPick=()=>{}, setTopScorerPick=()=>{}, myScoreBreakdown=null, hasUnread=false }) {
   const lang = useLang();
   const user = useUser();
   const displayName = useDisplayName();
@@ -4987,7 +5024,10 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
           </div>
           <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,flexShrink:0,paddingTop:20}}>
             <button onClick={onNotifications} style={{background:"none",border:"none",padding:0,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",WebkitTapHighlightColor:"transparent"}}>
-              <img src={bellIcon} alt="Notifications" style={{width:44,height:44}}/>
+              <div style={{position:"relative"}}>
+                <img src={bellIcon} alt="Notifications" style={{width:44,height:44}}/>
+                {hasUnread && <div style={{position:"absolute",top:4,right:4,width:12,height:12,borderRadius:"50%",background:"#C8102E",border:"2.5px solid #EEF2FF",boxShadow:"0 1px 4px rgba(200,16,46,0.5)"}}/>}
+              </div>
             </button>
             <p style={{fontSize:11,color:"transparent",margin:0,userSelect:"none"}}> </p>
           </div>
@@ -7709,24 +7749,25 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
     }));
   })();
 
-  const weeks = [8,15,22,29,36,43];
+  // weeks: May 25-31 (−6), Jun 1-7 (1), then WC weeks
+  const weeks = [-6,1,8,15,22,29,36,43];
   const mm0 = {};
   CALENDAR_EVENTS.forEach(e => { mm0[e.day] = e.matches; });
-  // Find first day with matches in first week
+  // Find first WC match day (Jun 8+)
   const firstMatchDay = Array.from({length:7},(_,i)=>8+i).find(d=>!!mm0[d]) || null;
-  // Auto-select today if it has matches, else first match day
+  // Auto-select today if it has matches, else first WC match day
   const todayDay = simDay ?? getRealTournamentDay();
   const todayHasMatches = !!mm0[todayDay];
   const defaultDay = todayHasMatches ? todayDay : firstMatchDay;
-  // Auto-select the week that contains today
-  const defaultWeek = initialWeek || [8,15,22,29].find(w=>todayDay>=w&&todayDay<=w+6) || 8;
+  // Auto-select the week that contains today (pre-WC weeks included)
+  const defaultWeek = initialWeek || [-6,1,8,15,22,29].find(w=>todayDay>=w&&todayDay<=w+6) || -6;
   const [weekStart, setWeekStart] = useState(defaultWeek);
   useEffect(()=>{
     if(initialWeek) {
       setWeekStart(initialWeek);
       const mm_ = {};
       CALENDAR_EVENTS.forEach(e => { mm_[e.day] = e.matches; });
-      const wDays = Array.from({length:7},(_,i)=>initialWeek+i).filter(d=>d>=1&&d<=50);
+      const wDays = Array.from({length:7},(_,i)=>initialWeek+i);
       // If today is within this week, open today; otherwise open first day with matches
       const todayInWeek = wDays.find(d => d === todayDay && !!mm_[d]);
       const firstDay = todayInWeek || wDays.find(d=>!!mm_[d]) || null;
@@ -7787,7 +7828,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
 
   const handleWeekChange = (w) => {
     setWeekStart(w); setSelGroup(null);
-    const wDays = Array.from({length:7},(_,i)=>w+i).filter(d=>d>=1&&d<=50);
+    const wDays = Array.from({length:7},(_,i)=>w+i);
     const ag = getGroupsForDays(wDays);
     if(ag.length>0) {
       const koGroup = ag.find(g=>["R16","QF","SF","3rd","Final"].includes(g));
@@ -7848,7 +7889,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
   });
   standing.sort((a,b)=>b.pts-a.pts||b.gd-a.gd||b.gf-a.gf);
 
-  const wDaysHeader = Array.from({length:7},(_,i)=>weekStart+i).filter(d=>d>=1&&d<=50);
+  const wDaysHeader = Array.from({length:7},(_,i)=>weekStart+i);
   const weekTotal = wDaysHeader.reduce((s,d)=>s+(mm0[d]||[]).length,0);
   const weekScored = wDaysHeader.reduce((s,d)=>s+(mm0[d]||[]).filter((_,i)=>scores[`${d}-${i}`]).length,0);
   const weekRemaining = weekTotal - weekScored;
@@ -7880,7 +7921,10 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
           liveScores={LIVE_SCORES}
           onMatchClick={(match,day,idx)=>{
             if(!isWeekUnlocked(day, simDay, simHour, simMin)) return;
-            if(isMatchPast(day, match.time, simDay, simHour)) return;
+            // UCL Final (day -1): allow prediction before kickoff only
+            const isUCL = match.group==="UCL";
+            if(!isUCL && isMatchPast(day, match.time, simDay, simHour)) return;
+            if(isUCL && isMatchPast(day, match.time, null, null)) return;
             setScorePick({match,day,idx,key:`${day}-${idx}`});
           }}/>
 
@@ -7962,9 +8006,13 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
                 const nowMins2 = nowH2*60 + nowM2;
                 const kickMins2 = matchH*60 + matchMin2;
                 const isFinished = live?.status==="FT" || (m.day < nowDay2) || (m.day===nowDay2 && nowMins2 > kickMins2+115);
-                const isLive = !isFinished && (live?.status==="LIVE" || (m.day===nowDay2 && nowMins2>=kickMins2 && nowMins2<=kickMins2+115));
+                const isLive = !isFinished && (live?.status==="LIVE" || (live?.status!=="NS" && m.day===nowDay2 && nowMins2>=kickMins2 && nowMins2<=kickMins2+115));
                 const isNS = !isFinished && !isLive;
-                const liveMin = isLive ? Math.min(90, nowMins2-kickMins2) : 0;
+                // Minute: prefer DB value (UTC-based from utcDate); fallback to local time diff
+                const liveMin = isLive ? (
+                  live?.min != null ? live.min :
+                  Math.min(90, nowMins2-kickMins2)
+                ) : 0;
                 const hasLive = live && live.home !== undefined && live.home !== null;
 
                 // Check prediction accuracy
@@ -8191,10 +8239,12 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
   const mm = {};
   CALENDAR_EVENTS.forEach(e => { mm[e.day] = e.matches; });
   const dl = ["L","M","M","J","V","S","D"];
-  const days = Array.from({length:7},(_,i)=>weekStart+i).filter(d=>d>=1&&d<=50);
-  const sel = selDay;
-  const sm = sel ? mm[sel] : null;
-  const weekLabel = `${toLabel(weekStart)} – ${toLabel(Math.min(weekStart+6,50))}`;
+  const days = Array.from({length:7},(_,i)=>weekStart+i);
+  const sel = selDay !== undefined ? selDay : null;
+  const sm = (sel !== null && sel !== undefined && mm[sel]) ? mm[sel] : null;
+  const weekEnd = weekStart+6;
+  const weekLabel = `${toLabel(weekStart)} – ${toLabel(weekEnd)}`;
+  const weekMonthLabel = weekStart<=0?"May 2026":weekEnd>30?"July 2026":"June 2026";
 
   return (
     <div style={{marginBottom:4}}>
@@ -8205,7 +8255,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
             fontSize:16,color:weekIdx>0?DARK:"#ddd",display:"flex",alignItems:"center",justifyContent:"center"}}>‹</button>
         <div style={{textAlign:"center"}}>
           <p style={{fontSize:13,fontWeight:700,color:DARK,margin:0}}>{weekLabel}</p>
-          <span style={{fontSize:12,color:NAVY,fontWeight:700}}>{weekLabel.includes("July")?"July 2026":"June 2026"} · Predicto</span>
+          <span style={{fontSize:12,color:NAVY,fontWeight:700}}>{weekMonthLabel} · Predicto</span>
         </div>
         <button onClick={()=>weekIdx<weeks.length-1&&setWeekStart(weeks[weekIdx+1])}
           style={{width:30,height:30,borderRadius:"50%",border:"none",background:weekIdx<weeks.length-1?BG:"transparent",
@@ -8247,7 +8297,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                 justifyContent:"center",borderRadius:10,padding:"8px 2px",
                 cursor:has?"pointer":"default",background:bg,border,boxShadow:shadow,transition:"all 0.15s",
                 opacity:locked?0.6:1}}>
-              <span style={{fontSize:13,fontWeight:fw,color:tc,lineHeight:1}}>{day>30?day-30:day}</span>
+              <span style={{fontSize:13,fontWeight:fw,color:tc,lineHeight:1}}>{day<=0?day+31:day>30?day-30:day}</span>
               {has&&(
                 locked
                   ? <span style={{fontSize:11,lineHeight:1,marginTop:2}}>🔒</span>
@@ -8267,6 +8317,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
             const groups = [...new Set(sm.map(m=>m.group))].filter(Boolean);
             const LETTER_GROUPS = ["A","B","C","D","E","F","G","H","I","J","K","L"];
             const KO_STAGES = ["R16","QF","SF","3rd","Final"];
+            const isUCLDay = groups.length===1 && groups[0]==="UCL";
             const hasGroupMatches = groups.some(g=>LETTER_GROUPS.includes(g));
             const activeGrp = selGroup || (hasGroupMatches ? groups.find(g=>LETTER_GROUPS.includes(g)) : groups.find(g=>KO_STAGES.includes(g))) || groups[0] || "A";
             const activeStage = LETTER_GROUPS.includes(activeGrp) ? "Groups" : (KO_STAGES.includes(activeGrp) ? activeGrp : (hasGroupMatches ? "Groups" : "R16"));
@@ -8274,13 +8325,19 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
               if(stage==="Groups") setSelGroup(groups.find(g=>LETTER_GROUPS.includes(g))||"A");
               else setSelGroup(stage);
             };
+            const selDateLabel = sel!==null && sel!==undefined ? toLabel(sel) : "";
+            const headerBg = isUCLDay
+              ? "linear-gradient(135deg,#0a1a4a,#0d2070)"
+              : `linear-gradient(135deg,${NAVY}cc,#001840cc)`;
             return (
               <div style={{background:BG,borderRadius:14,boxShadow:SHADOW_OUT,overflow:"hidden"}}>
                 {/* Header */}
-                <div style={{background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,padding:"8px 14px 0"}}>
+                <div style={{background:headerBg,padding:"8px 14px 0"}}>
                   <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
-                    <span style={{fontSize:12,fontWeight:800,color:"#fff"}}>{sel>30?sel-30:sel} {sel>30?"July":"June"} · {sm.length} matches</span>
-                    <div style={{display:"flex",background:"rgba(255,255,255,0.12)",borderRadius:20,padding:"2px",gap:0}}>
+                    <span style={{fontSize:12,fontWeight:800,color:isUCLDay?"#FFD700":"#fff"}}>
+                      {isUCLDay?"🏆 UCL Final":""}{!isUCLDay&&`${selDateLabel} · ${sm.length} matches`}
+                    </span>
+                    {!isUCLDay && <div style={{display:"flex",background:"rgba(255,255,255,0.12)",borderRadius:20,padding:"2px",gap:0}}>
                       <button onClick={()=>setShowStanding(false)}
                         style={{padding:"4px 10px",borderRadius:18,border:"none",cursor:"pointer",fontSize:12,fontWeight:700,
                           background:!showStanding?"rgba(255,255,255,0.95)":"transparent",
@@ -8293,10 +8350,10 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                           color:showStanding?NAVY:"rgba(255,255,255,0.6)",transition:"all 0.2s"}}>
                         📊 Standing
                       </button>
-                    </div>
+                    </div>}
                   </div>
-                  <div style={{height:1,background:"rgba(255,255,255,0.2)",marginTop:4}}/>
-                  {showStanding && <>
+                  {!isUCLDay && <div style={{height:1,background:"rgba(255,255,255,0.2)",marginTop:4}}/>}
+                  {!isUCLDay && showStanding && <>
                     {/* Nivel 1: etape campionat */}
                     <div style={{display:"flex",gap:5,padding:"10px 0 6px",alignItems:"center"}}>
                       {/* Groups tab */}
@@ -8365,7 +8422,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                   </>}
                 </div>
 
-                {showStanding ? (
+                {!isUCLDay && showStanding ? (
                   /* Standing panel */
                   <div style={{padding:"12px 14px"}}>
                     {["R16","QF","SF","3rd","Final"].includes(activeGrp) ? (
@@ -8501,7 +8558,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                                   const _nh=simDay!=null?(simHour||0):new Date().getHours();
                                   const _kick=_mH*60, _now=_nh*60;
                                   const isFT2 = m.day<_nd || (m.day===_nd && _now>_kick+115);
-                                  const isLive2 = !isFT2 && m.day===_nd && _now>=_kick && _now<=_kick+115;
+                                  const isLive2 = !isFT2 && live2?.status==="LIVE" || (!isFT2 && live2?.status!=="NS" && m.day===_nd && _now>=_kick && _now<=_kick+115);
                                   const liveScore2 = live2&&live2.home!=null ? live2 : (isLive2?{home:0,away:0}:null);
                                   const isPastM = m.day<_nd || (m.day===_nd && _mH<=_nh);
                                   const canEdit=!isLive2&&!isFT2&&!isPastM&&isWeekUnlocked(m.day,simDay,simHour,simMin);
@@ -8621,7 +8678,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                               const _nm=simDay!=null?(simMin||0):new Date().getMinutes();
                               const _kick=_mH*60+_mM, _now=_nh*60+_nm;
                               const isFT2 = m.day<_nd || (m.day===_nd && _now>_kick+115);
-                              const isLive2 = !isFT2 && m.day===_nd && _now>=_kick && _now<=_kick+115;
+                              const isLive2 = !isFT2 && live2?.status==="LIVE" || (!isFT2 && live2?.status!=="NS" && m.day===_nd && _now>=_kick && _now<=_kick+115);
                               const liveScore2 = live2&&live2.home!==null&&live2.home!==undefined ? live2 : (isLive2?{home:0,away:0}:null);
                               const hasScore2 = !!liveScore2;
                               const matchHourM=parseInt((m.time||"23:00").split(":")[0]);
@@ -8679,10 +8736,10 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                     const _nowH   = simDay!=null?(simHour||0):new Date().getHours();
                     const _nowM   = simDay!=null?(simMin||0):new Date().getMinutes();
                     const _kick = mH2*60+mM2, _now2 = _nowH*60+_nowM;
-                    const isFT = (sel||0)<_nowDay || (sel===_nowDay && _now2>_kick+115);
-                    const isLive = !isFT && sel===_nowDay && _now2>=_kick && _now2<=_kick+115;
+                    const isFT = live?.status==="FT" || (sel||0)<_nowDay || (sel===_nowDay && _now2>_kick+115);
+                    const isLive = !isFT && (live?.status==="LIVE" || (live?.status!=="NS" && sel===_nowDay && _now2>=_kick && _now2<=_kick+115));
                     const isNS2 = !isFT && !isLive;
-                    const liveMin2 = isLive?Math.min(90,_now2-_kick):0;
+                    const liveMin2 = isLive ? (live?.min != null ? live.min : Math.min(90,_now2-_kick)) : 0;
                     const hasScore = live && live.home !== undefined && live.home !== null;
                     const exactMatch = sc&&hasScore&&isFT&&scH(sc)===live.home&&scA(sc)===live.away;
                     const predRes = sc?scH(sc)>scA(sc)?"H":scH(sc)<scA(sc)?"A":"D":null;
@@ -8875,10 +8932,7 @@ function AccountScreen({ setLang, onBoards, onSignOut, onShowGuide, onPremium, o
   }, [isActive]);
 
   const handleSignOut = async () => {
-    try {
-      localStorage.removeItem('myBoards');
-      localStorage.removeItem('activeBoardId');
-    } catch {}
+    try { localStorage.clear(); } catch {}
     await supabase.auth.signOut();
     onSignOut();
   };
@@ -9309,10 +9363,12 @@ function App() {
 
       if (u) {
         if (event === 'INITIAL_SESSION') {
+          Promise.all([loadSystemNotifications(), loadNotifReads(u.id)]).then(([notifs, ids]) => { setSystemNotifs(notifs); setNotifReadIds(ids); });
           const nonRestorable = [SCREENS.SPLASH, SCREENS.LOGIN, SCREENS.RESET_PASSWORD, SCREENS.SET_PASSWORD];
           const saved = (() => { try { return localStorage.getItem('lastScreen'); } catch { return null; } })();
           setScreen(saved && !nonRestorable.includes(saved) ? saved : SCREENS.HOME);
         } else if (event === 'SIGNED_IN') {
+          Promise.all([loadSystemNotifications(), loadNotifReads(u.id)]).then(([notifs, ids]) => { setSystemNotifs(notifs); setNotifReadIds(ids); });
           setScreen(SCREENS.HOME);
         }
         // USER_UPDATED, TOKEN_REFRESHED — only update user state, don't navigate
@@ -9408,6 +9464,9 @@ function App() {
   const inRecoveryRef = useRef(false);
   const notificationsBackRef = useRef(SCREENS.HOME);
   const [screen, setScreen] = useState(SCREENS.SPLASH);
+  const [systemNotifs, setSystemNotifs] = useState([]);
+  const [notifReadIds, setNotifReadIds] = useState([]);
+  const hasUnread = systemNotifs.some(n => !notifReadIds.includes(n.id));
   const [championMode, setChampionMode] = useState("champion");
   const [boardsInitialTab, setBoardsInitialTab] = useState("my");
   const [boardsSubView, setBoardsSubView] = useState("main");
@@ -9662,9 +9721,10 @@ function App() {
               topScorerPick={topScorerPick}
               setChampionPick={setChampionPick}
               setTopScorerPick={setTopScorerPick}
-              myScoreBreakdown={myScoreBreakdowns[activeBoardId]}/>
+              myScoreBreakdown={myScoreBreakdowns[activeBoardId]}
+              hasUnread={hasUnread}/>
           </div>}
-          {screen===SCREENS.NOTIFICATIONS&&<NotificationsScreen onBack={()=>setScreen(notificationsBackRef.current)}/>}
+          {screen===SCREENS.NOTIFICATIONS&&<NotificationsScreen onBack={()=>setScreen(notificationsBackRef.current)} notifs={systemNotifs} readIds={notifReadIds} onMarkRead={(id)=>{ setNotifReadIds(p=>[...p,id]); }}/>}
           {screen===SCREENS.PREMIUM&&<PremiumScreen onBack={()=>setScreen(SCREENS.ACCOUNT)}/>}
           {screen===SCREENS.CHAMPION&&<ChampionScreen
             onBack={()=>setScreen(SCREENS.HOME)}

@@ -189,6 +189,11 @@ export const TEAM_PLAYERS = {
 // ─────────────────────────────────────────────────────────────────────────────
 export const CALENDAR_EVENTS = [
 
+  // ── UEFA Champions League Final — 30 Mai ────────────────────────────────
+  {day:-1, matches:[
+    {home:"Paris Saint-Germain", homeFlag:"🇫🇷", away:"Arsenal", awayFlag:"🏴󠁧󠁢󠁥󠁧󠁿", time:"18:00", group:"UCL", venue:"Puskás Aréna, Budapest"},
+  ]},
+
   // ── ETAPA 1 ──────────────────────────────────────────────────────────────
   // 11 Iunie — Grupa A (meci de deschidere)
   {day:11, matches:[
@@ -396,3 +401,21 @@ export const CALENDAR_EVENTS = [
     {home:"W101",homeFlag:"🏆",away:"W102",awayFlag:"🏆",time:"21:00",group:"Final",venue:"MetLife Stadium"},
   ]},
 ];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// UEFA Champions League Final 2026
+// May 30, 2026 · Puskás Aréna, Budapest · 18:00 CEST (16:00 UTC)
+// ─────────────────────────────────────────────────────────────────────────────
+export const CL_FINAL = {
+  matchKey:  "cl-final",
+  home:      "Paris Saint-Germain",
+  homeShort: "PSG",
+  homeFlag:  "🇫🇷",
+  away:      "Arsenal",
+  awayShort: "Arsenal",
+  awayFlag:  "🏴󠁧󠁢󠁥󠁧󠁿",
+  time:      "18:00",     // CEST
+  timeUTC:   "16:00",     // UTC
+  date:      "2026-05-30",
+  venue:     "Puskás Aréna, Budapest",
+};

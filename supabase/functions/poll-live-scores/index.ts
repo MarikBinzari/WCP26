@@ -215,15 +215,24 @@ function normalizeTeam(name: string): string {
   return TEAM_NORM[name] ?? name
 }
 
+// ── CL Final window check (May 30, 2026 · 16:00–21:00 UTC = 18:00–23:00 CEST) ─
+function isCLFinalWindow(now: Date): boolean {
+  const y = now.getUTCFullYear(), mo = now.getUTCMonth() + 1, d = now.getUTCDate()
+  if (y !== 2026 || mo !== 5 || d !== 30) return false
+  const utcMins = now.getUTCHours() * 60 + now.getUTCMinutes()
+  return utcMins >= 15 * 60 && utcMins <= 21 * 60   // 15:00–21:00 UTC
+}
+
 // ── Main handler ─────────────────────────────────────────────────────────────
 
 Deno.serve(async () => {
   const now = new Date()
   const dayNum = getDayNum(now)
 
-  const inWindow = isInWindow(dayNum, now)
+  const inWCWindow = isInWindow(dayNum, now)
+  const inCLWindow = isCLFinalWindow(now)
 
-  if (!inWindow) {
+  if (!inWCWindow && !inCLWindow) {
     // Still poll if there are LIVE matches in DB (handles extra time / delays)
     const { data: stillLive } = await supabase
       .from('live_scores')
@@ -240,49 +249,92 @@ Deno.serve(async () => {
     return new Response(JSON.stringify({ error: 'FOOTBALL_DATA_API_KEY not set' }), { status: 500 })
   }
 
-  // Fetch all live + recently finished matches for WC 2026
-  // Status: IN_PLAY (live), PAUSED (half time), EXTRA_TIME, PENALTY_SHOOTOUT, FINISHED
-  const res = await fetch(
-    'https://api.football-data.org/v4/competitions/2000/matches?status=IN_PLAY,PAUSED,EXTRA_TIME,PENALTY_SHOOTOUT,FINISHED',
-    { headers: { 'X-Auth-Token': apiKey } }
-  )
-
-  if (!res.ok) {
-    const text = await res.text()
-    return new Response(JSON.stringify({ error: `API error ${res.status}`, body: text }), { status: 500 })
-  }
-
-  const data = await res.json()
-  const apiMatches = data.matches ?? []
-
   const upserts: {
     match_key: string; status: string;
     home_score: number | null; away_score: number | null;
     live_min: number | null; updated_at: string
   }[] = []
 
-  for (const m of apiMatches) {
-    const homeNorm = normalizeTeam(m.homeTeam?.name ?? '')
-    const awayNorm = normalizeTeam(m.awayTeam?.name ?? '')
-    const matchKey = findMatchKey(homeNorm, awayNorm)
-    if (!matchKey) continue
+  // ── WC 2026 matches ────────────────────────────────────────────────────────
+  if (inWCWindow || (dayNum >= 11)) {
+    const res = await fetch(
+      'https://api.football-data.org/v4/competitions/2000/matches?status=IN_PLAY,PAUSED,EXTRA_TIME,PENALTY_SHOOTOUT,FINISHED',
+      { headers: { 'X-Auth-Token': apiKey } }
+    )
 
-    let status = 'NS'
-    if (m.status === 'FINISHED' || m.status === 'AWARDED') status = 'FT'
-    else if (['IN_PLAY', 'PAUSED', 'EXTRA_TIME', 'PENALTY_SHOOTOUT'].includes(m.status)) status = 'LIVE'
+    if (res.ok) {
+      const data = await res.json()
+      const apiMatches = data.matches ?? []
 
-    // For FT: use fullTime score. For LIVE: use score as updated by API.
-    const homeScore = m.score?.fullTime?.home ?? null
-    const awayScore = m.score?.fullTime?.away ?? null
+      for (const m of apiMatches) {
+        const homeNorm = normalizeTeam(m.homeTeam?.name ?? '')
+        const awayNorm = normalizeTeam(m.awayTeam?.name ?? '')
+        const matchKey = findMatchKey(homeNorm, awayNorm)
+        if (!matchKey) continue
 
-    upserts.push({
-      match_key: matchKey,
-      status,
-      home_score: homeScore,
-      away_score: awayScore,
-      live_min: null, // football-data.org free tier doesn't provide minute
-      updated_at: now.toISOString(),
-    })
+        let status = 'NS'
+        if (m.status === 'FINISHED' || m.status === 'AWARDED') status = 'FT'
+        else if (['IN_PLAY', 'PAUSED', 'EXTRA_TIME', 'PENALTY_SHOOTOUT'].includes(m.status)) status = 'LIVE'
+
+        const homeScore = m.score?.fullTime?.home ?? null
+        const awayScore = m.score?.fullTime?.away ?? null
+
+        let liveMin: number | null = null
+        if (status === 'LIVE' && m.utcDate) {
+          liveMin = Math.max(1, Math.min(90, Math.floor((now.getTime() - new Date(m.utcDate).getTime()) / 60000)))
+        }
+
+        upserts.push({
+          match_key: matchKey,
+          status,
+          home_score: homeScore,
+          away_score: awayScore,
+          live_min: liveMin,
+          updated_at: now.toISOString(),
+        })
+      }
+    }
+  }
+
+  // ── UCL Final (May 30, 2026) ───────────────────────────────────────────────
+  if (inCLWindow) {
+    const clRes = await fetch(
+      'https://api.football-data.org/v4/competitions/CL/matches?dateFrom=2026-05-30&dateTo=2026-05-30',
+      { headers: { 'X-Auth-Token': apiKey } }
+    )
+
+    if (clRes.ok) {
+      const clData = await clRes.json()
+      const clMatches = clData.matches ?? []
+      // The final is the only CL match on this date
+      const final = clMatches.find((m: { stage?: string }) =>
+        m.stage === 'FINAL' || clMatches.length === 1
+      ) ?? clMatches[0]
+
+      if (final) {
+        let clStatus = 'NS'
+        if (final.status === 'FINISHED' || final.status === 'AWARDED') clStatus = 'FT'
+        else if (['IN_PLAY', 'PAUSED', 'EXTRA_TIME', 'PENALTY_SHOOTOUT'].includes(final.status)) clStatus = 'LIVE'
+
+        const clHome = final.score?.fullTime?.home ?? final.score?.regularTime?.home ?? null
+        const clAway = final.score?.fullTime?.away ?? final.score?.regularTime?.away ?? null
+
+        // Compute minute from utcDate (timezone-independent, works for free tier)
+        let clMin: number | null = null
+        if (clStatus === 'LIVE' && final.utcDate) {
+          clMin = Math.max(1, Math.min(90, Math.floor((now.getTime() - new Date(final.utcDate).getTime()) / 60000)))
+        }
+
+        upserts.push({
+          match_key: '-1-0',
+          status: clStatus,
+          home_score: clHome,
+          away_score: clAway,
+          live_min: clMin,
+          updated_at: now.toISOString(),
+        })
+      }
+    }
   }
 
   if (upserts.length) {
@@ -292,7 +344,12 @@ Deno.serve(async () => {
     }
   }
 
-  return new Response(JSON.stringify({ ok: true, updated: upserts.length, checkedMatches: apiMatches.length }), {
+  return new Response(JSON.stringify({
+    ok: true,
+    updated: upserts.length,
+    clWindow: inCLWindow,
+    wcWindow: inWCWindow,
+  }), {
     status: 200,
     headers: { 'Content-Type': 'application/json' },
   })

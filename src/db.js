@@ -570,6 +570,32 @@ export async function loadMyScoreBreakdown(userId, boardId) {
   }
 }
 
+// ─── SYSTEM NOTIFICATIONS ────────────────────────────────────────────────────
+export async function loadSystemNotifications() {
+  const { data } = await supabase
+    .from('system_notifications')
+    .select('id, title, body, display_date')
+    .eq('active', true)
+    .order('sort_order', { ascending: true })
+    .order('created_at', { ascending: false })
+  return (data || []).map(n => ({ id: n.id, title: n.title, body: n.body, date: n.display_date || '' }))
+}
+
+// ─── NOTIFICATION READS ───────────────────────────────────────────────────────
+export async function loadNotifReads(userId) {
+  const { data } = await supabase
+    .from('notification_reads')
+    .select('notification_id')
+    .eq('user_id', userId)
+  return (data || []).map(r => r.notification_id)
+}
+
+export async function markNotifRead(userId, notificationId) {
+  await supabase
+    .from('notification_reads')
+    .upsert({ user_id: userId, notification_id: notificationId }, { onConflict: 'user_id,notification_id' })
+}
+
 // ─── LEADERBOARD ──────────────────────────────────────────────────────────────
 export async function loadLeaderboard(boardId, search = null, userId = null) {
   const [rpcRes, profileRes] = await Promise.all([
