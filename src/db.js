@@ -289,6 +289,10 @@ export async function deleteBoard(boardId) {
   return { error: null }
 }
 
+// Global board: UUID în boards/board_members, dar 'global' pentru scoring (exact_scores, board_scores, special_picks)
+const GLOBAL_BOARD_UUID = '00000000-0000-0000-0000-000000000000'
+const toScoringId = (id) => id === GLOBAL_BOARD_UUID ? 'global' : id
+
 // ─── BULK LOADERS (optimized — fewer requests) ───────────────────────────────
 // Replaces loadUserBoards + loadAvailableBoards: 2 requests instead of 5
 export async function loadAllBoards(userId) {
@@ -308,13 +312,15 @@ export async function loadAllBoards(userId) {
   ;(allBoards.data || []).forEach(b => {
     const isMember = memberSet.has(b.id)
     const isCreator = b.created_by === userId
-    if (isMember) {
-      userBoards.push({ ...b, label: b.emoji || '⚽', image_url: b.image_url || null, isGlobal: false, code: b.invite_code, max: b.max_players, isAdmin: roleMap[b.id] === 'admin' || isCreator, isMember: true })
+    const isGlobal = b.id === GLOBAL_BOARD_UUID
+    // Global board always uses 'global' string as id for scoring compatibility
+    const boardObj = { ...b, id: toScoringId(b.id), label: b.emoji || '⚽', image_url: b.image_url || null, isGlobal, code: b.invite_code, max: b.max_players }
+    if (isMember || isGlobal) {
+      userBoards.push({ ...boardObj, isAdmin: isGlobal ? false : (roleMap[b.id] === 'admin' || isCreator), isMember: true })
     } else if (isCreator) {
-      // Creator always sees their board even if they left as participant — no auto-rejoin to board_members
-      userBoards.push({ ...b, label: b.emoji || '⚽', image_url: b.image_url || null, isGlobal: false, code: b.invite_code, max: b.max_players, isAdmin: true, isMember: false })
+      userBoards.push({ ...boardObj, isAdmin: true, isMember: false })
     } else {
-      availableBoards.push({ ...b, label: b.emoji || '⚽', image_url: b.image_url || null, isGlobal: false, code: b.invite_code, max: b.max_players })
+      availableBoards.push(boardObj)
     }
   })
 
@@ -355,19 +361,17 @@ export async function loadAllUserPicks(userId) {
 
 // ─── MEMBER COUNTS ───────────────────────────────────────────────────────────
 export async function fetchMemberCounts(boardIds) {
-  const [boardRes, globalRes] = await Promise.all([
-    supabase
-      .from('board_members')
-      .select('board_id')
-      .in('board_id', boardIds.filter(id => id !== 'global')),
-    supabase
-      .from('profiles')
-      .select('id', { count: 'exact', head: true }),
-  ]);
+  // Map 'global' back to real UUID for board_members query
+  const realIds = boardIds.map(id => id === 'global' ? GLOBAL_BOARD_UUID : id);
+  const { data } = await supabase
+    .from('board_members')
+    .select('board_id')
+    .in('board_id', realIds);
 
-  const counts = { global: globalRes.count || 0 };
-  ;(boardRes.data || []).forEach(row => {
-    counts[row.board_id] = (counts[row.board_id] || 0) + 1;
+  const counts = {};
+  ;(data || []).forEach(row => {
+    const displayId = row.board_id === GLOBAL_BOARD_UUID ? 'global' : row.board_id;
+    counts[displayId] = (counts[displayId] || 0) + 1;
   });
   return counts;
 }
