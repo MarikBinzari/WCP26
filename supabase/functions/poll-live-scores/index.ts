@@ -220,7 +220,7 @@ function isCLFinalWindow(now: Date): boolean {
   const y = now.getUTCFullYear(), mo = now.getUTCMonth() + 1, d = now.getUTCDate()
   if (y !== 2026 || mo !== 5 || d !== 30) return false
   const utcMins = now.getUTCHours() * 60 + now.getUTCMinutes()
-  return utcMins >= 15 * 60 && utcMins <= 21 * 60   // 15:00–21:00 UTC
+  return utcMins >= 15 * 60 && utcMins <= 23 * 60   // 15:00–23:00 UTC (include extra time + penalties)
 }
 
 // ── Main handler ─────────────────────────────────────────────────────────────
