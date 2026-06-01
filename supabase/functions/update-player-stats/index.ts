@@ -3,7 +3,7 @@
 // Daily update — called once per match day during the tournament.
 // Fetches WC 2026 player statistics (goals, assists, cards, minutes, rating)
 // from API-Football for every team playing today, then upserts into the
-// players table so the app can display real-time Top Scorers / Dream Team.
+// world_cup_football_players table so the app can display real-time Top Scorers / Dream Team.
 //
 // Rate limit: 10 req/min (free tier). Max teams per day = 8 (4 matches × 2).
 // With a 7-second gap between requests this completes in under 60 seconds.
@@ -205,7 +205,7 @@ Deno.serve(async (req) => {
   }
 
   const { error: upsertError } = await supabase
-    .from('players')
+    .from('world_cup_football_players')
     .upsert(upserts, { onConflict: 'api_football_id' })
 
   return new Response(

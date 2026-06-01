@@ -9,7 +9,7 @@ import specialPickBadge from "./assets/special-pick-badge.webp";
 import bellIcon from "./assets/bell-icon.svg";
 import { ALL_GROUPS_DATA, FLAGS, TEAM_COLORS, CALENDAR_EVENTS, CL_FINAL } from "./data/worldcup2026.js";
 import { supabase } from "./supabase.js";
-import { savePredictions, saveExactScore, createBoard, joinBoardByCode, joinBoardById, loadLeaderboard, loadMyScoreBreakdown, fetchScoringRules, fetchMemberCounts, removeBoardMember, removeParticipation, deleteBoard, loadBoardMembers, checkDbHealth, checkEmailExists, loadLiveScores, subscribeLiveScores, loadPlayers, loadPlayersByTeam, seedPlayersFromApi, saveSpecialPick, uploadAvatar, uploadBoardImage, loadAllBoards, loadAllUserPicks, loadNotifReads, markNotifRead, loadSystemNotifications } from "./db.js";
+import { savePredictions, saveExactScore, createBoard, joinBoardByCode, joinBoardById, ensureBoardScores, loadLeaderboard, loadMyScoreBreakdown, fetchScoringRules, fetchMemberCounts, removeBoardMember, removeParticipation, deleteBoard, loadBoardMembers, checkDbHealth, checkEmailExists, loadLiveScores, subscribeLiveScores, loadPlayers, loadPlayersByTeam, seedPlayersFromApi, saveSpecialPick, uploadAvatar, uploadBoardImage, loadAllBoards, loadAllUserPicks, loadNotifReads, markNotifRead, loadSystemNotifications, loadRealGroupStandings } from "./db.js";
 
 const TEAM_CODE = {"Mexico":"MEX","South Africa":"RSA","South Korea":"KOR","Czechia":"CZE","Canada":"CAN","Switzerland":"SUI","Qatar":"QAT","Bosnia-Herzegovina":"BIH","Brazil":"BRA","Morocco":"MAR","Scotland":"SCO","Haiti":"HAI","USA":"USA","Paraguay":"PAR","Australia":"AUS","Turkiye":"TUR","Germany":"GER","Ecuador":"ECU","Ivory Coast":"CIV","Curacao":"CUW","Netherlands":"NED","Japan":"JPN","Tunisia":"TUN","Sweden":"SWE","Belgium":"BEL","Iran":"IRI","Egypt":"EGY","New Zealand":"NZL","Spain":"ESP","Uruguay":"URU","Saudi Arabia":"KSA","Cape Verde":"CPV","France":"FRA","Senegal":"SEN","Norway":"NOR","Iraq":"IRQ","Argentina":"ARG","Austria":"AUT","Algeria":"ALG","Jordan":"JOR","Portugal":"POR","Colombia":"COL","Uzbekistan":"UZB","DR Congo":"COD","England":"ENG","Croatia":"CRO","Panama":"PAN","Ghana":"GHA"};
 
@@ -25,6 +25,15 @@ const DARK = "#3D3D3D";
 const NAVY = "#0A2E8A";
 const RED = "#C8102E";
 const GREEN = "#009A44";
+
+const isLiveScoreStatus = (status) => status === "LIVE" || status === "ET" || status === "PEN";
+const liveScorePhaseLabel = (status, min) => {
+  if (status === "ET") return min != null ? `ET ${min}'` : "ET";
+  if (status === "PEN") return min != null ? `PEN ${min}'` : "PEN";
+  return min != null ? `LIVE ${min}'` : "LIVE";
+};
+const hasPenaltyScore = (live) => live?.homePen != null && live?.awayPen != null;
+const penaltyScoreLabel = (live) => hasPenaltyScore(live) ? `${live.homePen}-${live.awayPen} pen` : null;
 
 
 const SCREENS = {
@@ -236,7 +245,7 @@ const T = {
     koUnlockedLabel:"⚡ Knockout available", koDueJun27:"Due Jun 27",
     exactScores:"Exact Scores", weekComplete:"✓ Week complete", thisWeek:"this week",
     pathToTrophy:"Path to the Trophy", unlocksEvery:"Unlocks every Sunday 8AM",
-    groupStage:"Group Stage", week:"Week", roundOf16QF:"Round of 16 · QF · SF",
+    groupStage:"Group Stage", week:"Week", roundOf16QF:"R32 · R16 · QF · SF",
     final:"Final", locked:"Locked", past:"Past", viewAll:"View all ›",
     tournamentStarts:"Tournament starts Jun 11", ptsTotal:"pts total",
     leaderboard:"Leaderboard", searchPlayer:"Search player...",
@@ -415,7 +424,7 @@ const T = {
     koUnlockedLabel:"⚡ Knockout disponibil", koDueJun27:"Termen 27 Iun",
     exactScores:"Scoruri Exacte", weekComplete:"✓ Săptămâna completă", thisWeek:"această săptămână",
     pathToTrophy:"Drumul spre Trofeu", unlocksEvery:"Se deschide duminică la 8:00",
-    groupStage:"Faza Grupelor", week:"Săptămâna", roundOf16QF:"Optimi · Sferturi · Semi",
+    groupStage:"Faza Grupelor", week:"Săptămâna", roundOf16QF:"R32 · Optimi · Sferturi · Semi",
     final:"Finală", locked:"Blocat", past:"Trecut", viewAll:"Vezi tot ›",
     tournamentStarts:"Turneul începe pe 11 Iun", ptsTotal:"pts total",
     leaderboard:"Clasament", searchPlayer:"Caută jucător...",
@@ -594,7 +603,7 @@ const T = {
     koUnlockedLabel:"⚡ Knockout disponible", koDueJun27:"Délai 27 Juin",
     exactScores:"Scores Exacts", weekComplete:"✓ Semaine complète", thisWeek:"cette semaine",
     pathToTrophy:"Chemin vers le Trophée", unlocksEvery:"Ouvre chaque dimanche à 8h",
-    groupStage:"Phase de Groupes", week:"Semaine", roundOf16QF:"H.d.F. · Quarts · Demi",
+    groupStage:"Phase de Groupes", week:"Semaine", roundOf16QF:"R32 · H.d.F. · Quarts · Demi",
     final:"Finale", locked:"Bloqué", past:"Passé", viewAll:"Voir tout ›",
     tournamentStarts:"Tournoi débute le 11 Juin", ptsTotal:"pts total",
     leaderboard:"Classement", searchPlayer:"Chercher joueur...",
@@ -780,14 +789,9 @@ const useInitials = () => {
 
 // ECHIPE_DATA, FLAGS, TEAM_COLORS — importate din ./data/worldcup2026.js
 
-// Clasamente reale finale — se actualizează după încheierea turneului
-// Format: { "A": ["team1","team2","team3","team4"], ... }
-const REAL_STANDINGS = {};
-// Statistici reale per echipă din faza grupelor — pentru ranking best3
-// Format: { "Mexico": { pts:7, gf:5, ga:2, w:2, d:1, l:0 }, ... }
+// Clasamente reale — încărcate din DB via get_group_standings()
+// Mutate din constante în context React (vezi ScoringContext + useEffect în App)
 const REAL_GROUP_STATS = {};
-// Cele 8 best3 care avansează — override manual dacă vrei să eviți calculul auto
-// Format: ["team1","team2",...] în ordinea ranking-ului FIFA (1st vs 2nd, 3rd vs 4th etc.)
 const REAL_BEST3 = [];
 const GROUP_STAGE_FINISHED = false;
 
@@ -915,9 +919,11 @@ function useLiveScores(simDay, simHour, simMin) {
         ...prev,
         [row.match_key]: {
           status: row.status,
-          home:   row.home_score,
-          away:   row.away_score,
-          min:    row.live_min,
+          home:   row.regular_time_home_score,
+          away:   row.regular_time_away_score,
+          homePen: row.penalty_home_score,
+          awayPen: row.penalty_away_score,
+          min:    row.api_minute,
         },
       }));
     });
@@ -1742,21 +1748,31 @@ const INTERACTIVE_GROUPS = ["A","B","C","D","E","F","G","H","I","J","K","L"]; //
 const ALL_GROUP_IDS = Object.keys(ALL_GROUPS_DATA);
 
 // ── PREDICTION SCORING ────────────────────────────────────────────────────────
-const PRED_SCORING = {
+const DEFAULT_PRED_SCORING = {
   group1st: 20, group2nd: 15, group3rd: 10,
   best3: 5,
   r32: 10, r16: 20, qf: 40, sf: 60, final: 100,
 };
-const PRED_MAX = {
-  groups:  INTERACTIVE_GROUPS.length * (PRED_SCORING.group1st + PRED_SCORING.group2nd + PRED_SCORING.group3rd), // 12×45 = 540
-  best3:   8 * PRED_SCORING.best3,        // 120
-  r32:     16 * PRED_SCORING.r32,         // 160
-  r16:     8  * PRED_SCORING.r16,         // 160
-  qf:      4  * PRED_SCORING.qf,          // 160
-  sf:      2  * PRED_SCORING.sf,          // 120
-  final:   1  * PRED_SCORING.final,       // 100
+const DEFAULT_EXACT_SCORING = {
+  group_result: 30, group_exact: 90,
+  r32_result: 35, r32_exact_bonus: 15,
+  r16_result: 40, r16_exact_bonus: 20,
+  qf_result: 60, qf_exact_bonus: 30,
+  sf_result: 90, sf_exact_bonus: 40,
+  final_result: 120, final_exact_bonus: 50,
 };
-PRED_MAX.total = Object.values(PRED_MAX).reduce((a,b)=>a+b, 0); // 1360
+const computePredMax = (s) => {
+  const groups = INTERACTIVE_GROUPS.length * (s.group1st + s.group2nd + s.group3rd);
+  const best3  = 8  * s.best3;
+  const r32    = 16 * s.r32;
+  const r16    = 8  * s.r16;
+  const qf     = 4  * s.qf;
+  const sf     = 2  * s.sf;
+  const fin    = 1  * s.final;
+  return { groups, best3, r32, r16, qf, sf, final: fin, total: groups + best3 + r32 + r16 + qf + sf + fin };
+};
+const ScoringContext = React.createContext({ pred: DEFAULT_PRED_SCORING, exact: DEFAULT_EXACT_SCORING, predMax: computePredMax(DEFAULT_PRED_SCORING) });
+const useScoringRules = () => React.useContext(ScoringContext);
 
 const makeMatchups = (teams) => {
   const m = [];
@@ -3187,8 +3203,9 @@ function GroupIntroScreen({ group, teams: teamsProp, isKo, onStart, hideHeader=f
 }
 
 
-function InstantPickScreen({ onBack, onComplete, onKoComplete, onModify, savedState, onStateChange, tournamentStarted, viewMode=false, koUnlocked=false, startAtKo=false }) {
+function InstantPickScreen({ onBack, onComplete, onKoComplete, onModify, savedState, onStateChange, tournamentStarted, viewMode=false, koUnlocked=false, startAtKo=false, realStandings={} }) {
   const lang = useLang();
+  const { pred: PRED_SCORING, predMax: PRED_MAX } = useScoringRules();
   const GROUPS = INTERACTIVE_GROUPS;
   const [stage, setStage] = useState(savedState?.stage||"groups");
   const [groupIdx, setGroupIdx] = useState(savedState?.groupIdx||0);
@@ -3256,9 +3273,9 @@ function InstantPickScreen({ onBack, onComplete, onKoComplete, onModify, savedSt
   const allGroupStandings = {};
   GROUPS.forEach(g=>{ allGroupStandings[g]=getGroupStanding(g); });
 
-  // For KO bracket: use REAL_STANDINGS when available, else auto-standings
+  // For KO bracket: use realStandings (from DB) when available, else auto-standings
   const getRealGroupStanding = (group) => {
-    if(REAL_STANDINGS[group]?.length) return REAL_STANDINGS[group];
+    if(realStandings[group]?.length) return realStandings[group];
     return getAutoStanding(group);
   };
   const allRealGroupStandings = {};
@@ -3328,6 +3345,36 @@ function InstantPickScreen({ onBack, onComplete, onKoComplete, onModify, savedSt
 
   const koRoundMatchupsMap = {R32:r32Matchups,R16:r16Matchups,QF:qfMatchups,SF:sfMatchups,F:fMatchups};
   const koRoundMatchups = stage!=="groups"&&stage!=="best3" ? (koRoundMatchupsMap[koRound]||[]) : [];
+
+  // Matchup-uri PREZISE de user (din groupRankings, nu din realStandings)
+  const predWinners  = GROUPS.map(g=>(allGroupStandings[g]||[])[0]).filter(Boolean);
+  const predRunners  = GROUPS.map(g=>(allGroupStandings[g]||[])[1]).filter(Boolean);
+  const predBest3    = best3.length===8 ? best3 : rankBest3ByFifa(GROUPS, allGroupStandings, REAL_GROUP_STATS);
+  const PW = (i) => predWinners[i]  || "TBD";
+  const PR = (i) => predRunners[i]  || "TBD";
+  const PB = (i) => predBest3[i]    || "TBD";
+  const predictedR32 = [
+    {home:PW(0),away:PR(2)},{home:PW(2),away:PR(0)},{home:PW(1),away:PR(3)},{home:PW(3),away:PR(1)},
+    {home:PW(4),away:PR(6)},{home:PW(6),away:PR(4)},{home:PW(5),away:PR(7)},{home:PW(7),away:PR(5)},
+    {home:PW(8),away:PR(10)},{home:PW(10),away:PR(8)},{home:PW(9),away:PR(11)},{home:PW(11),away:PR(9)},
+    {home:PB(0),away:PB(1)},{home:PB(2),away:PB(3)},{home:PB(4),away:PB(5)},{home:PB(6),away:PB(7)},
+  ];
+  const getPredWinners = (roundKey, predMap) =>
+    Array.from({length:(predMap[roundKey]||[]).length},(_,i)=>{
+      const pick=koPicks[`${roundKey}-${i}`];
+      const m=(predMap[roundKey]||[])[i];
+      if(!m||!pick) return "TBD";
+      return pick==="home"?m.home:m.away;
+    });
+  const predR16Map = {R32:predictedR32};
+  const predictedR16 = makePairs(getPredWinners("R32", predR16Map));
+  const predR16Full  = {R32:predictedR32,R16:predictedR16};
+  const predictedQF  = makePairs(getPredWinners("R16", predR16Full));
+  const predQFFull   = {R32:predictedR32,R16:predictedR16,QF:predictedQF};
+  const predictedSF  = makePairs(getPredWinners("QF",  predQFFull));
+  const predSFFull   = {R32:predictedR32,R16:predictedR16,QF:predictedQF,SF:predictedSF};
+  const predictedF   = makePairs(getPredWinners("SF",  predSFFull));
+  const predictedMatchupsMap = {R32:predictedR32,R16:predictedR16,QF:predictedQF,SF:predictedSF,F:predictedF};
 
   const koLabel={R32:"Round of 32",R16:"Round of 16",QF:"Quarter-Finals",SF:"Semi-Finals",F:"Final"}[koRound]||koRound;
   const currentKo=koRoundMatchups[koIdx];
@@ -3456,6 +3503,10 @@ function InstantPickScreen({ onBack, onComplete, onKoComplete, onModify, savedSt
     const thirdTeams=GROUPS.map(g=>(allGroupStandings[g]||[])[2]).filter(t=>{ if(!t||seenThirds.has(t)) return false; seenThirds.add(t); return true; });
     const needed=8;
     const available=thirdTeams.filter(t=>!best3.includes(t));
+    const allGroupsFinished = GROUPS.every(g => (realStandings[g]||[]).length === 4);
+    const actualThirdsSet = allGroupsFinished
+      ? new Set(GROUPS.map(g => (realStandings[g]||[])[2]).filter(Boolean))
+      : null;
     const C3={"Mexico":"MEX","South Africa":"RSA","South Korea":"KOR","Czechia":"CZE",
       "Canada":"CAN","Switzerland":"SUI","Qatar":"QAT","Bosnia-Herzegovina":"BIH",
       "Brazil":"BRA","Morocco":"MAR","Scotland":"SCO","Haiti":"HAI",
@@ -3489,82 +3540,103 @@ function InstantPickScreen({ onBack, onComplete, onKoComplete, onModify, savedSt
             </div>
           ) : (
             <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-              {best3.map(team=>(
-                <button key={team} onClick={()=>!effectiveViewMode&&setBest3(prev=>prev.filter(t=>t!==team))}
-                  style={{
-                    display:"flex",alignItems:"center",gap:5,
-                    padding:"4px 10px 4px 6px",borderRadius:20,
-                    background:`${GREEN}18`,border:`1.5px solid ${GREEN}`,
-                    cursor:effectiveViewMode?"default":"pointer",transition:"all 0.15s",
-                    WebkitTapHighlightColor:"transparent",
-                  }}>
-                  <span style={{fontSize:18,lineHeight:1}}>{FLAGS[team]||"🏳"}</span>
-                  <span style={{fontSize:11,fontWeight:800,color:NAVY,
-                    textTransform:"uppercase"}}>{C3[team]||team.slice(0,3).toUpperCase()}</span>
-                  <span style={{fontSize:10,color:GREEN,fontWeight:900,marginLeft:1}}>✓</span>
-                </button>
-              ))}
+              {best3.map(team=>{
+                const isCorrect = actualThirdsSet ? actualThirdsSet.has(team) : null;
+                return (
+                  <button key={team} onClick={()=>!effectiveViewMode&&setBest3(prev=>prev.filter(t=>t!==team))}
+                    style={{
+                      display:"flex",alignItems:"center",gap:5,
+                      padding:"4px 10px 4px 6px",borderRadius:20,
+                      background: effectiveViewMode&&isCorrect!==null?(isCorrect?`${GREEN}18`:"rgba(220,38,38,0.08)"):`${GREEN}18`,
+                      border: effectiveViewMode&&isCorrect!==null?`1.5px solid ${isCorrect?GREEN:"#EF4444"}`:`1.5px solid ${GREEN}`,
+                      cursor:effectiveViewMode?"default":"pointer",transition:"all 0.15s",
+                      WebkitTapHighlightColor:"transparent",
+                    }}>
+                    <span style={{fontSize:18,lineHeight:1}}>{FLAGS[team]||"🏳"}</span>
+                    <span style={{fontSize:11,fontWeight:800,color:NAVY,
+                      textTransform:"uppercase"}}>{C3[team]||team.slice(0,3).toUpperCase()}</span>
+                    {effectiveViewMode&&isCorrect!==null ? (
+                      <span style={{fontSize:10,fontWeight:900,marginLeft:1,color:isCorrect?GREEN:"#EF4444"}}>
+                        {isCorrect?"+5":"✗"}
+                      </span>
+                    ) : (
+                      <span style={{fontSize:10,color:GREEN,fontWeight:900,marginLeft:1}}>✓</span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
 
-        {/* ── AVAILABLE TEAMS — same row style as GroupRankingScreen ── */}
+        {/* ── AVAILABLE TEAMS ── */}
         <div style={{flex:1,minHeight:0,overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",background:BG,padding:"8px 14px",
           display:"flex",flexDirection:"column",gap:6}}>
-          {available.map(team=>{
-            const grp=GROUPS.find(g=>(allGroupStandings[g]||[])[2]===team)||"?";
-            const disabled=best3.length>=needed;
-            return (
-              <div key={team} onClick={()=>!effectiveViewMode&&!disabled&&setBest3(prev=>[...prev,team])}
-                style={{
-                  display:"flex",alignItems:"center",gap:12,
-                  padding:"11px 14px",borderRadius:14,
-                  background:"#fff",
-                  border:"1.5px solid rgba(0,0,0,0.06)",
-                  boxShadow:"0 1px 4px rgba(0,0,0,0.05)",
-                  cursor:(effectiveViewMode||disabled)?"default":"pointer",
-                  opacity:disabled?0.4:1,
-                  transition:"all 0.15s",
-                  minHeight:56,
-                }}>
-                {/* Rank slot — empty circle */}
-                <div style={{
-                  width:30,height:30,borderRadius:8,flexShrink:0,
-                  background:"rgba(0,0,0,0.05)",
-                  display:"flex",alignItems:"center",justifyContent:"center",
-                }}>
-                  <span style={{fontSize:11,color:"rgba(0,0,0,0.2)",fontWeight:700}}>?</span>
-                </div>
-                {/* Flag */}
-                <div style={{width:40,height:28,borderRadius:6,overflow:"hidden",
-                  boxShadow:"0 2px 8px rgba(0,0,0,0.15)",flexShrink:0,position:"relative"}}>
-                  <FlagBg team={team} style={{}}/>
-                </div>
-                {/* Name + group */}
-                <div style={{flex:1}}>
-                  <div style={{fontSize:14,fontWeight:800,color:"#111",
-                    letterSpacing:0.3,textTransform:"uppercase"}}>{team}</div>
-                  <div style={{fontSize:10,color:"rgba(0,0,0,0.35)",marginTop:1,fontWeight:600}}>
-                    Group {grp} · 3rd place
-                  </div>
-                </div>
-                {/* Add indicator */}
-                <div style={{
-                  width:24,height:24,borderRadius:"50%",flexShrink:0,
-                  background:"rgba(0,0,0,0.06)",
-                  display:"flex",alignItems:"center",justifyContent:"center",
-                }}>
-                  <span style={{fontSize:14,color:"rgba(0,0,0,0.25)",lineHeight:1}}>+</span>
-                </div>
+          {(()=>{
+            const displayList = effectiveViewMode && allGroupsFinished
+              ? GROUPS.map(g => {
+                  const real3rd = (realStandings[g]||[])[2];
+                  if (!real3rd || best3.includes(real3rd)) return null;
+                  return { team: real3rd, group: g };
+                }).filter(Boolean)
+              : available.map(team => ({
+                  team,
+                  group: GROUPS.find(g=>(allGroupStandings[g]||[])[2]===team)||"?",
+                }));
+            if (!displayList.length) return (
+              <div style={{textAlign:"center",padding:"20px 0",
+                color:"rgba(0,0,0,0.3)",fontSize:13,fontStyle:"italic"}}>
+                {effectiveViewMode && allGroupsFinished ? "All real 3rd-place teams selected ✓" : "All 3rd-place teams selected ✓"}
               </div>
             );
-          })}
-          {available.length===0&&(
-            <div style={{textAlign:"center",padding:"20px 0",
-              color:"rgba(0,0,0,0.3)",fontSize:13,fontStyle:"italic"}}>
-              All 3rd-place teams selected ✓
-            </div>
-          )}
+            return displayList.map(({team, group})=>{
+              const disabled = best3.length >= needed;
+              return (
+                <div key={team} onClick={()=>!effectiveViewMode&&!disabled&&setBest3(prev=>[...prev,team])}
+                  style={{
+                    display:"flex",alignItems:"center",gap:12,
+                    padding:"11px 14px",borderRadius:14,
+                    background:"#fff",
+                    border:"1.5px solid rgba(0,0,0,0.06)",
+                    boxShadow:"0 1px 4px rgba(0,0,0,0.05)",
+                    cursor:(effectiveViewMode||disabled)?"default":"pointer",
+                    opacity:disabled?0.4:1,
+                    transition:"all 0.15s",
+                    minHeight:56,
+                  }}>
+                  <div style={{
+                    width:30,height:30,borderRadius:8,flexShrink:0,
+                    background: effectiveViewMode?"rgba(220,38,38,0.07)":"rgba(0,0,0,0.05)",
+                    display:"flex",alignItems:"center",justifyContent:"center",
+                  }}>
+                    <span style={{fontSize:11,fontWeight:700,color:effectiveViewMode?"#EF4444":"rgba(0,0,0,0.2)"}}>
+                      {effectiveViewMode?"✗":"?"}
+                    </span>
+                  </div>
+                  <div style={{width:40,height:28,borderRadius:6,overflow:"hidden",
+                    boxShadow:"0 2px 8px rgba(0,0,0,0.15)",flexShrink:0,position:"relative"}}>
+                    <FlagBg team={team} style={{}}/>
+                  </div>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:14,fontWeight:800,color:"#111",
+                      letterSpacing:0.3,textTransform:"uppercase"}}>{team}</div>
+                    <div style={{fontSize:10,color:"rgba(0,0,0,0.35)",marginTop:1,fontWeight:600}}>
+                      {effectiveViewMode?`Group ${group} · real 3rd · not picked`:`Group ${group} · 3rd place`}
+                    </div>
+                  </div>
+                  {!effectiveViewMode && (
+                    <div style={{
+                      width:24,height:24,borderRadius:"50%",flexShrink:0,
+                      background:"rgba(0,0,0,0.06)",
+                      display:"flex",alignItems:"center",justifyContent:"center",
+                    }}>
+                      <span style={{fontSize:14,color:"rgba(0,0,0,0.25)",lineHeight:1}}>+</span>
+                    </div>
+                  )}
+                </div>
+              );
+            });
+          })()}
         </div>
 
         {/* ── CONFIRM BUTTON ── */}
@@ -3726,11 +3798,44 @@ function InstantPickScreen({ onBack, onComplete, onKoComplete, onModify, savedSt
           isKo={true} hideHeader={true} onStart={()=>setKoShowIntro(false)} picks={koPicks} viewMode={viewMode}/>
       </div>
     );
+    const predictedKo = (predictedMatchupsMap[koRound]||[])[koIdx];
+    const homeChanged = viewMode && predictedKo && currentKo &&
+      predictedKo.home !== currentKo.home &&
+      currentKo.home !== "TBD" && predictedKo.home !== "TBD";
+    const awayChanged = viewMode && predictedKo && currentKo &&
+      predictedKo.away !== currentKo.away &&
+      currentKo.away !== "TBD" && predictedKo.away !== "TBD";
+
     return (
       <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,userSelect:"none"}}>
         {sharedHeader}
+        {/* Indicator echipe înlocuite */}
+        {viewMode && (homeChanged || awayChanged) && (
+          <div style={{background:"rgba(200,16,46,0.08)",borderLeft:"3px solid #C8102E",
+            margin:"8px 14px 0",borderRadius:"0 8px 8px 0",padding:"7px 12px",
+            display:"flex",flexDirection:"column",gap:3}}>
+            <p style={{fontSize:10,fontWeight:800,color:"#C8102E",margin:0,letterSpacing:1,textTransform:"uppercase"}}>
+              ⚠️ Echipe schimbate față de predicție
+            </p>
+            {homeChanged && (
+              <p style={{fontSize:12,color:"#555",margin:0}}>
+                <span style={{fontWeight:700}}>{currentKo.home}</span>
+                {" "}a înlocuit{" "}
+                <span style={{textDecoration:"line-through",color:"#aaa"}}>{predictedKo.home}</span>
+              </p>
+            )}
+            {awayChanged && (
+              <p style={{fontSize:12,color:"#555",margin:0}}>
+                <span style={{fontWeight:700}}>{currentKo.away}</span>
+                {" "}a înlocuit{" "}
+                <span style={{textDecoration:"line-through",color:"#aaa"}}>{predictedKo.away}</span>
+              </p>
+            )}
+          </div>
+        )}
         <MatchSwipeCard key={`ko-${koRound}-${koIdx}`}
           home={currentKo?.home||"TBD"} away={currentKo?.away||"TBD"}
+          existingPick={koPicks[`${koRound}-${koIdx}`]||null}
           onPick={viewMode ? undefined : (result)=>{
             const key=`${koRound}-${koIdx}`;
             setKoPicks(p=>({...p,[key]:result}));
@@ -3769,6 +3874,7 @@ function InstantPickScreen({ onBack, onComplete, onKoComplete, onModify, savedSt
         groupRankings={groupRankings}
         onNavigate={navigateGroup}
         viewMode={effectiveViewMode}
+        realGroupStandings={realStandings[currentGroup]||[]}
       />
     </div>
   );
@@ -3776,6 +3882,7 @@ function InstantPickScreen({ onBack, onComplete, onKoComplete, onModify, savedSt
 
 function InstantPickSummaryScreen({ picks, koPicks, best3, getGroupStanding, onConfirm, readOnly }) {
   const lang = useLang();
+  const { pred, exact } = useScoringRules();
   const GROUPS = INTERACTIVE_GROUPS;
   const ALL_ROUNDS = ["R16","QF","SF","Final"];
 
@@ -3783,12 +3890,12 @@ function InstantPickSummaryScreen({ picks, koPicks, best3, getGroupStanding, onC
   const champion = koPicks["final"] || null;
 
   const SCORING = [
-    { label:"⚽ Groups · Correct Result",  pts:30,  color:NAVY,   icon:"✓" },
-    { label:"🥉 Best Third · per echipă",  pts:20,  color:"#7B2FBE",icon:"✓" },
-    { label:"🏆 Round of 16",              pts:40,  color:RED,    icon:"✓" },
-    { label:"🏆 Sferturi",                 pts:60,  color:RED,    icon:"✓" },
-    { label:"🏆 Semifinale",               pts:90,  color:RED,    icon:"✓" },
-    { label:"🏆 Final",                    pts:120, color:"#D4820A",icon:"✓" },
+    { label:"⚽ Groups · Correct Result",  pts:exact.group_result, color:NAVY,        icon:"✓" },
+    { label:"🥉 Best Third · per echipă",  pts:pred.best3,         color:"#7B2FBE",   icon:"✓" },
+    { label:"🏆 Round of 16",              pts:pred.r16,           color:RED,         icon:"✓" },
+    { label:"🏆 Sferturi",                 pts:pred.qf,            color:RED,         icon:"✓" },
+    { label:"🏆 Semifinale",               pts:pred.sf,            color:RED,         icon:"✓" },
+    { label:"🏆 Final",                    pts:pred.final,         color:"#D4820A",   icon:"✓" },
   ];
 
   return (
@@ -3839,8 +3946,12 @@ function InstantPickSummaryScreen({ picks, koPicks, best3, getGroupStanding, onC
   );
 }
 
-function GroupRankingScreen({ group, teams, existingRanking, onConfirm, onAutoSave, onBack, groupIdx, totalGroups, onNavigate, groupRankings, hideHeader=false, viewMode=false }) {
+function GroupRankingScreen({ group, teams, existingRanking, onConfirm, onAutoSave, onBack, groupIdx, totalGroups, onNavigate, groupRankings, hideHeader=false, viewMode=false, realGroupStandings=[] }) {
   const lang = useLang();
+  const { pred: PRED_SCORING } = useScoringRules();
+  const groupDone = realGroupStandings.length === 4;
+  const PTS_MAP = [PRED_SCORING.group1st, PRED_SCORING.group2nd, PRED_SCORING.group3rd, 0];
+  const effectiveViewMode = viewMode || groupDone;
   const [ranking, setRanking] = useState(existingRanking || [null, null, null, null]);
   const [dragIdx, setDragIdx] = useState(null);
   const [dragOverIdx, setDragOverIdx] = useState(null);
@@ -4068,18 +4179,18 @@ function GroupRankingScreen({ group, teams, existingRanking, onConfirm, onAutoSa
       {/* ── TEAM TILES ── */}
       <div style={{background:"transparent", padding:"8px 14px 8px",
         borderBottom:"1px solid rgba(0,0,0,0.08)", position:"relative", zIndex:1}}>
-        {!viewMode && <div style={{fontSize:10, color:"rgba(0,0,0,0.4)", letterSpacing:2,
+        {!effectiveViewMode && <div style={{fontSize:10, color:"rgba(0,0,0,0.4)", letterSpacing:2,
           fontWeight:700, marginBottom:6, textAlign:"center"}}>TAP TO ASSIGN · TAP AGAIN TO REMOVE</div>}
         <div style={{display:"flex", gap:6, justifyContent:"space-between"}}>
           {teams.map(team => {
             const pos = ranking.indexOf(team);
             const isPlaced = pos !== -1;
             return (
-              <div key={team} onClick={() => !viewMode && handleTileClick(team)} style={{
+              <div key={team} onClick={() => !effectiveViewMode && handleTileClick(team)} style={{
                 flex:1, background: isPlaced ? "rgba(0,32,91,0.07)" : "#fff",
                 borderRadius:10, padding:"7px 2px",
                 display:"flex", flexDirection:"column", alignItems:"center", gap:4,
-                cursor:viewMode?"default":"pointer", position:"relative",
+                cursor:effectiveViewMode?"default":"pointer", position:"relative",
                 border:`2px solid ${isPlaced ? "rgba(0,32,91,0.25)" : "rgba(0,0,0,0.08)"}`,
                 transition:"all 0.15s",
                 opacity: isPlaced ? 0.6 : 1,
@@ -4119,9 +4230,9 @@ function GroupRankingScreen({ group, teams, existingRanking, onConfirm, onAutoSa
           const isOver = dragOverIdx === idx;
           return (
             <div key={idx} ref={el => rowRefs.current[idx] = el}
-              onTouchStart={team && !viewMode ? e=>handleTouchStart(e,idx) : undefined}
-              onTouchMove={team && !viewMode ? handleTouchMove : undefined}
-              onTouchEnd={team && !viewMode ? handleTouchEnd : undefined}
+              onTouchStart={team && !effectiveViewMode ? e=>handleTouchStart(e,idx) : undefined}
+              onTouchMove={team && !effectiveViewMode ? handleTouchMove : undefined}
+              onTouchEnd={team && !effectiveViewMode ? handleTouchEnd : undefined}
               style={{
                 display:"flex", alignItems:"center", gap:10,
                 padding:"8px 12px", borderRadius:12,
@@ -4158,7 +4269,7 @@ function GroupRankingScreen({ group, teams, existingRanking, onConfirm, onAutoSa
                     <FlagBg team={team} style={{}}/>
                   </div>
                   {/* Name */}
-                  <div style={{flex:1, cursor:viewMode?"default":"pointer"}} onClick={()=>!viewMode&&handleSlotClick(idx)}>
+                  <div style={{flex:1, cursor:effectiveViewMode?"default":"pointer"}} onClick={()=>!effectiveViewMode&&handleSlotClick(idx)}>
                     <div style={{fontSize:13, fontWeight:800, color:"#111",
                       letterSpacing:0.3, textTransform:"uppercase"}}>{team}</div>
                     <div style={{fontSize:11, color:idx===0?GREEN:idx===1?"#4a90e2":idx===2?"#CD7F32":"rgba(0,0,0,0.35)",
@@ -4166,8 +4277,8 @@ function GroupRankingScreen({ group, teams, existingRanking, onConfirm, onAutoSa
                       {idx===0?"Group Winner · Advances":idx===1?"Runner-up · Advances":idx===2?"Possible 3rd Place":"Eliminated"}
                     </div>
                   </div>
-                  {/* Drag handle = — touch to reorder */}
-                  {!viewMode && <div
+                  {/* Drag handle — touch to reorder */}
+                  {!effectiveViewMode && <div
                     onTouchStart={e=>{ e.stopPropagation(); handleTouchStart(e, idx); }}
                     onTouchMove={e=>{ e.stopPropagation(); handleTouchMove(e); }}
                     onTouchEnd={e=>{ e.stopPropagation(); handleTouchEnd(); }}
@@ -4179,6 +4290,21 @@ function GroupRankingScreen({ group, teams, existingRanking, onConfirm, onAutoSa
                     <div style={{width:20, height:2, background:"#999", borderRadius:2}}/>
                     <div style={{width:20, height:2, background:"#999", borderRadius:2}}/>
                   </div>}
+                  {/* Scoring in view mode */}
+                  {effectiveViewMode && groupDone && (() => {
+                    const actualIdx = realGroupStandings.indexOf(team);
+                    const earned = actualIdx === idx && idx < 3 ? PTS_MAP[idx] : 0;
+                    return (
+                      <div style={{textAlign:"right", flexShrink:0, minWidth:52}}>
+                        <div style={{fontSize:10, color:"#aaa", fontWeight:500}}>
+                          real {actualIdx >= 0 ? `${actualIdx+1}°` : "—"}
+                        </div>
+                        <div style={{fontSize:13, fontWeight:800, color: earned > 0 ? GREEN : "#ccc"}}>
+                          {earned > 0 ? `+${earned}` : "0"} pts
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </>
               ) : (
                 <div style={{flex:1, display:"flex", alignItems:"center"}}>
@@ -4199,7 +4325,7 @@ function GroupRankingScreen({ group, teams, existingRanking, onConfirm, onAutoSa
         position:"relative", zIndex:1}}>
 
         {/* Reset / Auto-pick row */}
-        {!viewMode && <div style={{display:"flex", justifyContent:"space-between"}}>
+        {!effectiveViewMode && <div style={{display:"flex", justifyContent:"space-between"}}>
           <button onClick={autoPickRanking} style={{
             background:"rgba(0,0,0,0.04)", border:"1px solid rgba(0,0,0,0.08)",
             borderRadius:10, padding:"6px 14px",
@@ -4213,20 +4339,20 @@ function GroupRankingScreen({ group, teams, existingRanking, onConfirm, onAutoSa
         </div>}
 
         {/* Confirm / Next */}
-        <button onClick={() => (viewMode || isComplete) && onConfirm(ranking)}
-          disabled={!viewMode && !isComplete}
+        <button onClick={() => (effectiveViewMode || isComplete) && onConfirm(ranking)}
+          disabled={!effectiveViewMode && !isComplete}
           style={{
             width:"100%", padding:"12px 0", borderRadius:14, border:"none",
-            background: (viewMode || isComplete)
+            background: (effectiveViewMode || isComplete)
               ? `linear-gradient(135deg, ${NAVY}, #003580)`
               : "rgba(0,0,0,0.06)",
-            color: (viewMode || isComplete) ? "#fff" : "rgba(0,0,0,0.2)",
+            color: (effectiveViewMode || isComplete) ? "#fff" : "rgba(0,0,0,0.2)",
             fontSize:15, fontWeight:900, letterSpacing:1,
-            cursor: (viewMode || isComplete) ? "pointer" : "default",
+            cursor: (effectiveViewMode || isComplete) ? "pointer" : "default",
             transition:"all 0.2s",
-            boxShadow: (viewMode || isComplete) ? `0 4px 20px rgba(0,32,91,0.35)` : "none",
+            boxShadow: (effectiveViewMode || isComplete) ? `0 4px 20px rgba(0,32,91,0.35)` : "none",
           }}>
-          {viewMode
+          {effectiveViewMode
             ? groupIdx < totalGroups-1 ? `NEXT GROUP →` : `NEXT: BEST THIRD →`
             : isComplete
               ? groupIdx < totalGroups-1 ? `CONFIRM & NEXT GROUP →` : `CONFIRM ALL GROUPS ✓`
@@ -6466,10 +6592,10 @@ function AdminBugPanel({ user, allInstantPickStates, allInstantPickDone, exactSc
                         {!dbHealth.exactScoresTable?.ok&&<div style={{fontSize:11,color:RED,fontWeight:700,marginTop:4}}>{dbHealth.exactScoresTable?.error}</div>}
                       </div>
 
-                      {/* players table */}
+                      {/* world cup football players table */}
                       <div style={{background:"#fff",borderRadius:12,padding:"12px",border:`1.5px solid ${dbHealth.playersTable?.ok?"rgba(0,0,0,0.08)":"#fee2e2"}`}}>
                         <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
-                          <span style={{fontSize:12,fontWeight:800,color:NAVY}}>players table</span>
+                          <span style={{fontSize:12,fontWeight:800,color:NAVY}}>world_cup_football_players table</span>
                           <span style={{fontSize:11,fontWeight:700,color:dbHealth.playersTable?.ok?GREEN:RED}}>{dbHealth.playersTable?.ok?"✓ Accessible":"✗ Error"}</span>
                         </div>
                         {dbHealth.playersTable?.ok && (
@@ -8006,11 +8132,12 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
                 const nowMins2 = nowH2*60 + nowM2;
                 const kickMins2 = matchH*60 + matchMin2;
                 const isFinished = live?.status==="FT" || (m.day < nowDay2) || (m.day===nowDay2 && nowMins2 > kickMins2+115);
-                const isLive = !isFinished && (live?.status==="LIVE" || (live?.status!=="NS" && m.day===nowDay2 && nowMins2>=kickMins2 && nowMins2<=kickMins2+115));
+                const isLive = !isFinished && (isLiveScoreStatus(live?.status) || (!live?.status && m.day===nowDay2 && nowMins2>=kickMins2 && nowMins2<=kickMins2+115));
                 const isNS = !isFinished && !isLive;
                 // Minute: prefer DB value (UTC-based from utcDate); fallback to local time diff
                 const liveMin = isLive ? (
                   live?.min != null ? live.min :
+                  live?.status ? null :
                   Math.min(90, nowMins2-kickMins2)
                 ) : 0;
                 const hasLive = live && live.home !== undefined && live.home !== null;
@@ -8033,7 +8160,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
                       <span style={{fontSize:11,color:"#aaa",fontWeight:600}}>{m.day} June · {m.time}</span>
                       {isLive&&<span style={{fontSize:11,fontWeight:800,color:RED,display:"flex",alignItems:"center",gap:3}}>
                         <span style={{width:6,height:6,borderRadius:"50%",background:RED,display:"inline-block"}}/>
-                        LIVE {liveMin}'
+                        {liveScorePhaseLabel(live?.status, liveMin)}
                       </span>}
                       {isFinished&&<span style={{fontSize:11,fontWeight:700,color:GREEN}}>FT</span>}
                       {isNS&&<span style={{fontSize:11,fontWeight:600,color:"#bbb"}}>{T[lang].notStarted}</span>}
@@ -8052,7 +8179,8 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
                         {(()=>{
                           const isPast = isMatchPast(m.day, m.time, simDay, simHour);
                           const canPredict = !isLive && !isFinished && !isPast && isWeekUnlocked(m.day, simDay, simHour, simMin);
-                          const scoreDisplay = isLive ? (hasLive?`${live.home}-${live.away}`:"0-0") : hasLive ? `${live.home}-${live.away}` : "-";
+                          const scoreDisplay = hasLive ? `${live.home}-${live.away}` : isLive ? "0-0" : "-";
+                          const penDisplay = penaltyScoreLabel(live);
                           const predBox = (isPast||isLive||isFinished) ? (sc ? (
                             isLive ? (
                               <div style={{background:"rgba(0,0,0,0.06)",borderRadius:6,padding:"3px 8px"}}>
@@ -8086,6 +8214,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
                                 borderRadius:8,padding:"5px 12px",width:"100%",textAlign:"center"}}>
                                 <span style={{fontSize:14,fontWeight:900,color:isLive?RED:hasLive?"#fff":"#bbb"}}>{scoreDisplay}</span>
                               </div>
+                              {penDisplay&&<span style={{fontSize:10,fontWeight:900,color:RED,lineHeight:1}}>{penDisplay}</span>}
                               {/* Prediction */}
                               <div style={{display:"flex",alignItems:"center",gap:4}}>
                                 <span style={{fontSize:11,color:"#bbb",fontWeight:600}}>tu:</span>
@@ -8560,8 +8689,9 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                                   const db2ko=live2?.status;
                                   const isFT2 = db2ko==="FT" || (!db2ko && (m.day<_nd || (m.day===_nd && _now>_kick+115)));
                                   const isHT2 = !isFT2 && db2ko==="HT";
-                                  const isLive2 = !isFT2 && !isHT2 && (db2ko==="LIVE" || (!db2ko && db2ko!=="NS" && m.day===_nd && _now>=_kick && _now<=_kick+115));
+                                  const isLive2 = !isFT2 && !isHT2 && (isLiveScoreStatus(db2ko) || (!db2ko && m.day===_nd && _now>=_kick && _now<=_kick+115));
                                   const liveScore2 = live2&&live2.home!=null ? live2 : ((isLive2||isHT2)?{home:0,away:0}:null);
+                                  const penDisplay2 = penaltyScoreLabel(live2);
                                   const isPastM = m.day<_nd || (m.day===_nd && _mH<=_nh);
                                   const canEdit=!isLive2&&!isHT2&&!isFT2&&!isPastM&&isWeekUnlocked(m.day,simDay,simHour,simMin);
                                   return (
@@ -8578,6 +8708,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                                         <div style={{background:liveScore2?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:"rgba(0,0,0,0.07)",borderRadius:6,padding:"3px 8px",textAlign:"center"}}>
                                           <span style={{fontSize:12,fontWeight:900,color:liveScore2?"#fff":"#bbb"}}>{liveScore2?`${liveScore2.home}-${liveScore2.away}`:"-"}</span>
                                         </div>
+                                        {penDisplay2&&<span style={{fontSize:10,fontWeight:900,color:RED,lineHeight:1}}>{penDisplay2}</span>}
                                         {sc2?(
                                           <span style={{fontSize:11,fontWeight:700,color:NAVY}}>tu: {scH(sc2)}-{scA(sc2)}</span>
                                         ):canEdit?(
@@ -8682,9 +8813,10 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                               const db2=live2?.status;
                               const isFT2 = db2==="FT" || (!db2 && (m.day<_nd || (m.day===_nd && _now>_kick+115)));
                               const isHT2 = !isFT2 && db2==="HT";
-                              const isLive2 = !isFT2 && !isHT2 && (db2==="LIVE" || (!db2 && db2!=="NS" && m.day===_nd && _now>=_kick && _now<=_kick+115));
+                              const isLive2 = !isFT2 && !isHT2 && (isLiveScoreStatus(db2) || (!db2 && m.day===_nd && _now>=_kick && _now<=_kick+115));
                               const liveScore2 = live2&&live2.home!==null&&live2.home!==undefined ? live2 : ((isLive2||isHT2)?{home:0,away:0}:null);
                               const hasScore2 = !!liveScore2;
+                              const penDisplay2 = penaltyScoreLabel(live2);
                               const matchHourM=parseInt((m.time||"23:00").split(":")[0]);
                               const nowDM = simDay ?? getRealTournamentDay();
                               const nowHM = simDay ? (simHour||0) : new Date().getHours();
@@ -8701,12 +8833,13 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                                   <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
                                     <span style={{fontSize:11,fontWeight:600,color:"#bbb"}}>{m.day} Iun · {m.time}</span>
                                     {isPastM?<span style={{fontSize:10,color:"#ccc",fontWeight:700}}>{T[lang].finished}</span>
-                                      :isLive2?<span style={{fontSize:10,fontWeight:800,color:RED,animation:"blink 1s infinite"}}>● LIVE</span>
+                                      :isLive2?<span style={{fontSize:10,fontWeight:800,color:RED,animation:"blink 1s infinite"}}>● {liveScorePhaseLabel(db2, live2?.min)}</span>
                                       :isHT2?<span style={{fontSize:10,fontWeight:800,color:"#F59E0B"}}>⏸ HT</span>
                                       :<span style={{fontSize:10,color:"#bbb",fontWeight:700}}>{isFT2?"Final":"-"}</span>}
                                     <div style={{background:hasScore2?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:"rgba(0,0,0,0.07)",borderRadius:6,padding:"3px 10px",minWidth:46,textAlign:"center"}}>
                                       <span style={{fontSize:12,fontWeight:900,color:hasScore2?"#fff":"#bbb"}}>{hasScore2?`${liveScore2.home}-${liveScore2.away}`:"-"}</span>
                                     </div>
+                                    {penDisplay2&&<span style={{fontSize:10,fontWeight:900,color:RED,lineHeight:1}}>{penDisplay2}</span>}
                                     <span style={{fontSize:10,fontWeight:700,color:"#bbb",textTransform:"uppercase",letterSpacing:0.5}}>{T[lang].prediction}</span>
                                     {!isWeekUnlocked(m.day,simDay,simHour,simMin)?<span style={{fontSize:12,color:"#ccc"}}>🔒</span>
                                       :sc2?<div style={{background:canEdit?`rgba(0,32,91,0.1)`:"rgba(0,0,0,0.06)",border:canEdit?`1.5px solid ${NAVY}`:"none",borderRadius:6,padding:"2px 8px",minWidth:46,textAlign:"center",opacity:isPastM?0.5:1}}>
@@ -8744,10 +8877,11 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                     const dbStatus = live?.status;
                     const isFT = dbStatus==="FT" || (!dbStatus && ((sel||0)<_nowDay || (sel===_nowDay && _now2>_kick+115)));
                     const isHT = !isFT && dbStatus==="HT";
-                    const isLive = !isFT && !isHT && (dbStatus==="LIVE" || (!dbStatus && dbStatus!=="NS" && sel===_nowDay && _now2>=_kick && _now2<=_kick+115));
+                    const isLive = !isFT && !isHT && (isLiveScoreStatus(dbStatus) || (!dbStatus && sel===_nowDay && _now2>=_kick && _now2<=_kick+115));
                     const isNS2 = !isFT && !isHT && !isLive;
-                    const liveMin2 = isLive ? (live?.min != null ? live.min : Math.min(90,_now2-_kick)) : isHT ? 45 : 0;
+                    const liveMin2 = isLive ? (live?.min != null ? live.min : dbStatus ? null : Math.min(90,_now2-_kick)) : isHT ? 45 : 0;
                     const hasScore = live && live.home !== undefined && live.home !== null;
+                    const penDisplay = penaltyScoreLabel(live);
                     const exactMatch = sc&&hasScore&&isFT&&scH(sc)===live.home&&scA(sc)===live.away;
                     const predRes = sc?scH(sc)>scA(sc)?"H":scH(sc)<scA(sc)?"A":"D":null;
                     const realRes = hasScore?live.home>live.away?"H":live.home<live.away?"A":"D":null;
@@ -8760,7 +8894,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                           <span style={{fontSize:11,fontWeight:600,color:"#aaa"}}>{m.time} · Gr.{m.group}</span>
                           {isLive&&<span style={{fontSize:11,fontWeight:800,color:RED,display:"flex",alignItems:"center",gap:3}}>
                             <span style={{width:5,height:5,borderRadius:"50%",background:RED,display:"inline-block"}}/>
-                            LIVE {liveMin2}'
+                            {liveScorePhaseLabel(dbStatus, liveMin2)}
                           </span>}
                           {isHT&&<span style={{fontSize:11,fontWeight:800,color:"#F59E0B"}}>HT · Pauză</span>}
                           {isFT&&<span style={{fontSize:11,fontWeight:700,color:GREEN}}>FT</span>}
@@ -8774,12 +8908,13 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                           <span style={{fontSize:18,flexShrink:0}}>{m.homeFlag}</span>
                           <span style={{flex:1,fontSize:11,fontWeight:600,color:DARK}}>{m.home.length>7?m.home.split(" ")[0]:m.home}</span>
                           <div style={{flexShrink:0,display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
-                            {isLive?<span style={{fontSize:10,fontWeight:800,color:RED,animation:"blink 1s infinite"}}>● LIVE</span>
+                            {isLive?<span style={{fontSize:10,fontWeight:800,color:RED,animation:"blink 1s infinite"}}>● {liveScorePhaseLabel(dbStatus, liveMin2)}</span>
                               :isHT?<span style={{fontSize:10,fontWeight:800,color:"#F59E0B"}}>⏸ HT</span>
                               :<span style={{fontSize:10,fontWeight:700,color:"#bbb",textTransform:"uppercase",letterSpacing:0.5}}>{isFT?"Final":"-"}</span>}
                             <div style={{background:(isLive||isHT)?"rgba(0,0,0,0.06)":hasScore?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:"rgba(0,0,0,0.08)",borderRadius:6,padding:"4px 10px",minWidth:54,textAlign:"center"}}>
-                              <span style={{fontSize:13,fontWeight:900,color:(isLive||isHT)?RED:hasScore?"#fff":"#bbb"}}>{(isLive||isHT)?(hasScore?`${live.home}-${live.away}`:"0-0"):hasScore?`${live.home}-${live.away}`:"-"}</span>
+                              <span style={{fontSize:13,fontWeight:900,color:(isLive||isHT)?RED:hasScore?"#fff":"#bbb"}}>{hasScore?`${live.home}-${live.away}`:(isLive||isHT)?"0-0":"-"}</span>
                             </div>
+                            {penDisplay&&<span style={{fontSize:10,fontWeight:900,color:RED,lineHeight:1}}>{penDisplay}</span>}
                             <span style={{fontSize:10,fontWeight:700,color:"#bbb",textTransform:"uppercase",letterSpacing:0.5}}>{T[lang].prediction}</span>
                             {(()=>{
                               const isPast = isMatchPast(sel, m.time, simDay, simHour);
@@ -9060,25 +9195,27 @@ function AccountScreen({ setLang, onBoards, onSignOut, onShowGuide, onPremium, o
 
 function RulesScreen({ onBack }) {
   const lang = useLang();
+  const { pred, exact } = useScoringRules();
   const [tab, setTab] = useState("predictions");
   const predRules = [
-    { phase:"⚽ Grupe · 1st loc",  pts:PRED_SCORING.group1st, desc:T[lang].rulesDesc1 },
-    { phase:"⚽ Grupe · 2nd loc",  pts:PRED_SCORING.group2nd, desc:T[lang].rulesDesc2 },
-    { phase:"⚽ Grupe · 3rd loc",  pts:PRED_SCORING.group3rd, desc:T[lang].rulesDesc3 },
-    { phase:"🥉 Best Third",       pts:PRED_SCORING.best3,    desc:T[lang].rulesDescBest3 },
-    { phase:"🏆 Round of 32",      pts:PRED_SCORING.r32,      desc:T[lang].rulesDescMatch },
-    { phase:"🏆 Round of 16",      pts:PRED_SCORING.r16,      desc:T[lang].rulesDescMatch },
-    { phase:"🏆 Quarter-Finals",   pts:PRED_SCORING.qf,       desc:T[lang].rulesDescMatch },
-    { phase:"🏆 Semi-Finals",      pts:PRED_SCORING.sf,       desc:T[lang].rulesDescMatch },
-    { phase:"🏆 Final",            pts:PRED_SCORING.final,    desc:T[lang].rulesDescFinal },
+    { phase:"⚽ Grupe · 1st loc",  pts:pred.group1st, desc:T[lang].rulesDesc1 },
+    { phase:"⚽ Grupe · 2nd loc",  pts:pred.group2nd, desc:T[lang].rulesDesc2 },
+    { phase:"⚽ Grupe · 3rd loc",  pts:pred.group3rd, desc:T[lang].rulesDesc3 },
+    { phase:"🥉 Best Third",       pts:pred.best3,    desc:T[lang].rulesDescBest3 },
+    { phase:"🏆 Round of 32",      pts:pred.r32,      desc:T[lang].rulesDescMatch },
+    { phase:"🏆 Round of 16",      pts:pred.r16,      desc:T[lang].rulesDescMatch },
+    { phase:"🏆 Quarter-Finals",   pts:pred.qf,       desc:T[lang].rulesDescMatch },
+    { phase:"🏆 Semi-Finals",      pts:pred.sf,       desc:T[lang].rulesDescMatch },
+    { phase:"🏆 Final",            pts:pred.final,    desc:T[lang].rulesDescFinal },
   ];
   const exactRules = [
-    { phase:"⚽ Groups · Result", pts:30, desc:"Correct winner or draw" },
-    { phase:"⚽ Groups · Exact Score", pts:90, desc:"Exact match score" },
-    { phase:"🏆 R16 · Winner", pts:40, desc:"Correct match winner" },
-    { phase:"🏆 QF · Winner", pts:60, desc:"Correct match winner" },
-    { phase:"🏆 SF · Winner", pts:90, desc:"Correct match winner" },
-    { phase:"🏆 Final · Winner", pts:120, desc:"Tournament winner" },
+    { phase:"⚽ Groups · Result",      pts:exact.group_result,  desc:"Correct winner or draw" },
+    { phase:"⚽ Groups · Exact Score", pts:exact.group_exact,   desc:"Exact match score" },
+    { phase:"🏆 R32 · Winner",         pts:exact.r32_result,    desc:"Correct match winner" },
+    { phase:"🏆 R16 · Winner",         pts:exact.r16_result,    desc:"Correct match winner" },
+    { phase:"🏆 QF · Winner",          pts:exact.qf_result,     desc:"Correct match winner" },
+    { phase:"🏆 SF · Winner",          pts:exact.sf_result,     desc:"Correct match winner" },
+    { phase:"🏆 Final · Winner",       pts:exact.final_result,  desc:"Tournament winner" },
   ];
 
   return (
@@ -9336,6 +9473,30 @@ function App() {
   },[]);
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [realStandings, setRealStandings] = useState({});
+  useEffect(() => {
+    const refreshStandings = () =>
+      loadRealGroupStandings().then(s => { if (Object.keys(s).length > 0) setRealStandings(s); });
+    refreshStandings();
+    const channel = supabase
+      .channel('live_scores_standings')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'live_scores' }, (payload) => {
+        if (payload.new?.status === 'FT') refreshStandings();
+      })
+      .subscribe();
+    return () => { channel.unsubscribe(); };
+  }, []);
+  const [predScoring, setPredScoring] = useState(DEFAULT_PRED_SCORING);
+  const [exactScoring, setExactScoring] = useState(DEFAULT_EXACT_SCORING);
+  const predMax = React.useMemo(() => computePredMax(predScoring), [predScoring]);
+  useEffect(() => {
+    fetchScoringRules().then(rules => {
+      if (rules?.prediction && Object.keys(rules.prediction).length > 0)
+        setPredScoring(rules.prediction);
+      if (rules?.exact_score && Object.keys(rules.exact_score).length > 0)
+        setExactScoring(rules.exact_score);
+    });
+  }, []);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -9435,6 +9596,7 @@ function App() {
 
       // Apply picks for global + all user boards
       const allBoardIds = ['global', ...userBoards.map(b => b.id)];
+      await ensureBoardScores(uid, allBoardIds);
       allBoardIds.forEach(id => applyPicks(id, allPicks.predictions[id], allPicks.exactScores[id], allPicks.specialPicks[id]));
 
       const adminBoards = userBoards.filter(b => b.isAdmin);
@@ -9544,10 +9706,19 @@ function App() {
 
   const [myScoreBreakdowns, setMyScoreBreakdowns] = useState({});
   useEffect(() => {
-    if (!user || screen !== SCREENS.HOME) return;
-    loadMyScoreBreakdown(user.id, activeBoardId).then(bd => {
-      setMyScoreBreakdowns(prev => ({ ...prev, [activeBoardId]: bd }));
-    });
+    if (!user) return;
+    const refresh = (boardId) =>
+      loadMyScoreBreakdown(user.id, boardId).then(bd => {
+        setMyScoreBreakdowns(prev => ({ ...prev, [boardId]: bd }));
+      });
+    if (screen === SCREENS.HOME) refresh(activeBoardId);
+    const channel = supabase
+      .channel('board_scores_realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'board_scores', filter: `user_id=eq.${user.id}` }, () => {
+        refresh(activeBoardId);
+      })
+      .subscribe();
+    return () => { channel.unsubscribe(); };
   }, [user, screen, activeBoardId]);
 
   const [allInstantPickStates, setAllInstantPickStates] = useState({});
@@ -9639,6 +9810,7 @@ function App() {
   if (authLoading || (user && boardsLoading)) return <LoadingState title={authLoading ? T[lang].loadingTitle : T[lang].loadingLeagues} body={authLoading ? T[lang].loadingSession : T[lang].loadingBoards} />;
 
   return (
+    <ScoringContext.Provider value={{ pred: predScoring, exact: exactScoring, predMax }}>
     <UserCtx.Provider value={user}>
     <LangCtx.Provider value={lang}>
     <div style={{width:"100%",height:"100%",background:BG,display:"flex",flexDirection:"column",position:"relative",fontFamily:"-apple-system,'SF Pro Display',sans-serif",paddingTop:"env(safe-area-inset-top, 0px)",boxSizing:"border-box"}}>
@@ -9877,6 +10049,7 @@ function App() {
               ];
             })()}/>}
           {screen===SCREENS.INSTANT_PICK&&<InstantPickScreen
+            realStandings={realStandings}
             savedState={shouldStartAtKo
               ? {...(instantPickState||{}), stage:"ko", koRound:"R32", koIdx:0, showIntro:false, showFinalSummary:false, koShowIntro:true}
               : instantPickDone
@@ -10009,6 +10182,7 @@ function App() {
     </div>
     </LangCtx.Provider>
     </UserCtx.Provider>
+    </ScoringContext.Provider>
   );
 }
 

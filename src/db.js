@@ -117,6 +117,20 @@ export async function saveExactScore(userId, boardId, matchKey, home, away) {
   return { error: null }
 }
 
+export async function ensureBoardScores(userId, boardIds) {
+  const ids = [...new Set((Array.isArray(boardIds) ? boardIds : [boardIds]).filter(Boolean))]
+  if (!userId || ids.length === 0) return { error: null }
+  const { error } = await supabase.rpc('ensure_board_scores', {
+    p_user_id: userId,
+    p_board_ids: ids,
+  })
+  if (error) {
+    console.error('ensureBoardScores:', error)
+    return { error: error.message }
+  }
+  return { error: null }
+}
+
 export async function checkDbHealth() {
   const results = {}
   // Check matches table
@@ -130,10 +144,10 @@ export async function checkDbHealth() {
   // Check exact_scores table accessible
   const { error: scErr } = await supabase.from('exact_scores').select('id').limit(1)
   results.exactScoresTable = scErr ? { ok: false, error: scErr.message } : { ok: true }
-  // Check players table
-  const { error: plErr } = await supabase.from('players').select('id').limit(1)
+  // Check world cup football players table
+  const { error: plErr } = await supabase.from('world_cup_football_players').select('id').limit(1)
   results.playersTable = plErr ? { ok: false, error: plErr.message } : { ok: true }
-  const { count: playerCount } = await supabase.from('players').select('id', { count: 'exact', head: true })
+  const { count: playerCount } = await supabase.from('world_cup_football_players').select('id', { count: 'exact', head: true })
   results.playersTotal = playerCount ?? 0
   return results
 }
@@ -212,6 +226,7 @@ export async function createBoard(userId, { name, emoji, type, password, max_pla
   if (error) { console.error('createBoard:', error); return { error } }
   // Add creator to board_members so membership is tracked uniformly
   await supabase.from('board_members').upsert({ board_id: data.id, user_id: userId, role: 'admin' }, { onConflict: 'board_id,user_id' })
+  await ensureBoardScores(userId, [data.id])
   return { data: { ...data, label: data.emoji || '⚽', image_url: data.image_url || null, isGlobal: false, code: data.invite_code, isAdmin: true, isMember: true } }
 }
 
@@ -226,6 +241,7 @@ export async function joinBoardByCode(userId, code) {
     .from('board_members')
     .upsert({ board_id: board.id, user_id: userId, role: 'member' }, { onConflict: 'board_id,user_id' })
   if (joinErr) return { error: joinErr.message }
+  await ensureBoardScores(userId, [board.id])
   return { data: { ...board, label: board.emoji || '⚽', image_url: board.image_url || null, isGlobal: false } }
 }
 
@@ -253,6 +269,7 @@ export async function joinBoardById(userId, boardId) {
     .from('board_members')
     .upsert({ board_id: boardId, user_id: userId, role: 'member' }, { onConflict: 'board_id,user_id' })
   if (error) { console.error('joinBoardById:', error); return { error: error.message } }
+  await ensureBoardScores(userId, [boardId])
   return { data: true }
 }
 
@@ -396,7 +413,7 @@ export async function checkEmailExists(email) {
 // Prefers records seeded from API-Football (api_football_id IS NOT NULL) when available.
 export async function loadPlayers() {
   const { data, error } = await supabase
-    .from('players')
+    .from('world_cup_football_players')
     .select('team_name, player_name, position, shirt_number, photo_url, nationality, goals, assists, yellow_cards, red_cards, minutes_played, rating, appearances, api_football_id')
     .order('shirt_number', { ascending: true, nullsFirst: false })
   if (error) { console.error('loadPlayers:', error); return {} }
@@ -425,7 +442,7 @@ export async function loadPlayers() {
 // Players for a single team — loaded lazily when team is selected
 export async function loadPlayersByTeam(teamName) {
   const { data, error } = await supabase
-    .from('players')
+    .from('world_cup_football_players')
     .select('player_name, position, shirt_number, photo_url, nationality')
     .eq('team_name', teamName)
     .order('shirt_number', { ascending: true, nullsFirst: false })
@@ -442,7 +459,7 @@ export async function loadPlayersByTeam(teamName) {
 // Top scorers across all teams — sorted by goals desc, then assists desc
 export async function loadTopScorers(limit = 20) {
   const { data, error } = await supabase
-    .from('players')
+    .from('world_cup_football_players')
     .select('team_name, player_name, photo_url, nationality, position, goals, assists, yellow_cards, red_cards, minutes_played, rating, appearances')
     .not('api_football_id', 'is', null)
     .order('goals', { ascending: false })
@@ -492,6 +509,19 @@ export async function updatePlayerStats(date) {
   return data
 }
 
+// ─── REAL GROUP STANDINGS ────────────────────────────────────────────────────
+// Returns { "A": ["Mexico","South Africa",...], "B": [...], ... } sorted by rank
+export async function loadRealGroupStandings() {
+  const { data, error } = await supabase.rpc('get_group_standings')
+  if (error) { console.error('loadRealGroupStandings:', error); return {} }
+  const standings = {}
+  ;(data || []).forEach(row => {
+    if (!standings[row.group_id]) standings[row.group_id] = []
+    standings[row.group_id].push(row.team_name)
+  })
+  return standings
+}
+
 // ─── LIVE SCORES ──────────────────────────────────────────────────────────────
 export async function loadLiveScores() {
   const { data } = await supabase.from('live_scores').select('*')
@@ -499,9 +529,11 @@ export async function loadLiveScores() {
   ;(data || []).forEach(row => {
     result[row.match_key] = {
       status: row.status,
-      home:   row.home_score,
-      away:   row.away_score,
-      min:    row.live_min,
+      home:   row.regular_time_home_score,
+      away:   row.regular_time_away_score,
+      homePen: row.penalty_home_score,
+      awayPen: row.penalty_away_score,
+      min:    row.api_minute,
     }
   })
   return result

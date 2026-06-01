@@ -211,6 +211,34 @@ function findMatchKey(homeNorm: string, awayNorm: string): string | null {
   return null
 }
 
+// Pentru meciurile KO (echipe TBD în SCHEDULE), identificăm slotul după dată/oră
+function findKoMatchKey(utcDateStr: string): string | null {
+  if (!utcDateStr) return null
+  const matchDate = new Date(utcDateStr)
+  const dayNum = getDayNum(matchDate)
+  const slots = SCHEDULE[dayNum]
+  if (!slots) return null
+
+  const tbdSlots = slots.filter(s => s.home === 'TBD')
+  if (!tbdSlots.length) return null
+
+  const etMs = matchDate.getTime() - 4 * 60 * 60 * 1000
+  const et = new Date(etMs)
+  const matchMins = et.getUTCHours() * 60 + et.getUTCMinutes()
+
+  let best: typeof tbdSlots[0] | null = null
+  let bestDiff = Infinity
+  for (const slot of tbdSlots) {
+    const [h, mn] = slot.timeET.split(':').map(Number)
+    const diff = Math.abs(matchMins - (h * 60 + mn))
+    if (diff < bestDiff && diff <= 45) {
+      bestDiff = diff
+      best = slot
+    }
+  }
+  return best ? `${dayNum}-${best.idx}` : null
+}
+
 function normalizeTeam(name: string): string {
   return TEAM_NORM[name] ?? name
 }
@@ -221,6 +249,64 @@ function isCLFinalWindow(now: Date): boolean {
   if (y !== 2026 || mo !== 5 || d !== 30) return false
   const utcMins = now.getUTCHours() * 60 + now.getUTCMinutes()
   return utcMins >= 15 * 60 && utcMins <= 23 * 60   // 15:00–23:00 UTC (include extra time + penalties)
+}
+
+function mapMatchStatus(match: any, now: Date): string {
+  const rawStatus = match.status
+  const duration = match.score?.duration
+  const rawStatusText = String(rawStatus ?? '').toUpperCase()
+  const durationText = String(duration ?? '').toUpperCase()
+  const elapsed = match.utcDate
+    ? Math.floor((now.getTime() - new Date(match.utcDate).getTime()) / 60000)
+    : null
+
+  if (rawStatus === 'FINISHED' || rawStatus === 'AWARDED') return 'FT'
+  if (rawStatusText.includes('PEN') || durationText.includes('PEN') || (elapsed != null && elapsed >= 120 && rawStatus !== 'FINISHED')) return 'PEN'
+  if (rawStatusText.includes('EXTRA') || durationText.includes('EXTRA')) return 'ET'
+  if (rawStatus === 'PAUSED') return elapsed != null && elapsed >= 105 ? 'ET' : 'HT'
+  if (rawStatus === 'IN_PLAY') return elapsed != null && elapsed >= 105 ? 'ET' : 'LIVE'
+  return 'NS'
+}
+
+function getLiveMinute(match: any, status: string): number | null {
+  if (status !== 'LIVE' && status !== 'ET') return null
+
+  if (match.minute != null) return match.minute + (match.injuryTime ?? 0)
+  return null
+}
+
+function scorePair(score: any): { home: number; away: number } | null {
+  return score?.home != null && score?.away != null
+    ? { home: score.home, away: score.away }
+    : null
+}
+
+function getApiScore(match: any): { home: number | null; away: number | null } {
+  const score =
+    scorePair(match.score?.regularTime) ??
+    scorePair(match.score?.fullTime) ??
+    scorePair(match.score?.extraTime) ??
+    scorePair(match.score?.halfTime)
+
+  return { home: score?.home ?? null, away: score?.away ?? null }
+}
+
+function getPenaltyScore(match: any, mappedStatus: string): { home: number | null; away: number | null } {
+  const regular = scorePair(match.score?.regularTime)
+  const full = scorePair(match.score?.fullTime)
+
+  if (mappedStatus === 'FT' && regular && full && (full.home !== regular.home || full.away !== regular.away)) {
+    return {
+      home: Math.max(0, full.home - regular.home),
+      away: Math.max(0, full.away - regular.away),
+    }
+  }
+
+  const score =
+    scorePair(match.score?.penalties) ??
+    scorePair(match.score?.penaltyShootout)
+
+  return { home: score?.home ?? null, away: score?.away ?? null }
 }
 
 // ── Main handler ─────────────────────────────────────────────────────────────
@@ -237,7 +323,7 @@ Deno.serve(async () => {
     const { data: stillLive } = await supabase
       .from('live_scores')
       .select('match_key')
-      .eq('status', 'LIVE')
+      .in('status', ['LIVE', 'HT', 'ET', 'PEN'])
       .limit(1)
     if (!stillLive?.length) {
       return new Response(JSON.stringify({ skipped: true, reason: 'no active window' }), { status: 200 })
@@ -251,11 +337,15 @@ Deno.serve(async () => {
 
   const upserts: {
     match_key: string; status: string;
-    home_score: number | null; away_score: number | null;
-    live_min: number | null; updated_at: string;
+    regular_time_home_score: number | null; regular_time_away_score: number | null;
+    penalty_home_score: number | null; penalty_away_score: number | null;
+    raw_api_response: unknown;
+    api_minute: number | null; updated_at: string;
     first_half_start?: string | null;
     second_half_start?: string | null;
   }[] = []
+
+  const koTeamUpdates: { matchKey: string; home: string; away: string }[] = []
 
   // ── WC 2026 matches ────────────────────────────────────────────────────────
   if (inWCWindow || (dayNum >= 11)) {
@@ -271,32 +361,34 @@ Deno.serve(async () => {
       for (const m of apiMatches) {
         const homeNorm = normalizeTeam(m.homeTeam?.name ?? '')
         const awayNorm = normalizeTeam(m.awayTeam?.name ?? '')
-        const matchKey = findMatchKey(homeNorm, awayNorm)
-        if (!matchKey) continue
 
-        let status = 'NS'
-        if (m.status === 'FINISHED' || m.status === 'AWARDED') status = 'FT'
-        else if (m.status === 'PAUSED') status = 'HT'
-        else if (['IN_PLAY', 'EXTRA_TIME', 'PENALTY_SHOOTOUT'].includes(m.status)) status = 'LIVE'
+        let matchKey = findMatchKey(homeNorm, awayNorm)
 
-        const homeScore = m.score?.fullTime?.home ?? null
-        const awayScore = m.score?.fullTime?.away ?? null
-
-        let liveMin: number | null = null
-        if (status === 'LIVE') {
-          if (m.minute != null) {
-            liveMin = m.minute + (m.injuryTime ?? 0)
-          } else if (m.utcDate) {
-            liveMin = Math.max(1, Math.min(90, Math.floor((now.getTime() - new Date(m.utcDate).getTime()) / 60000)))
+        // Meci KO — echipele sunt TBD în SCHEDULE, identificăm după dată/oră
+        if (!matchKey && m.utcDate) {
+          const koKey = findKoMatchKey(m.utcDate)
+          if (koKey) {
+            matchKey = koKey
+            koTeamUpdates.push({ matchKey: koKey, home: homeNorm, away: awayNorm })
           }
         }
+
+        if (!matchKey) continue
+
+        const status = mapMatchStatus(m, now)
+        const apiScore = getApiScore(m)
+        const penaltyScore = getPenaltyScore(m, status)
+        const liveMin = getLiveMinute(m, status)
 
         upserts.push({
           match_key: matchKey,
           status,
-          home_score: homeScore,
-          away_score: awayScore,
-          live_min: liveMin,
+          regular_time_home_score: apiScore.home,
+          regular_time_away_score: apiScore.away,
+          penalty_home_score: penaltyScore.home,
+          penalty_away_score: penaltyScore.away,
+          raw_api_response: m,
+          api_minute: liveMin,
           updated_at: now.toISOString(),
         })
       }
@@ -319,44 +411,151 @@ Deno.serve(async () => {
       ) ?? clMatches[0]
 
       if (final) {
-        let clStatus = 'NS'
-        if (final.status === 'FINISHED' || final.status === 'AWARDED') clStatus = 'FT'
-        else if (final.status === 'PAUSED') clStatus = 'HT'
-        else if (['IN_PLAY', 'EXTRA_TIME', 'PENALTY_SHOOTOUT'].includes(final.status)) clStatus = 'LIVE'
+        const clStatus = mapMatchStatus(final, now)
 
-        const clHome = final.score?.fullTime?.home ?? final.score?.regularTime?.home ?? null
-        const clAway = final.score?.fullTime?.away ?? final.score?.regularTime?.away ?? null
+        const clScore = getApiScore(final)
+        const clPenaltyScore = getPenaltyScore(final, clStatus)
 
-        // Minute: use API value if available, else compute from elapsed time
-        let clMin: number | null = null
-        if (clStatus === 'HT') {
-          clMin = 45
-        } else if (clStatus === 'LIVE') {
-          if (final.minute != null) {
-            // API provides exact minute (+ injuryTime if in stoppage)
-            clMin = final.minute + (final.injuryTime ?? 0)
-          } else if (final.utcDate) {
-            const elapsed = Math.floor((now.getTime() - new Date(final.utcDate).getTime()) / 60000)
-            clMin = elapsed > 62 ? Math.max(46, elapsed - 24) : Math.max(1, Math.min(45, elapsed - 6))
-          }
-        }
+        const clMin = getLiveMinute(final, clStatus)
 
         upserts.push({
           match_key: '-1-0',
           status: clStatus,
-          home_score: clHome,
-          away_score: clAway,
-          live_min: clMin,
+          regular_time_home_score: clScore.home,
+          regular_time_away_score: clScore.away,
+          penalty_home_score: clPenaltyScore.home,
+          penalty_away_score: clPenaltyScore.away,
+          raw_api_response: final,
+          api_minute: clMin,
           updated_at: now.toISOString(),
         })
       }
     }
   }
 
+  // ── Actualizează team1_id / team2_id în matches pentru meciurile KO ─────────
+  for (const upd of koTeamUpdates) {
+    const { data: teamRows } = await supabase
+      .from('teams')
+      .select('id, name')
+      .in('name', [upd.home, upd.away])
+    if (!teamRows || teamRows.length < 2) continue
+    const t1 = teamRows.find((t: { id: string; name: string }) => t.name === upd.home)
+    const t2 = teamRows.find((t: { id: string; name: string }) => t.name === upd.away)
+    if (!t1 || !t2) continue
+    await supabase
+      .from('matches')
+      .update({ team1_id: t1.id, team2_id: t2.id })
+      .eq('match_key', upd.matchKey)
+      .is('team1_id', null)
+  }
+
   if (upserts.length) {
+    const scoreKeysToProtect = upserts
+      .filter(row =>
+        row.regular_time_home_score == null ||
+        row.regular_time_away_score == null ||
+        row.penalty_home_score != null ||
+        row.penalty_away_score != null
+      )
+      .map(row => row.match_key)
+
+    if (scoreKeysToProtect.length) {
+      const { data: previousScores } = await supabase
+        .from('live_scores')
+        .select('match_key, regular_time_home_score, regular_time_away_score, penalty_home_score, penalty_away_score')
+        .in('match_key', scoreKeysToProtect)
+
+      const previousByKey = new Map(
+        (previousScores ?? []).map((row: {
+          match_key: string;
+          regular_time_home_score: number | null;
+          regular_time_away_score: number | null;
+          penalty_home_score: number | null;
+          penalty_away_score: number | null;
+        }) => [row.match_key, row])
+      )
+
+      for (const row of upserts) {
+        const previous = previousByKey.get(row.match_key)
+        const hasApiPenalty = row.penalty_home_score != null || row.penalty_away_score != null
+        if (previous?.regular_time_home_score != null && previous?.regular_time_away_score != null) {
+          if (hasApiPenalty || row.regular_time_home_score == null || row.regular_time_away_score == null) {
+            row.regular_time_home_score = previous.regular_time_home_score
+            row.regular_time_away_score = previous.regular_time_away_score
+          }
+        }
+        if (previous?.penalty_home_score != null && previous?.penalty_away_score != null) {
+          row.penalty_home_score = previous.penalty_home_score
+          row.penalty_away_score = previous.penalty_away_score
+        }
+      }
+    }
+
     const { error } = await supabase.from('live_scores').upsert(upserts, { onConflict: 'match_key' })
     if (error) {
       return new Response(JSON.stringify({ error: error.message }), { status: 500 })
+    }
+
+    // ── Trigger apply_bracket_scores() când o grupă se termină ───────────────
+    // Luăm match_key-urile de grupă care sunt FT în acest poll
+    const ftGroupMatchKeys = upserts
+      .filter(u => u.status === 'FT')
+      .map(u => u.match_key)
+
+    if (ftGroupMatchKeys.length > 0) {
+      // Găsim group_id-urile afectate
+      const { data: ftGroupData } = await supabase
+        .from('matches')
+        .select('group_id')
+        .in('match_key', ftGroupMatchKeys)
+        .eq('stage', 'group')
+        .not('group_id', 'is', null)
+
+      const affectedGroups = [...new Set(
+        (ftGroupData ?? []).map((m: { group_id: string }) => m.group_id)
+      )]
+
+      for (const gid of affectedGroups) {
+        // Toate match_key-urile din grupa respectivă
+        const { data: groupKeys } = await supabase
+          .from('matches')
+          .select('match_key')
+          .eq('stage', 'group')
+          .eq('group_id', gid)
+
+        const allKeys = (groupKeys ?? []).map((m: { match_key: string }) => m.match_key)
+
+        // Câte sunt FT?
+        const { count: ftCount } = await supabase
+          .from('live_scores')
+          .select('match_key', { count: 'exact', head: true })
+          .in('match_key', allKeys)
+          .eq('status', 'FT')
+
+        if (ftCount === allKeys.length && allKeys.length > 0) {
+          // Toate meciurile din grupă terminate → aplicăm scorurile
+          await supabase.rpc('apply_bracket_scores')
+          await supabase.rpc('apply_exact_scores')
+          break // o singură dată per poll este suficient
+        }
+      }
+    }
+
+    // ── Trigger scoring după fiecare meci FT (grupă sau KO) ──────────────────
+    const hasNewFt = upserts.some(u => u.status === 'FT')
+    const hasNewKoFt = upserts.some(u => {
+      if (u.status !== 'FT') return false
+      const dayNum = parseInt(u.match_key.split('-')[0], 10)
+      return dayNum >= 28 // meciurile KO încep din ziua 28
+    })
+
+    if (hasNewKoFt) {
+      await supabase.rpc('apply_bracket_scores')
+    }
+
+    if (hasNewFt) {
+      await supabase.rpc('apply_exact_scores')
     }
   }
 

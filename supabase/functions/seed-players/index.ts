@@ -1,6 +1,6 @@
 // Edge Function: seed-players
 // One-time (or manual refresh) call — fetches all WC 2026 squads from
-// football-data.org and upserts them into the public.players table.
+// football-data.org and upserts them into the public.world_cup_football_players table.
 // Trigger from Supabase Dashboard → Edge Functions → seed-players → Invoke,
 // or from the Admin panel in the app.
 
@@ -155,14 +155,14 @@ Deno.serve(async () => {
 
   if (withId.length) {
     const { error, count } = await supabase
-      .from('players')
+      .from('world_cup_football_players')
       .upsert(withId, { onConflict: 'api_id' })
     if (error) { lastError = error.message } else { totalSaved += withId.length }
   }
 
   if (withoutId.length) {
     const { error } = await supabase
-      .from('players')
+      .from('world_cup_football_players')
       .upsert(withoutId, { onConflict: 'team_name,player_name' })
     if (error) { lastError = lastError ?? error.message } else { totalSaved += withoutId.length }
   }

@@ -78,12 +78,12 @@ Deno.serve(async (req) => {
     )
   }
 
-  // Paginate through players table — PostgREST server cap is 1000 rows per request
+  // Paginate through world_cup_football_players table — PostgREST server cap is 1000 rows per request
   const seededNames = new Set<string>()
   let totalRows = 0
   for (let from = 0; ; from += 1000) {
     const { data: page } = await supabase
-      .from('players')
+      .from('world_cup_football_players')
       .select('team_name')
       .range(from, from + 999)
     if (!page || page.length === 0) break
@@ -158,7 +158,7 @@ Deno.serve(async (req) => {
   let dbError: string | null = null
   if (upserts.length > 0) {
     const { error } = await supabase
-      .from('players')
+      .from('world_cup_football_players')
       .upsert(upserts, { onConflict: 'api_football_id' })
     if (error) dbError = error.message
   }

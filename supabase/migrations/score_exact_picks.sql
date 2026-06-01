@@ -2,13 +2,7 @@
 -- score_exact_picks()
 -- Calculează punctele pentru exact score predictions și actualizează board_scores.
 -- Rulează DUPĂ ce live_scores are status='FT' pentru meciurile jucate.
---
--- Logica:
---   group stage  → scor exact: 90 pts | rezultat corect: 30 pts
---   r16          → câștigător corect: 40 pts
---   qf           → câștigător corect: 60 pts
---   sf           → câștigător corect: 90 pts
---   final/UCL    → câștigător corect: 120 pts | scor exact: +50 pts bonus
+-- Punctajul e citit din tabela scoring_rules (type='exact_score').
 -- ─────────────────────────────────────────────────────────────────────────────
 create or replace function public.score_exact_picks()
 returns table(
@@ -21,7 +15,33 @@ returns table(
   pts         int
 )
 language plpgsql security definer as $$
+declare
+  v_group_result      int;
+  v_group_exact       int;
+  v_r32_result        int;
+  v_r32_exact_bonus   int;
+  v_r16_result        int;
+  v_r16_exact_bonus   int;
+  v_qf_result         int;
+  v_qf_exact_bonus    int;
+  v_sf_result         int;
+  v_sf_exact_bonus    int;
+  v_final_result      int;
+  v_final_exact_bonus int;
 begin
+  select points into strict v_group_result      from public.scoring_rules where type='exact_score' and phase='group_result';
+  select points into strict v_group_exact       from public.scoring_rules where type='exact_score' and phase='group_exact';
+  select points into strict v_r32_result        from public.scoring_rules where type='exact_score' and phase='r32_result';
+  select points into strict v_r32_exact_bonus   from public.scoring_rules where type='exact_score' and phase='r32_exact_bonus';
+  select points into strict v_r16_result        from public.scoring_rules where type='exact_score' and phase='r16_result';
+  select points into strict v_r16_exact_bonus   from public.scoring_rules where type='exact_score' and phase='r16_exact_bonus';
+  select points into strict v_qf_result         from public.scoring_rules where type='exact_score' and phase='qf_result';
+  select points into strict v_qf_exact_bonus    from public.scoring_rules where type='exact_score' and phase='qf_exact_bonus';
+  select points into strict v_sf_result         from public.scoring_rules where type='exact_score' and phase='sf_result';
+  select points into strict v_sf_exact_bonus    from public.scoring_rules where type='exact_score' and phase='sf_exact_bonus';
+  select points into strict v_final_result      from public.scoring_rules where type='exact_score' and phase='final_result';
+  select points into strict v_final_exact_bonus from public.scoring_rules where type='exact_score' and phase='final_exact_bonus';
+
   return query
   with results as (
     select
@@ -29,44 +49,51 @@ begin
       es.board_id,
       m.match_key,
       m.stage,
-      es.team1_score  as pred_home,
-      es.team2_score  as pred_away,
-      ls.home_score   as real_home,
-      ls.away_score   as real_away,
-      -- Rezultat prezis
+      es.team1_score as pred_home,
+      es.team2_score as pred_away,
+      ls.regular_time_home_score as real_home,
+      ls.regular_time_away_score as real_away,
       case when es.team1_score > es.team2_score then 'H'
            when es.team1_score < es.team2_score then 'A'
            else 'D' end as pred_result,
-      -- Rezultat real
-      case when ls.home_score > ls.away_score then 'H'
-           when ls.home_score < ls.away_score then 'A'
+      case when ls.regular_time_home_score > ls.regular_time_away_score then 'H'
+           when ls.regular_time_home_score < ls.regular_time_away_score then 'A'
            else 'D' end as real_result
     from exact_scores es
     join matches m on m.id = es.match_id
     join live_scores ls on ls.match_key = m.match_key
     where ls.status = 'FT'
-      and ls.home_score is not null
-      and ls.away_score is not null
+      and ls.regular_time_home_score is not null
+      and ls.regular_time_away_score is not null
   ),
   scored as (
     select
       r.*,
       case
-        -- Group stage: scor exact = 90, rezultat corect = 30
-        when r.stage = 'group' and r.pred_home = r.real_home and r.pred_away = r.real_away then 90
-        when r.stage = 'group' and r.pred_result = r.real_result then 30
-        -- Round of 16: câștigător + bonus scor exact
-        when r.stage = 'r16' and r.pred_result = r.real_result and r.pred_home = r.real_home and r.pred_away = r.real_away then 40 + 20
-        when r.stage = 'r16' and r.pred_result = r.real_result then 40
-        -- QF
-        when r.stage = 'qf' and r.pred_result = r.real_result and r.pred_home = r.real_home and r.pred_away = r.real_away then 60 + 30
-        when r.stage = 'qf' and r.pred_result = r.real_result then 60
-        -- SF
-        when r.stage = 'sf' and r.pred_result = r.real_result and r.pred_home = r.real_home and r.pred_away = r.real_away then 90 + 40
-        when r.stage = 'sf' and r.pred_result = r.real_result then 90
-        -- Final / UCL Final: câștigător 120 pts, scor exact bonus +50
-        when r.stage in ('final', 'UCL Final') and r.pred_result = r.real_result and r.pred_home = r.real_home and r.pred_away = r.real_away then 120 + 50
-        when r.stage in ('final', 'UCL Final') and r.pred_result = r.real_result then 120
+        when r.stage = 'group' and r.pred_home = r.real_home and r.pred_away = r.real_away
+          then v_group_exact
+        when r.stage = 'group' and r.pred_result = r.real_result
+          then v_group_result
+        when r.stage = 'r32' and r.pred_result = r.real_result and r.pred_home = r.real_home and r.pred_away = r.real_away
+          then v_r32_result + v_r32_exact_bonus
+        when r.stage = 'r32' and r.pred_result = r.real_result
+          then v_r32_result
+        when r.stage = 'r16' and r.pred_result = r.real_result and r.pred_home = r.real_home and r.pred_away = r.real_away
+          then v_r16_result + v_r16_exact_bonus
+        when r.stage = 'r16' and r.pred_result = r.real_result
+          then v_r16_result
+        when r.stage = 'qf' and r.pred_result = r.real_result and r.pred_home = r.real_home and r.pred_away = r.real_away
+          then v_qf_result + v_qf_exact_bonus
+        when r.stage = 'qf' and r.pred_result = r.real_result
+          then v_qf_result
+        when r.stage = 'sf' and r.pred_result = r.real_result and r.pred_home = r.real_home and r.pred_away = r.real_away
+          then v_sf_result + v_sf_exact_bonus
+        when r.stage = 'sf' and r.pred_result = r.real_result
+          then v_sf_result
+        when r.stage in ('final', 'UCL Final') and r.pred_result = r.real_result and r.pred_home = r.real_home and r.pred_away = r.real_away
+          then v_final_result + v_final_exact_bonus
+        when r.stage in ('final', 'UCL Final') and r.pred_result = r.real_result
+          then v_final_result
         else 0
       end as pts_earned
     from results r
@@ -87,38 +114,25 @@ $$;
 -- ─────────────────────────────────────────────────────────────────────────────
 -- apply_exact_scores()
 -- Aplică rezultatele din score_exact_picks() în board_scores.
--- Rulează o singură dată după meci sau după fiecare meci important.
 -- ─────────────────────────────────────────────────────────────────────────────
 create or replace function public.apply_exact_scores()
 returns void language plpgsql security definer as $$
 begin
-  -- Calculează punctele și agregă per (user, board)
   with pts_per_user as (
     select user_id, board_id, sum(pts) as earned
     from public.score_exact_picks()
     group by user_id, board_id
   )
-  insert into board_scores (user_id, board_id, exact_pts, pred_pts, total_pts, updated_at)
-  select
-    p.user_id,
-    p.board_id,
-    p.earned,
-    0,
-    p.earned,
-    now()
+  insert into public.board_scores (user_id, board_id, exact_pts, pred_pts, updated_at)
+  select p.user_id, p.board_id, p.earned, 0, now()
   from pts_per_user p
   on conflict (user_id, board_id) do update
-    set exact_pts = excluded.exact_pts,
-        total_pts = board_scores.pred_pts + excluded.exact_pts,
+    set exact_pts  = excluded.exact_pts,
         updated_at = now();
 end;
 $$;
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- Preview: ce puncte ar primi fiecare user dacă s-ar rula acum
--- (fără să modifice nimic în DB)
--- select * from score_exact_picks();
---
--- Aplică efectiv punctele:
--- select apply_exact_scores();
+-- Preview (fără modificări în DB):  select * from score_exact_picks();
+-- Aplică efectiv:                   select apply_exact_scores();
 -- ─────────────────────────────────────────────────────────────────────────────

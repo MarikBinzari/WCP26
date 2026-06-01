@@ -29,7 +29,7 @@ export default defineConfig({
       manifest: false, // folosim manifest.json existent din /public
     }),
   ],
-  server: { host: true, port: 5175 },
+  server: { host: true, port: 5174 },
   build: {
     assetsInlineLimit: 4096,
     rollupOptions: {
