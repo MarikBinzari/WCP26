@@ -7019,7 +7019,6 @@ function LoginScreen({ onNext, onBack }) {
   const [captchaSolved, setCaptchaSolved] = useState(!CAPTCHA_ENABLED);
   const [captchaToken, setCaptchaToken] = useState(null);
   const [nicknameError, setNicknameError] = useState("");
-  const [nicknameChecking, setNicknameChecking] = useState(false);
 
   const handleNicknameChange = (val) => {
     setNickname(val);
@@ -7029,14 +7028,6 @@ function LoginScreen({ onNext, onBack }) {
     } else {
       setNicknameError("");
     }
-  };
-
-  const handleNicknameBlur = async (val) => {
-    if (!val.trim() || !/^[a-zA-Z]/.test(val.trim())) return;
-    setNicknameChecking(true);
-    const taken = await checkNicknameExists(val.trim());
-    setNicknameChecking(false);
-    if (taken) setNicknameError(T[lang].errNicknameTaken);
   };
   const [showPwd, setShowPwd] = useState(false);
   const [sentFrom, setSentFrom] = useState("");
@@ -7093,6 +7084,8 @@ function LoginScreen({ onNext, onBack }) {
     if (nicknameError) { setError(nicknameError); return; }
     if (password.length < 6) { setError(T[lang].errPasswordMin6); return; }
     setLoading(true); setError("");
+    const nickTaken = await checkNicknameExists(nickname.trim());
+    if (nickTaken) { setLoading(false); setError(T[lang].errNicknameTaken); resetLoginCaptcha(); return; }
     const { error: otpErr } = await supabase.auth.signUp({
       email: email.trim(), password,
       options: { data: { full_name: nickname.trim(), lang }, emailRedirectTo: window.location.origin, ...(captchaToken && { captchaToken }) }
@@ -7109,6 +7102,8 @@ function LoginScreen({ onNext, onBack }) {
     if (nicknameError) { setError(nicknameError); return; }
     if (password.length < 6) { setError(T[lang].errPasswordMin6); return; }
     setLoading(true); setError("");
+    const nickTaken = await checkNicknameExists(nickname.trim());
+    if (nickTaken) { setLoading(false); setError(T[lang].errNicknameTaken); resetLoginCaptcha(); return; }
     const { error: err } = await supabase.auth.signUp({
       email: email.trim(), password,
       options: { data: { full_name: nickname.trim(), lang }, emailRedirectTo: window.location.origin, ...(captchaToken && { captchaToken }) }
@@ -7163,10 +7158,8 @@ function LoginScreen({ onNext, onBack }) {
         <div style={{background:"#fff",borderRadius:14,boxShadow:"0 8px 22px rgba(0,0,0,0.07)",padding:"14px 16px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
           <span style={{fontSize:15}}>👤</span>
           <input value={nickname} onChange={e=>handleNicknameChange(e.target.value)}
-            onBlur={e=>handleNicknameBlur(e.target.value)}
             placeholder={T[lang].nicknamePlaceholder} type="text" autoCapitalize="words"
             style={{flex:1,border:"none",outline:"none",fontSize:15,color:DARK,background:"transparent"}}/>
-          {nicknameChecking&&<span style={{fontSize:11,color:"#9CA3AF"}}>…</span>}
         </div>
         {nicknameError&&<p style={{fontSize:12,color:RED,margin:"-6px 0 8px",paddingLeft:4}}>{nicknameError}</p>}
         {CAPTCHA_ENABLED && email.trim() && password.length >= 6 && nickname.trim() && !nicknameError && !captchaSolved && (
@@ -7264,10 +7257,8 @@ function LoginScreen({ onNext, onBack }) {
         <div style={{background:"#fff",borderRadius:14,boxShadow:"0 8px 22px rgba(0,0,0,0.07)",padding:"14px 16px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
           <span style={{fontSize:15}}>👤</span>
           <input value={nickname} onChange={e=>handleNicknameChange(e.target.value)}
-            onBlur={e=>handleNicknameBlur(e.target.value)}
             placeholder={T[lang].nicknamePlaceholder} type="text" autoCapitalize="words"
             style={{flex:1,border:"none",outline:"none",fontSize:15,color:DARK,background:"transparent"}}/>
-          {nicknameChecking&&<span style={{fontSize:11,color:"#9CA3AF"}}>…</span>}
         </div>
         {nicknameError&&<p style={{fontSize:12,color:RED,margin:"-6px 0 8px",paddingLeft:4}}>{nicknameError}</p>}
 
