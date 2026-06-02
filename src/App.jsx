@@ -9,7 +9,7 @@ import specialPickBadge from "./assets/special-pick-badge.webp";
 import bellIcon from "./assets/bell-icon.svg";
 import { ALL_GROUPS_DATA, FLAGS, TEAM_COLORS, CALENDAR_EVENTS, CL_FINAL } from "./data/worldcup2026.js";
 import { supabase } from "./supabase.js";
-import { savePredictions, saveExactScore, createBoard, joinBoardByCode, joinBoardById, ensureBoardScores, loadLeaderboard, loadMyScoreBreakdown, fetchScoringRules, fetchMemberCounts, removeBoardMember, removeParticipation, deleteBoard, loadBoardMembers, checkDbHealth, checkEmailExists, loadLiveScores, subscribeLiveScores, loadPlayers, loadPlayersByTeam, seedPlayersFromApi, saveSpecialPick, uploadAvatar, uploadBoardImage, loadAllBoards, loadAllUserPicks, loadNotifReads, markNotifRead, loadSystemNotifications, loadRealGroupStandings, loadUserBreakdown } from "./db.js";
+import { savePredictions, saveExactScore, createBoard, joinBoardByCode, joinBoardById, ensureBoardScores, loadLeaderboard, loadMyScoreBreakdown, fetchScoringRules, fetchMemberCounts, removeBoardMember, removeParticipation, deleteBoard, loadBoardMembers, checkDbHealth, checkEmailExists, checkNicknameExists, loadLiveScores, subscribeLiveScores, loadPlayers, loadPlayersByTeam, seedPlayersFromApi, saveSpecialPick, uploadAvatar, uploadBoardImage, loadAllBoards, loadAllUserPicks, loadNotifReads, markNotifRead, loadSystemNotifications, loadRealGroupStandings, loadUserBreakdown } from "./db.js";
 
 const TEAM_CODE = {"Mexico":"MEX","South Africa":"RSA","South Korea":"KOR","Czechia":"CZE","Canada":"CAN","Switzerland":"SUI","Qatar":"QAT","Bosnia-Herzegovina":"BIH","Brazil":"BRA","Morocco":"MAR","Scotland":"SCO","Haiti":"HAI","USA":"USA","Paraguay":"PAR","Australia":"AUS","Turkiye":"TUR","Germany":"GER","Ecuador":"ECU","Ivory Coast":"CIV","Curacao":"CUW","Netherlands":"NED","Japan":"JPN","Tunisia":"TUN","Sweden":"SWE","Belgium":"BEL","Iran":"IRI","Egypt":"EGY","New Zealand":"NZL","Spain":"ESP","Uruguay":"URU","Saudi Arabia":"KSA","Cape Verde":"CPV","France":"FRA","Senegal":"SEN","Norway":"NOR","Iraq":"IRQ","Argentina":"ARG","Austria":"AUT","Algeria":"ALG","Jordan":"JOR","Portugal":"POR","Colombia":"COL","Uzbekistan":"UZB","DR Congo":"COD","England":"ENG","Croatia":"CRO","Panama":"PAN","Ghana":"GHA"};
 
@@ -337,7 +337,7 @@ const T = {
     errEnterEmail:"Enter your email address.", errEnterPassword:"Enter your password.",
     errWrongPassword:"Wrong password. Try again or reset it.",
     errUnexpected:"Unexpected error. Try again.",
-    errChooseNickname:"Choose a nickname.",
+    errChooseNickname:"Choose a nickname.", errNicknameLetter:"Nickname must start with a letter.", errNicknameTaken:"This nickname is already taken.",
     errPasswordMin6:"Password must be at least 6 characters.",
     errSendFailed:"Error sending. Try again.",
     errPasswordsMismatch:"Passwords don't match.",
@@ -516,7 +516,7 @@ const T = {
     errEnterEmail:"Introdu adresa de email.", errEnterPassword:"Introdu parola.",
     errWrongPassword:"Parolă incorectă. Încearcă din nou sau resetează parola.",
     errUnexpected:"Eroare neașteptată. Încearcă din nou.",
-    errChooseNickname:"Alege un nickname.",
+    errChooseNickname:"Alege un nickname.", errNicknameLetter:"Nickname-ul trebuie să înceapă cu o literă.", errNicknameTaken:"Nickname-ul este deja folosit.",
     errPasswordMin6:"Parola trebuie să aibă minim 6 caractere.",
     errSendFailed:"Eroare la trimitere. Încearcă din nou.",
     errPasswordsMismatch:"Parolele nu coincid.",
@@ -695,7 +695,7 @@ const T = {
     errEnterEmail:"Entrez votre adresse email.", errEnterPassword:"Entrez votre mot de passe.",
     errWrongPassword:"Mot de passe incorrect. Réessayez ou réinitialisez-le.",
     errUnexpected:"Erreur inattendue. Réessayez.",
-    errChooseNickname:"Choisissez un pseudo.",
+    errChooseNickname:"Choisissez un pseudo.", errNicknameLetter:"Le pseudo doit commencer par une lettre.", errNicknameTaken:"Ce pseudo est déjà utilisé.",
     errPasswordMin6:"Le mot de passe doit comporter au moins 6 caractères.",
     errSendFailed:"Erreur d'envoi. Réessayez.",
     errPasswordsMismatch:"Les mots de passe ne correspondent pas.",
@@ -7070,8 +7070,11 @@ function LoginScreen({ onNext, onBack }) {
 
   const handleCreateAccount = async () => {
     if (!nickname.trim()) { setError(T[lang].errChooseNickname); return; }
+    if (!/^[a-zA-Z]/.test(nickname.trim())) { setError(T[lang].errNicknameLetter); return; }
     if (password.length < 6) { setError(T[lang].errPasswordMin6); return; }
     setLoading(true); setError("");
+    const nickTaken = await checkNicknameExists(nickname.trim());
+    if (nickTaken) { setLoading(false); setError(T[lang].errNicknameTaken); return; }
     const { error: otpErr } = await supabase.auth.signUp({
       email: email.trim(), password,
       options: { data: { full_name: nickname.trim(), lang }, emailRedirectTo: window.location.origin, ...(captchaToken && { captchaToken }) }
@@ -7085,8 +7088,11 @@ function LoginScreen({ onNext, onBack }) {
   const handleSignup = async () => {
     if (!email.trim()) { setError(T[lang].errEnterEmail); return; }
     if (!nickname.trim()) { setError(T[lang].errChooseNickname); return; }
+    if (!/^[a-zA-Z]/.test(nickname.trim())) { setError(T[lang].errNicknameLetter); return; }
     if (password.length < 6) { setError(T[lang].errPasswordMin6); return; }
     setLoading(true); setError("");
+    const nickTaken = await checkNicknameExists(nickname.trim());
+    if (nickTaken) { setLoading(false); setError(T[lang].errNicknameTaken); return; }
     const { error: err } = await supabase.auth.signUp({
       email: email.trim(), password,
       options: { data: { full_name: nickname.trim(), lang }, emailRedirectTo: window.location.origin, ...(captchaToken && { captchaToken }) }

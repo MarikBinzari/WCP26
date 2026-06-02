@@ -407,6 +407,17 @@ export async function checkEmailExists(email) {
   } catch { return null; }
 }
 
+export async function checkNicknameExists(nickname) {
+  try {
+    const { data } = await supabase
+      .from('profiles')
+      .select('id')
+      .ilike('display_name', nickname.trim())
+      .maybeSingle();
+    return !!data;
+  } catch { return false; }
+}
+
 // ─── PLAYERS ─────────────────────────────────────────────────────────────────
 // Returns { [teamName]: [{name, position, number, photo, nationality, goals, assists, yellowCards, redCards, minutesPlayed, rating, appearances}, ...] }
 // Sorted by shirt number ascending (nulls last).
