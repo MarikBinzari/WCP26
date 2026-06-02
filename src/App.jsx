@@ -48,6 +48,7 @@ const SCREENS = {
   NOTIFICATIONS:"notifications",
   PREMIUM:"premium",
   CHAMPION:"champion",
+  BOOSTER:"booster",
 };
 
 const INITIAL_BOARDS = [{ id:"global", label:"🌍", name:"Global League", members:48291, isGlobal:true }];
@@ -4596,6 +4597,33 @@ function PaniniCard({ player, teamName, isSelected, onClick }) {
   );
 }
 
+function BoosterScreen({ onBack }) {
+  const lang = useLang();
+  return (
+    <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",position:"relative"}}>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.055,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
+
+      {/* Navy header */}
+      <div style={{background:"rgba(0,32,91,0.88)",flexShrink:0,position:"relative",zIndex:1,overflow:"hidden"}}>
+        <img src={trophy} alt="" style={{position:"absolute",right:-10,top:-18,height:130,opacity:0.13,pointerEvents:"none",filter:"grayscale(0.3) contrast(1.2)"}}/>
+        <div style={{position:"relative",zIndex:1}}>
+          <div style={{display:"flex",alignItems:"center",gap:10,padding:"28px 14px 28px"}}>
+            <button onClick={onBack} style={{background:"rgba(255,255,255,0.12)",border:"none",borderRadius:10,width:34,height:34,color:"#fff",fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>‹</button>
+            <div style={{flex:1,textAlign:"center"}}>
+              <div style={{fontSize:18,fontWeight:800,color:"#fff"}}>⚡ Booster</div>
+            </div>
+            <div style={{width:34,flexShrink:0}}/>
+          </div>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",padding:"24px 18px 100px",position:"relative",zIndex:1}}>
+      </div>
+    </div>
+  );
+}
+
 function ChampionScreen({ onBack, initialMode="champion", championPick, topScorerPick, setChampionPick, setTopScorerPick, showToast, simDay=null, simHour=12, simMin=0 }) {
   const lang = useLang();
   const allTeams = Object.values(ALL_GROUPS_DATA).flat();
@@ -4958,13 +4986,11 @@ function ChampionScreen({ onBack, initialMode="champion", championPick, topScore
 }
 
 // module-level sets — persist across HomeScreen remounts
-const _champNotDone = new Set();   const _champScrolled = new Set();
-const _tsNotDone = new Set();      const _tsScrolled = new Set();
 const _pickNotDone = new Set();    const _pickScrolled = new Set();
 const _exNotDone = new Set();      const _exScrolled = new Set();
 
 // ── HOME ────────────────────────────────────────────────────────────────────
-function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateBoard, onOpenGroups, onCopyPredictions, onCopyExactScores, onCopySpecial, onAccount, onNotifications, onChampion, myBoards, predictionsComplete, instantPickDone, koPickDone, koUnlocked, exactScores, activeBoardId, setActiveBoardId, tournamentStarted, simDay, simHour, simMin, createdBoards=[], showFirstAction, leaderboardData={}, boardsLoading=false, predictionsLoaded={}, championPick=null, topScorerPick=null, setChampionPick=()=>{}, setTopScorerPick=()=>{}, myScoreBreakdown=null, hasUnread=false }) {
+function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateBoard, onOpenGroups, onCopyPredictions, onCopyExactScores, onCopySpecial, onAccount, onNotifications, onChampion, onBooster, myBoards, predictionsComplete, instantPickDone, koPickDone, koUnlocked, exactScores, activeBoardId, setActiveBoardId, tournamentStarted, simDay, simHour, simMin, createdBoards=[], showFirstAction, leaderboardData={}, boardsLoading=false, predictionsLoaded={}, championPick=null, topScorerPick=null, setChampionPick=()=>{}, setTopScorerPick=()=>{}, myScoreBreakdown=null, hasUnread=false }) {
   const lang = useLang();
   const user = useUser();
   const displayName = useDisplayName();
@@ -4979,8 +5005,6 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
   const [sliderPos, setSliderPos] = useState(()=>Math.max(0,myBoards.findIndex(b=>b.id===activeBoardId)));
   const sliderTouchRef = useRef(null);
   const scrollContainerRef = useRef(null);
-  const scorerRowRef = useRef(null);
-  const predPathRef = useRef(null);
   const exactScoreRef = useRef(null);
   const moreToComeRef = useRef(null);
   useEffect(()=>{
@@ -5047,8 +5071,6 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
   const _deadlinePassed = simDay ? (simDay > 11 || (simDay === 11 && (simHour||0) >= 19)) : new Date() >= new Date(2026,5,11,19,0,0);
   const _boardDone = _deadlinePassed ? (instantPickDone || predictionsComplete[activeId]) : instantPickDone;
   const allTasksDone = _boardDone && (!koUnlocked || koPickDone);
-  const champDone = !!championPick;
-  const tsDone = !!(topScorerPick?.player);
   const scrollTo = (ref) => {
     const el = ref.current;
     const container = scrollContainerRef.current;
@@ -5056,18 +5078,6 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
     const diff = el.getBoundingClientRect().top - container.getBoundingClientRect().top;
     container.scrollBy({ top: diff - 12, behavior: 'smooth' });
   };
-  useEffect(()=>{
-    if(!champDone){ _champNotDone.add(activeId); return; }
-    if(!_champNotDone.has(activeId)||_champScrolled.has(activeId)) return;
-    _champScrolled.add(activeId);
-    setTimeout(()=>scrollTo(scorerRowRef), 600);
-  },[champDone,activeId]);
-  useEffect(()=>{
-    if(!tsDone){ _tsNotDone.add(activeId); return; }
-    if(!_tsNotDone.has(activeId)||_tsScrolled.has(activeId)) return;
-    _tsScrolled.add(activeId);
-    setTimeout(()=>scrollTo(predPathRef), 600);
-  },[tsDone,activeId]);
   useEffect(()=>{
     if(!instantPickDone){ _pickNotDone.add(activeId); return; }
     if(!_pickNotDone.has(activeId)||_pickScrolled.has(activeId)) return;
@@ -5089,13 +5099,9 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
     : exactWeekStart===15 ? _exSimNow >= _exJune(14)
     : exactWeekStart===22 ? _exSimNow >= _exJune(21)
     : _exSimNow >= _exJune(28);
-  const _specialPhase1Locked = _exSimNow >= new Date(2026,5,11,19,0,0);
-  const _specialPhase2Open   = _exSimNow >= new Date(2026,5,27,21,0,0);
-  const specialLocked = _specialPhase1Locked && !_specialPhase2Open;
   const nextTask =
-    (!specialLocked && (!champDone || !tsDone)) ? 0 :
-    !_boardDone ? 1 :
-    (!exactWeekDone && exactWeekUnlocked) ? 2 :
+    !_boardDone ? 0 :
+    (!exactWeekDone && exactWeekUnlocked) ? 1 :
     null;
   const exKey = `${activeId}-${exactWeekStart}`;
   useEffect(()=>{
@@ -5228,96 +5234,6 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
         <div style={{position:"relative",borderRadius:18,padding:"14px 0 14px",flex:1}}>
           <div style={{position:"absolute",inset:0,borderRadius:18,background:"rgba(255,255,255,0.15)",WebkitMaskImage:"linear-gradient(to bottom,black 0%,black 55%,transparent 100%)",maskImage:"linear-gradient(to bottom,black 0%,black 55%,transparent 100%)",pointerEvents:"none"}}/>
           <div style={{position:"relative",zIndex:1}}>
-        {/* Card 0 — Champion & Top Score (teaser) */}
-        {(()=>{
-          const champDone = !!championPick;
-          const tsDone = !!(topScorerPick?.player);
-          const tCode = (t) => TEAM_CODE[t]||t.slice(0,3).toUpperCase();
-          const allDone = champDone && tsDone;
-          const doneCount = (champDone?1:0) + (tsDone?1:0);
-          const simNowHome = simDay ? new Date(2026,5,simDay,simHour||12,simMin||0,0) : new Date();
-          const specialPhase1Locked = simNowHome >= new Date(2026,5,11,19,0,0);
-          const specialPhase2Open   = simNowHome >= new Date(2026,5,27,21,0,0);
-          const specialLocked = specialPhase1Locked && !specialPhase2Open;
-          const taskRow = ({ icon, title, value, meta, done, mode }) => (
-            <button onClick={e=>{e.stopPropagation();onChampion(mode);}}
-              style={{width:"100%",border:"none",background:"transparent",padding:"8px 0",display:"flex",alignItems:"center",gap:10,cursor:"pointer",WebkitTapHighlightColor:"transparent",textAlign:"left"}}>
-              <span style={{width:18,height:18,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,lineHeight:1,flexShrink:0}}>{icon}</span>
-              <div style={{flex:1,minWidth:0}}>
-                <div style={{display:"flex",alignItems:"center",gap:6}}>
-                  <span style={{fontSize:12,fontWeight:700,color:specialLocked?"#9CA3AF":DARK,whiteSpace:"nowrap"}}>{title}</span>
-                </div>
-                <div style={{fontSize:11,color:specialLocked?"#C0C8D8":done?GREEN:"#9CA3AF",fontWeight:done?600:500,marginTop:1,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
-                  {specialLocked ? T[lang].lockedUntilJun27 : value}
-                </div>
-                {meta&&<div style={{fontSize:10,color:"#C0C8D8",fontWeight:700,letterSpacing:0.4,marginTop:1,textTransform:"uppercase"}}>{meta}</div>}
-              </div>
-              <div style={{display:"flex",alignItems:"center",gap:5,flexShrink:0}}>
-                {done && !specialLocked ? (<>
-                  <span style={{fontSize:11,fontWeight:600,color:GREEN,opacity:0.8}}>{T[lang].done}</span>
-                  <button onClick={e=>{e.stopPropagation();setCopyDone({});setShowCopySheet(mode);}} style={{cursor:"pointer",opacity:0.55,width:9,height:9,display:"flex",alignItems:"center",border:"none",background:"transparent",padding:0,flexShrink:0}}>
-                    <svg width="9" height="9" viewBox="0 0 14 14" fill="none"><rect x="4" y="4" width="8" height="8" rx="1.5" stroke={DARK} strokeWidth="1.8"/><path d="M2 10V2h8" stroke={DARK} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                  </button>
-                </>) : (
-                  <span style={{fontSize:18,color:"#C0C8D8",fontWeight:700,lineHeight:1}}>›</span>
-                )}
-              </div>
-            </button>
-          );
-          return (<>
-            <div style={{margin:"0 2px 6px"}}>
-              <p style={homeSectionLabelStyle}>{T[lang].specialPick}</p>
-            </div>
-            <button onClick={()=>onChampion(!champDone?"champion":!tsDone?"scorer":"champion")} style={{display:"block",width:"100%",textAlign:"left",...homeTaskCardStyle,marginBottom:6,cursor:"pointer",WebkitTapHighlightColor:"transparent",fontFamily:"inherit",...(nextTask===0?{border:"1.5px solid rgba(10,46,138,0.15)",animation:"cardHighlight 1s ease-out 1 forwards"}:{})}}>
-              {nextTask===0&&<div style={{fontSize:9,fontWeight:800,color:"rgba(10,46,138,0.45)",letterSpacing:1.5,textTransform:"uppercase",marginBottom:5,textAlign:"center"}}>{T[lang].continueHere}</div>}
-              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,marginBottom:5}}>
-                <div style={{display:"flex",flexDirection:"column",alignItems:"flex-start",minWidth:0,position:"relative",zIndex:1}}>
-                  <div style={{fontSize:13,fontWeight:700,color:DARK,textAlign:"left",lineHeight:1.15}}>{T[lang].winnerTopScorer}</div>
-                  <div style={{fontSize:10,color:specialLocked?"#D4820A":"#C0C8D8",fontWeight:500,marginTop:3,lineHeight:1.2}}>
-                    {specialLocked ? T[lang].reopensJun27 : T[lang].specialPickSub}
-                  </div>
-                </div>
-                {doneCount===0 ? (
-                  <div style={{position:"relative",width:36,height:36,flexShrink:0,zIndex:1}}>
-                    <div style={{position:"absolute",inset:0,borderRadius:"50%",background:"#fff",border:`1.5px solid ${NAVY}`,display:"flex",alignItems:"center",justifyContent:"center",...(nextTask!==0?{animation:"nodeBreath 3s ease-in-out infinite"}:{})}}>
-                      <span style={{fontSize:11,fontWeight:700,color:NAVY}}>0/2</span>
-                    </div>
-                  </div>
-                ) : (
-                  <div style={{position:"relative",width:36,height:36,flexShrink:0,zIndex:1}}>
-                    <div style={{position:"absolute",inset:0,borderRadius:"50%",border:`1.5px solid ${allDone?GREEN:NAVY}`,display:"flex",alignItems:"center",justifyContent:"center",background:allDone?`${GREEN}22`:"rgba(10,46,138,0.06)",...(!allDone&&nextTask!==0?{animation:"nodeBreath 3s ease-in-out infinite"}:{})}}>
-                      <span style={{fontSize:11,fontWeight:700,color:allDone?GREEN:NAVY}}>{doneCount}/2</span>
-                    </div>
-                  </div>
-                )}
-              </div>
-              {taskRow({
-                icon:"🏆",
-                title:T[lang].winnerTeam,
-                value:champDone?championPick:T[lang].pickTeam,
-                meta:null,
-                done:champDone,
-                mode:"champion",
-              })}
-              <div ref={scorerRowRef} style={{height:1,background:"#F1F3F7",marginLeft:32}}/>
-              {taskRow({
-                icon:"👕",
-                title:T[lang].topScorer,
-                value:tsDone?topScorerPick.player:T[lang].pickPlayer,
-                meta:null,
-                done:tsDone,
-                mode:"scorer",
-              })}
-            </button>
-          </>);
-        })()}
-
-        {/* Connector */}
-        <div ref={predPathRef} style={{display:"flex",justifyContent:"center",alignItems:"center",margin:"2px 0 6px",position:"relative"}}>
-          <div style={homeConnectorStyle}/>
-          <span style={{position:"absolute",right:2,fontSize:10,fontWeight:700,color:"rgba(10,46,138,0.30)",letterSpacing:"0.2px"}}>{T[lang].totalLabel} {myScoreBreakdown?.specialPts??0} pts</span>
-        </div>
-
         {/* Card 1 — Predictions + path to trophy */}
         {(()=>{
           const deadlinePassed = simDay ? (simDay > 11 || (simDay === 11 && (simHour||0) >= 19)) : new Date() >= new Date(2026,5,11,19,0,0);
@@ -5342,10 +5258,10 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
               <p style={{...homeSectionLabelStyle,color:isLocked?"#C0C8D8":"rgba(10,46,138,0.55)"}}>{T[lang].predictions}</p>
             </div>
             <div style={{...homeTaskCardStyle,
-              border:`1.5px solid ${allDone?GREEN+"44":nextTask===1?"rgba(10,46,138,0.15)":"transparent"}`,
+              border:`1.5px solid ${allDone?GREEN+"44":nextTask===0?"rgba(10,46,138,0.15)":"transparent"}`,
               opacity:isLocked?0.6:1,
-              ...(nextTask===1?{animation:"cardHighlight 1s ease-out 1 forwards"}:showFirstAction&&!boardDone&&!deadlinePassed?{animation:"pulse 1.5s ease-in-out 3"}:{})}}>
-              {nextTask===1&&<div style={{fontSize:9,fontWeight:800,color:"rgba(10,46,138,0.45)",letterSpacing:1.5,textTransform:"uppercase",marginBottom:5,textAlign:"center"}}>{T[lang].continueHere}</div>}
+              ...(nextTask===0?{animation:"cardHighlight 1s ease-out 1 forwards"}:showFirstAction&&!boardDone&&!deadlinePassed?{animation:"pulse 1.5s ease-in-out 3"}:{})}}>
+              {nextTask===0&&<div style={{fontSize:9,fontWeight:800,color:"rgba(10,46,138,0.45)",letterSpacing:1.5,textTransform:"uppercase",marginBottom:5,textAlign:"center"}}>{T[lang].continueHere}</div>}
               <div style={{marginBottom:10,textAlign:"left"}}>
                 <div style={{fontSize:13,fontWeight:700,color:isLocked?"#C0C8D8":DARK,lineHeight:1.15,textAlign:"left"}}>{T[lang].predCardTitle}</div>
                 <div style={{fontSize:10,color:"#C0C8D8",fontWeight:500,marginTop:3,lineHeight:1.2,textAlign:"left"}}>{T[lang].predCardSub}</div>
@@ -5377,7 +5293,7 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
                           border:step.active?`1.5px solid ${NAVY}`:step.done?`1.5px solid ${GREEN}`:"none",
                           display:"flex",alignItems:"center",justifyContent:"center",
                           boxShadow:step.isFinal?"0 0 0 3px rgba(240,160,32,0.25), 0 2px 8px rgba(240,160,32,0.4)":"none",
-                          ...(step.active&&nextTask!==1?{animation:"nodeBreath 3s ease-in-out infinite"}:{})}}>
+                          ...(step.active&&nextTask!==0?{animation:"nodeBreath 3s ease-in-out infinite"}:{})}}>
                           {step.isFinal?<span style={{fontSize:11}}>★</span>:step.done?<div style={{width:5,height:5,borderRadius:"50%",background:GREEN}}/>:step.active?<div style={{width:5,height:5,borderRadius:"50%",background:NAVY}}/>:step.locked?<span style={{fontSize:11}}>🔒</span>:null}
                         </div>
                       </div>
@@ -5443,11 +5359,19 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
             <div style={{margin:"0 2px 6px"}}>
               <p style={homeSectionLabelStyle}>{T[lang].exactScores}</p>
             </div>
-            <button onClick={()=>onOpenGroups&&onOpenGroups()} style={{display:"block",width:"100%",textAlign:"left",...homeTaskCardStyle,cursor:"pointer",fontFamily:"inherit",WebkitTapHighlightColor:"transparent",...(nextTask===2?{border:"1.5px solid rgba(10,46,138,0.15)",animation:"cardHighlight 1s ease-out 1 forwards"}:{})}}>
-              {nextTask===2&&<div style={{fontSize:9,fontWeight:800,color:"rgba(10,46,138,0.45)",letterSpacing:1.5,textTransform:"uppercase",marginBottom:5,textAlign:"center"}}>{T[lang].continueHere}</div>}
-              <div style={{marginBottom:10,textAlign:"left"}}>
-                <div style={{fontSize:13,fontWeight:700,color:DARK,lineHeight:1.15,textAlign:"left"}}>{T[lang].exactCardTitle}</div>
-                <div style={{fontSize:10,color:"#C0C8D8",fontWeight:500,marginTop:3,lineHeight:1.2,textAlign:"left"}}>{T[lang].exactCardSub}</div>
+            <button onClick={()=>onOpenGroups&&onOpenGroups()} style={{display:"block",width:"100%",textAlign:"left",...homeTaskCardStyle,cursor:"pointer",fontFamily:"inherit",WebkitTapHighlightColor:"transparent",...(nextTask===1?{border:"1.5px solid rgba(10,46,138,0.15)",animation:"cardHighlight 1s ease-out 1 forwards"}:{})}}>
+              {nextTask===1&&<div style={{fontSize:9,fontWeight:800,color:"rgba(10,46,138,0.45)",letterSpacing:1.5,textTransform:"uppercase",marginBottom:5,textAlign:"center"}}>{T[lang].continueHere}</div>}
+              <div style={{marginBottom:10,display:"flex",alignItems:"flex-start",justifyContent:"space-between"}}>
+                <div style={{textAlign:"left"}}>
+                  <div style={{fontSize:13,fontWeight:700,color:DARK,lineHeight:1.15,textAlign:"left"}}>{T[lang].exactCardTitle}</div>
+                  <div style={{fontSize:10,color:"#C0C8D8",fontWeight:500,marginTop:3,lineHeight:1.2,textAlign:"left"}}>{T[lang].exactCardSub}</div>
+                </div>
+                <button onClick={e=>{e.stopPropagation();onBooster&&onBooster();}}
+                  style={{flexShrink:0,width:28,height:28,borderRadius:"50%",border:"1.5px solid rgba(10,46,138,0.18)",background:"rgba(10,46,138,0.04)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",WebkitTapHighlightColor:"transparent",padding:0,marginTop:-2}}>
+                  <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+                    <path d="M10 2L12.5 7.5H18L13.5 11L15.5 17L10 13.5L4.5 17L6.5 11L2 7.5H7.5L10 2Z" stroke={NAVY} strokeWidth="1.6" strokeLinejoin="round"/>
+                  </svg>
+                </button>
               </div>
               {steps.map((w,i)=>{
                 const pct = w.total?Math.round((w.scored/w.total)*100):0;
@@ -5471,7 +5395,7 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
                           border:active?`1.5px solid ${NAVY}`:done?`1.5px solid ${GREEN}`:"none",
                           display:"flex",alignItems:"center",justifyContent:"center",
                           boxShadow:w.isFinal?"0 0 0 3px rgba(240,160,32,0.25), 0 2px 8px rgba(240,160,32,0.4)":"none",
-                          ...(active&&nextTask!==2?{animation:"nodeBreath 3s ease-in-out infinite"}:{})}}>
+                          ...(active&&nextTask!==1?{animation:"nodeBreath 3s ease-in-out infinite"}:{})}}>
                           {w.isFinal?<span style={{fontSize:11}}>★</span>:done?<div style={{width:5,height:5,borderRadius:"50%",background:GREEN}}/>:active?<div style={{width:5,height:5,borderRadius:"50%",background:NAVY}}/>:w.locked&&!isPast?<span style={{fontSize:11}}>🔒</span>:null}
                         </div>
                       </div>
@@ -9891,6 +9815,7 @@ function App() {
               onAccount={()=>setScreen(SCREENS.ACCOUNT)}
               onNotifications={()=>{ notificationsBackRef.current=SCREENS.HOME; setScreen(SCREENS.NOTIFICATIONS); }}
               onChampion={(mode)=>{ setChampionMode(mode||"champion"); setScreen(SCREENS.CHAMPION); }}
+              onBooster={()=>setScreen(SCREENS.BOOSTER)}
               myBoards={myBoards}
               predictionsComplete={predictionsComplete}
               instantPickDone={instantPickDone}
@@ -9924,6 +9849,7 @@ function App() {
             setTopScorerPick={setTopScorerPick}
             showToast={showToast}
             simDay={simDay} simHour={simHour} simMin={simMin}/>}
+          {screen===SCREENS.BOOSTER&&<BoosterScreen onBack={()=>setScreen(SCREENS.HOME)}/>}
           {screen===SCREENS.BOARDS&&<BoardsScreen
             initialTab={boardsInitialTab}
             onViewChange={setBoardsSubView}

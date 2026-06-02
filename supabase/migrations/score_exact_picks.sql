@@ -123,12 +123,13 @@ begin
     from public.score_exact_picks()
     group by user_id, board_id
   )
-  insert into public.board_scores (user_id, board_id, exact_pts, pred_pts, updated_at)
-  select p.user_id, p.board_id, p.earned, 0, now()
+  insert into public.board_scores (user_id, board_id, exact_score_pts, exact_pts, pred_pts, updated_at)
+  select p.user_id, p.board_id, p.earned, p.earned, 0, now()
   from pts_per_user p
   on conflict (user_id, board_id) do update
-    set exact_pts  = excluded.exact_pts,
-        updated_at = now();
+    set exact_score_pts = excluded.exact_score_pts,
+        exact_pts       = excluded.exact_pts,
+        updated_at      = now();
 end;
 $$;
 
