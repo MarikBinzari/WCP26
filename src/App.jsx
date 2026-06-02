@@ -5034,36 +5034,74 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
           </button>
         </div>
 
+        {/* ── BOARD SLIDER ───────────────────────────────────────────────────── */}
+        {(()=>{
+          const leftItem  = allSliderItems[sliderPos-1] ?? null;
+          const centerItem= allSliderItems[sliderPos];
+          const rightItem = allSliderItems[sliderPos+1] ?? null;
+          const renderItem = (item, pos) => {
+            if(!item) return <div style={{flex:1}}/>;
+            const isCenter = pos===0;
+            const dist = Math.abs(pos);
+            const handleTap = ()=>{
+              if(!isCenter){ const np=sliderPos+pos; setSliderPos(np); setActiveId(item.id); }
+            };
+            const bLeaders = leaderboardData[item.id];
+            const myRank = bLeaders?.find(u=>u.isMe)?.rank;
+            const memberCount = item.members;
+            return (
+              <div style={{flex:1,display:"flex",justifyContent:"center",alignItems:"center",...(isCenter?{transform:"translateY(-6px)",zIndex:2}:{})}}>
+                <CircleTab label={item.label} imageUrl={item.image_url||undefined} name={item.isGlobal?"Global":item.name.split(" ")[0]}
+                  isActive={isCenter} onClick={handleTap} lightBg distance={dist}
+                  rank={isCenter?myRank:undefined} members={isCenter?memberCount:undefined}
+                  done={isCenter&&allTasksDone}/>
+              </div>
+            );
+          };
+          return (
+            <div style={{margin:"18px 14px 0",background:"transparent",borderRadius:16,border:`1.5px solid ${allTasksDone?GREEN+"66":"transparent"}`,display:"flex",alignItems:"center",padding:"8px 4px",overflow:"visible",flexShrink:0,transition:"border-color 0.4s ease"}}>
+              <button onClick={()=>{ const np=sliderPos+1; if(np<allSliderItems.length){setSliderPos(np);setActiveId(allSliderItems[np].id);} }}
+                style={{background:"none",border:"none",padding:"0 16px",cursor:"pointer",fontSize:22,fontWeight:700,color:NAVY,opacity:sliderPos<allSliderItems.length-1?0.65:0.12,WebkitTapHighlightColor:"transparent",lineHeight:1,transition:"opacity 0.2s",flexShrink:0}}>‹</button>
+              <div onTouchStart={handleSliderTouchStart} onTouchEnd={handleSliderTouchEnd}
+                style={{flex:1,display:"flex",alignItems:"center",userSelect:"none",touchAction:"pan-x",overflow:"visible",padding:"6px 0"}}>
+                {renderItem(leftItem,-1)}
+                {renderItem(centerItem,0)}
+                {renderItem(rightItem,1)}
+              </div>
+              <button onClick={()=>{ const np=sliderPos-1; if(np>=0){setSliderPos(np);setActiveId(allSliderItems[np].id);} }}
+                style={{background:"none",border:"none",padding:"0 16px",cursor:"pointer",fontSize:22,fontWeight:700,color:NAVY,opacity:sliderPos>0?0.65:0.12,WebkitTapHighlightColor:"transparent",lineHeight:1,transition:"opacity 0.2s",flexShrink:0}}>›</button>
+            </div>
+          );
+        })()}
+        {/* manage + new league + ticker */}
+        <div style={{position:"relative",marginTop:-4,flexShrink:0}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",height:24,marginBottom:3}}>
+            <button onClick={e=>{e.stopPropagation();onBoards("my");}} style={{display:"flex",alignItems:"center",justifyContent:"center",minWidth:68,height:24,cursor:"pointer",flexShrink:0,padding:"0 9px 0 12px",border:"none",background:"transparent",fontFamily:"inherit",WebkitTapHighlightColor:"transparent"}}>
+              <span style={{fontSize:10,fontWeight:650,color:"rgba(10,46,138,0.45)",lineHeight:1}}>{T[lang].manageLeague}</span>
+            </button>
+            <button onClick={e=>{e.stopPropagation();onBoards("available");}} style={{display:"flex",alignItems:"center",justifyContent:"center",minWidth:68,height:24,cursor:"pointer",flexShrink:0,padding:"0 12px 0 9px",border:"none",background:"transparent",fontFamily:"inherit",WebkitTapHighlightColor:"transparent"}}>
+              <span style={{fontSize:10,fontWeight:650,color:"rgba(10,46,138,0.45)",lineHeight:1}}>{T[lang].newLeague}</span>
+            </button>
+          </div>
+          {(()=>{
+            const tickerMsgs = [
+              me?.rank ? `Your Rank #${me.rank} · ${me.pts||0} pts` : `Your Rank — · 0 pts`,
+              tournamentOver ? T[lang].tournamentLive : `${cdDays}${T[lang].cdDayAbbr} ${String(cdHours).padStart(2,"0")}${T[lang].cdHourAbbr} ${String(cdMins).padStart(2,"0")}${T[lang].cdMinAbbr} ${T[lang].kickoffLabel}`,
+              membersLabel ? `${membersLabel} ${T[lang].membersLabel?.toLowerCase()||"members"}` : null,
+            ].filter(Boolean);
+            const msg = tickerMsgs[tickerIdx % tickerMsgs.length];
+            return (
+              <div style={{display:"flex",justifyContent:"center",alignItems:"center",marginBottom:6,height:16,overflow:"hidden",position:"relative"}}>
+                <span key={tickerIdx} style={{fontSize:11,fontWeight:700,color:"rgba(10,46,138,0.50)",animation:"slideUpIn 0.4s cubic-bezier(0.22,1,0.36,1)",display:"inline-block",whiteSpace:"nowrap"}}>
+                  {msg}
+                </span>
+              </div>
+            );
+          })()}
+        </div>
+
         {/* ── SCROLLABLE CONTENT ─────────────────────────────────────────────── */}
         <div ref={scrollContainerRef} style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",padding:"0 16px 110px"}}>
-
-          {/* League selector pill */}
-          <div style={{background:"#fff",borderRadius:16,padding:"11px 14px",display:"flex",alignItems:"center",gap:10,marginBottom:14,boxShadow:"0 2px 12px rgba(0,0,0,0.06)",cursor:"pointer"}}
-            onClick={()=>onBoards&&onBoards("my")}
-            onTouchStart={handleSliderTouchStart} onTouchEnd={e=>{
-              if(sliderTouchRef.current===null) return;
-              const dx=e.changedTouches[0].clientX-sliderTouchRef.current;
-              sliderTouchRef.current=null;
-              if(Math.abs(dx)<28) return;
-              if(dx<0&&sliderPos<allSliderItems.length-1){const np=sliderPos+1;setSliderPos(np);setActiveId(allSliderItems[np].id);}
-              else if(dx>0&&sliderPos>0){const np=sliderPos-1;setSliderPos(np);setActiveId(allSliderItems[np].id);}
-            }}>
-            {/* Board icon */}
-            <div style={{width:38,height:38,borderRadius:"50%",background:NAVY,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,overflow:"hidden",boxShadow:"0 2px 8px rgba(10,46,138,0.25)"}}>
-              {activeBoard?.image_url
-                ? <img src={activeBoard.image_url} style={{width:"100%",height:"100%",objectFit:"cover"}} alt=""/>
-                : <span style={{fontSize:20}}>{activeBoard?.isGlobal?"🌍":(activeBoard?.label||"⚽")}</span>
-              }
-            </div>
-            <span style={{flex:1,fontSize:15,fontWeight:700,color:"#111",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
-              {activeBoard?.isGlobal?"Global League":(activeBoard?.name||"Global League")}
-            </span>
-            {me?.rank
-              ? <span style={{fontSize:13,fontWeight:600,color:NAVY,flexShrink:0}}>#{me.rank} · {me.pts||0} pts</span>
-              : <span style={{fontSize:12,color:"#9CA3AF",flexShrink:0}}>— pts</span>
-            }
-            <span style={{fontSize:16,color:"#9CA3AF",marginLeft:4,flexShrink:0}}>⌄</span>
-          </div>
 
           {/* ── NEXT ACTION hero card ──────────────────────────────────────────── */}
           <div style={{background:"#fff",borderRadius:20,padding:"20px 20px 20px",marginBottom:14,boxShadow:"0 4px 20px rgba(0,0,0,0.07)",position:"relative",overflow:"hidden"}}>
