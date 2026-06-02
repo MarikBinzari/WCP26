@@ -7074,7 +7074,7 @@ function LoginScreen({ onNext, onBack }) {
     setLoading(true); setError("");
     const { error: otpErr } = await supabase.auth.signUp({
       email: email.trim(), password,
-      options: { data: { full_name: nickname.trim() }, emailRedirectTo: window.location.origin, ...(captchaToken && { captchaToken }) }
+      options: { data: { full_name: nickname.trim(), lang }, emailRedirectTo: window.location.origin, ...(captchaToken && { captchaToken }) }
     });
     setLoading(false);
     if (otpErr) { setError(otpErr.message); return; }
@@ -7089,7 +7089,7 @@ function LoginScreen({ onNext, onBack }) {
     setLoading(true); setError("");
     const { error: err } = await supabase.auth.signUp({
       email: email.trim(), password,
-      options: { data: { full_name: nickname.trim() }, emailRedirectTo: window.location.origin, ...(captchaToken && { captchaToken }) }
+      options: { data: { full_name: nickname.trim(), lang }, emailRedirectTo: window.location.origin, ...(captchaToken && { captchaToken }) }
     });
     setLoading(false);
     if (err) { setError(err.message); return; }
