@@ -5059,7 +5059,7 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
             );
           };
           return (
-            <div style={{margin:"12px 16px 0",background:"#fff",borderRadius:20,boxShadow:"0 4px 16px rgba(0,0,0,0.06)",border:`1.5px solid ${allTasksDone?GREEN+"66":"transparent"}`,display:"flex",alignItems:"center",padding:"8px 4px",overflow:"visible",flexShrink:0,transition:"border-color 0.4s ease"}}>
+            <div style={{margin:"12px 16px 14px",background:"#fff",borderRadius:20,boxShadow:"0 4px 16px rgba(0,0,0,0.06)",border:`1.5px solid ${allTasksDone?GREEN+"66":"transparent"}`,display:"flex",alignItems:"center",padding:"8px 4px",overflow:"visible",flexShrink:0,transition:"border-color 0.4s ease"}}>
               <button onClick={()=>{ const np=sliderPos+1; if(np<allSliderItems.length){setSliderPos(np);setActiveId(allSliderItems[np].id);} }}
                 style={{background:"none",border:"none",padding:"0 16px",cursor:"pointer",fontSize:22,fontWeight:700,color:NAVY,opacity:sliderPos<allSliderItems.length-1?0.65:0.12,WebkitTapHighlightColor:"transparent",lineHeight:1,transition:"opacity 0.2s",flexShrink:0}}>‹</button>
               <div onTouchStart={handleSliderTouchStart} onTouchEnd={handleSliderTouchEnd}
