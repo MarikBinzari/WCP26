@@ -5362,17 +5362,9 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
             </div>
             <button onClick={()=>onOpenGroups&&onOpenGroups()} style={{display:"block",width:"100%",textAlign:"left",...homeTaskCardStyle,cursor:"pointer",fontFamily:"inherit",WebkitTapHighlightColor:"transparent",...(nextTask===1?{border:"1.5px solid rgba(10,46,138,0.15)",animation:"cardHighlight 1s ease-out 1 forwards"}:{})}}>
               {nextTask===1&&<div style={{fontSize:9,fontWeight:800,color:"rgba(10,46,138,0.45)",letterSpacing:1.5,textTransform:"uppercase",marginBottom:5,textAlign:"center"}}>{T[lang].continueHere}</div>}
-              <div style={{marginBottom:10,display:"flex",alignItems:"flex-start",justifyContent:"space-between"}}>
-                <div style={{textAlign:"left"}}>
-                  <div style={{fontSize:13,fontWeight:700,color:DARK,lineHeight:1.15,textAlign:"left"}}>{T[lang].exactCardTitle}</div>
-                  <div style={{fontSize:10,color:"#C0C8D8",fontWeight:500,marginTop:3,lineHeight:1.2,textAlign:"left"}}>{T[lang].exactCardSub}</div>
-                </div>
-                <button onClick={e=>{e.stopPropagation();onBooster&&onBooster();}}
-                  style={{flexShrink:0,width:28,height:28,borderRadius:"50%",border:"1.5px solid rgba(10,46,138,0.18)",background:"rgba(10,46,138,0.04)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",WebkitTapHighlightColor:"transparent",padding:0,marginTop:-2}}>
-                  <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
-                    <path d="M10 2L12.5 7.5H18L13.5 11L15.5 17L10 13.5L4.5 17L6.5 11L2 7.5H7.5L10 2Z" stroke={NAVY} strokeWidth="1.6" strokeLinejoin="round"/>
-                  </svg>
-                </button>
+              <div style={{marginBottom:10,textAlign:"left"}}>
+                <div style={{fontSize:13,fontWeight:700,color:DARK,lineHeight:1.15,textAlign:"left"}}>{T[lang].exactCardTitle}</div>
+                <div style={{fontSize:10,color:"#C0C8D8",fontWeight:500,marginTop:3,lineHeight:1.2,textAlign:"left"}}>{T[lang].exactCardSub}</div>
               </div>
               {steps.map((w,i)=>{
                 const pct = w.total?Math.round((w.scored/w.total)*100):0;
