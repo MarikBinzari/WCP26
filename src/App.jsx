@@ -2562,6 +2562,7 @@ function MatchSwipeCard({ home, away, onPick, onFlash, groupLabel, matchNum, tot
           @keyframes bgReveal{0%{opacity:0}100%{opacity:1}}
           @keyframes popIn{0%{transform:scale(0.3) rotate(-10deg);opacity:0}60%{transform:scale(1.18) rotate(3deg)}80%{transform:scale(0.94) rotate(-1deg)}100%{transform:scale(1) rotate(0deg);opacity:1}}
           @keyframes slideUp{0%{transform:translateY(40px);opacity:0}100%{transform:translateY(0);opacity:1}}
+          @keyframes fadeIn{0%{opacity:0}100%{opacity:1}}
           @keyframes flagWallpaperFloat{0%,100%{transform:translateY(0px) rotate(-2deg)}50%{transform:translateY(-8px) rotate(2deg)}}
         `}</style>
 
@@ -7445,15 +7446,24 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
 
   const openBreakdown = (u) => {
     if (!u.userId) return;
-    setSelectedUser(u);
     setBreakdown(null);
     setBreakdownLoading(true);
     const boardId = activeBoardId || 'global';
     loadUserBreakdown(u.userId, boardId).then(data => {
       setBreakdown(data);
       setBreakdownLoading(false);
+      setSelectedUser(u);
     });
   };
+
+  useEffect(()=>{
+    if(selectedUser) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  },[selectedUser]);
   const tCode = (name) => TEAM_CODE[name] || name?.slice(0,3).toUpperCase() || '???';
 
   const sliderItems = myBoards;
@@ -7696,11 +7706,12 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
     {selectedUser&&(
       <div style={{position:"fixed",inset:0,zIndex:1200,display:"flex",flexDirection:"column",justifyContent:"flex-end"}}
         onClick={()=>setSelectedUser(null)}>
-        <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.45)"}}/>
+        <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.45)",animation:"fadeIn 0.2s ease forwards"}}/>
         <div onClick={e=>e.stopPropagation()}
           style={{position:"relative",background:"#fff",borderRadius:"20px 20px 0 0",
             maxHeight:"78vh",display:"flex",flexDirection:"column",
-            boxShadow:"0 -4px 32px rgba(0,0,0,0.18)"}}>
+            boxShadow:"0 -4px 32px rgba(0,0,0,0.18)",
+            animation:"slideUp 0.28s cubic-bezier(0.32,0.72,0,1) forwards"}}>
           {/* Handle */}
           <div style={{display:"flex",justifyContent:"center",padding:"10px 0 0"}}>
             <div style={{width:36,height:4,borderRadius:2,background:"#E5E7EB"}}/>
