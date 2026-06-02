@@ -9,7 +9,7 @@ import specialPickBadge from "./assets/special-pick-badge.webp";
 import bellIcon from "./assets/bell-icon.svg";
 import { ALL_GROUPS_DATA, FLAGS, TEAM_COLORS, CALENDAR_EVENTS, CL_FINAL } from "./data/worldcup2026.js";
 import { supabase } from "./supabase.js";
-import { savePredictions, saveExactScore, createBoard, joinBoardByCode, joinBoardById, ensureBoardScores, loadLeaderboard, loadMyScoreBreakdown, fetchScoringRules, fetchMemberCounts, removeBoardMember, removeParticipation, deleteBoard, loadBoardMembers, checkDbHealth, checkEmailExists, loadLiveScores, subscribeLiveScores, loadPlayers, loadPlayersByTeam, seedPlayersFromApi, saveSpecialPick, uploadAvatar, uploadBoardImage, loadAllBoards, loadAllUserPicks, loadNotifReads, markNotifRead, loadSystemNotifications, loadRealGroupStandings } from "./db.js";
+import { savePredictions, saveExactScore, createBoard, joinBoardByCode, joinBoardById, ensureBoardScores, loadLeaderboard, loadMyScoreBreakdown, fetchScoringRules, fetchMemberCounts, removeBoardMember, removeParticipation, deleteBoard, loadBoardMembers, checkDbHealth, checkEmailExists, loadLiveScores, subscribeLiveScores, loadPlayers, loadPlayersByTeam, seedPlayersFromApi, saveSpecialPick, uploadAvatar, uploadBoardImage, loadAllBoards, loadAllUserPicks, loadNotifReads, markNotifRead, loadSystemNotifications, loadRealGroupStandings, loadUserBreakdown } from "./db.js";
 
 const TEAM_CODE = {"Mexico":"MEX","South Africa":"RSA","South Korea":"KOR","Czechia":"CZE","Canada":"CAN","Switzerland":"SUI","Qatar":"QAT","Bosnia-Herzegovina":"BIH","Brazil":"BRA","Morocco":"MAR","Scotland":"SCO","Haiti":"HAI","USA":"USA","Paraguay":"PAR","Australia":"AUS","Turkiye":"TUR","Germany":"GER","Ecuador":"ECU","Ivory Coast":"CIV","Curacao":"CUW","Netherlands":"NED","Japan":"JPN","Tunisia":"TUN","Sweden":"SWE","Belgium":"BEL","Iran":"IRI","Egypt":"EGY","New Zealand":"NZL","Spain":"ESP","Uruguay":"URU","Saudi Arabia":"KSA","Cape Verde":"CPV","France":"FRA","Senegal":"SEN","Norway":"NOR","Iraq":"IRQ","Argentina":"ARG","Austria":"AUT","Algeria":"ALG","Jordan":"JOR","Portugal":"POR","Colombia":"COL","Uzbekistan":"UZB","DR Congo":"COD","England":"ENG","Croatia":"CRO","Panama":"PAN","Ghana":"GHA"};
 
@@ -7439,6 +7439,22 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
   const lang = useLang();
   const leaders = leadersProp || BOARD_LEADERS.global;
   const [search, setSearch] = useState("");
+  const [selectedUser, setSelectedUser] = useState(null); // {userId, name, pts, rank}
+  const [breakdown, setBreakdown] = useState(null);
+  const [breakdownLoading, setBreakdownLoading] = useState(false);
+
+  const openBreakdown = (u) => {
+    if (!u.userId) return;
+    setSelectedUser(u);
+    setBreakdown(null);
+    setBreakdownLoading(true);
+    const boardId = activeBoardId || 'global';
+    loadUserBreakdown(u.userId, boardId).then(data => {
+      setBreakdown(data);
+      setBreakdownLoading(false);
+    });
+  };
+  const tCode = (name) => TEAM_CODE[name] || name?.slice(0,3).toUpperCase() || '???';
 
   const sliderItems = myBoards;
   const [sliderPos, setSliderPos] = useState(()=>Math.max(0,myBoards.findIndex(b=>b.id===activeBoardId)));
@@ -7467,7 +7483,7 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
     : leaders;
   const me = leaders.find(u=>u.isMe);
 
-  return (
+  return (<>
     <div style={{flex:1,display:"flex",flexDirection:"column",background:"transparent",position:"relative",overflow:"hidden"}}>
       <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.055,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
       <div style={{flex:1,display:"flex",flexDirection:"column",background:"linear-gradient(to bottom, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0.10) 28%, rgba(255,255,255,0.02) 48%, transparent 65%)",borderRadius:26,margin:"10px 14px 0",boxShadow:"0 8px 32px rgba(10,46,138,0.10), inset 0 1px 0 rgba(255,255,255,0.80)",border:"1px solid rgba(255,255,255,0.22)",overflow:"hidden",position:"relative",willChange:"transform",transform:"translateZ(0)"}}>
@@ -7564,7 +7580,7 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
               const size    = AVATAR_SIZE[rank];
               const initials= u.name?.split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2)||"?";
               return (
-                <div style={{flex:1,minWidth:0,display:"flex",flexDirection:"column",alignItems:"center",overflow:"hidden"}}>
+                <div onClick={()=>openBreakdown(u)} style={{flex:1,minWidth:0,display:"flex",flexDirection:"column",alignItems:"center",overflow:"hidden",cursor:"pointer",WebkitTapHighlightColor:"transparent"}}>
                   <div style={{fontSize:rank===1?26:22,marginBottom:4,lineHeight:1}}>{medal}</div>
                   <div style={{width:size,height:size,borderRadius:"50%",border:`3px solid ${color}`,
                     overflow:"hidden",background:u.isMe?`${NAVY}22`:"rgba(0,0,0,0.07)",
@@ -7590,9 +7606,9 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
               const rankColor = u.rank===4?"#5856D6":u.rank===5?"#5856D6":"#bbb";
               const initials  = u.name?.split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2)||"?";
               return (
-                <div style={{display:"flex",alignItems:"center",background:u.isMe?"#E8F0FF":"#fff",
+                <div onClick={()=>openBreakdown(u)} style={{display:"flex",alignItems:"center",background:u.isMe?"#E8F0FF":"#fff",
                   border:u.isMe?`1.5px solid ${NAVY}`:"1px solid rgba(0,0,0,0.07)",
-                  borderRadius:12,padding:"8px 12px",gap:10,marginBottom:6}}>
+                  borderRadius:12,padding:"8px 12px",gap:10,marginBottom:6,cursor:"pointer",WebkitTapHighlightColor:"transparent"}}>
                   <div style={{width:28,height:28,borderRadius:8,flexShrink:0,
                     background:u.isMe?`${NAVY}22`:"rgba(0,0,0,0.05)",
                     display:"flex",alignItems:"center",justifyContent:"center"}}>
@@ -7639,9 +7655,9 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
             const rankBadge = u.rank===1?"🥇":u.rank===2?"🥈":u.rank===3?"🥉":null;
             const initials  = u.name?.split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2)||"?";
             return (
-              <div key={u.rank} style={{display:"flex",alignItems:"center",background:u.isMe?"#E8F0FF":"#fff",
+              <div key={u.rank} onClick={()=>openBreakdown(u)} style={{display:"flex",alignItems:"center",background:u.isMe?"#E8F0FF":"#fff",
                 border:u.isMe?`1.5px solid ${NAVY}`:"1px solid rgba(0,0,0,0.07)",
-                borderRadius:12,padding:"8px 12px",gap:10,marginBottom:6}}>
+                borderRadius:12,padding:"8px 12px",gap:10,marginBottom:6,cursor:"pointer",WebkitTapHighlightColor:"transparent"}}>
                 <div style={{width:26,textAlign:"center",flexShrink:0}}>
                   {rankBadge?<span style={{fontSize:20}}>{rankBadge}</span>:(
                     <div style={{width:26,height:26,borderRadius:7,background:u.isMe?`${NAVY}22`:"rgba(0,0,0,0.05)",
@@ -7675,7 +7691,121 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
       </div>
       </div>
     </div>
-  );
+
+    {/* ── User Breakdown Bottom Sheet ── */}
+    {selectedUser&&(
+      <div style={{position:"fixed",inset:0,zIndex:1200,display:"flex",flexDirection:"column",justifyContent:"flex-end"}}
+        onClick={()=>setSelectedUser(null)}>
+        <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.45)"}}/>
+        <div onClick={e=>e.stopPropagation()}
+          style={{position:"relative",background:"#fff",borderRadius:"20px 20px 0 0",
+            maxHeight:"78vh",display:"flex",flexDirection:"column",
+            boxShadow:"0 -4px 32px rgba(0,0,0,0.18)"}}>
+          {/* Handle */}
+          <div style={{display:"flex",justifyContent:"center",padding:"10px 0 0"}}>
+            <div style={{width:36,height:4,borderRadius:2,background:"#E5E7EB"}}/>
+          </div>
+          {/* Header user */}
+          <div style={{padding:"12px 20px 14px",borderBottom:"1px solid #F3F4F6",display:"flex",alignItems:"center",gap:12}}>
+            <div style={{width:40,height:40,borderRadius:"50%",background:`${NAVY}15`,
+              display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,overflow:"hidden"}}>
+              {selectedUser.avatarUrl
+                ?<img src={selectedUser.avatarUrl} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                :<span style={{fontSize:14,fontWeight:800,color:NAVY}}>
+                  {selectedUser.name?.split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2)||"?"}
+                </span>}
+            </div>
+            <div style={{flex:1}}>
+              <div style={{fontSize:15,fontWeight:800,color:DARK}}>{selectedUser.name}</div>
+              <div style={{fontSize:11,color:"#9CA3AF",fontWeight:500}}>#{selectedUser.rank}</div>
+            </div>
+            <div style={{fontSize:18,fontWeight:900,color:NAVY}}>{selectedUser.pts}p</div>
+          </div>
+          {/* Content */}
+          <div style={{overflowY:"auto",flex:1,padding:"14px 20px 40px"}}>
+            {breakdownLoading?(
+              <div style={{display:"flex",justifyContent:"center",padding:"32px 0",color:"#9CA3AF",fontSize:13}}>
+                <span style={{width:18,height:18,borderRadius:"50%",border:`2px solid ${NAVY}22`,
+                  borderTopColor:NAVY,animation:"spin 0.9s linear infinite",display:"inline-block",marginRight:8}}/>
+                Se încarcă...
+              </div>
+            ):breakdown&&(()=>{
+              const predTotal = breakdown.groups.reduce((s,g)=>s+g.pts,0);
+              const exactTotal = breakdown.exact.reduce((s,m)=>s+m.pts,0);
+              const hasGroups = breakdown.groups.length>0;
+              const hasExact  = breakdown.exact.length>0;
+              return (<>
+                {/* Predictions section */}
+                {hasGroups&&(
+                  <div style={{marginBottom:16}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                      <span style={{fontSize:12,fontWeight:800,color:NAVY,textTransform:"uppercase",letterSpacing:1}}>🎯 Predictions</span>
+                      <span style={{fontSize:13,fontWeight:800,color:NAVY}}>{predTotal}p</span>
+                    </div>
+                    {breakdown.groups.map(g=>{
+                      const hits = [
+                        g.hit_1st ? `1.${tCode(g.hit_1st)}` : null,
+                        g.hit_2nd ? `2.${tCode(g.hit_2nd)}` : null,
+                        g.hit_3rd ? `3.${tCode(g.hit_3rd)}` : null,
+                      ].filter(Boolean).join("  ");
+                      return (
+                        <div key={g.group_id} style={{display:"flex",justifyContent:"space-between",
+                          alignItems:"center",padding:"5px 0",borderBottom:"1px solid #F9FAFB"}}>
+                          <div style={{display:"flex",gap:10,alignItems:"center"}}>
+                            <span style={{fontSize:11,fontWeight:700,color:"#6B7280",minWidth:46}}>Grp {g.group_id}</span>
+                            <span style={{fontSize:12,fontWeight:600,color:DARK}}>{hits}</span>
+                          </div>
+                          <span style={{fontSize:12,fontWeight:700,color:GREEN}}>{g.pts}p</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+                {/* Exact Scores section */}
+                {hasExact&&(
+                  <div style={{marginBottom:16}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                      <span style={{fontSize:12,fontWeight:800,color:NAVY,textTransform:"uppercase",letterSpacing:1}}>⚽ Exact Scores</span>
+                      <span style={{fontSize:13,fontWeight:800,color:NAVY}}>{exactTotal}p</span>
+                    </div>
+                    {breakdown.exact.map(m=>{
+                      const isExact = m.pred_home===m.actual_home && m.pred_away===m.actual_away;
+                      return (
+                        <div key={m.match_key} style={{display:"flex",justifyContent:"space-between",
+                          alignItems:"center",padding:"5px 0",borderBottom:"1px solid #F9FAFB"}}>
+                          <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                            <span style={{fontSize:12,fontWeight:700,color:DARK}}>
+                              {tCode(m.home_team)} {m.actual_home}-{m.actual_away} {tCode(m.away_team)}
+                            </span>
+                            {isExact&&<span style={{fontSize:9,fontWeight:800,color:"#fff",background:GREEN,
+                              borderRadius:4,padding:"1px 5px",letterSpacing:0.5}}>EXACT</span>}
+                          </div>
+                          <span style={{fontSize:12,fontWeight:700,color:GREEN}}>{m.pts}p</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+                {!hasGroups&&!hasExact&&(
+                  <div style={{textAlign:"center",padding:"24px 0",color:"#9CA3AF",fontSize:13}}>
+                    Niciun punct câștigat încă
+                  </div>
+                )}
+                {/* Total */}
+                {(hasGroups||hasExact)&&(
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",
+                    borderTop:`2px solid ${NAVY}22`,paddingTop:10,marginTop:4}}>
+                    <span style={{fontSize:13,fontWeight:800,color:DARK}}>Total</span>
+                    <span style={{fontSize:15,fontWeight:900,color:NAVY}}>{predTotal+exactTotal}p</span>
+                  </div>
+                )}
+              </>);
+            })()}
+          </div>
+        </div>
+      </div>
+    )}
+  </>);
 }
 
 function ScorePicker({ match, day, savedScore, onSave, onBack }) {

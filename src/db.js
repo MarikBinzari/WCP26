@@ -649,6 +649,7 @@ export async function loadLeaderboard(boardId, search = null, userId = null) {
     const isMe = myName ? row.display_name === myName : false
     return {
       rank:      i + 1,
+      userId:    row.user_id || null,
       name:      row.display_name || '—',
       pts:       row.total_pts || 0,
       avatarUrl: row.avatar_url || null,
@@ -659,6 +660,7 @@ export async function loadLeaderboard(boardId, search = null, userId = null) {
   if (userId && myName && !rows.some(row => row.isMe)) {
     rows.push({
       rank: rows.length + 1,
+      userId,
       name: myName,
       pts: 0,
       accent: '#E8F0FF',
@@ -666,4 +668,17 @@ export async function loadLeaderboard(boardId, search = null, userId = null) {
     })
   }
   return rows
+}
+
+export async function loadUserBreakdown(userId, boardId) {
+  const [groupRes, exactRes] = await Promise.all([
+    supabase.rpc('get_user_group_breakdown', { p_user_id: userId, p_board_id: boardId }),
+    supabase.rpc('get_user_exact_breakdown', { p_user_id: userId, p_board_id: boardId }),
+  ])
+  if (groupRes.error) console.error('loadUserBreakdown groups:', groupRes.error)
+  if (exactRes.error) console.error('loadUserBreakdown exact:', exactRes.error)
+  return {
+    groups: groupRes.data || [],
+    exact:  exactRes.data || [],
+  }
 }
