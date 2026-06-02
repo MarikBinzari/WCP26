@@ -5059,7 +5059,7 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
             );
           };
           return (
-            <div style={{margin:"18px 14px 0",background:"transparent",borderRadius:16,border:`1.5px solid ${allTasksDone?GREEN+"66":"transparent"}`,display:"flex",alignItems:"center",padding:"8px 4px",overflow:"visible",flexShrink:0,transition:"border-color 0.4s ease"}}>
+            <div style={{margin:"12px 16px 0",background:"#fff",borderRadius:20,boxShadow:"0 4px 16px rgba(0,0,0,0.06)",border:`1.5px solid ${allTasksDone?GREEN+"66":"transparent"}`,display:"flex",alignItems:"center",padding:"8px 4px",overflow:"visible",flexShrink:0,transition:"border-color 0.4s ease"}}>
               <button onClick={()=>{ const np=sliderPos+1; if(np<allSliderItems.length){setSliderPos(np);setActiveId(allSliderItems[np].id);} }}
                 style={{background:"none",border:"none",padding:"0 16px",cursor:"pointer",fontSize:22,fontWeight:700,color:NAVY,opacity:sliderPos<allSliderItems.length-1?0.65:0.12,WebkitTapHighlightColor:"transparent",lineHeight:1,transition:"opacity 0.2s",flexShrink:0}}>‹</button>
               <div onTouchStart={handleSliderTouchStart} onTouchEnd={handleSliderTouchEnd}
@@ -5073,32 +5073,6 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
             </div>
           );
         })()}
-        {/* manage + new league + ticker */}
-        <div style={{position:"relative",marginTop:-4,flexShrink:0}}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",height:24,marginBottom:3}}>
-            <button onClick={e=>{e.stopPropagation();onBoards("my");}} style={{display:"flex",alignItems:"center",justifyContent:"center",minWidth:68,height:24,cursor:"pointer",flexShrink:0,padding:"0 9px 0 12px",border:"none",background:"transparent",fontFamily:"inherit",WebkitTapHighlightColor:"transparent"}}>
-              <span style={{fontSize:10,fontWeight:650,color:"rgba(10,46,138,0.45)",lineHeight:1}}>{T[lang].manageLeague}</span>
-            </button>
-            <button onClick={e=>{e.stopPropagation();onBoards("available");}} style={{display:"flex",alignItems:"center",justifyContent:"center",minWidth:68,height:24,cursor:"pointer",flexShrink:0,padding:"0 12px 0 9px",border:"none",background:"transparent",fontFamily:"inherit",WebkitTapHighlightColor:"transparent"}}>
-              <span style={{fontSize:10,fontWeight:650,color:"rgba(10,46,138,0.45)",lineHeight:1}}>{T[lang].newLeague}</span>
-            </button>
-          </div>
-          {(()=>{
-            const tickerMsgs = [
-              me?.rank ? `Your Rank #${me.rank} · ${me.pts||0} pts` : `Your Rank — · 0 pts`,
-              tournamentOver ? T[lang].tournamentLive : `${cdDays}${T[lang].cdDayAbbr} ${String(cdHours).padStart(2,"0")}${T[lang].cdHourAbbr} ${String(cdMins).padStart(2,"0")}${T[lang].cdMinAbbr} ${T[lang].kickoffLabel}`,
-              membersLabel ? `${membersLabel} ${T[lang].membersLabel?.toLowerCase()||"members"}` : null,
-            ].filter(Boolean);
-            const msg = tickerMsgs[tickerIdx % tickerMsgs.length];
-            return (
-              <div style={{display:"flex",justifyContent:"center",alignItems:"center",marginBottom:6,height:16,overflow:"hidden",position:"relative"}}>
-                <span key={tickerIdx} style={{fontSize:11,fontWeight:700,color:"rgba(10,46,138,0.50)",animation:"slideUpIn 0.4s cubic-bezier(0.22,1,0.36,1)",display:"inline-block",whiteSpace:"nowrap"}}>
-                  {msg}
-                </span>
-              </div>
-            );
-          })()}
-        </div>
 
         {/* ── SCROLLABLE CONTENT ─────────────────────────────────────────────── */}
         <div ref={scrollContainerRef} style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",padding:"0 16px 110px"}}>
