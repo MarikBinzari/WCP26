@@ -4,8 +4,8 @@
   "description": "World Cup 2026 Predictions",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#EEF2FF",
-  "theme_color": "#0A2E8A",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
   "orientation": "portrait",
   "icons": [
     {
