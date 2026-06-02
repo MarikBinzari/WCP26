@@ -7077,7 +7077,7 @@ function LoginScreen({ onNext, onBack }) {
       options: { data: { full_name: nickname.trim(), lang }, emailRedirectTo: window.location.origin, ...(captchaToken && { captchaToken }) }
     });
     setLoading(false);
-    if (otpErr) { setError(otpErr.message); return; }
+    if (otpErr) { setError(otpErr.message); resetLoginCaptcha(); return; }
     incAttempts();
     setStep("sent");
   };
@@ -7092,7 +7092,7 @@ function LoginScreen({ onNext, onBack }) {
       options: { data: { full_name: nickname.trim(), lang }, emailRedirectTo: window.location.origin, ...(captchaToken && { captchaToken }) }
     });
     setLoading(false);
-    if (err) { setError(err.message); return; }
+    if (err) { setError(err.message); resetLoginCaptcha(); return; }
     setStep("sent");
   };
 
@@ -7103,7 +7103,7 @@ function LoginScreen({ onNext, onBack }) {
       redirectTo: window.location.origin, ...(captchaToken && { captchaToken })
     });
     setLoading(false);
-    if (error) { setError(T[lang].errSendFailed); return; }
+    if (error) { setError(T[lang].errSendFailed); resetLoginCaptcha(); return; }
     setSentFrom("forgot");
     setStep("sent");
   };
