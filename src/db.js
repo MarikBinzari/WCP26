@@ -131,9 +131,9 @@ export async function checkDbHealth() {
   const { error: scErr } = await supabase.from('exact_scores').select('id').limit(1)
   results.exactScoresTable = scErr ? { ok: false, error: scErr.message } : { ok: true }
   // Check players table
-  const { error: plErr } = await supabase.from('players').select('id').limit(1)
+  const { error: plErr } = await supabase.from('world_cup_football_players').select('id').limit(1)
   results.playersTable = plErr ? { ok: false, error: plErr.message } : { ok: true }
-  const { count: playerCount } = await supabase.from('players').select('id', { count: 'exact', head: true })
+  const { count: playerCount } = await supabase.from('world_cup_football_players').select('id', { count: 'exact', head: true })
   results.playersTotal = playerCount ?? 0
   return results
 }
@@ -392,7 +392,7 @@ export async function checkEmailExists(email) {
 // Prefers records seeded from API-Football (api_football_id IS NOT NULL) when available.
 export async function loadPlayers() {
   const { data, error } = await supabase
-    .from('players')
+    .from('world_cup_football_players')
     .select('team_name, player_name, position, shirt_number, photo_url, nationality, goals, assists, yellow_cards, red_cards, minutes_played, rating, appearances, api_football_id')
     .order('shirt_number', { ascending: true, nullsFirst: false })
   if (error) { console.error('loadPlayers:', error); return {} }
@@ -421,7 +421,7 @@ export async function loadPlayers() {
 // Players for a single team — loaded lazily when team is selected
 export async function loadPlayersByTeam(teamName) {
   const { data, error } = await supabase
-    .from('players')
+    .from('world_cup_football_players')
     .select('player_name, position, shirt_number, photo_url, nationality')
     .eq('team_name', teamName)
     .order('shirt_number', { ascending: true, nullsFirst: false })
@@ -438,7 +438,7 @@ export async function loadPlayersByTeam(teamName) {
 // Top scorers across all teams — sorted by goals desc, then assists desc
 export async function loadTopScorers(limit = 20) {
   const { data, error } = await supabase
-    .from('players')
+    .from('world_cup_football_players')
     .select('team_name, player_name, photo_url, nationality, position, goals, assists, yellow_cards, red_cards, minutes_played, rating, appearances')
     .not('api_football_id', 'is', null)
     .order('goals', { ascending: false })
