@@ -5136,25 +5136,58 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
             <div style={{background:"#fff",borderRadius:20,boxShadow:"0 4px 16px rgba(0,0,0,0.06)",overflow:"hidden"}}>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr"}}>
                 {/* Special Picks */}
-                <button onClick={()=>onChampion("champion")} style={{textAlign:"center",padding:"16px 6px",borderRight:"1px solid #F3F4F6",border:"none",background:"transparent",cursor:"pointer",WebkitTapHighlightColor:"transparent",fontFamily:"inherit",borderRight:"1px solid #F3F4F6"}}>
-                  <div style={{width:42,height:42,borderRadius:"50%",background:"rgba(200,16,46,0.08)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 8px",fontSize:22}}>{specialDoneCount===2?"⭐":"☆"}</div>
-                  <div style={{fontSize:11,color:"#6B7280",fontWeight:600,marginBottom:4}}>{T[lang].specialPick||"Special Picks"}</div>
-                  <div style={{fontSize:14,fontWeight:800,color:specialDoneCount===2?GREEN:RED}}>{specialDoneCount}/2</div>
-                </button>
+                {(()=>{
+                  const canCopy = specialDoneCount > 0;
+                  return (
+                    <div style={{position:"relative",borderRight:"1px solid #F3F4F6"}}>
+                      <button onClick={()=>onChampion("champion")} style={{width:"100%",textAlign:"center",padding:"16px 6px",border:"none",background:"transparent",cursor:"pointer",WebkitTapHighlightColor:"transparent",fontFamily:"inherit"}}>
+                        <div style={{width:42,height:42,borderRadius:"50%",background:"rgba(200,16,46,0.08)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 8px",fontSize:22}}>{specialDoneCount===2?"⭐":"☆"}</div>
+                        <div style={{fontSize:11,color:"#6B7280",fontWeight:600,marginBottom:4}}>{T[lang].specialPick||"Special Picks"}</div>
+                        <div style={{fontSize:14,fontWeight:800,color:specialDoneCount===2?GREEN:RED}}>{specialDoneCount}/2</div>
+                      </button>
+                      <button onClick={e=>{e.stopPropagation();if(!canCopy)return;setCopyDone({});setShowCopySheet("special");}}
+                        style={{position:"absolute",top:8,right:8,width:22,height:22,display:"flex",alignItems:"center",justifyContent:"center",background:canCopy?"rgba(10,46,138,0.07)":"transparent",borderRadius:6,border:"none",cursor:canCopy?"pointer":"default",opacity:canCopy?1:0,padding:0}}>
+                        <svg width="11" height="11" viewBox="0 0 14 14" fill="none"><rect x="4" y="4" width="8" height="8" rx="1.5" stroke={NAVY} strokeWidth="1.8"/><path d="M2 10V2h8" stroke={NAVY} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                      </button>
+                    </div>
+                  );
+                })()}
                 {/* Predictions */}
-                <button onClick={()=>onPredict(activeId)} style={{textAlign:"center",padding:"16px 6px",border:"none",background:"transparent",cursor:"pointer",WebkitTapHighlightColor:"transparent",fontFamily:"inherit",borderRight:"1px solid #F3F4F6"}}>
-                  <div style={{width:42,height:42,borderRadius:"50%",background:"rgba(10,46,138,0.08)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 8px",fontSize:22}}>📋</div>
-                  <div style={{fontSize:11,color:"#6B7280",fontWeight:600,marginBottom:4}}>{T[lang].predictions||"Predictions"}</div>
-                  <div style={{fontSize:14,fontWeight:800,color:NAVY}}>{predDoneCount}/{GROUPS_COUNT}</div>
-                </button>
+                {(()=>{
+                  const canCopy = instantPickDone;
+                  return (
+                    <div style={{position:"relative",borderRight:"1px solid #F3F4F6"}}>
+                      <button onClick={()=>onPredict(activeId)} style={{width:"100%",textAlign:"center",padding:"16px 6px",border:"none",background:"transparent",cursor:"pointer",WebkitTapHighlightColor:"transparent",fontFamily:"inherit"}}>
+                        <div style={{width:42,height:42,borderRadius:"50%",background:"rgba(10,46,138,0.08)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 8px",fontSize:22}}>📋</div>
+                        <div style={{fontSize:11,color:"#6B7280",fontWeight:600,marginBottom:4}}>{T[lang].predictions||"Predictions"}</div>
+                        <div style={{fontSize:14,fontWeight:800,color:NAVY}}>{predDoneCount}/{GROUPS_COUNT}</div>
+                      </button>
+                      <button onClick={e=>{e.stopPropagation();if(!canCopy)return;setCopyDone({});setShowCopySheet("predictions");}}
+                        style={{position:"absolute",top:8,right:8,width:22,height:22,display:"flex",alignItems:"center",justifyContent:"center",background:canCopy?"rgba(10,46,138,0.07)":"transparent",borderRadius:6,border:"none",cursor:canCopy?"pointer":"default",opacity:canCopy?1:0,padding:0}}>
+                        <svg width="11" height="11" viewBox="0 0 14 14" fill="none"><rect x="4" y="4" width="8" height="8" rx="1.5" stroke={NAVY} strokeWidth="1.8"/><path d="M2 10V2h8" stroke={NAVY} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                      </button>
+                    </div>
+                  );
+                })()}
                 {/* Exact Scores */}
-                <button onClick={()=>onOpenGroups&&onOpenGroups()} style={{textAlign:"center",padding:"16px 6px",border:"none",background:"transparent",cursor:"pointer",WebkitTapHighlightColor:"transparent",fontFamily:"inherit"}}>
-                  <div style={{width:42,height:42,borderRadius:"50%",background:"rgba(0,154,68,0.08)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 8px",fontSize:22}}>{exactWeekUnlocked?(exactWeekDone?"✅":"📊"):"🔒"}</div>
-                  <div style={{fontSize:11,color:"#6B7280",fontWeight:600,marginBottom:4}}>{T[lang].exactScores||"Exact Scores"}</div>
-                  <div style={{fontSize:14,fontWeight:800,color:exactWeekUnlocked?(exactWeekDone?GREEN:NAVY):GREEN}}>
-                    {exactWeekUnlocked?`${exactWeekScored}/${exactWeekTotal}`:(T[lang].locked||"Locked")}
-                  </div>
-                </button>
+                {(()=>{
+                  const canCopy = exactWeekUnlocked && exactWeekScored > 0;
+                  return (
+                    <div style={{position:"relative"}}>
+                      <button onClick={()=>onOpenGroups&&onOpenGroups()} style={{width:"100%",textAlign:"center",padding:"16px 6px",border:"none",background:"transparent",cursor:"pointer",WebkitTapHighlightColor:"transparent",fontFamily:"inherit"}}>
+                        <div style={{width:42,height:42,borderRadius:"50%",background:"rgba(0,154,68,0.08)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 8px",fontSize:22}}>{exactWeekUnlocked?(exactWeekDone?"✅":"📊"):"🔒"}</div>
+                        <div style={{fontSize:11,color:"#6B7280",fontWeight:600,marginBottom:4}}>{T[lang].exactScores||"Exact Scores"}</div>
+                        <div style={{fontSize:14,fontWeight:800,color:exactWeekUnlocked?(exactWeekDone?GREEN:NAVY):GREEN}}>
+                          {exactWeekUnlocked?`${exactWeekScored}/${exactWeekTotal}`:(T[lang].locked||"Locked")}
+                        </div>
+                      </button>
+                      <button onClick={e=>{e.stopPropagation();if(!canCopy)return;setCopyDone({});setCopyWeekStart(exactWeekStart);setShowCopySheet("scores");}}
+                        style={{position:"absolute",top:8,right:8,width:22,height:22,display:"flex",alignItems:"center",justifyContent:"center",background:canCopy?"rgba(10,46,138,0.07)":"transparent",borderRadius:6,border:"none",cursor:canCopy?"pointer":"default",opacity:canCopy?1:0,padding:0}}>
+                        <svg width="11" height="11" viewBox="0 0 14 14" fill="none"><rect x="4" y="4" width="8" height="8" rx="1.5" stroke={NAVY} strokeWidth="1.8"/><path d="M2 10V2h8" stroke={NAVY} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                      </button>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           </div>
