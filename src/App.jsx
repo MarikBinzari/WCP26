@@ -4245,7 +4245,7 @@ function CircleTab({ label, imageUrl, name, isActive, onClick, lightBg=false, di
       cursor:"pointer",flexShrink:0,WebkitTapHighlightColor:"transparent",
       transform:`scale(${scale})`,opacity,
       transition:"transform 0.28s, opacity 0.28s",
-      transformOrigin:"center bottom",
+      transformOrigin:"center center",
     }}>
       <div style={{
         width:44, height:44,
@@ -4264,7 +4264,7 @@ function CircleTab({ label, imageUrl, name, isActive, onClick, lightBg=false, di
       <span style={{
         fontSize:isActive?10:9,
         fontWeight:isActive?800:600,
-        color:isActive?activeColor:lightBg?"rgba(0,0,0,0.55)":"rgba(255,255,255,0.6)",
+        color:isActive?NAVY:lightBg?"rgba(0,0,0,0.55)":"rgba(255,255,255,0.6)",
         maxWidth:52,textAlign:"center",lineHeight:1.2,
         transition:"all 0.4s ease",
       }}>{name}</span>
@@ -4952,7 +4952,6 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
   const _specialPhase2Open   = _exSimNow >= new Date(2026,5,27,21,0,0);
   const specialLocked = _specialPhase1Locked && !_specialPhase2Open;
   const nextTask =
-    (!specialLocked && (!champDone || !tsDone)) ? 0 :
     !_boardDone ? 1 :
     (!exactWeekDone && exactWeekUnlocked) ? 2 :
     null;
@@ -4993,15 +4992,6 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
     const deadlinePassed = simDay ? (simDay > 11 || (simDay === 11 && (simHour||0) >= 19)) : new Date() >= new Date(2026,5,11,19,0,0);
     const boardDone = deadlinePassed ? (instantPickDone || predictionsComplete[activeId]) : instantPickDone;
     const koAvailable = koUnlocked && boardDone && !koPickDone;
-    if (nextTask === 0) return {
-      title: T[lang].winnerTopScorer,
-      sub: T[lang].specialPickSub,
-      due: "Due Jun 11",
-      progress: specialDoneCount, total: 2,
-      label: specialDoneCount > 0 ? (T[lang].continuePredictions||"Continue") : (T[lang].startPredictions||"Start Special Picks"),
-      onClick: ()=>onChampion(!champDone?"champion":"scorer"),
-      badge: "NEXT ACTION",
-    };
     if (nextTask === 1) return {
       title: T[lang].predCardTitle||"Complete Group Predictions",
       sub: `${GROUPS_COUNT} groups + best third teams`,
@@ -5014,7 +5004,7 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
     if (nextTask === 2) return {
       title: T[lang].exactCardTitle||"Exact Scores",
       sub: T[lang].exactCardSub||"Predict exact scores for each match",
-      due: null,
+      due: !deadlinePassed ? "Due Jun 11" : null,
       progress: exactWeekScored, total: exactWeekTotal||1,
       label: T[lang].openScores||"Open Exact Scores",
       onClick: ()=>onOpenGroups&&onOpenGroups(),
@@ -5072,7 +5062,7 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
             const myRank = bLeaders?.find(u=>u.isMe)?.rank;
             const memberCount = item.members;
             return (
-              <div style={{flex:1,display:"flex",justifyContent:"center",alignItems:"center",...(isCenter?{transform:"translateY(-6px)",zIndex:2}:{})}}>
+              <div style={{flex:1,display:"flex",justifyContent:"center",alignItems:"center"}}>
                 <CircleTab label={item.label} imageUrl={item.image_url||undefined} name={item.isGlobal?"Global":item.name.split(" ")[0]}
                   isActive={isCenter} onClick={handleTap} lightBg distance={dist}
                   rank={isCenter?myRank:undefined} members={isCenter?memberCount:undefined}
@@ -5081,7 +5071,7 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
             );
           };
           return (
-            <div style={{margin:"12px 16px 14px",background:"#fff",borderRadius:20,boxShadow:"0 4px 16px rgba(0,0,0,0.06)",border:`1.5px solid ${allTasksDone?GREEN+"66":"transparent"}`,display:"flex",alignItems:"center",padding:"8px 4px",overflow:"visible",flexShrink:0,transition:"border-color 0.4s ease"}}>
+            <div style={{margin:"4px 16px 14px",background:BG,borderRadius:20,boxShadow:"none",border:"none",display:"flex",alignItems:"center",padding:"8px 4px",overflow:"visible",flexShrink:0}}>
               <button onClick={()=>{ const np=sliderPos+1; if(np<allSliderItems.length){setSliderPos(np);setActiveId(allSliderItems[np].id);} }}
                 style={{background:"none",border:"none",padding:"0 16px",cursor:"pointer",fontSize:22,fontWeight:700,color:NAVY,opacity:sliderPos<allSliderItems.length-1?0.65:0.12,WebkitTapHighlightColor:"transparent",lineHeight:1,transition:"opacity 0.2s",flexShrink:0}}>‹</button>
               <div onTouchStart={handleSliderTouchStart} onTouchEnd={handleSliderTouchEnd}
@@ -5100,67 +5090,57 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
         <div ref={scrollContainerRef} style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",padding:"0 16px 110px"}}>
 
           {/* ── NEXT ACTION hero card ──────────────────────────────────────────── */}
-          <div style={{background:"#fff",borderRadius:20,padding:"20px 20px 20px",marginBottom:14,boxShadow:"0 4px 20px rgba(0,0,0,0.07)",position:"relative",overflow:"hidden"}}>
-            {/* Trophy decoration */}
-            <img src={trophy} alt="" style={{position:"absolute",right:8,top:14,height:112,opacity:1,pointerEvents:"none",filter:"drop-shadow(0 8px 20px rgba(0,0,0,0.15))",WebkitMaskImage:"linear-gradient(to bottom,black 55%,transparent 100%)",maskImage:"linear-gradient(to bottom,black 55%,transparent 100%)"}}/>
-            {/* Badge */}
-            <div style={{display:"inline-flex",background:NAVY,color:"#fff",borderRadius:20,padding:"5px 13px",fontSize:10,fontWeight:800,letterSpacing:1,marginBottom:14}}>{naCard.badge}</div>
-            {/* Title */}
-            <div style={{fontSize:24,fontWeight:900,color:"#0D1117",lineHeight:1.2,marginBottom:7,maxWidth:"58%"}}>{naCard.title}</div>
-            {/* Sub */}
-            <div style={{fontSize:12,color:"#6B7280",marginBottom:6,lineHeight:1.4,maxWidth:"62%"}}>{naCard.sub}</div>
-            {/* Due date */}
-            {naCard.due&&(
-              <div style={{display:"inline-flex",alignItems:"center",gap:5,background:"rgba(200,16,46,0.08)",borderRadius:20,padding:"4px 11px",fontSize:11,fontWeight:700,color:"#C8102E",marginBottom:10}}>
-                <span style={{fontSize:10}}>📅</span>{naCard.due}
+          <div style={{background:"#fff",borderRadius:20,padding:"14px 16px 16px",marginBottom:14,boxShadow:"0 4px 20px rgba(0,0,0,0.07)",overflow:"hidden"}}>
+            {/* Rând 1: NEXT ACTION centrat */}
+            <div style={{textAlign:"center",fontSize:11,fontWeight:800,letterSpacing:1.5,color:"rgba(10,46,138,0.5)",textTransform:"uppercase",marginBottom:8}}>{naCard.badge}</div>
+            {/* Rând 2: Due stânga | 0/12 dreapta */}
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
+              {naCard.due
+                ? <div style={{display:"inline-flex",alignItems:"center",gap:4,background:"rgba(200,16,46,0.08)",borderRadius:20,padding:"3px 10px",fontSize:11,fontWeight:700,color:"#C8102E"}}>
+                    <span style={{fontSize:10}}>📅</span>{naCard.due}
+                  </div>
+                : <div/>}
+              {naCard.total > 1
+                ? <div style={{fontSize:11,fontWeight:800,color:NAVY}}>{naCard.progress}/{naCard.total}</div>
+                : <div/>}
+            </div>
+            {/* Content row: titlu+sub stânga | trofeu dreapta */}
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
+              <div style={{flex:1,paddingRight:10}}>
+                <div style={{fontSize:18,fontWeight:900,color:"#0D1117",lineHeight:1.2,marginBottom:6}}>{naCard.title}</div>
+                <div style={{fontSize:11,color:"#6B7280",lineHeight:1.4}}>{naCard.sub}</div>
               </div>
-            )}
-            {/* Progress label */}
-            {naCard.total > 1 && <div style={{fontSize:12,fontWeight:600,color:NAVY,marginBottom:5}}>{naCard.progress}/{naCard.total} {nextTask===0?"picks done":nextTask===1?"groups completed":nextTask===2?"scored":""}</div>}
+              <img src={trophy} alt="" style={{height:76,flexShrink:0,pointerEvents:"none",filter:"drop-shadow(0 8px 20px rgba(0,0,0,0.15))",WebkitMaskImage:"linear-gradient(to bottom,black 60%,transparent 100%)",maskImage:"linear-gradient(to bottom,black 60%,transparent 100%)"}}/>
+            </div>
             {/* Progress bar */}
-            {naCard.total > 1 && <div style={{height:6,background:"#E8EDF8",borderRadius:3,marginBottom:16,overflow:"hidden"}}>
+            {naCard.total > 1 && <div style={{height:4,background:"#E8EDF8",borderRadius:3,marginBottom:12,overflow:"hidden"}}>
               <div style={{height:"100%",width:`${naPct}%`,background:`linear-gradient(90deg,${NAVY},#3B6FE8)`,borderRadius:3,transition:"width 0.4s"}}/>
             </div>}
-            {naCard.total === 1 && <div style={{height:16}}/>}
+            {naCard.total === 1 && <div style={{height:4}}/>}
             {/* CTA button */}
-            <button onClick={naCard.onClick}
-              style={{width:"100%",background:NAVY,color:"#fff",borderRadius:14,padding:"15px 20px",fontSize:15,fontWeight:700,border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between",boxShadow:`0 4px 16px rgba(10,46,138,0.35)`,fontFamily:"inherit"}}>
-              <span>{naCard.label}</span>
-              <span style={{fontSize:20,lineHeight:1}}>→</span>
-            </button>
+            {nextTask !== null && (
+              <button onClick={naCard.onClick}
+                style={{width:"100%",background:NAVY,color:"#fff",borderRadius:12,padding:"12px 16px",fontSize:14,fontWeight:700,border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between",boxShadow:`0 4px 16px rgba(10,46,138,0.35)`,fontFamily:"inherit"}}>
+                <span>{naCard.label}</span>
+                <span style={{fontSize:18,lineHeight:1}}>→</span>
+              </button>
+            )}
           </div>
 
           {/* ── YOUR PROGRESS ─────────────────────────────────────────────────── */}
           <div style={{marginBottom:14}}>
             <div style={{fontSize:11,fontWeight:800,color:"rgba(10,46,138,0.5)",letterSpacing:1.5,textTransform:"uppercase",marginBottom:9,paddingLeft:2}}>YOUR PROGRESS</div>
             <div style={{background:"#fff",borderRadius:20,boxShadow:"0 4px 16px rgba(0,0,0,0.06)",overflow:"hidden"}}>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr"}}>
-                {/* Special Picks */}
-                {(()=>{
-                  const canCopy = specialDoneCount > 0;
-                  return (
-                    <div style={{position:"relative",borderRight:"1px solid #F3F4F6"}}>
-                      <button onClick={()=>onChampion("champion")} style={{width:"100%",textAlign:"center",padding:"16px 6px",border:"none",background:"transparent",cursor:"pointer",WebkitTapHighlightColor:"transparent",fontFamily:"inherit"}}>
-                        <div style={{width:42,height:42,borderRadius:"50%",background:"rgba(200,16,46,0.08)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 8px",fontSize:22}}>{specialDoneCount===2?"⭐":"☆"}</div>
-                        <div style={{fontSize:11,color:"#6B7280",fontWeight:600,marginBottom:4}}>{T[lang].specialPick||"Special Picks"}</div>
-                        <div style={{fontSize:14,fontWeight:800,color:specialDoneCount===2?GREEN:RED}}>{specialDoneCount}/2</div>
-                      </button>
-                      <button onClick={e=>{e.stopPropagation();if(!canCopy)return;setCopyDone({});setShowCopySheet("special");}}
-                        style={{position:"absolute",top:8,right:8,width:22,height:22,display:"flex",alignItems:"center",justifyContent:"center",background:canCopy?"rgba(10,46,138,0.07)":"transparent",borderRadius:6,border:"none",cursor:canCopy?"pointer":"default",opacity:canCopy?1:0,padding:0}}>
-                        <svg width="11" height="11" viewBox="0 0 14 14" fill="none"><rect x="4" y="4" width="8" height="8" rx="1.5" stroke={NAVY} strokeWidth="1.8"/><path d="M2 10V2h8" stroke={NAVY} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                      </button>
-                    </div>
-                  );
-                })()}
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr"}}>
                 {/* Predictions */}
                 {(()=>{
                   const canCopy = instantPickDone;
                   return (
                     <div style={{position:"relative",borderRight:"1px solid #F3F4F6"}}>
-                      <button onClick={()=>onPredict(activeId)} style={{width:"100%",textAlign:"center",padding:"16px 6px",border:"none",background:"transparent",cursor:"pointer",WebkitTapHighlightColor:"transparent",fontFamily:"inherit"}}>
-                        <div style={{width:42,height:42,borderRadius:"50%",background:"rgba(10,46,138,0.08)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 8px",fontSize:22}}>📋</div>
-                        <div style={{fontSize:11,color:"#6B7280",fontWeight:600,marginBottom:4}}>{T[lang].predictions||"Predictions"}</div>
-                        <div style={{fontSize:14,fontWeight:800,color:NAVY}}>{predDoneCount}/{GROUPS_COUNT}</div>
+                      <button onClick={()=>onPredict(activeId)} style={{width:"100%",textAlign:"center",padding:"12px 6px",border:"none",background:"transparent",cursor:"pointer",WebkitTapHighlightColor:"transparent",fontFamily:"inherit"}}>
+                        <div style={{width:36,height:36,borderRadius:"50%",background:"rgba(10,46,138,0.08)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 6px",fontSize:18}}>📋</div>
+                        <div style={{fontSize:10,color:"#6B7280",fontWeight:600,marginBottom:3}}>{T[lang].predictions||"Predictions"}</div>
+                        <div style={{fontSize:13,fontWeight:800,color:NAVY}}>{predDoneCount}/{GROUPS_COUNT}</div>
                       </button>
                       <button onClick={e=>{e.stopPropagation();if(!canCopy)return;setCopyDone({});setShowCopySheet("predictions");}}
                         style={{position:"absolute",top:8,right:8,width:22,height:22,display:"flex",alignItems:"center",justifyContent:"center",background:canCopy?"rgba(10,46,138,0.07)":"transparent",borderRadius:6,border:"none",cursor:canCopy?"pointer":"default",opacity:canCopy?1:0,padding:0}}>
@@ -5174,10 +5154,10 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
                   const canCopy = exactWeekUnlocked && exactWeekScored > 0;
                   return (
                     <div style={{position:"relative"}}>
-                      <button onClick={()=>onOpenGroups&&onOpenGroups()} style={{width:"100%",textAlign:"center",padding:"16px 6px",border:"none",background:"transparent",cursor:"pointer",WebkitTapHighlightColor:"transparent",fontFamily:"inherit"}}>
-                        <div style={{width:42,height:42,borderRadius:"50%",background:"rgba(0,154,68,0.08)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 8px",fontSize:22}}>{exactWeekUnlocked?(exactWeekDone?"✅":"📊"):"🔒"}</div>
-                        <div style={{fontSize:11,color:"#6B7280",fontWeight:600,marginBottom:4}}>{T[lang].exactScores||"Exact Scores"}</div>
-                        <div style={{fontSize:14,fontWeight:800,color:exactWeekUnlocked?(exactWeekDone?GREEN:NAVY):GREEN}}>
+                      <button onClick={()=>onOpenGroups&&onOpenGroups()} style={{width:"100%",textAlign:"center",padding:"12px 6px",border:"none",background:"transparent",cursor:"pointer",WebkitTapHighlightColor:"transparent",fontFamily:"inherit"}}>
+                        <div style={{width:36,height:36,borderRadius:"50%",background:"rgba(0,154,68,0.08)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 6px",fontSize:18}}>{exactWeekUnlocked?(exactWeekDone?"✅":"📊"):"🔒"}</div>
+                        <div style={{fontSize:10,color:"#6B7280",fontWeight:600,marginBottom:3}}>{T[lang].exactScores||"Exact Scores"}</div>
+                        <div style={{fontSize:13,fontWeight:800,color:exactWeekUnlocked?(exactWeekDone?GREEN:NAVY):GREEN}}>
                           {exactWeekUnlocked?`${exactWeekScored}/${exactWeekTotal}`:(T[lang].locked||"Locked")}
                         </div>
                       </button>
@@ -5195,23 +5175,23 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
           {/* ── BOTTOM ROW: This Week + League Ranking ────────────────────────── */}
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:14}}>
             {/* This Week */}
-            <div style={{background:"#fff",borderRadius:20,padding:"14px",boxShadow:"0 4px 16px rgba(0,0,0,0.06)",display:"flex",flexDirection:"column"}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10}}>
-                <span style={{fontSize:14,fontWeight:800,color:"#111"}}>{T[lang].thisWeekLabel||"This Week"}</span>
+            <div style={{background:"#fff",borderRadius:20,padding:"12px",boxShadow:"0 4px 16px rgba(0,0,0,0.06)",display:"flex",flexDirection:"column"}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
+                <span style={{fontSize:12,fontWeight:800,color:"#111"}}>{T[lang].thisWeekLabel||"This Week"}</span>
               </div>
-              <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",padding:"4px 0 10px"}}>
+              <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",padding:"2px 0 8px"}}>
                 {(()=>{
                   const d = simDay ? new Date(2026,5,simDay,simHour||12) : new Date();
                   const months=["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
                   return (
-                    <div style={{width:52,height:52,borderRadius:12,background:NAVY,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",boxShadow:`0 4px 12px rgba(10,46,138,0.3)`}}>
-                      <div style={{fontSize:9,fontWeight:800,color:"rgba(255,255,255,0.65)",letterSpacing:1}}>{months[d.getMonth()]}</div>
-                      <div style={{fontSize:26,fontWeight:900,color:"#fff",lineHeight:1.1}}>{d.getDate()}</div>
+                    <div style={{width:44,height:44,borderRadius:10,background:NAVY,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:1,boxShadow:`0 4px 12px rgba(10,46,138,0.3)`,paddingBottom:2}}>
+                      <div style={{fontSize:8,fontWeight:800,color:"rgba(255,255,255,0.65)",letterSpacing:1,lineHeight:1}}>{months[d.getMonth()]}</div>
+                      <div style={{fontSize:20,fontWeight:900,color:"#fff",lineHeight:1}}>{d.getDate()}</div>
                     </div>
                   );
                 })()}
               </div>
-              <div style={{fontSize:11,color:"#6B7280",textAlign:"center",marginBottom:10,lineHeight:1.5}}>
+              <div style={{fontSize:10,color:"#6B7280",textAlign:"center",marginBottom:8,lineHeight:1.5}}>
                 {exactWeekUnlocked
                   ? exactWeekDone
                     ? `${T[lang].weekComplete||"Week complete"} ✓`
@@ -5219,38 +5199,38 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
                   : `${T[lang].exactScoresUnlock||"Exact scores unlock"}\nSunday at 8:00 AM`}
               </div>
               <button onClick={exactWeekUnlocked?()=>onOpenGroups&&onOpenGroups():undefined}
-                style={{width:"100%",background:exactWeekUnlocked?`linear-gradient(135deg,${NAVY},#1E4BC7)`:"#F3F4F6",color:exactWeekUnlocked?"#fff":"#9CA3AF",border:"none",borderRadius:10,padding:"9px 0",fontSize:12,fontWeight:700,cursor:exactWeekUnlocked?"pointer":"default",display:"flex",alignItems:"center",justifyContent:"center",gap:5,fontFamily:"inherit"}}>
+                style={{width:"100%",background:exactWeekUnlocked?`linear-gradient(135deg,${NAVY},#1E4BC7)`:"#F3F4F6",color:exactWeekUnlocked?"#fff":"#9CA3AF",border:"none",borderRadius:8,padding:"7px 0",fontSize:11,fontWeight:700,cursor:exactWeekUnlocked?"pointer":"default",display:"flex",alignItems:"center",justifyContent:"center",gap:5,fontFamily:"inherit"}}>
                 {!exactWeekUnlocked&&<span>🔒</span>}
                 <span>{exactWeekUnlocked?(T[lang].openScores||"Open Scores"):(T[lang].locked||"Locked")}</span>
               </button>
             </div>
 
             {/* League Ranking */}
-            <div style={{background:"#fff",borderRadius:20,padding:"14px",boxShadow:"0 4px 16px rgba(0,0,0,0.06)",display:"flex",flexDirection:"column"}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10}}>
-                <span style={{fontSize:14,fontWeight:800,color:"#111"}}>{T[lang].leagueRanking||"League Ranking"}</span>
-                <div style={{width:30,height:30,borderRadius:"50%",background:"rgba(10,46,138,0.07)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,flexShrink:0}}>🏆</div>
+            <div style={{background:"#fff",borderRadius:20,padding:"12px",boxShadow:"0 4px 16px rgba(0,0,0,0.06)",display:"flex",flexDirection:"column"}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
+                <span style={{fontSize:12,fontWeight:800,color:"#111"}}>{T[lang].leagueRanking||"League Ranking"}</span>
+                <div style={{width:26,height:26,borderRadius:"50%",background:"rgba(10,46,138,0.07)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,flexShrink:0}}>🏆</div>
               </div>
-              <div style={{flex:1,display:"flex",flexDirection:"column",gap:7,marginBottom:10}}>
+              <div style={{flex:1,display:"flex",flexDirection:"column",gap:5,marginBottom:8}}>
                 {top3.slice(0,3).map((u,i)=>{
                   const medals=["🥇","🥈","🥉"];
                   const isYou = u.isMe;
                   return (
-                    <div key={i} style={{display:"flex",alignItems:"center",gap:7}}>
-                      <span style={{fontSize:15,flexShrink:0,lineHeight:1}}>{medals[i]||"🏅"}</span>
-                      <div style={{width:24,height:24,borderRadius:"50%",background:u.accent||"#E8F0FF",display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:NAVY,overflow:"hidden",flexShrink:0,border:`1px solid rgba(10,46,138,0.08)`}}>
+                    <div key={i} style={{display:"flex",alignItems:"center",gap:6}}>
+                      <span style={{fontSize:13,flexShrink:0,lineHeight:1}}>{medals[i]||"🏅"}</span>
+                      <div style={{width:20,height:20,borderRadius:"50%",background:u.accent||"#E8F0FF",display:"flex",alignItems:"center",justifyContent:"center",fontSize:8,fontWeight:700,color:NAVY,overflow:"hidden",flexShrink:0,border:`1px solid rgba(10,46,138,0.08)`}}>
                         {u.avatarUrl?<img src={u.avatarUrl} style={{width:"100%",height:"100%",objectFit:"cover"}} alt=""/>:(isYou?initials:(u.name||"?").slice(0,2).toUpperCase())}
                       </div>
-                      <span style={{flex:1,fontSize:11,fontWeight:isYou?700:600,color:isYou?NAVY:"#374151",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{isYou?(T[lang].you||"You"):u.name}</span>
-                      {!u.empty&&<span style={{fontSize:11,fontWeight:700,color:isYou?NAVY:"#6B7280",flexShrink:0}}>{u.pts||0} pts</span>}
+                      <span style={{flex:1,fontSize:10,fontWeight:isYou?700:600,color:isYou?NAVY:"#374151",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{isYou?(T[lang].you||"You"):u.name}</span>
+                      {!u.empty&&<span style={{fontSize:10,fontWeight:700,color:isYou?NAVY:"#6B7280",flexShrink:0}}>{u.pts||0} pts</span>}
                     </div>
                   );
                 })}
               </div>
               <button onClick={onLeaderboard}
-                style={{width:"100%",background:"transparent",border:"none",color:NAVY,fontSize:12,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:4,padding:"4px 0",fontFamily:"inherit"}}>
+                style={{width:"100%",background:"transparent",border:"none",color:NAVY,fontSize:11,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:4,padding:"3px 0",fontFamily:"inherit"}}>
                 <span>{T[lang].viewRanking||"View ranking"}</span>
-                <span style={{fontSize:16,lineHeight:1}}>›</span>
+                <span style={{fontSize:14,lineHeight:1}}>›</span>
               </button>
             </div>
           </div>
@@ -5963,12 +5943,12 @@ function Footer({ active, onNavigate, lang, user }) {
   return (
     <div style={{position:"fixed",bottom:0,left:0,right:0,padding:"0 14px",paddingBottom:"env(safe-area-inset-bottom, 10px)",zIndex:1000}}>
       <div style={{
-        background:"#EEF2FF",
+        background:"#F0F4FF",
         backdropFilter:"blur(20px)",
         WebkitBackdropFilter:"blur(20px)",
         borderRadius:16,
-        boxShadow:"0 2px 14px rgba(0,0,0,0.07)",
-        border:"1.5px solid rgba(255,255,255,0.72)",
+        boxShadow:"0 -2px 0 rgba(10,46,138,0.08), 0 4px 24px rgba(10,46,138,0.14)",
+        border:"1.5px solid rgba(10,46,138,0.10)",
         display:"flex",
         alignItems:"stretch",
         height:62,
@@ -5977,17 +5957,17 @@ function Footer({ active, onNavigate, lang, user }) {
       }}>
         {tabs.map(tab=>{
           const isActive=active===tab.key;
-          const iconColor = isActive ? NAVY : "#6B7280";
+          const iconColor = isActive ? NAVY : "#9CA3AF";
           const isAccount = tab.key === SCREENS.ACCOUNT;
           return (
             <button key={tab.key} onClick={()=>onNavigate(tab.key)}
               style={{flex:1,background:"transparent",border:"none",cursor:"pointer",WebkitTapHighlightColor:"transparent",
                 display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:3,padding:0,position:"relative",
-                opacity:isActive?1:0.6,transition:"opacity 0.18s"}}>
+                transition:"opacity 0.18s"}}>
               <div style={{
                 width:40,height:36,borderRadius:11,
-                background:isActive?`rgba(10,46,138,0.08)`:"transparent",
-                boxShadow:isActive?`0 2px 10px rgba(10,46,138,0.10)`:"none",
+                background:isActive?"rgba(10,46,138,0.08)":"transparent",
+                boxShadow:isActive?"0 2px 10px rgba(10,46,138,0.10)":"none",
                 display:"flex",alignItems:"center",justifyContent:"center",
                 animation:isActive?"tabPop 0.3s cubic-bezier(0.175,0.885,0.32,1.275) forwards":"none",
                 transition:"background 0.2s, box-shadow 0.2s",
@@ -6001,7 +5981,7 @@ function Footer({ active, onNavigate, lang, user }) {
                   : _footerIcons[tab.key]?.(iconColor, isActive)
                 }
               </div>
-              <span style={{fontSize:10,fontWeight:isActive?700:500,color:isActive?NAVY:"#6B7280",transition:"all 0.18s",letterSpacing:0.2}}>
+              <span style={{fontSize:10,fontWeight:isActive?700:500,color:isActive?NAVY:"#9CA3AF",transition:"all 0.18s",letterSpacing:0.2}}>
                 {tab.label}
               </span>
             </button>
