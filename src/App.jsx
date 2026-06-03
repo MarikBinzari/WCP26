@@ -293,7 +293,7 @@ const T = {
     possiblePts:"possible pts", selectScore:"Select predicted score",
     customScore:"Other score", saveScore:"Save ✓", modifyBtn:"← Modify", bestThirdBtn:"Best Third →",
     notStarted:"Not Started", winner:"Winner", scheduledMatches:"Scheduled Matches",
-    realLabel:"Real", predictedLabel:"Predicted", noMatchesScheduled:"No matches scheduled",
+    realLabel:"Real", predictedLabel:"Predicted", noMatchesScheduled:"No matches scheduled", checkWeekHint:"Check the rest of the week — there might be matches to predict.",
     finished:"Finished", prediction:"Prediction",
     noMembersYet:"No members yet", searchOrCode:"Search or enter invite code...",
     joinBtn:"Join", noBoardsFor:"No leagues found for",
@@ -314,7 +314,7 @@ const T = {
     membersLabel:"Members", adminLabel:"Admin", remove:"Remove", saveChanges:"Save Changes ✓",
     createBoard2:"Create League 🏆", boardAdmin:"League Admin", incorrectPassword:"Incorrect password. Try again.",
     joinBoardTitle:"Join a League", joinedBoards:"My Leagues", availableBoards:"Available Leagues",
-    chooseEmoji:"Choose emoji", passwordProtected:"🔒 Password protected league",
+    chooseEmoji:"Choose emoji", passwordProtected:"Password protected league",
     enterPassword:"Enter password...", rank:"Rank",
     globalBoard:"Global", noBoards:"No leagues found.",
     viewAll2:"View all", members2:"members", code:"code",
@@ -370,6 +370,11 @@ const T = {
     availableEmptyTitle:"No leagues available", availableEmptyBody:"Create a new league or enter an invite code.",
     adminEmptyTitle:"No leagues managed", adminEmptyBody:"Create a league and it will appear here.",
     hiGreeting:"Hi,", manageLeague:"Manage League", newLeague:"New League",
+    nextActionLabel:"Next action", upToDateLabel:"Up to date", yourProgress:"Your progress",
+    thisWeekLabel:"This week", leagueRanking:"League ranking", viewRanking:"View ranking",
+    openScores:"Open scores", exactScoresUnlock:"Exact scores unlock", scoresLeftThisWeek:"left this week",
+    allDoneTitle:"You're all set!", allDoneSub:"Check back after matches",
+    continuePredictions:"Continue", startPredictions:"Start predictions", you:"You",
     syncingLabel:"syncing", tournamentLive:"🏆 tournament live", kickoffLabel:"· kickoff",
     lockedUntilJun27:"Locked until Jun 27", specialPick:"Special Pick",
     winnerTopScorer:"Winner & Top Scorer", reopensJun27:"Reopens Jun 27",
@@ -472,7 +477,7 @@ const T = {
     possiblePts:"pts posibile", selectScore:"Selectează scorul prezis",
     customScore:"Alt scor", saveScore:"Salvează ✓", modifyBtn:"← Modifică", bestThirdBtn:"Locul 3 →",
     notStarted:"Neînceput", winner:"Câștigător", scheduledMatches:"Meciuri Programate",
-    realLabel:"Real", predictedLabel:"Prezis", noMatchesScheduled:"Nu sunt meciuri programate",
+    realLabel:"Real", predictedLabel:"Prezis", noMatchesScheduled:"Nu sunt meciuri programate", checkWeekHint:"Verifică restul săptămânii — s-ar putea să ai meciuri de prezis.",
     finished:"Terminat", prediction:"Predicție",
     noMembersYet:"Niciun membru încă", searchOrCode:"Caută sau introdu codul...",
     joinBtn:"Alătură-te", noBoardsFor:"Nicio ligă găsită pentru",
@@ -493,7 +498,7 @@ const T = {
     membersLabel:"Membri", adminLabel:"Admin", remove:"Elimină", saveChanges:"Salvează Modificările ✓",
     createBoard2:"Creează Ligă 🏆", boardAdmin:"Admin Ligă", incorrectPassword:"Parolă incorectă. Încearcă din nou.",
     joinBoardTitle:"Alătură-te unei Ligi", joinedBoards:"Ligile mele", availableBoards:"Ligi disponibile",
-    chooseEmoji:"Alege un emoji", passwordProtected:"🔒 Ligă protejată cu parolă",
+    chooseEmoji:"Alege un emoji", passwordProtected:"Ligă protejată cu parolă",
     enterPassword:"Introdu parola...", rank:"Rang",
     globalBoard:"Global", noBoards:"Nicio ligă găsită.",
     viewAll2:"Vezi tot", members2:"membri", code:"cod",
@@ -549,6 +554,11 @@ const T = {
     availableEmptyTitle:"Nicio ligă disponibilă", availableEmptyBody:"Creează o ligă nouă sau introdu un cod de invitație.",
     adminEmptyTitle:"Nicio ligă administrată", adminEmptyBody:"Creează o ligă și va apărea aici.",
     hiGreeting:"Salut,", manageLeague:"Administrează Liga", newLeague:"Ligă Nouă",
+    nextActionLabel:"Urmatoarea actiune", upToDateLabel:"La zi", yourProgress:"Progresul tau",
+    thisWeekLabel:"Saptamana aceasta", leagueRanking:"Clasament liga", viewRanking:"Vezi clasamentul",
+    openScores:"Deschide scoruri", exactScoresUnlock:"Scorurile exacte se deschid", scoresLeftThisWeek:"ramase saptamana asta",
+    allDoneTitle:"Esti la zi!", allDoneSub:"Revino dupa meciuri",
+    continuePredictions:"Continua", startPredictions:"Incepe predictiile", you:"Tu",
     syncingLabel:"sincronizare", tournamentLive:"🏆 turneu live", kickoffLabel:"· start",
     lockedUntilJun27:"Blocat până pe 27 Iun", specialPick:"Selecție Specială",
     winnerTopScorer:"Câștigător & Golgheter", reopensJun27:"Se redeschide 27 Iun",
@@ -651,7 +661,7 @@ const T = {
     possiblePts:"pts possibles", selectScore:"Sélectionner le score prédit",
     customScore:"Autre score", saveScore:"Enregistrer ✓", modifyBtn:"← Modifier", bestThirdBtn:"Best Third →",
     notStarted:"Pas commencé", winner:"Vainqueur", scheduledMatches:"Matchs Programmés",
-    realLabel:"Réel", predictedLabel:"Prédit", noMatchesScheduled:"Aucun match programmé",
+    realLabel:"Réel", predictedLabel:"Prédit", noMatchesScheduled:"Aucun match programmé", checkWeekHint:"Consultez le reste de la semaine — il pourrait y avoir des matchs à prédire.",
     finished:"Terminé", prediction:"Pronostic",
     noMembersYet:"Aucun membre encore", searchOrCode:"Chercher ou entrer le code...",
     joinBtn:"Rejoindre", noBoardsFor:"Aucune ligue trouvée pour",
@@ -672,7 +682,7 @@ const T = {
     membersLabel:"Membres", adminLabel:"Admin", remove:"Retirer", saveChanges:"Sauvegarder ✓",
     createBoard2:"Créer Ligue 🏆", boardAdmin:"Admin Ligue", incorrectPassword:"Mot de passe incorrect. Réessayez.",
     joinBoardTitle:"Rejoindre une Ligue", joinedBoards:"Mes Ligues", availableBoards:"Ligues disponibles",
-    chooseEmoji:"Choisir un emoji", passwordProtected:"🔒 Ligue protégée par mot de passe",
+    chooseEmoji:"Choisir un emoji", passwordProtected:"Ligue protégée par mot de passe",
     enterPassword:"Entrer le mot de passe...", rank:"Rang",
     globalBoard:"Global", noBoards:"Aucune ligue trouvée.",
     viewAll2:"Voir tout", members2:"membres", code:"code",
@@ -728,6 +738,11 @@ const T = {
     availableEmptyTitle:"Aucune ligue disponible", availableEmptyBody:"Créez une nouvelle ligue ou entrez un code d'invitation.",
     adminEmptyTitle:"Aucune ligue gérée", adminEmptyBody:"Créez une ligue et elle apparaîtra ici.",
     hiGreeting:"Salut,", manageLeague:"Gérer la Ligue", newLeague:"Nouvelle Ligue",
+    nextActionLabel:"Prochaine action", upToDateLabel:"A jour", yourProgress:"Votre progression",
+    thisWeekLabel:"Cette semaine", leagueRanking:"Classement ligue", viewRanking:"Voir le classement",
+    openScores:"Ouvrir les scores", exactScoresUnlock:"Scores exacts disponibles", scoresLeftThisWeek:"restants cette semaine",
+    allDoneTitle:"Vous etes a jour !", allDoneSub:"Revenez apres les matchs",
+    continuePredictions:"Continuer", startPredictions:"Commencer", you:"Vous",
     syncingLabel:"sync", tournamentLive:"🏆 tournoi en direct", kickoffLabel:"· coup d'envoi",
     lockedUntilJun27:"Bloqué jusqu'au 27 Juin", specialPick:"Sélection Spéciale",
     winnerTopScorer:"Vainqueur & Meilleur Buteur", reopensJun27:"Rouvre le 27 Juin",
@@ -1746,6 +1761,19 @@ function GrupeTab({ groupRank, setRank, onComplete }) {
 // ── INSTANT PICK SCREEN ───────────────────────────────────────────────────────
 
 const INTERACTIVE_GROUPS = ["A","B","C","D","E","F","G","H","I","J","K","L"]; // all 12 groups user ranks manually
+const isGroupRankingComplete = (ranking) => {
+  if (Array.isArray(ranking)) return ranking.length >= 4 && ranking.slice(0, 4).every(Boolean);
+  if (ranking && typeof ranking === "object") return [1, 2, 3, 4].every(pos => !!ranking[pos]);
+  return false;
+};
+const getPredictionProgress = (state = {}) => {
+  const groupRankings = state.groupRankings || {};
+  const groupsDone = INTERACTIVE_GROUPS.filter(g => isGroupRankingComplete(groupRankings[g])).length;
+  const best3Done = (state.best3 || []).filter(Boolean).length >= 8;
+  const total = INTERACTIVE_GROUPS.length + 1;
+  const done = Math.min(total, groupsDone + (best3Done ? 1 : 0));
+  return { done, total, groupsDone, best3Done, complete: done === total };
+};
 const ALL_GROUP_IDS = Object.keys(ALL_GROUPS_DATA);
 
 // ── PREDICTION SCORING ────────────────────────────────────────────────────────
@@ -4367,38 +4395,39 @@ function GroupRankingScreen({ group, teams, existingRanking, onConfirm, onAutoSa
 
 // ── CIRCLE TAB ────────────────────────────────────────────────────────────────
 function CircleTab({ label, imageUrl, name, isActive, onClick, lightBg=false, distance=0, rank, members, done=false }) {
-  const scale = isActive ? 1.32 : Math.max(0.58, 1 - distance * 0.2);
-  const opacity = isActive ? 1 : Math.max(0.32, 1 - distance * 0.28);
+  const scale = isActive ? 1 : Math.max(0.58, 1 - distance * 0.2);
+  const opacity = isActive ? 1 : Math.max(0.26, 1 - distance * 0.36);
   const activeColor = isActive && done ? GREEN : NAVY;
   return (
     <div onClick={onClick} style={{
       display:"flex",flexDirection:"column",alignItems:"center",gap:5,
       cursor:"pointer",flexShrink:0,WebkitTapHighlightColor:"transparent",
-      transform:`scale(${scale})`,opacity,
-      transition:"transform 0.28s, opacity 0.28s",
-      transformOrigin:"center bottom",
+      transform:`scale(${scale}) translateY(${isActive ? -20 : 0}px)`,opacity,
+      transition:"transform 0.28s, opacity 0.28s, filter 0.28s",
+      transformOrigin:"center center",
+      filter:isActive?"none":"saturate(0.85)",
     }}>
       <div style={{
-        width:44, height:44,
+        width:isActive?84:44, height:isActive?84:44,
         borderRadius:"50%",
-        background:isActive?"#fff":lightBg?"rgba(0,0,0,0.05)":"rgba(255,255,255,0.1)",
-        border:isActive?`2px solid ${activeColor}`:"1px solid rgba(0,0,0,0.10)",
+        background:isActive?"rgba(255,255,255,0.96)":lightBg?"rgba(255,255,255,0.44)":"rgba(255,255,255,0.1)",
+        border:isActive?`2.5px solid ${activeColor}`:"1px solid rgba(10,46,138,0.08)",
         display:"flex",alignItems:"center",justifyContent:"center",
-        fontSize:22, overflow:"hidden",
-        boxShadow:isActive?`0 0 0 4px ${activeColor}28, 0 4px 14px ${activeColor}30`:"none",
+        fontSize:isActive?38:22, overflow:"hidden",
+        boxShadow:isActive?`0 0 0 7px ${activeColor}12, 0 14px 32px rgba(10,46,138,0.18), inset 0 1px 0 rgba(255,255,255,0.9)`:"0 3px 10px rgba(10,46,138,0.05)",
         transition:"all 0.4s ease",
       }}>
         {imageUrl
           ? <img src={imageUrl} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
           : label}
       </div>
-      <span style={{
+      {!!name&&<span style={{
         fontSize:isActive?10:9,
         fontWeight:isActive?800:600,
-        color:isActive?activeColor:lightBg?"rgba(0,0,0,0.55)":"rgba(255,255,255,0.6)",
+        color:isActive?NAVY:lightBg?"rgba(0,0,0,0.55)":"rgba(255,255,255,0.6)",
         maxWidth:52,textAlign:"center",lineHeight:1.2,
         transition:"all 0.4s ease",
-      }}>{name}</span>
+      }}>{name}</span>}
     </div>
   );
 }
@@ -4619,7 +4648,7 @@ function BoosterScreen({ onBack }) {
       </div>
 
       {/* Content */}
-      <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",padding:"24px 18px 100px",position:"relative",zIndex:1}}>
+      <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",padding:"24px 20px 100px",position:"relative",zIndex:1}}>
       </div>
     </div>
   );
@@ -4990,8 +5019,169 @@ function ChampionScreen({ onBack, initialMode="champion", championPick, topScore
 const _pickNotDone = new Set();    const _pickScrolled = new Set();
 const _exNotDone = new Set();      const _exScrolled = new Set();
 
+const homeCardBaseStyle = {
+  background:"#fff",
+  borderRadius:20,
+  boxShadow:"0 4px 16px rgba(0,0,0,0.06)",
+  overflow:"hidden",
+};
+
+function HomeSectionLabel({ children }) {
+  return (
+    <div style={{...UI.sectionLabel,fontSize:12,fontWeight:750,color:"rgba(10,46,138,0.55)",textAlign:"left",letterSpacing:1.2,marginBottom:9,paddingLeft:2}}>
+      {children}
+    </div>
+  );
+}
+
+function HomeCard({ children, style }) {
+  return <div style={{...homeCardBaseStyle,...style}}>{children}</div>;
+}
+
+function CopyGlyph({ color=NAVY }) {
+  return (
+    <svg width="11" height="11" viewBox="0 0 14 14" fill="none">
+      <rect x="4" y="4" width="8" height="8" rx="1.5" stroke={color} strokeWidth="1.8"/>
+      <path d="M2 10V2h8" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+}
+
+function LockIcon({ size=14, color="currentColor", strokeWidth=2 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <rect x="5" y="10" width="14" height="10" rx="2.5" stroke={color} strokeWidth={strokeWidth}/>
+      <path d="M8 10V7a4 4 0 0 1 8 0v3" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round"/>
+    </svg>
+  );
+}
+
+function ChevronIcon({ direction="right", size=18, color="currentColor", strokeWidth=2.4 }) {
+  const rotate = direction === "left" ? 180 : direction === "up" ? -90 : direction === "down" ? 90 : 0;
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" style={{transform:`rotate(${rotate}deg)`}} aria-hidden="true">
+      <path d="M9 5l7 7-7 7" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+}
+
+function SearchIcon({ size=15, color="currentColor", strokeWidth=2.2 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="11" cy="11" r="6.5" stroke={color} strokeWidth={strokeWidth}/>
+      <path d="M16 16l4 4" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round"/>
+    </svg>
+  );
+}
+
+function XIcon({ size=15, color="currentColor", strokeWidth=2.4 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M6 6l12 12M18 6L6 18" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round"/>
+    </svg>
+  );
+}
+
+function TrashIcon({ size=15, color="currentColor", strokeWidth=1.9 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M3 6h18" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round"/>
+      <path d="M8 6V5c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v1" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M19 6l-1 14c-.1 1.1-1 2-2.1 2H8.1c-1.1 0-2-.9-2.1-2L5 6" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M10 11v6M14 11v6" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round"/>
+    </svg>
+  );
+}
+
+function NextActionCard({ card, pct, nextTask }) {
+  return (
+    <HomeCard style={{padding:"14px 16px 16px",marginBottom:14,boxShadow:"0 4px 20px rgba(0,0,0,0.07)"}}>
+      <div style={{textAlign:"center",fontSize:11,fontWeight:800,letterSpacing:1.5,color:"rgba(10,46,138,0.5)",textTransform:"uppercase",marginBottom:8}}>{card.badge}</div>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
+        {card.due?<div style={{display:"inline-flex",alignItems:"center",gap:4,background:"rgba(200,16,46,0.08)",borderRadius:20,padding:"3px 10px",fontSize:11,fontWeight:700,color:"#C8102E"}}><span style={{fontSize:10}}>📅</span>{card.due}</div>:<div/>}
+        {card.total>1?<div style={{fontSize:11,fontWeight:800,color:NAVY}}>{card.progress}/{card.total}</div>:<div/>}
+      </div>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
+        <div style={{flex:1,paddingRight:10}}>
+          <div style={{fontSize:18,fontWeight:900,color:"#0D1117",lineHeight:1.2,marginBottom:6}}>{card.title}</div>
+          <div style={{fontSize:11,color:"#6B7280",lineHeight:1.4}}>{card.sub}</div>
+        </div>
+        <img src={trophy} alt="" style={{height:76,flexShrink:0,pointerEvents:"none",filter:"drop-shadow(0 8px 20px rgba(0,0,0,0.15))",WebkitMaskImage:"linear-gradient(to bottom,black 60%,transparent 100%)",maskImage:"linear-gradient(to bottom,black 60%,transparent 100%)"}} />
+      </div>
+      {card.total>1&&<div style={{height:4,background:"#E8EDF8",borderRadius:3,marginBottom:12,overflow:"hidden"}}><div style={{height:"100%",width:pct+"%",background:"linear-gradient(90deg,"+NAVY+",#3B6FE8)",borderRadius:3,transition:"width 0.4s"}}/></div>}
+      {card.total===1&&<div style={{height:4}}/>}
+      {nextTask!==null&&<button onClick={card.onClick} style={{width:"100%",background:NAVY,color:"#fff",borderRadius:12,padding:"12px 16px",fontSize:14,fontWeight:700,border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between",boxShadow:"0 4px 16px rgba(10,46,138,0.35)",fontFamily:"inherit"}}><span>{card.label}</span><span style={{fontSize:18,lineHeight:1}}>{"→"}</span></button>}
+    </HomeCard>
+  );
+}
+
+function ProgressTile({ icon, title, value, active=true, withDivider=false, onClick, copyEnabled, onCopy }) {
+  return (
+    <div style={{position:"relative",borderRight:withDivider?"1px solid #F3F4F6":"none"}}>
+      <button onClick={onClick} style={{width:"100%",textAlign:"center",padding:"12px 6px",border:"none",background:"transparent",cursor:"pointer",WebkitTapHighlightColor:"transparent",fontFamily:"inherit"}}>
+        <div style={{width:36,height:36,borderRadius:"50%",background:"rgba(10,46,138,0.08)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 6px",fontSize:18,color:NAVY}}>{icon}</div>
+        <div style={{fontSize:10,color:"#6B7280",fontWeight:600,marginBottom:3}}>{title}</div>
+        <div style={{fontSize:13,fontWeight:800,color:active?NAVY:"#6B7280"}}>{value}</div>
+      </button>
+      <button onClick={e=>{e.stopPropagation();if(!copyEnabled)return;onCopy&&onCopy();}} style={{position:"absolute",top:8,right:8,width:22,height:22,display:"flex",alignItems:"center",justifyContent:"center",background:copyEnabled?"rgba(10,46,138,0.07)":"transparent",borderRadius:6,border:"none",cursor:copyEnabled?"pointer":"default",opacity:copyEnabled?1:0,padding:0}}>
+        <CopyGlyph />
+      </button>
+    </div>
+  );
+}
+
+function ThisWeekCard({ title, body, buttonLabel, locked, onOpen, date }) {
+  const d = date || new Date();
+  const months = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+  return (
+    <HomeCard style={{padding:"12px",display:"flex",flexDirection:"column"}}>
+      <div style={{marginBottom:8}}><span style={{fontSize:12,fontWeight:800,color:"#111"}}>{title}</span></div>
+      <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",padding:"2px 0 8px"}}>
+        <div style={{width:44,height:44,borderRadius:10,background:NAVY,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:1,paddingBottom:2}}>
+          <div style={{fontSize:8,fontWeight:800,color:"rgba(255,255,255,0.65)",letterSpacing:1,lineHeight:1}}>{months[d.getMonth()]}</div>
+          <div style={{fontSize:20,fontWeight:900,color:"#fff",lineHeight:1}}>{d.getDate()}</div>
+        </div>
+      </div>
+      <div style={{fontSize:10,color:"#6B7280",textAlign:"center",marginBottom:8,lineHeight:1.5}}>{body}</div>
+      <button onClick={locked?undefined:onOpen} style={{width:"100%",background:!locked?"linear-gradient(135deg,"+NAVY+",#1E4BC7)":"#F3F4F6",color:!locked?"#fff":"#9CA3AF",border:"none",borderRadius:8,padding:"7px 0",fontSize:11,fontWeight:700,cursor:!locked?"pointer":"default",display:"flex",alignItems:"center",justifyContent:"center",gap:5,fontFamily:"inherit"}}>
+        {locked&&<LockIcon size={13} color="#9CA3AF" strokeWidth={2.2}/>}<span>{buttonLabel}</span>
+      </button>
+    </HomeCard>
+  );
+}
+
+function LeagueRankingCard({ title, viewLabel, top3, avatarUrl, displayName, onLeaderboard, lang }) {
+  return (
+    <HomeCard style={{padding:"12px",display:"flex",flexDirection:"column"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
+        <span style={{fontSize:12,fontWeight:800,color:"#111"}}>{title}</span>
+        <div style={{width:26,height:26,borderRadius:"50%",background:"rgba(10,46,138,0.07)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,flexShrink:0}}>{"🏆"}</div>
+      </div>
+      <div style={{flex:1,display:"flex",flexDirection:"column",gap:5,marginBottom:8}}>
+        {top3.slice(0,3).map((u,i)=>{
+          const medals=["🥇","🥈","🥉"];
+          const isYou=u.isMe;
+          const rowAvatar=u.avatarUrl||(isYou?avatarUrl:null);
+          const fallbackLetter=((isYou?displayName:u.name)||"?").trim().slice(0,1).toUpperCase()||"?";
+          return (
+            <div key={i} style={{display:"flex",alignItems:"center",gap:6}}>
+              <span style={{fontSize:13,flexShrink:0,lineHeight:1}}>{medals[i]||"🏅"}</span>
+              <div style={{width:20,height:20,borderRadius:"50%",background:isYou?`${NAVY}22`:"rgba(0,0,0,0.07)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:8,fontWeight:700,color:isYou?NAVY:"#888",overflow:"hidden",flexShrink:0}}>
+                {rowAvatar?<img src={rowAvatar} style={{width:"100%",height:"100%",objectFit:"cover"}} alt=""/>:fallbackLetter}
+              </div>
+              <span style={{flex:1,fontSize:10,fontWeight:isYou?700:600,color:isYou?NAVY:"#374151",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{isYou?(T[lang].you):u.name}</span>
+              {!u.empty&&<span style={{fontSize:10,fontWeight:700,color:isYou?NAVY:"#6B7280",flexShrink:0}}>{u.pts||0} pts</span>}
+            </div>
+          );
+        })}
+      </div>
+      <button onClick={onLeaderboard} style={{width:"100%",background:"transparent",border:"none",color:NAVY,fontSize:11,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:4,padding:"3px 0",fontFamily:"inherit"}}><span>{viewLabel}</span><ChevronIcon size={13} color={NAVY}/></button>
+    </HomeCard>
+  );
+}
+
 // ── HOME ────────────────────────────────────────────────────────────────────
-function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateBoard, onOpenGroups, onCopyPredictions, onCopyExactScores, onCopySpecial, onAccount, onNotifications, onChampion, onBooster, myBoards, predictionsComplete, instantPickDone, koPickDone, koUnlocked, exactScores, activeBoardId, setActiveBoardId, tournamentStarted, simDay, simHour, simMin, createdBoards=[], showFirstAction, leaderboardData={}, boardsLoading=false, predictionsLoaded={}, championPick=null, topScorerPick=null, setChampionPick=()=>{}, setTopScorerPick=()=>{}, myScoreBreakdown=null, hasUnread=false }) {
+function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateBoard, onOpenGroups, onCopyPredictions, onCopyExactScores, onCopySpecial, onAccount, onNotifications, onChampion, onBooster, myBoards, predictionsComplete, instantPickState=null, instantPickDone, allGroupsDone=false, groupsDoneCount=null, koPickDone, koUnlocked, exactScores, activeBoardId, setActiveBoardId, tournamentStarted, simDay, simHour, simMin, createdBoards=[], showFirstAction, leaderboardData={}, boardsLoading=false, predictionsLoaded={}, championPick=null, topScorerPick=null, setChampionPick=()=>{}, setTopScorerPick=()=>{}, myScoreBreakdown=null, hasUnread=false }) {
   const lang = useLang();
   const user = useUser();
   const displayName = useDisplayName();
@@ -5000,12 +5190,15 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
   const [showCopySheet, setShowCopySheet] = useState(null); // "predictions" | "scores" | null
   const [copyWeekStart, setCopyWeekStart] = useState(null);
   const [copyDone, setCopyDone] = useState({});
+  const [boardSwitching, setBoardSwitching] = useState(false);
   const activeId = activeBoardId;
   const setActiveId = setActiveBoardId;
   const allSliderItems = myBoards;
   const [sliderPos, setSliderPos] = useState(()=>Math.max(0,myBoards.findIndex(b=>b.id===activeBoardId)));
   const sliderTouchRef = useRef(null);
   const scrollContainerRef = useRef(null);
+  const predPathRef = useRef(null);
+  const scorerRowRef = useRef(null);
   const exactScoreRef = useRef(null);
   const moreToComeRef = useRef(null);
   useEffect(()=>{
@@ -5014,6 +5207,9 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
   },[activeId,myBoards]);
   useEffect(()=>{
     if(scrollContainerRef.current) scrollContainerRef.current.scrollTop = 0;
+    setBoardSwitching(true);
+    const t = setTimeout(()=>setBoardSwitching(false), 260);
+    return ()=>clearTimeout(t);
   },[activeId]);
   const handleSliderTouchStart = (e)=>{ sliderTouchRef.current = e.touches[0].clientX; };
   const handleSliderTouchEnd = (e)=>{
@@ -5027,18 +5223,13 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
       const np=sliderPos-1; setSliderPos(np); setActiveId(allSliderItems[np].id);
     }
   };
-  const [cdUnitIdx, setCdUnitIdx] = useState(0);
-  useEffect(()=>{
-    const t = setInterval(()=>setCdUnitIdx(p=>(p+1)%3), 2200);
-    return ()=>clearInterval(t);
-  },[]);
-  const [tickerIdx, setTickerIdx] = useState(0);
-  useEffect(()=>{
-    const t = setInterval(()=>setTickerIdx(p=>(p+1)%3), 5000);
-    return ()=>clearInterval(t);
-  },[]);
   const activeBoard = myBoards.find(b=>b.id===activeId)||myBoards[0];
-  const membersLabel = activeBoard?.members>999?`${(activeBoard.members/1000).toFixed(0)}k`:activeBoard?.members;
+  const activeBoardName = activeBoard?.isGlobal ? "Global" : (activeBoard?.name || "League");
+  const activeBoardContextLabel = lang === "ro"
+    ? `Date afisate pentru ${activeBoardName}`
+    : lang === "fr"
+      ? `Donnees affichees pour ${activeBoardName}`
+      : `Data shown for ${activeBoardName}`;
   // Get leaders for active board — prefer real DB data, fall back to placeholder
   const boardLeaders = (() => {
     const real = leaderboardData[activeBoard?.id];
@@ -5057,20 +5248,10 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
   const prizeSlots = leaders.filter(u=>u.emoji||u.isMe||u.empty).length;
   const topCount = Math.max(3, prizeSlots || 3);
   const top3 = leaders.slice(0, topCount);
-  const me = leaders.find(u=>u.isMe);
-  const rankingLoading = !!activeBoard && !leaderboardData[activeBoard.id]?.length;
-  const {d:cdD,h:cdH,m:cdM,s:cdS}=useCountdown();
-  const cdTarget=new Date("2026-06-11T19:00:00");
-  const cdSimNow=simDay?new Date(2026,5,simDay,simHour,simMin,0):new Date();
-  const cdDiff=cdTarget-cdSimNow;
-  const cdDays=simDay?Math.max(0,Math.floor(cdDiff/86400000)):cdD;
-  const cdHours=simDay?Math.max(0,Math.floor((cdDiff%86400000)/3600000)):cdH;
-  const cdMins=simDay?Math.max(0,Math.floor((cdDiff%3600000)/60000)):cdM;
-  const cdSecs=simDay?Math.max(0,Math.floor((cdDiff%60000)/1000)):cdS;
-  const tournamentOver = cdDiff<=0;
-  const meInTop3 = top3.some(u=>u.isMe);
   const _deadlinePassed = simDay ? (simDay > 11 || (simDay === 11 && (simHour||0) >= 19)) : new Date() >= new Date(2026,5,11,19,0,0);
-  const _boardDone = _deadlinePassed ? (instantPickDone || predictionsComplete[activeId]) : instantPickDone;
+  const predictionProgress = getPredictionProgress(instantPickState || {});
+  const task1Done = predictionProgress.complete || instantPickDone || !!predictionsComplete[activeId];
+  const _boardDone = task1Done;
   const allTasksDone = _boardDone && (!koUnlocked || koPickDone);
   const scrollTo = (ref) => {
     const el = ref.current;
@@ -5091,6 +5272,8 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
   const _exWkScored = (s)=>_exWkDays(s).reduce((a,d)=>a+(_exWkMM[d]||[]).filter((_,i)=>(exactScores||{})[`${d}-${i}`]).length,0);
   const todaySimEx = simDay ?? getRealTournamentDay();
   const exactWeekStart = todaySimEx<=14?8:todaySimEx<=21?15:todaySimEx<=28?22:29;
+  const _calWeeks = [-6,1,8,15,22,29,36,43];
+  const todayCalendarWeek = _calWeeks.find(w=>todaySimEx>=w&&todaySimEx<=w+6) ?? _calWeeks[0];
   const exactWeekTotal = _exWkTotal(exactWeekStart);
   const exactWeekScored = _exWkScored(exactWeekStart);
   const exactWeekDone = exactWeekTotal>0 && exactWeekScored===exactWeekTotal;
@@ -5104,6 +5287,15 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
     !_boardDone ? 0 :
     (!exactWeekDone && exactWeekUnlocked) ? 1 :
     null;
+  const predDoneCount = Math.max(predictionProgress.done, groupsDoneCount !== null ? groupsDoneCount : 0);
+  const _predStepsTotal = predictionProgress.total;
+  const _predStepsDone = _boardDone ? _predStepsTotal : predDoneCount;
+  const naCard = (()=>{
+    if(nextTask===0) return { title:T[lang].predCardTitle, sub:T[lang].predCardSub, due:!_deadlinePassed?T[lang].dueJun11:null, progress:_predStepsDone, total:_predStepsTotal, label:predDoneCount>0?T[lang].continuePredictions:T[lang].startPredictions, onClick:()=>onPredict(activeId), badge:T[lang].nextActionLabel };
+    if(nextTask===1) return { title:T[lang].exactCardTitle, sub:T[lang].exactCardSub, due:!_deadlinePassed?T[lang].dueJun11:null, progress:exactWeekScored, total:Math.max(2, exactWeekTotal), label:T[lang].openScores, onClick:()=>onOpenGroups&&onOpenGroups(exactWeekStart), badge:T[lang].nextActionLabel };
+    return { title:T[lang].allDoneTitle, sub:T[lang].allDoneSub, due:null, progress:1, total:1, label:"", onClick:()=>{}, badge:T[lang].upToDateLabel };
+  })();
+  const naPct = naCard.total>0 ? Math.round((naCard.progress/naCard.total)*100) : 100;
   const exKey = `${activeId}-${exactWeekStart}`;
   useEffect(()=>{
     if(!exactWeekDone){ _exNotDone.add(exKey); return; }
@@ -5119,19 +5311,6 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
       } else { scrollTo(moreToComeRef); }
     }, 700);
   },[exactWeekDone,exKey]);
-  const homeSectionLabelStyle = { ...UI.sectionLabel, fontSize:12, fontWeight:750, color:"rgba(10,46,138,0.55)", textAlign:"center", letterSpacing:1.2 };
-  const homeTaskCardStyle = {
-    ...UI.card,
-    border: "1.5px solid transparent",
-    padding: "13px 14px 11px",
-    position: "relative",
-  };
-  const homeConnectorStyle = {
-    width: 2,
-    height: 22,
-    background: "linear-gradient(to bottom,transparent,#d0d0d0,transparent)",
-    borderRadius: 1,
-  };
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:"transparent",overflow:"hidden",position:"relative"}}>
       <div style={{flex:1,display:"flex",flexDirection:"column",background:"linear-gradient(to bottom, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0.10) 28%, rgba(255,255,255,0.02) 48%, transparent 65%)",borderRadius:26,margin:"10px 14px 0",boxShadow:"0 4px 16px rgba(10,46,138,0.04), inset 0 1px 0 rgba(255,255,255,0.40)",border:"1px solid rgba(255,255,255,0.08)",overflow:"hidden",position:"relative",willChange:"transform",transform:"translateZ(0)"}}>
@@ -5181,8 +5360,8 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
           const myRank = boardLeaders?.find(u=>u.isMe)?.rank;
           const memberCount = item.members;
           return (
-            <div style={{flex:1,display:"flex",justifyContent:"center",alignItems:"center",...(isCenter?{transform:"translateY(-6px)",zIndex:2}:{})}}>
-              <CircleTab label={item.label} imageUrl={item.image_url||undefined} name={item.isGlobal?"Global":item.name.split(" ")[0]}
+            <div style={{flex:1,display:"flex",justifyContent:"center",alignItems:"center",minWidth:0,overflow:"visible"}}>
+              <CircleTab label={item.label} imageUrl={item.image_url||undefined} name={isCenter?"":item.isGlobal?"Global":item.name.split(" ")[0]}
                 isActive={isCenter} onClick={handleTap} lightBg distance={dist}
                 rank={isCenter?myRank:undefined} members={isCenter?memberCount:undefined}
                 done={isCenter&&allTasksDone}/>
@@ -5190,253 +5369,76 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
           );
         };
         return (
-          <div style={{margin:"18px 14px 0",background:"transparent",borderRadius:16,border:`1.5px solid ${allTasksDone?GREEN+"66":"transparent"}`,display:"flex",alignItems:"center",padding:"8px 4px",overflow:"visible",flexShrink:0,transition:"border-color 0.4s ease"}}>
+          <div style={{margin:"10px 8px 0",background:"#fff",borderRadius:20,border:"none",display:"flex",alignItems:"center",padding:"4px 8px 8px",overflow:"visible",flexShrink:0,position:"relative",zIndex:3,boxShadow:"0 4px 16px rgba(0,0,0,0.06)"}}>
             <button onClick={()=>{ const np=sliderPos+1; if(np<allSliderItems.length){setSliderPos(np);setActiveId(allSliderItems[np].id);} }}
-              style={{background:"none",border:"none",padding:"0 16px",cursor:"pointer",fontSize:22,fontWeight:700,color:NAVY,opacity:sliderPos<allSliderItems.length-1?0.65:0.12,WebkitTapHighlightColor:"transparent",lineHeight:1,transition:"opacity 0.2s",flexShrink:0}}>‹</button>
+              style={{background:"none",border:"none",padding:"0 16px",cursor:"pointer",color:NAVY,opacity:sliderPos<allSliderItems.length-1?0.65:0.12,WebkitTapHighlightColor:"transparent",lineHeight:1,transition:"opacity 0.2s",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}><ChevronIcon direction="left" size={20} color={NAVY}/></button>
             <div onTouchStart={handleSliderTouchStart} onTouchEnd={handleSliderTouchEnd}
-              style={{flex:1,display:"flex",alignItems:"center",userSelect:"none",touchAction:"pan-x",overflow:"visible",padding:"6px 0"}}>
+              style={{flex:1,display:"flex",alignItems:"center",userSelect:"none",touchAction:"pan-x",overflow:"visible",padding:"6px 2px",minWidth:0}}>
               {renderItem(leftItem,-1)}
               {renderItem(centerItem,0)}
               {renderItem(rightItem,1)}
             </div>
             <button onClick={()=>{ const np=sliderPos-1; if(np>=0){setSliderPos(np);setActiveId(allSliderItems[np].id);} }}
-              style={{background:"none",border:"none",padding:"0 16px",cursor:"pointer",fontSize:22,fontWeight:700,color:NAVY,opacity:sliderPos>0?0.65:0.12,WebkitTapHighlightColor:"transparent",lineHeight:1,transition:"opacity 0.2s",flexShrink:0}}>›</button>
+              style={{background:"none",border:"none",padding:"0 16px",cursor:"pointer",color:NAVY,opacity:sliderPos>0?0.65:0.12,WebkitTapHighlightColor:"transparent",lineHeight:1,transition:"opacity 0.2s",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}><ChevronIcon size={20} color={NAVY}/></button>
           </div>
         );
       })()}
-      <div style={{position:"relative",marginTop:-4,flexShrink:0}}>
-        {/* rând 1 — manage + new league */}
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",height:24,marginBottom:3}}>
-          <button onClick={e=>{e.stopPropagation();onBoards("my");}} style={{display:"flex",alignItems:"center",justifyContent:"center",minWidth:68,height:24,cursor:"pointer",flexShrink:0,padding:"0 9px 0 12px",border:"none",background:"transparent",fontFamily:"inherit",WebkitTapHighlightColor:"transparent"}}>
-            <span style={{fontSize:10,fontWeight:650,color:"rgba(10,46,138,0.45)",lineHeight:1}}>{T[lang].manageLeague}</span>
-          </button>
-          <button onClick={e=>{e.stopPropagation();onBoards("available");}} style={{display:"flex",alignItems:"center",justifyContent:"center",minWidth:68,height:24,cursor:"pointer",flexShrink:0,padding:"0 12px 0 9px",border:"none",background:"transparent",fontFamily:"inherit",WebkitTapHighlightColor:"transparent"}}>
-            <span style={{fontSize:10,fontWeight:650,color:"rgba(10,46,138,0.45)",lineHeight:1}}>{T[lang].newLeague}</span>
-          </button>
+      <div style={{display:"flex",justifyContent:"center",alignItems:"center",padding:"0 14px 6px",marginTop:-14,flexShrink:0,position:"relative",zIndex:4}}>
+        <div style={{display:"inline-flex",alignItems:"center",gap:7,maxWidth:"calc(100% - 20px)",background:"rgba(255,255,255,0.84)",border:"1px solid rgba(10,46,138,0.10)",borderRadius:999,padding:"7px 13px",boxShadow:"0 8px 22px rgba(10,46,138,0.08), inset 0 1px 0 rgba(255,255,255,0.85)",backdropFilter:"blur(16px)",WebkitBackdropFilter:"blur(16px)",opacity:boardSwitching?0.68:1,transform:`translateY(${boardSwitching?3:0}px) scale(${boardSwitching?0.985:1})`,transition:"opacity 0.22s ease, transform 0.22s ease"}}>
+          <span style={{width:18,height:18,borderRadius:"50%",background:"rgba(10,46,138,0.09)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,flexShrink:0}}>🏆</span>
+          <span style={{fontSize:11,fontWeight:800,color:NAVY,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",lineHeight:1.15}}>{activeBoardContextLabel}</span>
         </div>
-        {/* ticker */}
-        {(()=>{
-          const tickerMsgs = [
-            me?.rank ? `Your Rank #${me.rank} · ${me.pts||0} pts` : `Your Rank — · 0 pts`,
-            tournamentOver ? T[lang].tournamentLive : `${cdDays}${T[lang].cdDayAbbr} ${String(cdHours).padStart(2,"0")}${T[lang].cdHourAbbr} ${String(cdMins).padStart(2,"0")}${T[lang].cdMinAbbr} ${T[lang].kickoffLabel}`,
-            membersLabel ? `${membersLabel} ${T[lang].membersLabel?.toLowerCase()||"members"}` : null,
-          ].filter(Boolean);
-          const msg = tickerMsgs[tickerIdx % tickerMsgs.length];
-          return (
-            <div style={{display:"flex",justifyContent:"center",alignItems:"center",marginBottom:6,height:16,overflow:"hidden",position:"relative"}}>
-              <span key={tickerIdx} style={{fontSize:11,fontWeight:700,color:"rgba(10,46,138,0.50)",animation:"slideUpIn 0.4s cubic-bezier(0.22,1,0.36,1)",display:"inline-block",whiteSpace:"nowrap"}}>
-                {msg}
-              </span>
-            </div>
-          );
-        })()}
       </div>
-      <div ref={scrollContainerRef} style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",padding:"0 14px 90px",marginTop:-2,display:"flex",flexDirection:"column"}}>
-        <div style={{position:"relative",borderRadius:18,padding:"14px 0 14px",flex:1}}>
-          <div style={{position:"absolute",inset:0,borderRadius:18,background:"rgba(255,255,255,0.15)",WebkitMaskImage:"linear-gradient(to bottom,black 0%,black 55%,transparent 100%)",maskImage:"linear-gradient(to bottom,black 0%,black 55%,transparent 100%)",pointerEvents:"none"}}/>
-          <div style={{position:"relative",zIndex:1}}>
-        {/* Card 1 — Predictions + path to trophy */}
-        {(()=>{
-          const deadlinePassed = simDay ? (simDay > 11 || (simDay === 11 && (simHour||0) >= 19)) : new Date() >= new Date(2026,5,11,19,0,0);
-          const boardDone = deadlinePassed ? (instantPickDone || predictionsComplete[activeId]) : instantPickDone;
-          const isLocked = deadlinePassed && !boardDone;
-          const predLoading = !predictionsLoaded[activeId];
-          const koAvailable = koUnlocked && boardDone && !koPickDone;
-          const allDone = boardDone && koPickDone;
-          const handleClick = () => {
-            if (koAvailable) { onPredictKo&&onPredictKo(activeId); return; }
-            if (!deadlinePassed || boardDone) onPredict(activeId);
-          };
-          const showBadge = koAvailable || (!boardDone && !deadlinePassed && predictionsLoaded[activeId]);
-          const boardLabel = activeBoard?.isGlobal?"🌍 Global":(activeBoard?.name||"");
-          const predPath = [
-            { label:"Jun 11", stage:T[lang].groupsBestThird, due:T[lang].dueJun11, done:boardDone, locked:false, active:!boardDone&&!deadlinePassed&&!!predictionsLoaded[activeId] },
-            { label:"Jun 27", stage:T[lang].knockoutPhase, due:koAvailable?T[lang].availableNow:T[lang].koDueJun27, done:koPickDone, locked:!koUnlocked||!boardDone, active:!!koAvailable },
-            { label:"Jul 19", stage:T[lang].final, isFinal:true },
-          ];
-          return (<>
-            <div style={{margin:"0 2px 6px"}}>
-              <p style={{...homeSectionLabelStyle,color:isLocked?"#C0C8D8":"rgba(10,46,138,0.55)"}}>{T[lang].predictions}</p>
+      <div ref={scrollContainerRef} style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",padding:"10px 6px 110px",opacity:boardSwitching?0.72:1,transform:`translateY(${boardSwitching?6:0}px)`,transition:"opacity 0.22s ease, transform 0.22s ease"}}>
+        <NextActionCard card={naCard} pct={naPct} nextTask={nextTask} />
+        <div style={{marginBottom:14}}>
+          <HomeSectionLabel>{T[lang].yourProgress}</HomeSectionLabel>
+          <HomeCard>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr"}}>
+              <ProgressTile
+                icon="📋"
+                title={T[lang].predictions}
+                value={`${predDoneCount}/${_predStepsTotal}`}
+                withDivider
+                onClick={()=>onPredict(activeId)}
+                copyEnabled={predictionProgress.complete&&!_deadlinePassed}
+                onCopy={()=>{setCopyDone({});setShowCopySheet("predictions");}}
+              />
+              <ProgressTile
+                icon={exactWeekUnlocked?"📊":<LockIcon size={17} color={NAVY} strokeWidth={2.1}/>}
+                title={T[lang].exactScores}
+                value={exactWeekUnlocked?`${exactWeekScored}/${exactWeekTotal}`:T[lang].locked}
+                active={exactWeekUnlocked}
+                onClick={()=>onOpenGroups&&onOpenGroups(exactWeekStart)}
+                copyEnabled={exactWeekUnlocked&&exactWeekDone}
+                onCopy={()=>{setCopyDone({});setCopyWeekStart(exactWeekStart);setShowCopySheet("scores");}}
+              />
             </div>
-            <div style={{...homeTaskCardStyle,
-              border:`1.5px solid ${allDone?GREEN+"44":nextTask===0?"rgba(10,46,138,0.15)":"transparent"}`,
-              opacity:isLocked?0.6:1,
-              ...(nextTask===0?{animation:"cardHighlight 1s ease-out 1 forwards"}:showFirstAction&&!boardDone&&!deadlinePassed?{animation:"pulse 1.5s ease-in-out 3"}:{})}}>
-              {nextTask===0&&<div style={{fontSize:9,fontWeight:800,color:"rgba(10,46,138,0.45)",letterSpacing:1.5,textTransform:"uppercase",marginBottom:5,textAlign:"center"}}>{T[lang].continueHere}</div>}
-              <div style={{marginBottom:10,textAlign:"left"}}>
-                <div style={{fontSize:13,fontWeight:700,color:isLocked?"#C0C8D8":DARK,lineHeight:1.15,textAlign:"left"}}>{T[lang].predCardTitle}</div>
-                <div style={{fontSize:10,color:"#C0C8D8",fontWeight:500,marginTop:3,lineHeight:1.2,textAlign:"left"}}>{T[lang].predCardSub}</div>
-              </div>
-              {predLoading&&(
-                <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:7,color:"#9CA3AF",fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:0.6}}>
-                  <span style={{width:10,height:10,borderRadius:"50%",border:"2px solid rgba(10,46,138,0.12)",borderTopColor:NAVY,animation:"spin 0.9s linear infinite"}}/>
-                  {T[lang].syncingPredictions}
-                </div>
-              )}
-
-              {predPath.map((step,i)=>{
-                const nodeColor = step.isFinal?"#F0A020":step.done?GREEN:step.active?NAVY:"#ddd";
-                const isLast = i===predPath.length-1;
-                const stepClick = step.isFinal||step.locked?undefined:()=>{
-                  if(i===0&&!deadlinePassed) onPredict(activeId);
-                  else if(i===1&&koAvailable) onPredictKo&&onPredictKo(activeId);
-                };
-                return (
-                  <button key={i} onClick={stepClick} style={{display:"flex",gap:10,borderRadius:10,width:"100%",
-                    background:step.isFinal?"linear-gradient(90deg,rgba(240,160,32,0.08),transparent)":step.locked?"rgba(0,0,0,0.025)":"transparent",
-                    padding:"4px 6px 4px 4px",margin:"0 -6px 0 -4px",
-                    border:"none",fontFamily:"inherit",WebkitTapHighlightColor:"transparent",textAlign:"left",
-                    cursor:stepClick?"pointer":"default"}}>
-                    <div style={{display:"flex",flexDirection:"column",alignItems:"center",width:18,flexShrink:0}}>
-                      <div style={{position:"relative",width:18,height:18,flexShrink:0}}>
-                        <div style={{position:"absolute",inset:0,borderRadius:"50%",
-                          background:step.active?"#fff":step.done?`${GREEN}22`:nodeColor,
-                          border:step.active?`1.5px solid ${NAVY}`:step.done?`1.5px solid ${GREEN}`:"none",
-                          display:"flex",alignItems:"center",justifyContent:"center",
-                          boxShadow:step.isFinal?"0 0 0 3px rgba(240,160,32,0.25), 0 2px 8px rgba(240,160,32,0.4)":"none",
-                          ...(step.active&&nextTask!==0?{animation:"nodeBreath 3s ease-in-out infinite"}:{})}}>
-                          {step.isFinal?<span style={{fontSize:11}}>★</span>:step.done?<div style={{width:5,height:5,borderRadius:"50%",background:GREEN}}/>:step.active?<div style={{width:5,height:5,borderRadius:"50%",background:NAVY}}/>:step.locked?<span style={{fontSize:11}}>🔒</span>:null}
-                        </div>
-                      </div>
-                      {!isLast&&<div style={{width:2,flex:1,minHeight:22,marginTop:2,background:step.done?GREEN:"#e8e8e8",borderRadius:1}}/>}
-                    </div>
-                    <div style={{flex:1,paddingBottom:isLast?0:4}}>
-                      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                        <div>
-                          <span style={{fontSize:13,fontWeight:step.isFinal?700:step.active?700:step.done?600:500,
-                            color:step.isFinal?"#D4820A":step.locked?"#C0C8D8":DARK,opacity:step.locked?0.5:1}}>{step.label}</span>
-                          <span style={{fontSize:10,color:step.isFinal?"rgba(212,130,10,0.6)":"#9CA3AF",marginLeft:5,fontWeight:400,opacity:step.locked?0.5:0.7}}>{step.stage}</span>
-                        </div>
-                        <div style={{display:"flex",alignItems:"center",gap:5}}>
-                          <span style={{fontSize:11,fontWeight:step.active?600:400,
-                            color:step.isFinal?"#D4820A":step.locked?"#C0C8D8":step.done?GREEN:"#9CA3AF",opacity:step.locked?0.5:0.8}}>
-                            {step.isFinal?T[lang].trophyLabel:step.locked?T[lang].locked:step.done?T[lang].done:step.due}
-                          </span>
-                          <button onClick={e=>{if(!step.done||step.isFinal)return;e.stopPropagation();setCopyDone({});setShowCopySheet("predictions");}} style={{cursor:step.done&&!step.isFinal?"pointer":"default",opacity:step.done&&!step.isFinal?0.55:0,pointerEvents:step.done&&!step.isFinal?"auto":"none",width:9,height:9,flexShrink:0,display:"flex",alignItems:"center",border:"none",background:"transparent",padding:0}}><svg width="9" height="9" viewBox="0 0 14 14" fill="none"><rect x="4" y="4" width="8" height="8" rx="1.5" stroke={DARK} strokeWidth="1.8"/><path d="M2 10V2h8" stroke={DARK} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg></button>
-                        </div>
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </>);
-        })()}
-
-        {/* Connector */}
-        <div ref={exactScoreRef} style={{display:"flex",justifyContent:"center",alignItems:"center",margin:"2px 0 6px",position:"relative"}}>
-          <div style={homeConnectorStyle}/>
-          <span style={{position:"absolute",right:2,fontSize:10,fontWeight:700,color:"rgba(10,46,138,0.30)",letterSpacing:"0.2px"}}>{T[lang].totalLabel} {myScoreBreakdown?.predPts??0} pts</span>
+          </HomeCard>
         </div>
-
-        {/* Card 2 — Exact Score + path to trophy */}
-        {(()=>{
-          const todaySim = simDay ?? getRealTournamentDay();
-          const simNowDate = simDay ? new Date(2026,5,simDay,simHour||12,simMin||0,0) : new Date();
-          const june = (d) => new Date(2026,5,d,8,0,0);
-          const w1Open = true;
-          const w2Open = simNowDate >= june(14);
-          const w3Open = simNowDate >= june(21);
-          const w4Open = simNowDate >= june(28);
-          const weekDays = (start) => Array.from({length:7},(_,i)=>start+i).filter(d=>d>=1&&d<=50);
-          const weekMatchMap = () => { const mm={}; CALENDAR_EVENTS.forEach(e=>{mm[e.day]=e.matches;}); return mm; };
-          const totalRawInWeek = (start) => { const mm=weekMatchMap(); return weekDays(start).reduce((s,d)=>s+(mm[d]||[]).length,0); };
-          const scoredInWeek  = (start) => { const mm=weekMatchMap(); return weekDays(start).reduce((s,d)=>s+(mm[d]||[]).filter((_,i)=>(exactScores||{})[`${d}-${i}`]).length,0); };
-          const missedInWeek  = (start) => { const mm=weekMatchMap(); return weekDays(start).reduce((s,d)=>s+(mm[d]||[]).filter((m,i)=>isMatchPast(d,m.time,simDay,simHour)&&!(exactScores||{})[`${d}-${i}`]).length,0); };
-          const matchesInWeek = (start) => { const mm=weekMatchMap(); return weekDays(start).reduce((s,d)=>s+(mm[d]||[]).filter((m,i)=>(exactScores||{})[`${d}-${i}`]||!isMatchPast(d,m.time,simDay,simHour)).length,0); };
-          const weekStart = todaySim<=14?8:todaySim<=21?15:todaySim<=28?22:29;
-          const missing = totalRawInWeek(weekStart) - scoredInWeek(weekStart);
-          const scored  = scoredInWeek(weekStart);
-          const weekNum = weekStart===8?1:weekStart===15?2:weekStart===22?3:4;
-          const scoreSubtitle = missing===0?`Week ${weekNum} completed`:`${missing} ${T[lang].thisWeek}`;
-          const steps = [
-            { label:"Jun 8-14",  stage:`${T[lang].groupStage} · ${T[lang].week} 1`, locked:!w1Open, total:matchesInWeek(8),  scored:scoredInWeek(8),  missed:missedInWeek(8),  totalRaw:totalRawInWeek(8),  past:todaySim>14, weekStart:8  },
-            { label:"Jun 15-21", stage:`${T[lang].groupStage} · ${T[lang].week} 2`, locked:!w2Open, total:matchesInWeek(15), scored:scoredInWeek(15), missed:missedInWeek(15), totalRaw:totalRawInWeek(15), past:todaySim>21, weekStart:15 },
-            { label:"Jun 22-28", stage:`${T[lang].groupStage} · ${T[lang].week} 3`, locked:!w3Open, total:matchesInWeek(22), scored:scoredInWeek(22), missed:missedInWeek(22), totalRaw:totalRawInWeek(22), past:todaySim>28, weekStart:22 },
-            { label:"Jun 29+",   stage:T[lang].roundOf16QF, locked:!w4Open, total:matchesInWeek(29), scored:scoredInWeek(29), missed:missedInWeek(29), totalRaw:totalRawInWeek(29), past:false, weekStart:29 },
-            { label:"Jul 19",    stage:T[lang].final, locked:true, total:1, scored:0, missed:0, totalRaw:1, isFinal:true },
-          ];
-          return (<>
-            <div style={{margin:"0 2px 6px"}}>
-              <p style={homeSectionLabelStyle}>{T[lang].exactScores}</p>
-            </div>
-            <button onClick={()=>onOpenGroups&&onOpenGroups()} style={{display:"block",width:"100%",textAlign:"left",...homeTaskCardStyle,cursor:"pointer",fontFamily:"inherit",WebkitTapHighlightColor:"transparent",...(nextTask===1?{border:"1.5px solid rgba(10,46,138,0.15)",animation:"cardHighlight 1s ease-out 1 forwards"}:{})}}>
-              {nextTask===1&&<div style={{fontSize:9,fontWeight:800,color:"rgba(10,46,138,0.45)",letterSpacing:1.5,textTransform:"uppercase",marginBottom:5,textAlign:"center"}}>{T[lang].continueHere}</div>}
-              <div style={{marginBottom:10,textAlign:"left"}}>
-                <div style={{fontSize:13,fontWeight:700,color:DARK,lineHeight:1.15,textAlign:"left"}}>{T[lang].exactCardTitle}</div>
-                <div style={{fontSize:10,color:"#C0C8D8",fontWeight:500,marginTop:3,lineHeight:1.2,textAlign:"left"}}>{T[lang].exactCardSub}</div>
-              </div>
-              {steps.map((w,i)=>{
-                const pct = w.total?Math.round((w.scored/w.total)*100):0;
-                const done = !w.locked && pct===100;
-                const isPast = w.past && !w.locked;
-                const active = !w.locked && !done && !isPast;
-                const nodeColor = w.isFinal?"#F0A020":done?GREEN:isPast?"#aaa":active?NAVY:"#ddd";
-                const isLast = i===steps.length-1;
-                return (
-                  <button key={i} data-week={w.weekStart} style={{display:"flex",gap:10,cursor:(w.locked&&!isPast)?"default":"pointer",
-                    borderRadius:10,width:"100%",
-                    background:w.isFinal?"linear-gradient(90deg,rgba(240,160,32,0.08),transparent)":w.locked&&!isPast?"rgba(0,0,0,0.025)":"transparent",
-                    padding:"4px 6px 4px 4px",margin:"0 -6px 0 -4px",
-                    border:"none",fontFamily:"inherit",WebkitTapHighlightColor:"transparent",textAlign:"left",
-                    opacity:(isPast&&!done)?0.6:1}}
-                    onClick={e=>{e.stopPropagation();(!w.locked||isPast)&&!w.isFinal&&onOpenGroups&&onOpenGroups(w.weekStart);}}>
-                    <div style={{display:"flex",flexDirection:"column",alignItems:"center",width:18,flexShrink:0}}>
-                      <div style={{position:"relative",width:18,height:18,flexShrink:0}}>
-                        <div style={{position:"absolute",inset:0,borderRadius:"50%",
-                          background:active?"#fff":done?`${GREEN}22`:nodeColor,
-                          border:active?`1.5px solid ${NAVY}`:done?`1.5px solid ${GREEN}`:"none",
-                          display:"flex",alignItems:"center",justifyContent:"center",
-                          boxShadow:w.isFinal?"0 0 0 3px rgba(240,160,32,0.25), 0 2px 8px rgba(240,160,32,0.4)":"none",
-                          ...(active&&nextTask!==1?{animation:"nodeBreath 3s ease-in-out infinite"}:{})}}>
-                          {w.isFinal?<span style={{fontSize:11}}>★</span>:done?<div style={{width:5,height:5,borderRadius:"50%",background:GREEN}}/>:active?<div style={{width:5,height:5,borderRadius:"50%",background:NAVY}}/>:w.locked&&!isPast?<span style={{fontSize:11}}>🔒</span>:null}
-                        </div>
-                      </div>
-                      {!isLast&&<div style={{width:2,flex:1,minHeight:16,marginTop:2,borderRadius:1,background:"#e8e8e8",position:"relative",overflow:"hidden"}}>
-                        <div style={{position:"absolute",top:0,left:0,right:0,height:`${w.locked?0:pct}%`,background:done?GREEN:active?NAVY+"99":"#bbb",borderRadius:1,transition:"height 0.4s"}}/>
-                      </div>}
-                    </div>
-                    <div style={{flex:1,paddingBottom:isLast?0:6}}>
-                      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                        <div>
-                          <span style={{fontSize:12,fontWeight:w.isFinal?700:active?700:done?600:500,
-                            color:w.isFinal?"#D4820A":w.locked&&!w.isFinal?"#C0C8D8":DARK,opacity:w.locked&&!w.isFinal?0.5:1}}>{w.label}</span>
-                          <span style={{fontSize:10,color:w.isFinal?"rgba(212,130,10,0.6)":"#9CA3AF",marginLeft:5,fontWeight:400,opacity:w.locked&&!w.isFinal?0.5:0.7}}>{w.stage}</span>
-                        </div>
-                        <div style={{display:"flex",alignItems:"center",gap:5}}>
-                          <span style={{fontSize:11,fontWeight:active?600:400,
-                            color:w.isFinal?"#D4820A":w.locked&&!isPast?"#C0C8D8":done?GREEN:"#9CA3AF",opacity:w.locked&&!isPast?0.5:0.8}}>
-                            {w.isFinal?T[lang].trophyLabel:w.locked&&!isPast?T[lang].locked:done?T[lang].weekComplete:isPast?`${w.scored}/${w.total}`:`${w.scored}/${w.total}`}
-                          </span>
-                          <button onClick={e=>{if(!done||w.isFinal)return;e.stopPropagation();setCopyDone({});setCopyWeekStart(w.weekStart);setShowCopySheet("scores");}} style={{cursor:done&&!w.isFinal?"pointer":"default",opacity:done&&!w.isFinal?0.55:0,pointerEvents:done&&!w.isFinal?"auto":"none",width:9,height:9,flexShrink:0,display:"flex",alignItems:"center",border:"none",background:"transparent",padding:0}}><svg width="9" height="9" viewBox="0 0 14 14" fill="none"><rect x="4" y="4" width="8" height="8" rx="1.5" stroke={DARK} strokeWidth="1.8"/><path d="M2 10V2h8" stroke={DARK} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg></button>
-                        </div>
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
-            </button>
-          </>);
-        })()}
-
-        {/* Connector */}
-        <div style={{display:"flex",justifyContent:"center",alignItems:"center",margin:"2px 0 6px",position:"relative"}}>
-          <div style={homeConnectorStyle}/>
-          <span style={{position:"absolute",right:2,fontSize:10,fontWeight:700,color:"rgba(10,46,138,0.30)",letterSpacing:"0.2px"}}>{T[lang].totalLabel} {myScoreBreakdown?.exactPts??0} pts</span>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:14}}>
+          <ThisWeekCard
+            title={T[lang].thisWeekLabel}
+            body={exactWeekUnlocked?exactWeekDone?T[lang].weekComplete+" ✓":(exactWeekTotal-exactWeekScored)+" "+T[lang].scoresLeftThisWeek:T[lang].exactScoresUnlock+" Sun 8:00"}
+            buttonLabel={exactWeekUnlocked?T[lang].openScores:T[lang].locked}
+            locked={!exactWeekUnlocked}
+            onOpen={()=>onOpenGroups&&onOpenGroups(todayCalendarWeek)}
+            date={simDay?new Date(2026,5,simDay,simHour||12):new Date()}
+          />
+          <LeagueRankingCard
+            title={T[lang].leagueRanking}
+            viewLabel={T[lang].viewRanking}
+            top3={top3}
+            avatarUrl={avatarUrl}
+            displayName={displayName}
+            onLeaderboard={onLeaderboard}
+            lang={lang}
+          />
         </div>
-
-        {/* Footer teaser */}
-        <div ref={moreToComeRef} style={{margin:"0 2px 6px",paddingBottom:16}}>
-          <p style={homeSectionLabelStyle}>{T[lang].moreToCome}</p>
-        </div>
-
-          </div>
-        </div>
-
+        <div ref={predPathRef} style={{height:0}}/><div ref={scorerRowRef} style={{height:0}}/><div ref={exactScoreRef} style={{height:0}}/><div ref={moreToComeRef} style={{height:0}}/>
       </div>
       </div>
-
-    {/* Copy predictions sheet */}
+      {/* Copy predictions sheet */}
     {showCopySheet&&(
       <div style={{position:"fixed",inset:0,zIndex:1100,display:"flex",flexDirection:"column",justifyContent:"flex-end"}}
         onClick={()=>setShowCopySheet(false)}>
@@ -5740,7 +5742,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
                 {(cEmoji||cImagePreview)&&<div onClick={()=>{setCEmoji("");setCImageFile(null);setCImagePreview(null);setShowEmojiPicker(false);}}
                   style={{fontSize:10,fontWeight:700,color:"#FF3B30",cursor:"pointer",
                     padding:"3px 7px",borderRadius:6,background:"rgba(255,59,48,0.08)"}}>
-                  ✕
+                  <XIcon size={15}/>
                 </div>}
               </div>
             </div>
@@ -5779,7 +5781,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
           {/* Password */}
           <p style={UI.formLabel}>{T[lang].boardPassword}</p>
           <InputPanel style={{...createInputStyle,marginBottom:14}}>
-            <span style={{fontSize:14}}>🔒</span>
+            <LockIcon size={14} color="#9CA3AF" strokeWidth={2.1}/>
             <input value={cPassword} onChange={e=>setCPassword(e.target.value)} placeholder={boardCopy.passwordPlaceholder}
               style={{flex:1,background:"transparent",border:"none",outline:"none",fontSize:14,color:DARK}}/>
           </InputPanel>
@@ -5892,7 +5894,10 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
           <div style={{background:"#fff",borderRadius:"20px 20px 0 0",padding:"24px 20px 40px",width:"100%"}}>
             <div style={{width:36,height:4,borderRadius:2,background:"#e0e0e0",margin:"0 auto 20px"}}/>
             <h3 style={{fontSize:17,fontWeight:800,color:DARK,margin:"0 0 4px",textAlign:"center"}}>{joinPrompt.name}</h3>
-            <p style={{fontSize:12,color:"#aaa",textAlign:"center",margin:"0 0 20px"}}>{T[lang].passwordProtected}</p>
+            <p style={{fontSize:12,color:"#aaa",textAlign:"center",margin:"0 0 20px",display:"flex",alignItems:"center",justifyContent:"center",gap:5}}>
+              <LockIcon size={13} color="#9CA3AF" strokeWidth={2.1}/>
+              <span>{T[lang].passwordProtected}</span>
+            </p>
             <InputPanel style={{marginBottom:8}}>
               <span style={{fontSize:16}}>🔑</span>
               <input value={joinPass} onChange={e=>{setJoinPass(e.target.value);setJoinError("");}}
@@ -5935,7 +5940,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
       )}
       {deleteConfirmBoard && (
         <ConfirmSheet
-          icon="🗑️"
+          icon={<TrashIcon size={27} color={RED} strokeWidth={2}/>}
           title={T[lang].deleteLeagueTitle}
           body={<>{T[lang].deleteLeagueBody1} <strong style={{color:DARK}}>{deleteConfirmBoard.name}</strong> {T[lang].deleteLeagueBody2}</>}
           confirmLabel={T[lang].deleteLeagueConfirm}
@@ -5966,7 +5971,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
                         <p style={{fontSize:11,color:"#aaa",margin:"2px 0 0"}}>👥 {latest.members}{latest.max?"/"+latest.max:""} members</p>
                       </div>
                       <span style={{fontSize:11,fontWeight:700,color:b.isAdmin&&!b.isMember?"#F59E0B":NAVY,flexShrink:0}}>{b.isAdmin&&!b.isMember?"👑 Admin":`✓ ${T[lang].joinedStatus}`}</span>
-                      {!b.isGlobal&&b.isMember&&<Button variant="danger" onClick={e=>{e.stopPropagation();setLeaveConfirmBoard(b);}} style={{fontSize:13,flexShrink:0}}>🗑️</Button>}
+                      {!b.isGlobal&&b.isMember&&<Button variant="danger" onClick={e=>{e.stopPropagation();setLeaveConfirmBoard(b);}} style={{fontSize:13,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",width:36,height:36,padding:0}}><TrashIcon size={15}/></Button>}
                     </div>
                     {bi<arr.length-1&&<div style={{height:1,background:"rgba(0,0,0,0.05)",margin:"0 14px"}}/>}
                   </div>
@@ -5996,11 +6001,11 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
               </div>
               <div style={{padding:"0 14px 10px"}}>
                 <InputPanel style={{border:isCode?`1.5px solid ${NAVY}`:"1px solid rgba(10,46,138,0.06)"}}>
-                  <span style={{fontSize:14,opacity:0.4}}>{isCode?"🔑":"🔍"}</span>
+                  <span style={{fontSize:14,opacity:0.45,color:NAVY,display:"flex",alignItems:"center"}}>{isCode?"🔑":<SearchIcon size={15}/>}</span>
                   <input value={boardSearch} onChange={e=>{setBoardSearch(e.target.value);setCodeError("");}} placeholder={boardCopy.searchPlaceholder} style={{flex:1,background:"transparent",border:"none",outline:"none",fontSize:14,color:DARK}}/>
                   {boardSearch&&(isCode?(
                     <Button onClick={()=>{ const found=[...availBoards,...createdBoards].find(b=>b.code===boardSearch.trim().toUpperCase()||b.id===boardSearch.trim()); if(found){joinBoard(found);setBoardSearch("");setCodeError("");}else setCodeError("Code not found."); }}>Join</Button>
-                  ):(<span onClick={()=>setBoardSearch("")} style={{fontSize:13,color:"#bbb",cursor:"pointer"}}>✕</span>))}
+                  ):(<button onClick={()=>setBoardSearch("")} style={{background:"transparent",border:"none",padding:4,color:"#9CA3AF",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}><XIcon size={14}/></button>))}
                 </InputPanel>
                 {isCode&&<p style={{fontSize:11,color:NAVY,margin:"6px 0 0",fontWeight:600}}>{T[lang].inviteCodeDetected}</p>}
                 {codeError&&<p style={{fontSize:11,color:RED,margin:"6px 0 0"}}>{codeError}</p>}
@@ -6009,7 +6014,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
               {allAvail.length===0
                 ? <div style={{padding:14}}><EmptyState icon="🏆" title={boardCopy.availableEmptyTitle} body={boardCopy.availableEmptyBody} /></div>
                 : filtered.length===0&&boardSearch.trim()
-                  ? <div style={{padding:14}}><EmptyState icon="🔍" title={`${T[lang].noBoardsFoundFor} "${boardSearch}"`} body={T[lang].tryAnotherName} /></div>
+                  ? <div style={{padding:14}}><EmptyState icon={<SearchIcon size={27} color="#9CA3AF" strokeWidth={1.9}/>} title={`${T[lang].noBoardsFoundFor} "${boardSearch}"`} body={T[lang].tryAnotherName} /></div>
                   : filtered.map((b,bi)=>(
                     <div key={b.id}>
                       <div style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px"}}>
@@ -6018,7 +6023,10 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
                         </div>
                         <div style={{flex:1,minWidth:0}}>
                           <p style={{fontSize:13,fontWeight:700,color:DARK,margin:0}}>{b.name}</p>
-                          <p style={{fontSize:11,color:"#aaa",margin:"2px 0 0"}}>👥 {b.members}{b.max?"/"+b.max:""}{b.password?" · 🔒":""}</p>
+                          <p style={{fontSize:11,color:"#aaa",margin:"2px 0 0",display:"flex",alignItems:"center",gap:4}}>
+                            <span>👥 {b.members}{b.max?"/"+b.max:""}</span>
+                            {b.password&&<><span>·</span><LockIcon size={11} color="#9CA3AF" strokeWidth={2.1}/></>}
+                          </p>
                         </div>
                         <Button onClick={()=>joinBoard(b)}>{T[lang].joinBtn}</Button>
                       </div>
@@ -6049,7 +6057,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
                     <div style={{display:"flex",gap:6}}>
                       <Button variant="ghost" onClick={()=>openMembers(b.id)}>👥</Button>
                       <Button variant="ghost" onClick={()=>{ setEditBoard(b); setCName(b.name); setCPassword(b.password||""); setCMaxPlayers(b.max||10); setCSlots(b.prizes?.length||3); setCPrizes(b.prizes?.length?[...b.prizes,...Array(5).fill("")]:["",...Array(4).fill("")]); changeView("create"); }}>✏️</Button>
-                      <Button variant="danger" onClick={()=>setDeleteConfirmBoard(b)}>🗑️</Button>
+                      <Button variant="danger" onClick={()=>setDeleteConfirmBoard(b)} style={{display:"flex",alignItems:"center",justifyContent:"center",width:36,height:36,padding:0}}><TrashIcon size={15}/></Button>
                     </div>
                   </div>
                   {viewMembersBoard===b.id&&(
@@ -6135,12 +6143,12 @@ function Footer({ active, onNavigate, lang, user }) {
   return (
     <div style={{position:"fixed",bottom:0,left:0,right:0,padding:"0 14px",paddingBottom:"env(safe-area-inset-bottom, 10px)",zIndex:1000}}>
       <div style={{
-        background:"#EEF2FF",
+        background:"#F0F4FF",
         backdropFilter:"blur(20px)",
         WebkitBackdropFilter:"blur(20px)",
         borderRadius:16,
-        boxShadow:"0 2px 14px rgba(0,0,0,0.07)",
-        border:"1.5px solid rgba(255,255,255,0.72)",
+        boxShadow:"0 -2px 0 rgba(10,46,138,0.08), 0 4px 24px rgba(10,46,138,0.14)",
+        border:"1.5px solid rgba(10,46,138,0.10)",
         display:"flex",
         alignItems:"stretch",
         height:62,
@@ -7957,10 +7965,9 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
   CALENDAR_EVENTS.forEach(e => { mm0[e.day] = e.matches; });
   // Find first WC match day (Jun 8+)
   const firstMatchDay = Array.from({length:7},(_,i)=>8+i).find(d=>!!mm0[d]) || null;
-  // Auto-select today if it has matches, else first WC match day
   const todayDay = simDay ?? getRealTournamentDay();
   const todayHasMatches = !!mm0[todayDay];
-  const defaultDay = todayHasMatches ? todayDay : firstMatchDay;
+  const defaultDay = todayDay;
   // Auto-select the week that contains today (pre-WC weeks included)
   const defaultWeek = initialWeek || [-6,1,8,15,22,29].find(w=>todayDay>=w&&todayDay<=w+6) || -6;
   const [weekStart, setWeekStart] = useState(defaultWeek);
@@ -7970,9 +7977,9 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
       const mm_ = {};
       CALENDAR_EVENTS.forEach(e => { mm_[e.day] = e.matches; });
       const wDays = Array.from({length:7},(_,i)=>initialWeek+i);
-      // If today is within this week, open today; otherwise open first day with matches
-      const todayInWeek = wDays.find(d => d === todayDay && !!mm_[d]);
-      const firstDay = todayInWeek || wDays.find(d=>!!mm_[d]) || null;
+      // Selectăm ziua de azi dacă e în săptămână (cu sau fără meciuri), altfel prima zi cu meciuri
+      const todayInWeek = wDays.find(d => d === todayDay);
+      const firstDay = todayInWeek ?? wDays.find(d=>!!mm_[d]) ?? wDays[0];
       setSelDay(firstDay);
     }
   },[initialWeek]);
@@ -8036,11 +8043,9 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
       const koGroup = ag.find(g=>["R16","QF","SF","3rd","Final"].includes(g));
       setSelGroup(koGroup || ag[0]);
     }
-    // Auto-select first day with matches in new week
-    const mm_ = {};
-    CALENDAR_EVENTS.forEach(e => { mm_[e.day] = e.matches; });
-    const firstDay = wDays.find(d=>!!mm_[d]) || null;
-    setSelDay(firstDay);
+    // Dreapta → prima zi din săptămână, Stânga → ultima zi
+    const goingForward = w > weekStart;
+    setSelDay(goingForward ? wDays[0] : wDays[wDays.length-1]);
   };
 
   const handleDaySelect = (day) => {
@@ -8112,7 +8117,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
         </div>
       </div>
 
-      <div ref={exactScrollRef} style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",padding:"14px 20px 100px",position:"relative",zIndex:1}}>
+      <div ref={exactScrollRef} style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",padding:"14px 14px 130px",position:"relative",zIndex:1}}>
         {/* Weekly Calendar with clickable matches */}
         <WeeklyCalendar weekStart={weekStart} setWeekStart={handleWeekChange} weeks={weeks} weekIdx={weekIdx}
           selDay={selDay} onDaySelect={handleDaySelect} scores={scores} scoresVersion={_v}
@@ -8497,10 +8502,10 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
           else if(has&&!locked){fw=700;tc=DARK;}
           else if(locked){tc="#bbb";}
           return (
-            <div key={day} onClick={()=>has&&onDaySelect&&onDaySelect(day)}
+            <div key={day} onClick={()=>onDaySelect&&onDaySelect(day)}
               style={{position:"relative",display:"flex",flexDirection:"column",alignItems:"center",
                 justifyContent:"center",borderRadius:10,padding:"8px 2px",
-                cursor:has?"pointer":"default",background:bg,border,boxShadow:shadow,transition:"all 0.15s",
+                cursor:"pointer",background:bg,border,boxShadow:shadow,transition:"all 0.15s",
                 opacity:locked?0.6:1}}>
               <span style={{fontSize:13,fontWeight:fw,color:tc,lineHeight:1}}>{day<=0?day+31:day>30?day-30:day}</span>
               {has&&(
@@ -9057,6 +9062,13 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
           })()}
         </div>
       )}
+      {!sm && sel !== null && sel !== undefined && (
+        <div style={{marginTop:16,display:"flex",flexDirection:"column",alignItems:"center",padding:"28px 20px",background:"#fff",borderRadius:16,boxShadow:"0 2px 12px rgba(0,0,0,0.05)"}}>
+          <div style={{fontSize:32,marginBottom:8}}>📅</div>
+          <div style={{fontSize:13,fontWeight:700,color:"#374151",textAlign:"center",marginBottom:6}}>{T[lang].noMatchesScheduled}</div>
+          <div style={{fontSize:11,color:"#9CA3AF",textAlign:"center",lineHeight:1.5,maxWidth:220}}>{T[lang].checkWeekHint}</div>
+        </div>
+      )}
     </div>
   );
 }
@@ -9328,7 +9340,7 @@ function RulesScreen({ onBack }) {
         </div>
       </div>
 
-      <div style={{flex:1,overflowY:"auto",overscrollBehavior:"contain",padding:"10px 14px 100px",position:"relative",zIndex:1}}>
+      <div style={{flex:1,overflowY:"auto",overscrollBehavior:"contain",padding:"10px 20px 100px",position:"relative",zIndex:1}}>
 
         {/* Description */}
         <div style={{...UI.card,padding:"14px 16px",marginBottom:12}}>
@@ -9648,11 +9660,17 @@ function App() {
             koPicks:       preds.ko_picks       || {},
           }
         }));
-        const hasTask1 = Object.keys(preds.group_rankings || {}).length > 0 || (preds.best3_picks || []).length > 0;
+        const loadedProgress = getPredictionProgress({
+          groupRankings: preds.group_rankings || {},
+          best3: preds.best3_picks || [],
+        });
+        const hasTask1 = loadedProgress.complete;
         const hasTask2 = Object.keys(preds.ko_picks || {}).length > 0;
-        if (hasTask1 || hasTask2) setPredictionsComplete(p => ({ ...p, [boardId]: true }));
-        if (hasTask1 || hasTask2) setAllInstantPickDone(p => ({ ...p, [boardId]: true }));
+        setPredictionsComplete(p => ({ ...p, [boardId]: hasTask1 || hasTask2 }));
+        setAllInstantPickDone(p => ({ ...p, [boardId]: hasTask1 || hasTask2 }));
         if (hasTask2) setAllKoPickDone(p => ({ ...p, [boardId]: true }));
+        setGroupsDoneCountByBoard(p=>({...p,[boardId]:loadedProgress.groupsDone}));
+        setAllGroupsDoneByBoard(p=>({...p,[boardId]:loadedProgress.groupsDone >= INTERACTIVE_GROUPS.length}));
       }
       if (scores && Object.keys(scores).length > 0)
         setExactScoresByBoard(p => ({ ...p, [boardId]: scores }));
@@ -9808,6 +9826,8 @@ function App() {
     });
   };
   const [allInstantPickDone, setAllInstantPickDone] = useState({});
+  const [allGroupsDoneByBoard, setAllGroupsDoneByBoard] = useState({});
+  const [groupsDoneCountByBoard, setGroupsDoneCountByBoard] = useState({});
   const [allKoPickDone, setAllKoPickDone] = useState({});
   const [allChampionPicks, setAllChampionPicks] = useState({});
   const [allTopScorerPicks, setAllTopScorerPicks] = useState({});
@@ -9828,7 +9848,14 @@ function App() {
   const instantPickState = allInstantPickStates[activeBoardId]||null;
   const instantPickDone = allInstantPickDone[activeBoardId]||false;
   const koPickDone = allKoPickDone[activeBoardId]||false;
-  const setInstantPickState = (s) => setAllInstantPickStates(p=>({...p,[activeBoardId]:s}));
+  const setInstantPickState = (s) => {
+    setAllInstantPickStates(p=>({...p,[activeBoardId]:s}));
+    const progress = getPredictionProgress(s || {});
+    setGroupsDoneCountByBoard(p=>({...p,[activeBoardId]:progress.groupsDone}));
+    setAllGroupsDoneByBoard(p=>({...p,[activeBoardId]:progress.groupsDone >= INTERACTIVE_GROUPS.length}));
+    setAllInstantPickDone(p=>({...p,[activeBoardId]:progress.complete}));
+    setPredictionsComplete(p=>({...p,[activeBoardId]:progress.complete}));
+  };
   const setInstantPickDone = (v) => setAllInstantPickDone(p=>({...p,[activeBoardId]:v}));
   const setKoPickDone = (v) => setAllKoPickDone(p=>({...p,[activeBoardId]:v}));
   const championPick = allChampionPicks[activeBoardId]||null;
@@ -9891,7 +9918,6 @@ function App() {
     <LangCtx.Provider value={lang}>
     <div style={{width:"100%",height:"100%",background:BG,display:"flex",flexDirection:"column",position:"relative",fontFamily:"-apple-system,'SF Pro Display',sans-serif",paddingTop:"env(safe-area-inset-top, 0px)",boxSizing:"border-box"}}>
         {isDesktop && <DesktopBlocker />}
-        {screen===SCREENS.HOME&&<img src={trophy} alt="" style={{position:"fixed",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.09,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>}
         <div style={{flex:1,overflow:"hidden",display:"flex",flexDirection:"column"}}>
           {screen==="dev"&&<DevPanel
             onAutoPick={(state)=>{
@@ -9970,7 +9996,10 @@ function App() {
               onBooster={()=>setScreen(SCREENS.BOOSTER)}
               myBoards={myBoards}
               predictionsComplete={predictionsComplete}
+              instantPickState={instantPickState}
               instantPickDone={instantPickDone}
+              allGroupsDone={!!(allGroupsDoneByBoard[activeBoardId])}
+              groupsDoneCount={groupsDoneCountByBoard[activeBoardId]??null}
               koPickDone={koPickDone}
               koUnlocked={koUnlocked}
               exactScores={exactScores}
@@ -10144,6 +10173,7 @@ function App() {
                 const best3Complete = (state?.best3?.length || 0) >= 8;
                 if (best3Complete) {
                   setInstantPickDone(true);
+                  const _gr = state?.groupRankings||{}; if(Object.keys(_gr).filter(g=>INTERACTIVE_GROUPS.includes(g)).length>=INTERACTIVE_GROUPS.length) setAllGroupsDoneByBoard(p=>({...p,[activeBoardId]:true}));
                   if (user && state) await savePredictions(user.id, activeBoardId, state);
                 } else {
                   setInstantPickDone(false);
@@ -10154,6 +10184,7 @@ function App() {
             onModify={()=>setInstantPickDone(false)}
             onComplete={async ()=>{
               setInstantPickDone(true);
+              const _gr2 = instantPickState?.groupRankings||{}; if(Object.keys(_gr2).filter(g=>INTERACTIVE_GROUPS.includes(g)).length>=INTERACTIVE_GROUPS.length) setAllGroupsDoneByBoard(p=>({...p,[activeBoardId]:true}));
               if (user && instantPickState) {
                 await savePredictions(user.id, activeBoardId, instantPickState);
               }
