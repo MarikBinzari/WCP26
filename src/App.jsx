@@ -4437,8 +4437,9 @@ function ChampionScreen({ onBack, initialMode="champion", championPick, topScore
   const lang = useLang();
   const allTeams = Object.values(ALL_GROUPS_DATA).flat();
   const tCode = (t) => TEAM_CODE[t]||t.slice(0,3).toUpperCase();
-  const showChampion = true;
-  const showScorer = true;
+  const [activeTab, setActiveTab] = useState(initialMode==="scorer"?"scorer":"champion");
+  const showChampion = activeTab === "champion";
+  const showScorer = activeTab === "scorer";
   const simNow = simDay ? new Date(2026,5,simDay,simHour,simMin,0) : new Date();
   const phase1Deadline = new Date(2026,5,11,19,0,0);
   const phase2Open     = new Date(2026,5,27,21,0,0);
@@ -4449,15 +4450,18 @@ function ChampionScreen({ onBack, initialMode="champion", championPick, topScore
   const otherChampionTeams = allTeams.filter(t=>!featuredChampionTeams.includes(t));
   const pickCardStyle = UI.card;
   const pickLabelStyle = UI.sectionLabel;
-  const finishPick = (message, icon) => {
+  const finishPick = (message, icon, fromTab) => {
     showToast&&showToast(message, icon);
-    setTimeout(()=>onBack&&onBack(), 450);
+    const otherTab = fromTab==="champion" ? "scorer" : "champion";
+    const otherDone = fromTab==="champion" ? !!(topScorerPick?.player) : !!championPick;
+    if (!otherDone) setTimeout(()=>setActiveTab(otherTab), 500);
+    else setTimeout(()=>onBack&&onBack(), 450);
   };
   const selectChampion = (team) => {
     if (isLocked) return;
     const next = championPick===team ? null : team;
     setChampionPick(next);
-    if(next) finishPick(T[lang].winnerTeamSaved, FLAGS[team]||"🏆");
+    if(next) finishPick(T[lang].winnerTeamSaved, FLAGS[team]||"🏆", "champion");
     else showToast&&showToast(T[lang].winnerTeamCleared, "↺");
   };
   const [tsTeam, setTsTeam] = useState(topScorerPick?.team||null);
@@ -4481,12 +4485,30 @@ function ChampionScreen({ onBack, initialMode="champion", championPick, topScore
         {/* trophy image watermark inside header */}
         <img src={trophy} alt="" style={{position:"absolute",right:-10,top:-18,height:130,opacity:0.13,pointerEvents:"none",filter:"grayscale(0.3) contrast(1.2)"}}/>
         <div style={{position:"relative",zIndex:1}}>
-          <div style={{display:"flex",alignItems:"center",gap:10,padding:"28px 14px 28px"}}>
+          <div style={{display:"flex",alignItems:"center",gap:10,padding:"28px 14px 12px"}}>
             <button onClick={onBack} style={{background:"rgba(255,255,255,0.12)",border:"none",borderRadius:10,width:34,height:34,color:"#fff",fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>‹</button>
             <div style={{flex:1,textAlign:"center"}}>
-              <div style={{fontSize:18,fontWeight:800,color:"#fff"}}>{showChampion?T[lang].pickChampionHeader:T[lang].pickTopScorerHeader}</div>
+              <div style={{fontSize:18,fontWeight:800,color:"#fff"}}>{T[lang].winnerTopScorer}</div>
             </div>
             <div style={{width:34,flexShrink:0}}/>
+          </div>
+          {/* Tab bar */}
+          <div style={{display:"flex",margin:"0 14px 16px",background:"rgba(255,255,255,0.1)",borderRadius:12,padding:3,gap:3}}>
+            {[{key:"champion",label:T[lang].pickChampionHeader},{key:"scorer",label:T[lang].pickTopScorerHeader}].map(tab=>{
+              const isActive = activeTab===tab.key;
+              const hasPick = tab.key==="champion" ? !!championPick : !!(topScorerPick?.player);
+              return (
+                <button key={tab.key} onClick={()=>setActiveTab(tab.key)}
+                  style={{flex:1,padding:"9px 6px",borderRadius:10,border:"none",cursor:"pointer",fontFamily:"inherit",fontWeight:700,fontSize:13,transition:"all 0.2s",
+                    background:isActive?"#fff":"transparent",
+                    color:isActive?NAVY:"rgba(255,255,255,0.65)",
+                    boxShadow:isActive?"0 2px 8px rgba(0,0,0,0.12)":"none",
+                    display:"flex",alignItems:"center",justifyContent:"center",gap:5}}>
+                  {hasPick&&<span style={{fontSize:10,color:isActive?GREEN:"rgba(255,255,255,0.7)"}}>✓</span>}
+                  {tab.label}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -4630,7 +4652,7 @@ function ChampionScreen({ onBack, initialMode="champion", championPick, topScore
                             isSelected={isSel}
                             onClick={isLocked ? undefined : ()=>{
                               setTopScorerPick({team:tsTeam,player:name});
-                              finishPick(T[lang].topScorerSaved, FLAGS[tsTeam]||"👕");
+                              finishPick(T[lang].topScorerSaved, FLAGS[tsTeam]||"👕", "scorer");
                             }}
                           />
                         );
