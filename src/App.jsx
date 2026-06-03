@@ -5107,10 +5107,14 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
             <div style={{display:"inline-flex",background:NAVY,color:"#fff",borderRadius:20,padding:"5px 13px",fontSize:10,fontWeight:800,letterSpacing:1,marginBottom:14}}>{naCard.badge}</div>
             {/* Title */}
             <div style={{fontSize:24,fontWeight:900,color:"#0D1117",lineHeight:1.2,marginBottom:7,maxWidth:"58%"}}>{naCard.title}</div>
-            {/* Sub + due */}
-            <div style={{fontSize:12,color:"#6B7280",marginBottom:naCard.due?3:12,lineHeight:1.4,maxWidth:"62%"}}>
-              {naCard.sub}{naCard.due&&<> · <span style={{color:NAVY,fontWeight:700}}>{naCard.due}</span></>}
-            </div>
+            {/* Sub */}
+            <div style={{fontSize:12,color:"#6B7280",marginBottom:6,lineHeight:1.4,maxWidth:"62%"}}>{naCard.sub}</div>
+            {/* Due date */}
+            {naCard.due&&(
+              <div style={{display:"inline-flex",alignItems:"center",gap:5,background:"rgba(200,16,46,0.08)",borderRadius:20,padding:"4px 11px",fontSize:11,fontWeight:700,color:"#C8102E",marginBottom:10}}>
+                <span style={{fontSize:10}}>📅</span>{naCard.due}
+              </div>
+            )}
             {/* Progress label */}
             {naCard.total > 1 && <div style={{fontSize:12,fontWeight:600,color:NAVY,marginBottom:5}}>{naCard.progress}/{naCard.total} {nextTask===0?"picks done":nextTask===1?"groups completed":nextTask===2?"scored":""}</div>}
             {/* Progress bar */}
