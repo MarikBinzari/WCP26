@@ -4750,7 +4750,7 @@ function ChampionScreen({ onBack, initialMode="champion", championPick, topScore
           onWheel={e=>e.stopPropagation()}>
           <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.55)"}}/>
           <div onClick={e=>e.stopPropagation()}
-            style={{position:"relative",background:"#1C1C1E",borderRadius:"20px 20px 0 0",zIndex:1,
+            style={{position:"relative",background:"#fff",borderRadius:"20px 20px 0 0",zIndex:1,
               display:"flex",flexDirection:"column",maxHeight:"75vh"}}>
             <div style={{display:"flex",justifyContent:"center",padding:"10px 0 4px",flexShrink:0,touchAction:"none"}}
               onTouchStart={e=>{ e.currentTarget._y0=e.touches[0].clientY; }}
@@ -4764,12 +4764,12 @@ function ChampionScreen({ onBack, initialMode="champion", championPick, topScore
                 s.style.transition="transform 0.3s"; s.style.transform="";
                 if(dy>80) setTsPopup(false);
               }}>
-              <div style={{width:36,height:4,borderRadius:2,background:"rgba(255,255,255,0.35)"}}/>
+              <div style={{width:36,height:4,borderRadius:2,background:"rgba(0,0,0,0.12)"}}/>
             </div>
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 20px 12px",flexShrink:0,borderBottom:"1px solid rgba(255,255,255,0.07)"}}>
-              <span style={{fontSize:15,fontWeight:800,color:"#fff"}}>{T[lang].pickTeamPopup}</span>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 20px 12px",flexShrink:0,borderBottom:"1px solid rgba(0,0,0,0.06)"}}>
+              <span style={{fontSize:15,fontWeight:800,color:DARK}}>{T[lang].pickTeamPopup}</span>
               <button onClick={()=>setTsPopup(false)}
-                style={{background:"rgba(255,255,255,0.1)",border:"none",borderRadius:8,padding:"5px 14px",color:"rgba(255,255,255,0.6)",fontSize:13,cursor:"pointer"}}>
+                style={{background:"#F3F4F6",border:"none",borderRadius:8,padding:"5px 14px",color:"#6B7280",fontSize:13,cursor:"pointer",fontFamily:"inherit"}}>
                 {T[lang].guideClose}
               </button>
             </div>
@@ -4779,30 +4779,30 @@ function ChampionScreen({ onBack, initialMode="champion", championPick, topScore
                   const isSel = tsTeam===team;
                   return (
                     <button key={`ts-featured-${team}`} onClick={()=>{ setTsTeam(team); setTsPopup(false); }}
-                      style={{background:isSel?NAVY:"rgba(255,255,255,0.08)",borderRadius:14,border:`1.5px solid ${isSel?NAVY:"rgba(255,255,255,0.08)"}`,padding:"11px 5px",minHeight:88,cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:6,position:"relative"}}>
+                      style={{background:isSel?NAVY:"#fff",borderRadius:14,border:`1.5px solid ${isSel?NAVY:"rgba(240,160,32,0.20)"}`,boxShadow:isSel?"0 4px 14px rgba(10,46,138,0.16)":"0 2px 10px rgba(0,0,0,0.05)",padding:"11px 5px",minHeight:88,cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:6,position:"relative"}}>
                       {isSel&&<span style={{position:"absolute",top:6,right:6,width:17,height:17,borderRadius:"50%",background:GREEN,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:900,color:"#fff"}}>✓</span>}
                       <span style={{fontSize:30,lineHeight:1}}>{FLAGS[team]||"🏳"}</span>
-                      <span style={{fontSize:10,fontWeight:800,color:"#fff",lineHeight:1.15,textAlign:"center",maxWidth:"100%",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{team}</span>
-                      <span style={{fontSize:11,fontWeight:800,color:"rgba(255,255,255,0.35)",letterSpacing:0.5}}>{tCode(team)}</span>
+                      <span style={{fontSize:10,fontWeight:800,color:isSel?"#fff":DARK,lineHeight:1.15,textAlign:"center",maxWidth:"100%",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{team}</span>
+                      <span style={{fontSize:11,fontWeight:800,color:isSel?"rgba(255,255,255,0.55)":"#D4820A",letterSpacing:0.5}}>{tCode(team)}</span>
                     </button>
                   );
                 })}
               </div>
 
-              <div style={{fontSize:10,fontWeight:800,color:"rgba(255,255,255,0.35)",letterSpacing:0.8,textTransform:"uppercase",margin:"0 2px 8px"}}>{T[lang].allTeams}</div>
+              <div style={{fontSize:10,fontWeight:800,color:"#9CA3AF",letterSpacing:0.8,textTransform:"uppercase",margin:"0 2px 8px"}}>{T[lang].allTeams}</div>
               <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:8}}>
               {otherChampionTeams.map(team=>{
                 const isSel = tsTeam===team;
                 return (
                   <button key={team} onClick={()=>{ setTsTeam(team); setTsPopup(false); }}
                     style={{display:"flex",alignItems:"center",gap:9,padding:"10px",
-                      background:isSel?"rgba(10,46,138,0.55)":"rgba(255,255,255,0.06)",
-                      border:`1.5px solid ${isSel?NAVY:"rgba(255,255,255,0.04)"}`,borderRadius:12,cursor:"pointer",textAlign:"left",position:"relative",overflow:"hidden"}}>
+                      background:"#fff",
+                      border:`1.5px solid ${isSel?NAVY:"transparent"}`,boxShadow:isSel?"0 2px 12px rgba(10,46,138,0.12)":"0 2px 10px rgba(0,0,0,0.05)",borderRadius:12,cursor:"pointer",textAlign:"left",position:"relative",overflow:"hidden"}}>
                     {isSel&&<span style={{position:"absolute",top:6,right:6,width:16,height:16,borderRadius:"50%",background:GREEN,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:900,color:"#fff"}}>✓</span>}
                     <span style={{fontSize:23,lineHeight:1,flexShrink:0}}>{FLAGS[team]||"🏳"}</span>
                     <div style={{flex:1,minWidth:0}}>
-                      <div style={{fontSize:11,fontWeight:700,color:"#fff",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{team}</div>
-                      <div style={{fontSize:11,color:"rgba(255,255,255,0.35)",fontWeight:700,letterSpacing:0.5,marginTop:3}}>{tCode(team)}</div>
+                      <div style={{fontSize:11,fontWeight:700,color:isSel?NAVY:DARK,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{team}</div>
+                      <div style={{fontSize:11,color:"#C0C8D8",fontWeight:700,letterSpacing:0.5,marginTop:3}}>{tCode(team)}</div>
                     </div>
                   </button>
                 );
