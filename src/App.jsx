@@ -5080,7 +5080,7 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
           {/* ── NEXT ACTION hero card ──────────────────────────────────────────── */}
           <div style={{background:"#fff",borderRadius:20,padding:"20px 20px 20px",marginBottom:14,boxShadow:"0 4px 20px rgba(0,0,0,0.07)",position:"relative",overflow:"hidden"}}>
             {/* Trophy decoration */}
-            <img src={trophy} alt="" style={{position:"absolute",right:-8,top:-6,height:132,opacity:1,pointerEvents:"none",filter:"drop-shadow(0 8px 20px rgba(0,0,0,0.15))",WebkitMaskImage:"linear-gradient(to bottom,black 55%,transparent 100%)",maskImage:"linear-gradient(to bottom,black 55%,transparent 100%)"}}/>
+            <img src={trophy} alt="" style={{position:"absolute",right:-8,top:14,height:132,opacity:1,pointerEvents:"none",filter:"drop-shadow(0 8px 20px rgba(0,0,0,0.15))",WebkitMaskImage:"linear-gradient(to bottom,black 55%,transparent 100%)",maskImage:"linear-gradient(to bottom,black 55%,transparent 100%)"}}/>
             {/* Badge */}
             <div style={{display:"inline-flex",background:NAVY,color:"#fff",borderRadius:20,padding:"5px 13px",fontSize:10,fontWeight:800,letterSpacing:1,marginBottom:14}}>{naCard.badge}</div>
             {/* Title */}
