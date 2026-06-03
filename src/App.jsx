@@ -4437,8 +4437,8 @@ function ChampionScreen({ onBack, initialMode="champion", championPick, topScore
   const lang = useLang();
   const allTeams = Object.values(ALL_GROUPS_DATA).flat();
   const tCode = (t) => TEAM_CODE[t]||t.slice(0,3).toUpperCase();
-  const showChampion = initialMode !== "scorer";
-  const showScorer = initialMode !== "champion";
+  const showChampion = true;
+  const showScorer = true;
   const simNow = simDay ? new Date(2026,5,simDay,simHour,simMin,0) : new Date();
   const phase1Deadline = new Date(2026,5,11,19,0,0);
   const phase2Open     = new Date(2026,5,27,21,0,0);
@@ -5080,7 +5080,7 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
           {/* ── NEXT ACTION hero card ──────────────────────────────────────────── */}
           <div style={{background:"#fff",borderRadius:20,padding:"20px 20px 20px",marginBottom:14,boxShadow:"0 4px 20px rgba(0,0,0,0.07)",position:"relative",overflow:"hidden"}}>
             {/* Trophy decoration */}
-            <img src={trophy} alt="" style={{position:"absolute",right:-12,top:-8,height:168,opacity:1,pointerEvents:"none",filter:"drop-shadow(0 8px 20px rgba(0,0,0,0.15))"}}/>
+            <img src={trophy} alt="" style={{position:"absolute",right:0,top:"50%",transform:"translateY(-50%)",height:148,opacity:1,pointerEvents:"none",filter:"drop-shadow(0 8px 20px rgba(0,0,0,0.15))"}}/>
             {/* Badge */}
             <div style={{display:"inline-flex",background:NAVY,color:"#fff",borderRadius:20,padding:"5px 13px",fontSize:10,fontWeight:800,letterSpacing:1,marginBottom:14}}>{naCard.badge}</div>
             {/* Title */}
