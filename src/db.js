@@ -117,6 +117,20 @@ export async function saveExactScore(userId, boardId, matchKey, home, away) {
   return { error: null }
 }
 
+export async function ensureBoardScores(userId, boardIds) {
+  const ids = [...new Set((Array.isArray(boardIds) ? boardIds : [boardIds]).filter(Boolean))]
+  if (!userId || ids.length === 0) return { error: null }
+  const { error } = await supabase.rpc('ensure_board_scores', {
+    p_user_id: userId,
+    p_board_ids: ids,
+  })
+  if (error) {
+    console.error('ensureBoardScores:', error)
+    return { error: error.message }
+  }
+  return { error: null }
+}
+
 export async function checkDbHealth() {
   const results = {}
   // Check matches table
@@ -130,7 +144,7 @@ export async function checkDbHealth() {
   // Check exact_scores table accessible
   const { error: scErr } = await supabase.from('exact_scores').select('id').limit(1)
   results.exactScoresTable = scErr ? { ok: false, error: scErr.message } : { ok: true }
-  // Check players table
+  // Check world cup football players table
   const { error: plErr } = await supabase.from('world_cup_football_players').select('id').limit(1)
   results.playersTable = plErr ? { ok: false, error: plErr.message } : { ok: true }
   const { count: playerCount } = await supabase.from('world_cup_football_players').select('id', { count: 'exact', head: true })
@@ -212,6 +226,7 @@ export async function createBoard(userId, { name, emoji, type, password, max_pla
   if (error) { console.error('createBoard:', error); return { error } }
   // Add creator to board_members so membership is tracked uniformly
   await supabase.from('board_members').upsert({ board_id: data.id, user_id: userId, role: 'admin' }, { onConflict: 'board_id,user_id' })
+  await ensureBoardScores(userId, [data.id])
   return { data: { ...data, label: data.emoji || '⚽', image_url: data.image_url || null, isGlobal: false, code: data.invite_code, isAdmin: true, isMember: true } }
 }
 
@@ -226,6 +241,7 @@ export async function joinBoardByCode(userId, code) {
     .from('board_members')
     .upsert({ board_id: board.id, user_id: userId, role: 'member' }, { onConflict: 'board_id,user_id' })
   if (joinErr) return { error: joinErr.message }
+  await ensureBoardScores(userId, [board.id])
   return { data: { ...board, label: board.emoji || '⚽', image_url: board.image_url || null, isGlobal: false } }
 }
 
@@ -253,6 +269,7 @@ export async function joinBoardById(userId, boardId) {
     .from('board_members')
     .upsert({ board_id: boardId, user_id: userId, role: 'member' }, { onConflict: 'board_id,user_id' })
   if (error) { console.error('joinBoardById:', error); return { error: error.message } }
+  await ensureBoardScores(userId, [boardId])
   return { data: true }
 }
 
@@ -289,6 +306,10 @@ export async function deleteBoard(boardId) {
   return { error: null }
 }
 
+// Global board: UUID în boards/board_members, dar 'global' pentru scoring (exact_scores, board_scores, special_picks)
+const GLOBAL_BOARD_UUID = '00000000-0000-0000-0000-000000000000'
+const toScoringId = (id) => id === GLOBAL_BOARD_UUID ? 'global' : id
+
 // ─── BULK LOADERS (optimized — fewer requests) ───────────────────────────────
 // Replaces loadUserBoards + loadAvailableBoards: 2 requests instead of 5
 export async function loadAllBoards(userId) {
@@ -308,13 +329,15 @@ export async function loadAllBoards(userId) {
   ;(allBoards.data || []).forEach(b => {
     const isMember = memberSet.has(b.id)
     const isCreator = b.created_by === userId
-    if (isMember) {
-      userBoards.push({ ...b, label: b.emoji || '⚽', image_url: b.image_url || null, isGlobal: false, code: b.invite_code, max: b.max_players, isAdmin: roleMap[b.id] === 'admin' || isCreator, isMember: true })
+    const isGlobal = b.id === GLOBAL_BOARD_UUID
+    // Global board always uses 'global' string as id for scoring compatibility
+    const boardObj = { ...b, id: toScoringId(b.id), label: b.emoji || '⚽', image_url: b.image_url || null, isGlobal, code: b.invite_code, max: b.max_players }
+    if (isMember || isGlobal) {
+      userBoards.push({ ...boardObj, isAdmin: isGlobal ? false : (roleMap[b.id] === 'admin' || isCreator), isMember: true })
     } else if (isCreator) {
-      // Creator always sees their board even if they left as participant — no auto-rejoin to board_members
-      userBoards.push({ ...b, label: b.emoji || '⚽', image_url: b.image_url || null, isGlobal: false, code: b.invite_code, max: b.max_players, isAdmin: true, isMember: false })
+      userBoards.push({ ...boardObj, isAdmin: true, isMember: false })
     } else {
-      availableBoards.push({ ...b, label: b.emoji || '⚽', image_url: b.image_url || null, isGlobal: false, code: b.invite_code, max: b.max_players })
+      availableBoards.push(boardObj)
     }
   })
 
@@ -355,19 +378,17 @@ export async function loadAllUserPicks(userId) {
 
 // ─── MEMBER COUNTS ───────────────────────────────────────────────────────────
 export async function fetchMemberCounts(boardIds) {
-  const [boardRes, globalRes] = await Promise.all([
-    supabase
-      .from('board_members')
-      .select('board_id')
-      .in('board_id', boardIds.filter(id => id !== 'global')),
-    supabase
-      .from('profiles')
-      .select('id', { count: 'exact', head: true }),
-  ]);
+  // Map 'global' back to real UUID for board_members query
+  const realIds = boardIds.map(id => id === 'global' ? GLOBAL_BOARD_UUID : id);
+  const { data } = await supabase
+    .from('board_members')
+    .select('board_id')
+    .in('board_id', realIds);
 
-  const counts = { global: globalRes.count || 0 };
-  ;(boardRes.data || []).forEach(row => {
-    counts[row.board_id] = (counts[row.board_id] || 0) + 1;
+  const counts = {};
+  ;(data || []).forEach(row => {
+    const displayId = row.board_id === GLOBAL_BOARD_UUID ? 'global' : row.board_id;
+    counts[displayId] = (counts[displayId] || 0) + 1;
   });
   return counts;
 }
@@ -384,6 +405,17 @@ export async function checkEmailExists(email) {
     if (error) return null;
     return data === true;
   } catch { return null; }
+}
+
+export async function checkNicknameExists(nickname) {
+  try {
+    const { data } = await supabase
+      .from('profiles')
+      .select('id')
+      .ilike('display_name', nickname.trim())
+      .maybeSingle();
+    return !!data;
+  } catch { return false; }
 }
 
 // ─── PLAYERS ─────────────────────────────────────────────────────────────────
@@ -488,6 +520,19 @@ export async function updatePlayerStats(date) {
   return data
 }
 
+// ─── REAL GROUP STANDINGS ────────────────────────────────────────────────────
+// Returns { "A": ["Mexico","South Africa",...], "B": [...], ... } sorted by rank
+export async function loadRealGroupStandings() {
+  const { data, error } = await supabase.rpc('get_group_standings')
+  if (error) { console.error('loadRealGroupStandings:', error); return {} }
+  const standings = {}
+  ;(data || []).forEach(row => {
+    if (!standings[row.group_id]) standings[row.group_id] = []
+    standings[row.group_id].push(row.team_name)
+  })
+  return standings
+}
+
 // ─── LIVE SCORES ──────────────────────────────────────────────────────────────
 export async function loadLiveScores() {
   const { data } = await supabase.from('live_scores').select('*')
@@ -495,9 +540,11 @@ export async function loadLiveScores() {
   ;(data || []).forEach(row => {
     result[row.match_key] = {
       status: row.status,
-      home:   row.home_score,
-      away:   row.away_score,
-      min:    row.live_min,
+      home:   row.regular_time_home_score,
+      away:   row.regular_time_away_score,
+      homePen: row.penalty_home_score,
+      awayPen: row.penalty_away_score,
+      min:    row.api_minute,
     }
   })
   return result
@@ -570,6 +617,32 @@ export async function loadMyScoreBreakdown(userId, boardId) {
   }
 }
 
+// ─── SYSTEM NOTIFICATIONS ────────────────────────────────────────────────────
+export async function loadSystemNotifications() {
+  const { data } = await supabase
+    .from('system_notifications')
+    .select('id, title, body, display_date')
+    .eq('active', true)
+    .order('sort_order', { ascending: true })
+    .order('created_at', { ascending: false })
+  return (data || []).map(n => ({ id: n.id, title: n.title, body: n.body, date: n.display_date || '' }))
+}
+
+// ─── NOTIFICATION READS ───────────────────────────────────────────────────────
+export async function loadNotifReads(userId) {
+  const { data } = await supabase
+    .from('notification_reads')
+    .select('notification_id')
+    .eq('user_id', userId)
+  return (data || []).map(r => r.notification_id)
+}
+
+export async function markNotifRead(userId, notificationId) {
+  await supabase
+    .from('notification_reads')
+    .upsert({ user_id: userId, notification_id: notificationId }, { onConflict: 'user_id,notification_id' })
+}
+
 // ─── LEADERBOARD ──────────────────────────────────────────────────────────────
 export async function loadLeaderboard(boardId, search = null, userId = null) {
   const [rpcRes, profileRes] = await Promise.all([
@@ -587,6 +660,7 @@ export async function loadLeaderboard(boardId, search = null, userId = null) {
     const isMe = myName ? row.display_name === myName : false
     return {
       rank:      i + 1,
+      userId:    row.user_id || null,
       name:      row.display_name || '—',
       pts:       row.total_pts || 0,
       avatarUrl: row.avatar_url || null,
@@ -597,6 +671,7 @@ export async function loadLeaderboard(boardId, search = null, userId = null) {
   if (userId && myName && !rows.some(row => row.isMe)) {
     rows.push({
       rank: rows.length + 1,
+      userId,
       name: myName,
       pts: 0,
       accent: '#E8F0FF',
@@ -604,4 +679,17 @@ export async function loadLeaderboard(boardId, search = null, userId = null) {
     })
   }
   return rows
+}
+
+export async function loadUserBreakdown(userId, boardId) {
+  const [groupRes, exactRes] = await Promise.all([
+    supabase.rpc('get_user_group_breakdown', { p_user_id: userId, p_board_id: boardId }),
+    supabase.rpc('get_user_exact_breakdown', { p_user_id: userId, p_board_id: boardId }),
+  ])
+  if (groupRes.error) console.error('loadUserBreakdown groups:', groupRes.error)
+  if (exactRes.error) console.error('loadUserBreakdown exact:', exactRes.error)
+  return {
+    groups: groupRes.data || [],
+    exact:  exactRes.data || [],
+  }
 }
