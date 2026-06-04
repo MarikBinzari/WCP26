@@ -267,6 +267,7 @@ const T = {
     confirmPredictions:"✅ Confirm Predictions",
     predictionsLocked:"🔒 Tournament started — predictions locked",
     slotGroupWinner:"Group Winner · Advances", slotRunnerUp:"Runner-up · Advances", slotThirdPlace:"Possible 3rd Place", slotEliminated:"Eliminated",
+    btnAutoPick:"🎲 Auto-pick", btnReset:"↺ Reset", btnNextGroup:"NEXT GROUP →", btnNextBestThird:"NEXT: BEST THIRD →", btnConfirmNextGroup:"CONFIRM & NEXT GROUP →", btnConfirmAllGroups:"CONFIRM ALL GROUPS ✓", btnSelectAll4:"SELECT ALL 4 TEAMS", btnGroupSummaryReset:"🔄 Reset", btnNextGroupSummary:"Urmatoarea grupă →", btnKnockout:"Knockout →",
     noChampionSelected:"No champion selected",
     matchesToPredict:"matches to predict", startMatches:"Start Matches →",
     viewOnly:"View Only", winnerArrow:"Winner →",
@@ -452,6 +453,7 @@ const T = {
     confirmPredictions:"✅ Confirmă Predicțiile",
     predictionsLocked:"🔒 Turneul a început — predicții blocate",
     slotGroupWinner:"Câștigătoare Grupă · Avansează", slotRunnerUp:"Locul 2 · Avansează", slotThirdPlace:"Posibil Locul 3", slotEliminated:"Eliminată",
+    btnAutoPick:"🎲 Auto-selectare", btnReset:"↺ Resetează", btnNextGroup:"GRUPA URMATOARE →", btnNextBestThird:"URMĂTOR: LOCUL 3 →", btnConfirmNextGroup:"CONFIRMĂ & GRUPA URMATOARE →", btnConfirmAllGroups:"CONFIRMĂ TOATE GRUPELE ✓", btnSelectAll4:"SELECTEAZĂ TOATE 4 ECHIPELE", btnGroupSummaryReset:"🔄 Resetează", btnNextGroupSummary:"Urmatoarea grupă →", btnKnockout:"Knockout →",
     noChampionSelected:"Niciun campion selectat",
     matchesToPredict:"meciuri de prezis", startMatches:"Începe Meciurile →",
     viewOnly:"Doar Vizualizare", winnerArrow:"Câștigător →",
@@ -637,6 +639,7 @@ const T = {
     confirmPredictions:"✅ Confirmer les Pronostics",
     predictionsLocked:"🔒 Tournoi commencé — pronostics verrouillés",
     slotGroupWinner:"1er du Groupe · Qualifié", slotRunnerUp:"2e du Groupe · Qualifié", slotThirdPlace:"Possible 3e Place", slotEliminated:"Éliminé",
+    btnAutoPick:"🎲 Auto-sélection", btnReset:"↺ Réinitialiser", btnNextGroup:"GROUPE SUIVANT →", btnNextBestThird:"SUIVANT: 3e PLACE →", btnConfirmNextGroup:"CONFIRMER & GROUPE SUIVANT →", btnConfirmAllGroups:"CONFIRMER TOUS LES GROUPES ✓", btnSelectAll4:"SÉLECTIONNER 4 ÉQUIPES", btnGroupSummaryReset:"🔄 Réinitialiser", btnNextGroupSummary:"Groupe suivant →", btnKnockout:"Knockout →",
     noChampionSelected:"Aucun champion sélectionné",
     matchesToPredict:"matchs à pronostiquer", startMatches:"Démarrer les Matchs →",
     viewOnly:"Vue uniquement", winnerArrow:"Vainqueur →",
@@ -3001,14 +3004,14 @@ function GroupSummaryCard({ group, picks, onNext, onReset, isLastGroup }) {
           style={{flex:1,padding:"14px 0",borderRadius:14,border:"none",
             background:BG,boxShadow:SHADOW_OUT,
             color:"#888",fontSize:13,fontWeight:700,cursor:"pointer"}}>
-          🔄 Reset
+          {T[lang].btnGroupSummaryReset}
         </button>
         <button onClick={onNext}
           style={{flex:2,padding:"14px 0",borderRadius:14,border:"none",
             background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,
             color:"#fff",fontSize:14,fontWeight:800,cursor:"pointer",
             boxShadow:"0 4px 14px rgba(0,32,91,0.3)"}}>
-          {isLastGroup ? "Knockout →" : "Group urmatoare →"}
+          {isLastGroup ? T[lang].btnKnockout : T[lang].btnNextGroupSummary}
         </button>
       </div>
     </div>
@@ -4363,12 +4366,12 @@ function GroupRankingScreen({ group, teams, existingRanking, onConfirm, onAutoSa
             background:"rgba(0,0,0,0.04)", border:"1px solid rgba(0,0,0,0.08)",
             borderRadius:10, padding:"6px 14px",
             color:"rgba(0,0,0,0.45)", fontSize:12, cursor:"pointer", fontWeight:700,
-          }}>🎲 Auto-pick</button>
+          }}>{T[lang].btnAutoPick}</button>
           <button onClick={resetRanking} style={{
             background:"rgba(0,0,0,0.04)", border:"1px solid rgba(0,0,0,0.08)",
             borderRadius:10, padding:"6px 14px",
             color:"rgba(0,0,0,0.45)", fontSize:12, cursor:"pointer", fontWeight:700,
-          }}>↺ Reset</button>
+          }}>{T[lang].btnReset}</button>
         </div>}
 
         {/* Confirm / Next */}
@@ -4386,10 +4389,10 @@ function GroupRankingScreen({ group, teams, existingRanking, onConfirm, onAutoSa
             boxShadow: (effectiveViewMode || isComplete) ? `0 4px 20px rgba(0,32,91,0.35)` : "none",
           }}>
           {effectiveViewMode
-            ? groupIdx < totalGroups-1 ? `NEXT GROUP →` : `NEXT: BEST THIRD →`
+            ? groupIdx < totalGroups-1 ? T[lang].btnNextGroup : T[lang].btnNextBestThird
             : isComplete
-              ? groupIdx < totalGroups-1 ? `CONFIRM & NEXT GROUP →` : `CONFIRM ALL GROUPS ✓`
-              : `SELECT ALL 4 TEAMS`}
+              ? groupIdx < totalGroups-1 ? T[lang].btnConfirmNextGroup : T[lang].btnConfirmAllGroups
+              : T[lang].btnSelectAll4}
         </button>
       </div>
     </div>
