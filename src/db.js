@@ -622,7 +622,7 @@ export async function loadSystemNotifications(lang = 'ro') {
   // Try with multilingual columns; fall back to base columns if migration not applied yet
   const { data, error } = await supabase
     .from('system_notifications')
-    .select('id, title, title_en, title_fr, body, body_en, body_fr, display_date')
+    .select('id, title, body, display_date')
     .eq('active', true)
     .order('sort_order', { ascending: true })
     .order('created_at', { ascending: false })
