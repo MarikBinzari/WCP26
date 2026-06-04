@@ -295,6 +295,8 @@ const T = {
     possiblePts:"possible pts", selectScore:"Select predicted score",
     customScore:"Other score", saveScore:"Save ✓", modifyBtn:"← Modify", bestThirdBtn:"Best Third →",
     notStarted:"Not Started", winner:"Winner", scheduledMatches:"Scheduled Matches",
+    tabMatches:"Matches", tabStanding:"Standing",
+    matchSingular:"match", matchPlural:"matches",
     realLabel:"Real", predictedLabel:"Predicted", noMatchesScheduled:"No matches scheduled", checkWeekHint:"Check the rest of the week — there might be matches to predict.",
     finished:"Finished", prediction:"Prediction",
     noMembersYet:"No members yet", searchOrCode:"Search or enter invite code...",
@@ -481,6 +483,8 @@ const T = {
     possiblePts:"pts posibile", selectScore:"Selectează scorul prezis",
     customScore:"Alt scor", saveScore:"Salvează ✓", modifyBtn:"← Modifică", bestThirdBtn:"Locul 3 →",
     notStarted:"Neînceput", winner:"Câștigător", scheduledMatches:"Meciuri Programate",
+    tabMatches:"Meciuri", tabStanding:"Clasament",
+    matchSingular:"meci", matchPlural:"meciuri",
     realLabel:"Real", predictedLabel:"Prezis", noMatchesScheduled:"Nu sunt meciuri programate", checkWeekHint:"Verifică restul săptămânii — s-ar putea să ai meciuri de prezis.",
     finished:"Terminat", prediction:"Predicție",
     noMembersYet:"Niciun membru încă", searchOrCode:"Caută sau introdu codul...",
@@ -667,6 +671,8 @@ const T = {
     possiblePts:"pts possibles", selectScore:"Sélectionner le score prédit",
     customScore:"Autre score", saveScore:"Enregistrer ✓", modifyBtn:"← Modifier", bestThirdBtn:"Best Third →",
     notStarted:"Pas commencé", winner:"Vainqueur", scheduledMatches:"Matchs Programmés",
+    tabMatches:"Matchs", tabStanding:"Classement",
+    matchSingular:"match", matchPlural:"matchs",
     realLabel:"Réel", predictedLabel:"Prédit", noMatchesScheduled:"Aucun match programmé", checkWeekHint:"Consultez le reste de la semaine — il pourrait y avoir des matchs à prédire.",
     finished:"Terminé", prediction:"Pronostic",
     noMembersYet:"Aucun membre encore", searchOrCode:"Chercher ou entrer le code...",
@@ -2088,6 +2094,14 @@ function FlagBg({ team, style }) {
         <div style={{position:"absolute",inset:0,background:"#00008B"}}/>
         <div style={{position:"absolute",top:0,left:0,width:"50%",height:"50%",
           background:"linear-gradient(135deg,#012169 50%,#C8102E 50%)"}}/>
+        {/* Commonwealth Star below Union Jack */}
+        <div style={{position:"absolute",top:"58%",left:"10%",
+          color:"#fff",fontSize:"140%",lineHeight:1}}>★</div>
+        {/* Southern Cross — white stars, right half */}
+        <div style={{position:"absolute",top:"15%",right:"16%",color:"#fff",fontSize:"95%",lineHeight:1}}>★</div>
+        <div style={{position:"absolute",top:"44%",right:"6%",color:"#fff",fontSize:"75%",lineHeight:1}}>★</div>
+        <div style={{position:"absolute",top:"66%",right:"20%",color:"#fff",fontSize:"80%",lineHeight:1}}>★</div>
+        <div style={{position:"absolute",top:"55%",right:"38%",color:"#fff",fontSize:"65%",lineHeight:1}}>★</div>
       </div>
     ),
     "Senegal": (
@@ -2298,6 +2312,10 @@ function FlagBg({ team, style }) {
           <div style={{flex:1,background:"#fff"}}/>
           <div style={{flex:1,background:"#0038A8"}}/>
         </div>
+        <div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",
+          width:"18%",height:"30%",borderRadius:"50%",border:"2px solid #009B3A",
+          display:"flex",alignItems:"center",justifyContent:"center",
+          fontSize:"70%",color:"#009B3A",lineHeight:1}}>★</div>
       </div>
     ),
     "Turkiye": (
@@ -2350,6 +2368,11 @@ function FlagBg({ team, style }) {
         <div style={{position:"absolute",inset:0,background:"#012169"}}/>
         <div style={{position:"absolute",top:0,left:0,width:"50%",height:"50%",
           background:"linear-gradient(135deg,#012169 50%,#C8102E 50%)"}}/>
+        {/* Southern Cross — 4 red stars (white-outlined), right half */}
+        <div style={{position:"absolute",top:"14%",right:"18%",color:"#CC0001",fontSize:"90%",lineHeight:1,textShadow:"0 0 3px #fff,0 0 1px #fff"}}>★</div>
+        <div style={{position:"absolute",top:"42%",right:"6%",color:"#CC0001",fontSize:"78%",lineHeight:1,textShadow:"0 0 3px #fff,0 0 1px #fff"}}>★</div>
+        <div style={{position:"absolute",top:"64%",right:"20%",color:"#CC0001",fontSize:"72%",lineHeight:1,textShadow:"0 0 3px #fff,0 0 1px #fff"}}>★</div>
+        <div style={{position:"absolute",top:"52%",right:"38%",color:"#CC0001",fontSize:"68%",lineHeight:1,textShadow:"0 0 3px #fff,0 0 1px #fff"}}>★</div>
       </div>
     ),
     "Cape Verde": (
@@ -2444,6 +2467,13 @@ function FlagBg({ team, style }) {
       </div>
     ),
   };
+  // Canonical name aliases — worldcup2026.js uses these exact strings
+  renders["Korea Republic"]          = renders["South Korea"];
+  renders["Czech Republic"]          = renders["Czechia"];
+  renders["Bosnia and Herzegovina"]  = renders["Bosnia-Herzegovina"];
+  renders["Turkey"]                  = renders["Turkiye"];
+  renders["Côte d'Ivoire"]           = renders["Ivory Coast"];
+  renders["Curaçao"]                 = renders["Curacao"];
   return renders[team] || (
     <div style={s}>
       <div style={{position:"absolute",inset:0,
@@ -8201,7 +8231,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
 
             {/* Matches for this group */}
             <p style={{fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,margin:"0 0 8px"}}>
-              Matches · Group {selGroup}
+              {T[lang].tabMatches} · Group {selGroup}
             </p>
             <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:14}}>
               {groupMatches.length===0 ? (
@@ -8551,20 +8581,20 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                 <div style={{background:headerBg,padding:"8px 14px 0"}}>
                   <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
                     <span style={{fontSize:12,fontWeight:800,color:isUCLDay?"#FFD700":"#fff"}}>
-                      {isUCLDay?"🏆 UCL Final":""}{!isUCLDay&&`${selDateLabel} · ${sm.length} matches`}
+                      {isUCLDay?"🏆 UCL Final":""}{!isUCLDay&&`${selDateLabel} · ${sm.length} ${sm.length===1?T[lang].matchSingular:T[lang].matchPlural}`}
                     </span>
                     {!isUCLDay && <div style={{display:"flex",background:"rgba(255,255,255,0.12)",borderRadius:20,padding:"2px",gap:0}}>
                       <button onClick={()=>setShowStanding(false)}
                         style={{padding:"4px 10px",borderRadius:18,border:"none",cursor:"pointer",fontSize:12,fontWeight:700,
                           background:!showStanding?"rgba(255,255,255,0.95)":"transparent",
                           color:!showStanding?NAVY:"rgba(255,255,255,0.6)",transition:"all 0.2s"}}>
-                        <span style={{colorScheme:"light",filter:"saturate(0) contrast(3) brightness(1.1)"}}>⚽</span> Matches
+                        <span style={{colorScheme:"light",filter:"saturate(0) contrast(3) brightness(1.1)"}}>⚽</span> {T[lang].tabMatches}
                       </button>
                       <button onClick={()=>setShowStanding(true)}
                         style={{padding:"4px 10px",borderRadius:18,border:"none",cursor:"pointer",fontSize:12,fontWeight:700,
                           background:showStanding?"rgba(255,255,255,0.95)":"transparent",
                           color:showStanding?NAVY:"rgba(255,255,255,0.6)",transition:"all 0.2s"}}>
-                        📊 Standing
+                        📊 {T[lang].tabStanding}
                       </button>
                     </div>}
                   </div>
@@ -9635,12 +9665,12 @@ function App() {
 
       if (u) {
         if (event === 'INITIAL_SESSION') {
-          Promise.all([loadSystemNotifications(), loadNotifReads(u.id)]).then(([notifs, ids]) => { setSystemNotifs(notifs); setNotifReadIds(ids); });
+          Promise.all([loadSystemNotifications(lang), loadNotifReads(u.id)]).then(([notifs, ids]) => { setSystemNotifs(notifs); setNotifReadIds(ids); });
           const nonRestorable = [SCREENS.SPLASH, SCREENS.LOGIN, SCREENS.RESET_PASSWORD, SCREENS.SET_PASSWORD];
           const saved = (() => { try { return localStorage.getItem('lastScreen'); } catch { return null; } })();
           setScreen(saved && !nonRestorable.includes(saved) ? saved : SCREENS.HOME);
         } else if (event === 'SIGNED_IN') {
-          Promise.all([loadSystemNotifications(), loadNotifReads(u.id)]).then(([notifs, ids]) => { setSystemNotifs(notifs); setNotifReadIds(ids); });
+          Promise.all([loadSystemNotifications(lang), loadNotifReads(u.id)]).then(([notifs, ids]) => { setSystemNotifs(notifs); setNotifReadIds(ids); });
           setScreen(SCREENS.HOME);
         }
         // USER_UPDATED, TOKEN_REFRESHED — only update user state, don't navigate
@@ -9758,6 +9788,9 @@ function App() {
   const simDate = simDay ? new Date(2026,5,simDay,simHour,simMin,0) : null;
   const [lang, setLang] = useState(() => { try { return localStorage.getItem('predicto_lang')||"en"; } catch { return "en"; } });
   useEffect(()=>{ try { localStorage.setItem('predicto_lang', lang); } catch {} }, [lang]);
+  useEffect(() => {
+    if (user) loadSystemNotifications(lang).then(setSystemNotifs);
+  }, [lang]);
   const _cachedBoards = (() => { try { const s = localStorage.getItem('myBoards'); return s ? JSON.parse(s) : []; } catch { return []; } })();
   const [myBoards, setMyBoards] = useState(_cachedBoards);
   const [boardsLoading, setBoardsLoading] = useState(_cachedBoards.length === 0);

@@ -618,14 +618,32 @@ export async function loadMyScoreBreakdown(userId, boardId) {
 }
 
 // ─── SYSTEM NOTIFICATIONS ────────────────────────────────────────────────────
-export async function loadSystemNotifications() {
-  const { data } = await supabase
+export async function loadSystemNotifications(lang = 'ro') {
+  // Try with multilingual columns; fall back to base columns if migration not applied yet
+  const { data, error } = await supabase
     .from('system_notifications')
-    .select('id, title, body, display_date')
+    .select('id, title, title_en, title_fr, body, body_en, body_fr, display_date')
     .eq('active', true)
     .order('sort_order', { ascending: true })
     .order('created_at', { ascending: false })
-  return (data || []).map(n => ({ id: n.id, title: n.title, body: n.body, date: n.display_date || '' }))
+
+  if (error) {
+    // Columns may not exist yet — retry with base columns only
+    const { data: base } = await supabase
+      .from('system_notifications')
+      .select('id, title, body, display_date')
+      .eq('active', true)
+      .order('sort_order', { ascending: true })
+      .order('created_at', { ascending: false })
+    return (base || []).map(n => ({ id: n.id, title: n.title, body: n.body, date: n.display_date || '' }))
+  }
+
+  return (data || []).map(n => ({
+    id:   n.id,
+    title: (lang === 'en' ? n.title_en : lang === 'fr' ? n.title_fr : null) || n.title,
+    body:  (lang === 'en' ? n.body_en  : lang === 'fr' ? n.body_fr  : null) || n.body,
+    date:  n.display_date || '',
+  }))
 }
 
 // ─── NOTIFICATION READS ───────────────────────────────────────────────────────
