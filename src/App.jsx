@@ -266,6 +266,7 @@ const T = {
     pointsPerPrediction:"Points per correct prediction",
     confirmPredictions:"✅ Confirm Predictions",
     predictionsLocked:"🔒 Tournament started — predictions locked",
+    slotGroupWinner:"Group Winner · Advances", slotRunnerUp:"Runner-up · Advances", slotThirdPlace:"Possible 3rd Place", slotEliminated:"Eliminated",
     noChampionSelected:"No champion selected",
     matchesToPredict:"matches to predict", startMatches:"Start Matches →",
     viewOnly:"View Only", winnerArrow:"Winner →",
@@ -450,6 +451,7 @@ const T = {
     pointsPerPrediction:"Puncte per predicție corectă",
     confirmPredictions:"✅ Confirmă Predicțiile",
     predictionsLocked:"🔒 Turneul a început — predicții blocate",
+    slotGroupWinner:"Câștigătoare Grupă · Avansează", slotRunnerUp:"Locul 2 · Avansează", slotThirdPlace:"Posibil Locul 3", slotEliminated:"Eliminată",
     noChampionSelected:"Niciun campion selectat",
     matchesToPredict:"meciuri de prezis", startMatches:"Începe Meciurile →",
     viewOnly:"Doar Vizualizare", winnerArrow:"Câștigător →",
@@ -634,6 +636,7 @@ const T = {
     pointsPerPrediction:"Points par prédiction correcte",
     confirmPredictions:"✅ Confirmer les Pronostics",
     predictionsLocked:"🔒 Tournoi commencé — pronostics verrouillés",
+    slotGroupWinner:"1er du Groupe · Qualifié", slotRunnerUp:"2e du Groupe · Qualifié", slotThirdPlace:"Possible 3e Place", slotEliminated:"Éliminé",
     noChampionSelected:"Aucun champion sélectionné",
     matchesToPredict:"matchs à pronostiquer", startMatches:"Démarrer les Matchs →",
     viewOnly:"Vue uniquement", winnerArrow:"Vainqueur →",
@@ -4304,7 +4307,7 @@ function GroupRankingScreen({ group, teams, existingRanking, onConfirm, onAutoSa
                       letterSpacing:0.3, textTransform:"uppercase"}}>{team}</div>
                     <div style={{fontSize:11, color:idx===0?GREEN:idx===1?"#4a90e2":idx===2?"#CD7F32":"rgba(0,0,0,0.35)",
                       marginTop:1, fontWeight:600}}>
-                      {idx===0?"Group Winner · Advances":idx===1?"Runner-up · Advances":idx===2?"Possible 3rd Place":"Eliminated"}
+                      {idx===0?T[lang].slotGroupWinner:idx===1?T[lang].slotRunnerUp:idx===2?T[lang].slotThirdPlace:T[lang].slotEliminated}
                     </div>
                   </div>
                   {/* Drag handle — touch to reorder */}
