@@ -2520,6 +2520,7 @@ function MatchSwipeCard({ home, away, onPick, onFlash, groupLabel, matchNum, tot
       setConfettiActive(true);
       setTimeout(()=>{ setNextReady(true); pickRef.current=false; }, 350);
     }
+    return true;
   };
 
   const onTouchStart = e => {
@@ -5618,14 +5619,22 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
     setBoardLeadersMap(prev => ({ ...prev, [boardId]: leaders }));
   };
 
-  const doJoin = (b) => {
+  const doJoin = async (b, password = "") => {
     if(!myBoards.find(x=>x.id===b.id)){
+      if(onJoinBoard) {
+        const result = await onJoinBoard(b.id, password);
+        if(result?.error) {
+          setJoinError(result.error);
+          if(showToast) showToast(result.error, "❌");
+          return false;
+        }
+      }
       setMyBoards(p=>appendJoinedBoard(p,{...b}));
       setAvailBoards(p=>p.map(c=>c.id===b.id?{...c,members:(c.members||0)+1}:c));
-      if(onJoinBoard) onJoinBoard(b.id);
       if(showToast) showToast(`Joined "${b.name}"!`, "🏆");
       if(onJoin) onJoin(b.id);
     }
+    return true;
   };
 
   const removeMember = (boardId, memberId) => {
@@ -5637,7 +5646,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
   };
 
   const joinBoard = b => {
-    if(b.password) {
+    if(b.has_password) {
       setJoinPrompt(b);
       setJoinPass("");
       setJoinError("");
@@ -5648,15 +5657,15 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
 
   const handleJoinCode = async () => {
     const trimmed = boardSearch.trim();
+    const found = [...availBoards, ...createdBoards].find(b=>b.code===trimmed.toUpperCase()||b.id===trimmed);
+    if(found){ joinBoard(found); setBoardSearch(""); setCodeError(""); return; }
     if (onJoinByCode) {
       const data = await onJoinByCode(trimmed);
       if (data) { setBoardSearch(""); setCodeError(""); if(onJoin) onJoin(data.id); }
       else setCodeError(T[lang].invalidCode);
       return;
     }
-    const found = [...availBoards, ...createdBoards].find(b=>b.code===trimmed.toUpperCase()||b.id===trimmed);
-    if(found){ joinBoard(found); setBoardSearch(""); setCodeError(""); }
-    else setCodeError(T[lang].invalidCode);
+    setCodeError(T[lang].invalidCode);
   };
 
   const handleCreate = async () => {
@@ -5947,12 +5956,9 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
                 {T[lang].cancel}
               </Button>
               <Button onClick={()=>{
-                if(joinPass===joinPrompt.password){
-                  doJoin(joinPrompt);
-                  setJoinPrompt(null);
-                } else {
-                  setJoinError(T[lang].incorrectPassword);
-                }
+                doJoin(joinPrompt, joinPass).then(joined => {
+                  if(joined) setJoinPrompt(null);
+                });
               }}
                 style={{flex:2,padding:"13px 0",borderRadius:12,fontSize:14}}>
                 {T[lang].joinBtn} 🏆
@@ -6061,7 +6067,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
                           <p style={{fontSize:13,fontWeight:700,color:DARK,margin:0}}>{b.name}</p>
                           <p style={{fontSize:11,color:"#aaa",margin:"2px 0 0",display:"flex",alignItems:"center",gap:4}}>
                             <span>👥 {b.members}{b.max?"/"+b.max:""}</span>
-                            {b.password&&<><span>·</span><LockIcon size={11} color="#9CA3AF" strokeWidth={2.1}/></>}
+                            {b.has_password&&<><span>·</span><LockIcon size={11} color="#9CA3AF" strokeWidth={2.1}/></>}
                           </p>
                         </div>
                         <Button onClick={()=>joinBoard(b)}>{T[lang].joinBtn}</Button>
@@ -6092,7 +6098,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
                     </div>
                     <div style={{display:"flex",gap:6}}>
                       <Button variant="ghost" onClick={()=>openMembers(b.id)}>👥</Button>
-                      <Button variant="ghost" onClick={()=>{ setEditBoard(b); setCName(b.name); setCPassword(b.password||""); setCMaxPlayers(b.max||10); setCSlots(b.prizes?.length||3); setCPrizes(b.prizes?.length?[...b.prizes,...Array(5).fill("")]:["",...Array(4).fill("")]); changeView("create"); }}>✏️</Button>
+                      <Button variant="ghost" onClick={()=>{ setEditBoard(b); setCName(b.name); setCPassword(""); setCMaxPlayers(b.max||10); setCSlots(b.prizes?.length||3); setCPrizes(b.prizes?.length?[...b.prizes,...Array(5).fill("")]:["",...Array(4).fill("")]); changeView("create"); }}>✏️</Button>
                       <Button variant="danger" onClick={()=>setDeleteConfirmBoard(b)} style={{display:"flex",alignItems:"center",justifyContent:"center",width:36,height:36,padding:0}}><TrashIcon size={15}/></Button>
                     </div>
                   </div>
@@ -10112,11 +10118,11 @@ function App() {
               return data;
             }}
             onJoin={(boardId)=>{ setActiveBoardId(boardId); setScreen(SCREENS.HOME); }}
-            onJoinBoard={async (boardId) => {
-              if (!user) return;
+            onJoinBoard={async (boardId, password = "") => {
+              if (!user) return { error: "Not signed in" };
+              const { error } = await joinBoardById(user.id, boardId, password);
+              if (error) { showToast(error, "❌"); return { error }; }
               await removeParticipation(boardId, user.id);
-              const { data, error } = await joinBoardById(user.id, boardId);
-              if (error) { showToast(error, "❌"); return; }
               forgetRemovedBoard(boardId);
               setAllInstantPickStates(prev => { const n = {...prev}; delete n[boardId]; return n; });
               setAllInstantPickDone(prev => { const n = {...prev}; delete n[boardId]; return n; });
@@ -10131,6 +10137,7 @@ function App() {
                 setMyBoards(prev => appendJoinedBoard(prev, { ...board, isMember: true, members: (board.members || 0) + 1 }));
                 setAvailableBoards(prev => prev.filter(b => b.id !== boardId));
               }
+              return { data: true };
             }}
             onDeleteBoard={async (boardId) => {
               const { error } = await deleteBoard(boardId);

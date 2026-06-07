@@ -1,6 +1,17 @@
-import { supabase } from './supabase.js'
+﻿import { supabase } from './supabase.js'
 
-// ─── MATCH KEY → ID MAP (cached) ─────────────────────────────────────────────
+const BOARD_SAFE_COLUMNS = 'id, name, emoji, type, max_players, prizes, created_by, invite_code, image_url, created_at, has_password'
+const mapBoard = (b) => ({
+  ...b,
+  password: undefined,
+  label: b.emoji || 'âš½',
+  image_url: b.image_url || null,
+  isGlobal: false,
+  code: b.invite_code,
+  max: b.max_players,
+})
+
+// â”€â”€â”€ MATCH KEY â†’ ID MAP (cached) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 let _matchKeyMap = null
 async function getMatchKeyMap() {
   if (_matchKeyMap) return _matchKeyMap
@@ -10,7 +21,7 @@ async function getMatchKeyMap() {
   return _matchKeyMap
 }
 
-// ─── SCORING RULES ────────────────────────────────────────────────────────────
+// â”€â”€â”€ SCORING RULES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function fetchScoringRules() {
   const { data } = await supabase
     .from('scoring_rules')
@@ -21,7 +32,7 @@ export async function fetchScoringRules() {
   return rules
 }
 
-// ─── PREDICTIONS ──────────────────────────────────────────────────────────────
+// â”€â”€â”€ PREDICTIONS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function loadPredictions(userId, boardId) {
   const { data, error } = await supabase
     .from('predictions')
@@ -51,7 +62,7 @@ export async function savePredictions(userId, boardId, pickState) {
   if (error) console.error('savePredictions:', error)
 }
 
-// ─── SPECIAL PICKS (champion + top scorer) ───────────────────────────────────
+// â”€â”€â”€ SPECIAL PICKS (champion + top scorer) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function loadSpecialPick(userId, boardId) {
   const { data } = await supabase
     .from('special_picks')
@@ -81,7 +92,7 @@ export async function saveSpecialPick(userId, boardId, { champion, topScorer }) 
   if (error) console.error('saveSpecialPick:', error)
 }
 
-// ─── EXACT SCORES ─────────────────────────────────────────────────────────────
+// â”€â”€â”€ EXACT SCORES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function loadExactScores(userId, boardId) {
   const { data } = await supabase
     .from('exact_scores')
@@ -152,19 +163,19 @@ export async function checkDbHealth() {
   return results
 }
 
-// ─── BOARDS ───────────────────────────────────────────────────────────────────
+// â”€â”€â”€ BOARDS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Returns boards with isAdmin=true (created_by) and/or isMember=true (board_members)
 export async function loadUserBoards(userId) {
   const [memberships, created] = await Promise.all([
     supabase.from('board_members').select('board_id, role').eq('user_id', userId),
-    supabase.from('boards').select('*').eq('created_by', userId),
+    supabase.from('boards').select(BOARD_SAFE_COLUMNS).eq('created_by', userId),
   ])
   if (memberships.error) { console.error('loadUserBoards memberships:', memberships.error); return [] }
   if (created.error) console.error('loadUserBoards created:', created.error)
   const memberRows = memberships.data || []
   const memberBoardIds = [...new Set(memberRows.map(row => row.board_id).filter(Boolean))]
   const memberBoards = memberBoardIds.length
-    ? await supabase.from('boards').select('*').in('id', memberBoardIds)
+    ? await supabase.from('boards').select(BOARD_SAFE_COLUMNS).in('id', memberBoardIds)
     : { data: [], error: null }
   if (memberBoards.error) console.error('loadUserBoards member boards:', memberBoards.error)
   const boardsById = new Map((memberBoards.data || []).map(b => [b.id, b]))
@@ -179,9 +190,9 @@ export async function loadUserBoards(userId) {
     if (error) console.error('loadUserBoards repair memberships:', error)
   }
   const map = new Map()
-  // Creatorul vede mereu boardul său (indiferent de board_members)
+  // Creatorul vede mereu boardul sÄƒu (indiferent de board_members)
   ;(created.data || []).forEach(b => {
-    map.set(b.id, { ...b, label: b.emoji || '⚽', image_url: b.image_url || null, isGlobal: false, code: b.invite_code, max: b.max_players, isAdmin: true, isMember: false })
+    map.set(b.id, { ...mapBoard(b), isAdmin: true, isMember: false })
   })
   ;(created.data || []).forEach(b => {
     if (b?.id && map.has(b.id)) map.set(b.id, { ...map.get(b.id), isMember: true })
@@ -196,7 +207,7 @@ export async function loadUserBoards(userId) {
       map.set(b.id, { ...existing, joined_at, isMember: true })
     } else {
       b.joined_at = joined_at
-      map.set(b.id, { ...b, label: b.emoji || '⚽', image_url: b.image_url || null, isGlobal: false, code: b.invite_code, max: b.max_players, isAdmin: false, isMember: true })
+      map.set(b.id, { ...mapBoard(b), isAdmin: false, isMember: true })
     }
   })
   return Array.from(map.values())
@@ -204,14 +215,14 @@ export async function loadUserBoards(userId) {
 
 export async function loadAvailableBoards(userId) {
   const [allRes, memberRes] = await Promise.all([
-    supabase.from('boards').select('*'),
+    supabase.from('boards').select(BOARD_SAFE_COLUMNS),
     supabase.from('board_members').select('board_id').eq('user_id', userId),
   ])
   if (allRes.error) { console.error('loadAvailableBoards:', allRes.error); return [] }
   const excludeSet = new Set((memberRes.data || []).map(r => r.board_id))
   return (allRes.data || [])
     .filter(b => !excludeSet.has(b.id))
-    .map(b => ({ ...b, label: b.emoji || '⚽', image_url: b.image_url || null, isGlobal: false, code: b.invite_code, max: b.max_players }))
+    .map(mapBoard)
 }
 
 export async function createBoard(userId, { name, emoji, type, password, max_players, prizes }) {
@@ -221,35 +232,32 @@ export async function createBoard(userId, { name, emoji, type, password, max_pla
   const { data, error } = await supabase
     .from('boards')
     .insert({ name, emoji, type, password, max_players, prizes: prizes || [], created_by: userId, invite_code })
-    .select()
+    .select(BOARD_SAFE_COLUMNS)
     .single()
   if (error) { console.error('createBoard:', error); return { error } }
   // Add creator to board_members so membership is tracked uniformly
   await supabase.from('board_members').upsert({ board_id: data.id, user_id: userId, role: 'admin' }, { onConflict: 'board_id,user_id' })
   await ensureBoardScores(userId, [data.id])
-  return { data: { ...data, label: data.emoji || '⚽', image_url: data.image_url || null, isGlobal: false, code: data.invite_code, isAdmin: true, isMember: true } }
+  return { data: { ...mapBoard(data), isAdmin: true, isMember: true } }
 }
 
-export async function joinBoardByCode(userId, code) {
-  const { data: board, error } = await supabase
-    .from('boards')
-    .select('*')
-    .eq('invite_code', code.trim().toUpperCase())
-    .single()
-  if (error || !board) return { error: 'Cod invalid. Verifică și încearcă din nou.' }
-  const { error: joinErr } = await supabase
-    .from('board_members')
-    .upsert({ board_id: board.id, user_id: userId, role: 'member' }, { onConflict: 'board_id,user_id' })
-  if (joinErr) return { error: joinErr.message }
+export async function joinBoardByCode(userId, code, password = '') {
+  const { data, error } = await supabase.rpc('join_board', {
+    p_invite_code: code.trim().toUpperCase(),
+    p_password: password || null,
+  })
+  const board = Array.isArray(data) ? data[0] : data
+  if (error || !board) return { error: error?.message || 'Cod invalid. Verifica si incearca din nou.' }
   await ensureBoardScores(userId, [board.id])
-  return { data: { ...board, label: board.emoji || '⚽', image_url: board.image_url || null, isGlobal: false } }
+  return { data: mapBoard(board) }
 }
 
 export async function loadBoardMembers(boardId) {
-  const { data: members, error: err1 } = await supabase
+  const { data: members, error } = await supabase
     .from('board_members')
     .select('user_id, role')
     .eq('board_id', boardId)
+  if (error) { console.error('loadBoardMembers:', error); return [] }
   if (!members?.length) return []
   const { data: profiles } = await supabase
     .from('profiles')
@@ -259,15 +267,16 @@ export async function loadBoardMembers(boardId) {
   ;(profiles || []).forEach(p => { profileMap[p.id] = p.display_name })
   return members.map(row => ({
     id:   row.user_id,
-    name: profileMap[row.user_id] || '—',
+    name: profileMap[row.user_id] || '-',
     role: row.role,
   }))
 }
 
-export async function joinBoardById(userId, boardId) {
-  const { error } = await supabase
-    .from('board_members')
-    .upsert({ board_id: boardId, user_id: userId, role: 'member' }, { onConflict: 'board_id,user_id' })
+export async function joinBoardById(userId, boardId, password = '') {
+  const { error } = await supabase.rpc('join_board', {
+    p_board_id: boardId,
+    p_password: password || null,
+  })
   if (error) { console.error('joinBoardById:', error); return { error: error.message } }
   await ensureBoardScores(userId, [boardId])
   return { data: true }
@@ -306,16 +315,16 @@ export async function deleteBoard(boardId) {
   return { error: null }
 }
 
-// Global board: UUID în boards/board_members, dar 'global' pentru scoring (exact_scores, board_scores, special_picks)
+// Global board: UUID Ã®n boards/board_members, dar 'global' pentru scoring (exact_scores, board_scores, special_picks)
 const GLOBAL_BOARD_UUID = '00000000-0000-0000-0000-000000000000'
 const toScoringId = (id) => id === GLOBAL_BOARD_UUID ? 'global' : id
 
-// ─── BULK LOADERS (optimized — fewer requests) ───────────────────────────────
+// â”€â”€â”€ BULK LOADERS (optimized â€” fewer requests) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Replaces loadUserBoards + loadAvailableBoards: 2 requests instead of 5
 export async function loadAllBoards(userId) {
   const [memberships, allBoards] = await Promise.all([
     supabase.from('board_members').select('board_id, role').eq('user_id', userId),
-    supabase.from('boards').select('*'),
+    supabase.from('boards').select(BOARD_SAFE_COLUMNS),
   ])
   if (allBoards.error) { console.error('loadAllBoards:', allBoards.error); return { userBoards: [], availableBoards: [] } }
 
@@ -331,7 +340,7 @@ export async function loadAllBoards(userId) {
     const isCreator = b.created_by === userId
     const isGlobal = b.id === GLOBAL_BOARD_UUID
     // Global board always uses 'global' string as id for scoring compatibility
-    const boardObj = { ...b, id: toScoringId(b.id), label: b.emoji || '⚽', image_url: b.image_url || null, isGlobal, code: b.invite_code, max: b.max_players }
+    const boardObj = { ...mapBoard(b), id: toScoringId(b.id), isGlobal }
     if (isMember || isGlobal) {
       userBoards.push({ ...boardObj, isAdmin: isGlobal ? false : (roleMap[b.id] === 'admin' || isCreator), isMember: true })
     } else if (isCreator) {
@@ -344,7 +353,7 @@ export async function loadAllBoards(userId) {
   return { userBoards, availableBoards }
 }
 
-// Replaces N × loadForBoard calls: 3 requests instead of N×3
+// Replaces N Ã— loadForBoard calls: 3 requests instead of NÃ—3
 export async function loadAllUserPicks(userId) {
   const [predsRes, scoresRes, specialRes] = await Promise.all([
     supabase.from('predictions').select('*').eq('user_id', userId),
@@ -376,7 +385,7 @@ export async function loadAllUserPicks(userId) {
   return { predictions, exactScores, specialPicks }
 }
 
-// ─── MEMBER COUNTS ───────────────────────────────────────────────────────────
+// â”€â”€â”€ MEMBER COUNTS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function fetchMemberCounts(boardIds) {
   // Map 'global' back to real UUID for board_members query
   const realIds = boardIds.map(id => id === 'global' ? GLOBAL_BOARD_UUID : id);
@@ -393,7 +402,7 @@ export async function fetchMemberCounts(boardIds) {
   return counts;
 }
 
-// ─── AUTH HELPERS ─────────────────────────────────────────────────────────────
+// â”€â”€â”€ AUTH HELPERS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Requires Supabase SQL (run once in SQL editor):
 //   create or replace function public.check_email_exists(p_email text)
 //   returns boolean language plpgsql security definer set search_path = '' as $$
@@ -418,7 +427,7 @@ export async function checkNicknameExists(nickname) {
   } catch { return false; }
 }
 
-// ─── PLAYERS ─────────────────────────────────────────────────────────────────
+// â”€â”€â”€ PLAYERS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Returns { [teamName]: [{name, position, number, photo, nationality, goals, assists, yellowCards, redCards, minutesPlayed, rating, appearances}, ...] }
 // Sorted by shirt number ascending (nulls last).
 // Prefers records seeded from API-Football (api_football_id IS NOT NULL) when available.
@@ -450,7 +459,7 @@ export async function loadPlayers() {
   return result
 }
 
-// Players for a single team — loaded lazily when team is selected
+// Players for a single team â€” loaded lazily when team is selected
 export async function loadPlayersByTeam(teamName) {
   const { data, error } = await supabase
     .from('world_cup_football_players')
@@ -467,7 +476,7 @@ export async function loadPlayersByTeam(teamName) {
   }))
 }
 
-// Top scorers across all teams — sorted by goals desc, then assists desc
+// Top scorers across all teams â€” sorted by goals desc, then assists desc
 export async function loadTopScorers(limit = 20) {
   const { data, error } = await supabase
     .from('world_cup_football_players')
@@ -493,15 +502,15 @@ export async function loadTopScorers(limit = 20) {
   }))
 }
 
-// Seed players via football-data.org Edge Function (legacy — basic info + photos)
+// Seed players via football-data.org Edge Function (legacy â€” basic info + photos)
 export async function seedPlayersFromApi() {
   const { data, error } = await supabase.functions.invoke('seed-players')
   if (error) { console.error('seedPlayersFromApi:', error); return { error: error.message } }
   return data
 }
 
-// Initial load of all 48 WC 2026 teams via API-Football (6 batches × 8 teams)
-// offset: 0, 8, 16, 24, 32, 40 — call sequentially from the admin UI
+// Initial load of all 48 WC 2026 teams via API-Football (6 batches Ã— 8 teams)
+// offset: 0, 8, 16, 24, 32, 40 â€” call sequentially from the admin UI
 export async function seedPlayersApiFootball(offset = 0) {
   const { data, error } = await supabase.functions.invoke('seed-players-apifootball', {
     body: { offset, batchSize: 8 },
@@ -520,7 +529,7 @@ export async function updatePlayerStats(date) {
   return data
 }
 
-// ─── REAL GROUP STANDINGS ────────────────────────────────────────────────────
+// â”€â”€â”€ REAL GROUP STANDINGS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Returns { "A": ["Mexico","South Africa",...], "B": [...], ... } sorted by rank
 export async function loadRealGroupStandings() {
   const { data, error } = await supabase.rpc('get_group_standings')
@@ -533,7 +542,7 @@ export async function loadRealGroupStandings() {
   return standings
 }
 
-// ─── LIVE SCORES ──────────────────────────────────────────────────────────────
+// â”€â”€â”€ LIVE SCORES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function loadLiveScores() {
   const { data } = await supabase.from('live_scores').select('*')
   const result = {}
@@ -557,7 +566,7 @@ export function subscribeLiveScores(onChange) {
     .subscribe()
 }
 
-// ─── BOARD IMAGE ─────────────────────────────────────────────────────────────
+// â”€â”€â”€ BOARD IMAGE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function uploadBoardImage(userId, boardId, file) {
   const ext = file.name.split('.').pop().toLowerCase()
   const path = `${userId}/${boardId}.${ext}`
@@ -570,7 +579,7 @@ export async function uploadBoardImage(userId, boardId, file) {
   return urlWithBust
 }
 
-// ─── AVATAR ───────────────────────────────────────────────────────────────────
+// â”€â”€â”€ AVATAR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function uploadAvatar(userId, file) {
   const ext = file.name.split('.').pop().toLowerCase()
   const path = `${userId}/avatar.${ext}`
@@ -591,7 +600,7 @@ export async function uploadAvatar(userId, file) {
   return urlWithBust
 }
 
-// ─── SCORE BREAKDOWN (per user per board) ────────────────────────────────────
+// â”€â”€â”€ SCORE BREAKDOWN (per user per board) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function loadMyScoreBreakdown(userId, boardId) {
   const [specialRes, boardRes] = await Promise.all([
     supabase
@@ -608,7 +617,7 @@ export async function loadMyScoreBreakdown(userId, boardId) {
       .maybeSingle(),
   ])
   const total = boardRes.data?.total_pts ?? 0
-  const pred  = boardRes.data?.pred_pts  ?? total  // fallback: total dacă coloana nu există încă
+  const pred  = boardRes.data?.pred_pts  ?? total  // fallback: total dacÄƒ coloana nu existÄƒ Ã®ncÄƒ
   const exact = boardRes.data?.exact_pts ?? 0
   return {
     specialPts: (specialRes.data?.champion_pts ?? 0) + (specialRes.data?.top_scorer_pts ?? 0),
@@ -617,7 +626,7 @@ export async function loadMyScoreBreakdown(userId, boardId) {
   }
 }
 
-// ─── SYSTEM NOTIFICATIONS ────────────────────────────────────────────────────
+// â”€â”€â”€ SYSTEM NOTIFICATIONS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function loadSystemNotifications(lang = 'ro') {
   // Try with multilingual columns; fall back to base columns if migration not applied yet
   const { data, error } = await supabase
@@ -628,7 +637,7 @@ export async function loadSystemNotifications(lang = 'ro') {
     .order('created_at', { ascending: false })
 
   if (error) {
-    // Columns may not exist yet — retry with base columns only
+    // Columns may not exist yet â€” retry with base columns only
     const { data: base } = await supabase
       .from('system_notifications')
       .select('id, title, body, display_date')
@@ -646,7 +655,7 @@ export async function loadSystemNotifications(lang = 'ro') {
   }))
 }
 
-// ─── NOTIFICATION READS ───────────────────────────────────────────────────────
+// â”€â”€â”€ NOTIFICATION READS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function loadNotifReads(userId) {
   const { data } = await supabase
     .from('notification_reads')
@@ -661,7 +670,7 @@ export async function markNotifRead(userId, notificationId) {
     .upsert({ user_id: userId, notification_id: notificationId }, { onConflict: 'user_id,notification_id' })
 }
 
-// ─── LEADERBOARD ──────────────────────────────────────────────────────────────
+// â”€â”€â”€ LEADERBOARD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function loadLeaderboard(boardId, search = null, userId = null) {
   const [rpcRes, profileRes] = await Promise.all([
     supabase.rpc('get_leaderboard', {
@@ -679,7 +688,7 @@ export async function loadLeaderboard(boardId, search = null, userId = null) {
     return {
       rank:      i + 1,
       userId:    row.user_id || null,
-      name:      row.display_name || '—',
+      name:      row.display_name || 'â€”',
       pts:       row.total_pts || 0,
       avatarUrl: row.avatar_url || null,
       accent:    isMe ? '#E8F0FF' : '#fff',
