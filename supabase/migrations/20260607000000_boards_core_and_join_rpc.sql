@@ -1,4 +1,4 @@
-create extension if not exists pgcrypto;
+create extension if not exists pgcrypto with schema extensions;
 
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
@@ -39,6 +39,7 @@ alter table public.boards add column if not exists has_password boolean not null
 create or replace function public.sync_board_password_state()
 returns trigger
 language plpgsql
+set search_path = public, extensions
 as $$
 begin
   if new.password is not null and btrim(new.password) = '' then
@@ -46,7 +47,7 @@ begin
   end if;
 
   if new.password is not null and new.password !~ '^\\$2[aby]\\$' then
-    new.password := crypt(new.password, gen_salt('bf'));
+    new.password := extensions.crypt(new.password, extensions.gen_salt('bf'));
   end if;
 
   new.has_password := new.password is not null;
@@ -60,7 +61,7 @@ before insert or update of password on public.boards
 for each row execute function public.sync_board_password_state();
 
 update public.boards
-set password = crypt(password, gen_salt('bf')),
+set password = extensions.crypt(password, extensions.gen_salt('bf')),
     has_password = true
 where password is not null
   and btrim(password) <> ''
@@ -148,7 +149,7 @@ returns table (
 )
 language plpgsql
 security definer
-set search_path = public
+set search_path = public, extensions
 as $$
 declare
   v_board public.boards%rowtype;
@@ -169,7 +170,7 @@ begin
   end if;
 
   if v_board.password is not null then
-    if p_password is null or crypt(p_password, v_board.password) <> v_board.password then
+    if p_password is null or extensions.crypt(p_password, v_board.password) <> v_board.password then
       raise exception 'Incorrect password';
     end if;
   end if;
