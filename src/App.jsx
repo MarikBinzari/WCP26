@@ -259,6 +259,8 @@ const T = {
     myBoards:"My Leagues", activeBoards:"3 active leagues", appGuide:"App Guide",
     howItWorks:"How it works", notifications:"Notifications", matchAlertsOn:"Match alerts on",
     language:"Language", upgradePremium:"Upgrade to Premium", removeAds:"Remove ads",
+    shareApp:"Share with Friends", shareAppSub:"Invite friends via WhatsApp",
+    shareAppMsg:"Hey! Join me on WCP26 - the best World Cup 2026 prediction game! 🏆⚽ Play here: ",
     signOut:"Sign Out", memberSince:"Member since March 2026",
     todaysMatches:"Today's Matches", tapToPredict:"Tap to predict the winner",
     allDone:"All done!", backToHome:"Back to Home", draw:"Draw",
@@ -447,6 +449,8 @@ const T = {
     myBoards:"Ligile mele", activeBoards:"3 ligi active", appGuide:"Ghid Aplicație",
     howItWorks:"Cum funcționează", notifications:"Notificări", matchAlertsOn:"Alerte meci active",
     language:"Limbă", upgradePremium:"Upgrade la Premium", removeAds:"Elimină reclamele",
+    shareApp:"Trimite Prietenilor", shareAppSub:"Invită prieteni pe WhatsApp",
+    shareAppMsg:"Salut! Alătură-te mie pe WCP26 - cel mai bun joc de predicții pentru Cupa Mondială 2026! 🏆⚽ Joacă aici: ",
     signOut:"Deconectare", memberSince:"Membru din Martie 2026",
     todaysMatches:"Meciurile de Azi", tapToPredict:"Apasă pentru a prezice câștigătorul",
     allDone:"Gata!", backToHome:"Înapoi Acasă", draw:"Egal",
@@ -635,6 +639,8 @@ const T = {
     myBoards:"Mes Ligues", activeBoards:"3 ligues actives", appGuide:"Guide App",
     howItWorks:"Comment ça marche", notifications:"Notifications", matchAlertsOn:"Alertes match activées",
     language:"Langue", upgradePremium:"Passer à Premium", removeAds:"Supprimer les pubs",
+    shareApp:"Partager avec des Amis", shareAppSub:"Inviter des amis via WhatsApp",
+    shareAppMsg:"Hey ! Rejoins-moi sur WCP26 - le meilleur jeu de pronostics pour la Coupe du Monde 2026 ! 🏆⚽ Joue ici : ",
     signOut:"Déconnexion", memberSince:"Membre depuis Mars 2026",
     todaysMatches:"Matchs du Jour", tapToPredict:"Appuyez pour prédire le vainqueur",
     allDone:"Terminé !", backToHome:"Retour à l'Accueil", draw:"Nul",
@@ -9270,7 +9276,7 @@ function AccountScreen({ setLang, onBoards, onSignOut, onShowGuide, onPremium, o
       </div>
       <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",position:"relative",zIndex:1}}>
         <div style={{padding:"12px 20px 100px"}}>
-          {[{icon:"🏆",label:T[lang].myBoards,sub:T[lang].activeBoards,action:onBoards},{icon:"📖",label:T[lang].appGuide,sub:T[lang].howItWorks,action:onShowGuide},{icon:"🔔",label:T[lang].notifications,sub:T[lang].matchAlertsOn,action:onNotifications},{icon:"🌍",label:T[lang].language,sub:LANGS.find(l=>l.code===lang)?.name||"English",isLang:true},{icon:"⭐",label:T[lang].upgradePremium,sub:T[lang].removeAds,highlight:true,action:onPremium},{icon:"🚪",label:T[lang].signOut,sub:"",action:handleSignOut}].map(item=>(
+          {[{icon:"🏆",label:T[lang].myBoards,sub:T[lang].activeBoards,action:onBoards},{icon:"📖",label:T[lang].appGuide,sub:T[lang].howItWorks,action:onShowGuide},{icon:"🔔",label:T[lang].notifications,sub:T[lang].matchAlertsOn,action:onNotifications},{icon:"🌍",label:T[lang].language,sub:LANGS.find(l=>l.code===lang)?.name||"English",isLang:true},{icon:"📲",label:T[lang].shareApp,sub:T[lang].shareAppSub,action:()=>{ const url=window.location.origin; window.open("https://wa.me/?text="+encodeURIComponent(T[lang].shareAppMsg+url),"_blank"); }},{icon:"⭐",label:T[lang].upgradePremium,sub:T[lang].removeAds,highlight:true,action:onPremium},{icon:"🚪",label:T[lang].signOut,sub:"",action:handleSignOut}].map(item=>(
             <div key={item.label} onClick={item.isLang?undefined:item.action||undefined} style={{display:"flex",alignItems:"center",gap:14,...UI.card,background:item.highlight?"#E8F0FF":"#fff",border:item.highlight?`1.5px solid ${NAVY}`:UI.card.border,padding:"13px 16px",marginBottom:10,cursor:item.isLang?"default":"pointer"}}>
               <span style={{fontSize:20}}>{item.icon}</span>
               <div style={{flex:1}}>
