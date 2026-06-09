@@ -9,7 +9,7 @@ import specialPickBadge from "./assets/special-pick-badge.webp";
 import bellIcon from "./assets/bell-icon.svg";
 import { ALL_GROUPS_DATA, FLAGS, TEAM_COLORS, CALENDAR_EVENTS, CL_FINAL } from "./data/worldcup2026.js";
 import { supabase } from "./supabase.js";
-import { savePredictions, saveExactScore, createBoard, joinBoardByCode, joinBoardById, ensureBoardScores, loadLeaderboard, loadMyScoreBreakdown, fetchScoringRules, fetchMemberCounts, removeBoardMember, removeParticipation, deleteBoard, loadBoardMembers, checkDbHealth, checkEmailExists, checkNicknameExists, loadLiveScores, subscribeLiveScores, loadPlayers, loadPlayersByTeam, seedPlayersFromApi, saveSpecialPick, uploadAvatar, uploadBoardImage, loadAllBoards, loadAllUserPicks, loadNotifReads, markNotifRead, loadSystemNotifications, loadRealGroupStandings, loadUserBreakdown } from "./db.js";
+import { savePredictions, saveExactScore, createBoard, joinBoardByCode, joinBoardById, ensureBoardScores, loadLeaderboard, loadMyScoreBreakdown, fetchScoringRules, fetchMemberCounts, removeBoardMember, removeParticipation, deleteBoard, loadBoardMembers, checkDbHealth, checkEmailExists, checkNicknameExists, loadLiveScores, subscribeLiveScores, loadPlayers, loadPlayersByTeam, seedPlayersFromApi, saveSpecialPick, uploadAvatar, uploadBoardImage, loadAllBoards, loadAllUserPicks, loadNotifReads, markNotifRead, loadSystemNotifications, loadRealGroupStandings, loadUserBreakdown, savePushSubscription } from "./db.js";
 
 const TEAM_CODE = {"Mexico":"MEX","South Africa":"RSA","South Korea":"KOR","Czechia":"CZE","Canada":"CAN","Switzerland":"SUI","Qatar":"QAT","Bosnia-Herzegovina":"BIH","Brazil":"BRA","Morocco":"MAR","Scotland":"SCO","Haiti":"HAI","USA":"USA","Paraguay":"PAR","Australia":"AUS","Turkiye":"TUR","Germany":"GER","Ecuador":"ECU","Ivory Coast":"CIV","Curacao":"CUW","Netherlands":"NED","Japan":"JPN","Tunisia":"TUN","Sweden":"SWE","Belgium":"BEL","Iran":"IRI","Egypt":"EGY","New Zealand":"NZL","Spain":"ESP","Uruguay":"URU","Saudi Arabia":"KSA","Cape Verde":"CPV","France":"FRA","Senegal":"SEN","Norway":"NOR","Iraq":"IRQ","Argentina":"ARG","Austria":"AUT","Algeria":"ALG","Jordan":"JOR","Portugal":"POR","Colombia":"COL","Uzbekistan":"UZB","DR Congo":"COD","England":"ENG","Croatia":"CRO","Panama":"PAN","Ghana":"GHA"};
 
@@ -9603,6 +9603,27 @@ function App() {
   },[]);
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
+
+  const setupPushNotifications = React.useCallback(async (userId) => {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') return;
+      const reg = await navigator.serviceWorker.ready;
+      const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+      const existing = await reg.pushManager.getSubscription();
+      const sub = existing ?? await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: Uint8Array.from(
+          atob(VAPID_PUBLIC_KEY.replace(/-/g, '+').replace(/_/g, '/')),
+          c => c.charCodeAt(0)
+        ),
+      });
+      await savePushSubscription(userId, sub);
+    } catch (e) {
+      console.warn('[push] setup failed:', e);
+    }
+  }, []);
   const [realStandings, setRealStandings] = useState({});
   useEffect(() => {
     const refreshStandings = () =>
@@ -9672,11 +9693,13 @@ function App() {
       if (u) {
         if (event === 'INITIAL_SESSION') {
           Promise.all([loadSystemNotifications(lang), loadNotifReads(u.id)]).then(([notifs, ids]) => { setSystemNotifs(notifs); setNotifReadIds(ids); });
+          setupPushNotifications(u.id);
           const nonRestorable = [SCREENS.SPLASH, SCREENS.LOGIN, SCREENS.RESET_PASSWORD, SCREENS.SET_PASSWORD];
           const saved = (() => { try { return localStorage.getItem('lastScreen'); } catch { return null; } })();
           setScreen(saved && !nonRestorable.includes(saved) ? saved : SCREENS.HOME);
         } else if (event === 'SIGNED_IN') {
           Promise.all([loadSystemNotifications(lang), loadNotifReads(u.id)]).then(([notifs, ids]) => { setSystemNotifs(notifs); setNotifReadIds(ids); });
+          setupPushNotifications(u.id);
           setScreen(SCREENS.HOME);
         }
         // USER_UPDATED, TOKEN_REFRESHED — only update user state, don't navigate

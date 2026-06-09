@@ -10,6 +10,7 @@ export default defineConfig({
       workbox: {
         skipWaiting: true,
         clientsClaim: true,
+        importScripts: ['/push-handler.js'],
         // Nu cachea apelurile API sau Supabase — doar assets statice
         navigateFallback: 'index.html',
         globPatterns: ['**/*.{js,css,html,png,svg,webp,woff2}'],

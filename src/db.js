@@ -629,15 +629,17 @@ export async function loadMyScoreBreakdown(userId, boardId) {
 // â”€â”€â”€ SYSTEM NOTIFICATIONS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function loadSystemNotifications(lang = 'ro') {
   // Try with multilingual columns; fall back to base columns if migration not applied yet
+  const now = new Date().toISOString()
   const { data, error } = await supabase
     .from('system_notifications')
     .select('id, title, title_en, title_fr, body, body_en, body_fr, display_date')
     .eq('active', true)
+    .or(`expires_at.is.null,expires_at.gt.${now}`)
     .order('sort_order', { ascending: true })
     .order('created_at', { ascending: false })
 
   if (error) {
-    // Columns may not exist yet â€” retry with base columns only
+    // Columns may not exist yet — retry with base columns only
     const { data: base } = await supabase
       .from('system_notifications')
       .select('id, title, body, display_date')
@@ -670,7 +672,22 @@ export async function markNotifRead(userId, notificationId) {
     .upsert({ user_id: userId, notification_id: notificationId }, { onConflict: 'user_id,notification_id' })
 }
 
-// â”€â”€â”€ LEADERBOARD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── PUSH SUBSCRIPTIONS ────────────────────────────────────────────────────────
+export async function savePushSubscription(userId, subscription) {
+  const { endpoint, keys } = subscription.toJSON()
+  await supabase
+    .from('push_subscriptions')
+    .upsert(
+      { user_id: userId, endpoint, p256dh: keys.p256dh, auth: keys.auth },
+      { onConflict: 'endpoint' }
+    )
+}
+
+export async function deletePushSubscription(endpoint) {
+  await supabase.from('push_subscriptions').delete().eq('endpoint', endpoint)
+}
+
+// ─── LEADERBOARD ──────────────────────────────────────────────────────────────
 export async function loadLeaderboard(boardId, search = null, userId = null) {
   const [rpcRes, profileRes] = await Promise.all([
     supabase.rpc('get_leaderboard', {
