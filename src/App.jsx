@@ -959,7 +959,7 @@ const computeLiveScores = (simDay=null, simHour=12, simMin=0) => {
   });
   return scores;
 };
-const LIVE_SCORES_DEFAULT = computeLiveScores();
+const LIVE_SCORES_DEFAULT = {};
 let LIVE_SCORES = LIVE_SCORES_DEFAULT;
 
 // Hook: merge scoruri reale din Supabase peste scoruri simulate.
@@ -992,7 +992,7 @@ function useLiveScores(simDay, simHour, simMin) {
     return () => { channel.unsubscribe(); };
   }, []);
 
-  const computed = computeLiveScores(simDay, simHour, simMin);
+  const computed = simDay != null ? computeLiveScores(simDay, simHour, simMin) : {};
   return { ...computed, ...dbScores };
 }
 
@@ -5332,28 +5332,46 @@ function BonusPredictionScreen({ onBack, onChampion, championPick, runnerUpPick,
     { key:"scorer",  icon:"⚽", color:"#059669", bg:"linear-gradient(135deg,#F0FDF4,#DCFCE7)", label:T[lang].topScorerPickLabel, pickVal:topScorerPick?.player||null, flagTeam:topScorerPick?.team||null, subtext:topScorerPick?.team?`${FLAGS[topScorerPick.team]||""} ${topScorerPick.team}`:null, empty:T[lang].pickPlayer, mode:"scorer" },
   ];
 
+  const scoringRules = [
+    { icon:"🏆", pts:"100", label:T[lang].championPickLabel, sub:null },
+    { icon:"🥈", pts:"30",  label:T[lang].runnerUpPickLabel, sub:null },
+    { icon:"⚽", pts:"5×",  label:T[lang].topScorerPickLabel, sub:"+50 bonus" },
+  ];
+
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",position:"relative"}}>
-      <style>{`@keyframes bonusBadgePulse{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(234,179,8,0.45)}55%{transform:scale(1.1);box-shadow:0 0 0 8px rgba(234,179,8,0)}}`}</style>
 
       {/* Header */}
-      <div style={{background:"linear-gradient(135deg,#1a1a2e,#0d1b3e)",flexShrink:0,position:"relative",zIndex:1}}>
-        <div style={{display:"flex",alignItems:"center",gap:10,padding:"28px 14px 16px"}}>
+      <div style={{background:"linear-gradient(160deg,#0A2E8A 0%,#001840 100%)",flexShrink:0,position:"relative",zIndex:1,paddingBottom:20}}>
+        {/* Nav row */}
+        <div style={{display:"flex",alignItems:"center",gap:10,padding:"28px 14px 14px"}}>
           <button onClick={onBack} style={{background:"rgba(255,255,255,0.12)",border:"none",borderRadius:10,width:34,height:34,color:"#fff",fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>‹</button>
           <div style={{flex:1,textAlign:"center"}}>
             <div style={{fontSize:18,fontWeight:800,color:"#FFD700",letterSpacing:0.3}}>⚡ {T[lang].bonusPrediction}</div>
           </div>
           <div style={{width:34,flexShrink:0}}/>
         </div>
-        <div style={{padding:"0 20px 20px",textAlign:"center"}}>
-          <p style={{fontSize:13,color:"rgba(255,255,255,0.65)",margin:0,lineHeight:1.55}}>{T[lang].bonusDesc}</p>
+
+        {/* Description */}
+        <p style={{fontSize:13,color:"rgba(255,255,255,0.62)",margin:"0 20px 18px",textAlign:"center",lineHeight:1.55}}>{T[lang].bonusDesc}</p>
+
+        {/* Scoring rules — 3 chips */}
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,padding:"0 14px"}}>
+          {scoringRules.map(({icon,pts,label,sub})=>(
+            <div key={label} style={{background:"rgba(255,255,255,0.07)",border:"1px solid rgba(255,215,0,0.18)",borderRadius:14,padding:"12px 6px",textAlign:"center"}}>
+              <div style={{fontSize:22,lineHeight:1,marginBottom:4}}>{icon}</div>
+              <div style={{fontSize:18,fontWeight:900,color:"#FFD700",lineHeight:1}}>{pts}</div>
+              {sub&&<div style={{fontSize:9,fontWeight:700,color:"#FFD700",opacity:0.75,letterSpacing:0.3,marginTop:1}}>{sub}</div>}
+              <div style={{fontSize:9,fontWeight:700,color:"rgba(255,255,255,0.5)",letterSpacing:0.3,marginTop:3,textTransform:"uppercase",lineHeight:1.2}}>{label}</div>
+            </div>
+          ))}
         </div>
       </div>
 
       {/* Content */}
-      <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",padding:"20px 16px 48px"}}>
+      <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",padding:"16px 14px 48px"}}>
         {isLocked&&(
-          <div style={{background:"rgba(10,46,138,0.07)",border:"1.5px solid rgba(10,46,138,0.14)",borderRadius:14,padding:"12px 16px",marginBottom:16,display:"flex",alignItems:"center",gap:10}}>
+          <div style={{background:"rgba(10,46,138,0.07)",border:"1.5px solid rgba(10,46,138,0.14)",borderRadius:14,padding:"12px 16px",marginBottom:14,display:"flex",alignItems:"center",gap:10}}>
             <span style={{fontSize:20}}>🔒</span>
             <div>
               <div style={{fontSize:13,fontWeight:700,color:NAVY}}>{T[lang].picksLockedTitle}</div>
@@ -5363,24 +5381,24 @@ function BonusPredictionScreen({ onBack, onChampion, championPick, runnerUpPick,
         )}
 
         {picks.map(({key, icon, color, bg, label, pickVal, flagTeam, subtext, empty, mode})=>(
-          <div key={key} style={{background:"#fff",borderRadius:18,padding:"18px",marginBottom:14,boxShadow:"0 2px 14px rgba(0,0,0,0.07)"}}>
-            <div style={{display:"flex",alignItems:"center",gap:14}}>
-              <div style={{width:58,height:58,borderRadius:"50%",background:bg,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,border:`1.5px solid ${color}33`}}>
-                <span style={{fontSize:32,lineHeight:1}}>{flagTeam ? (FLAGS[flagTeam]||"🏳") : icon}</span>
+          <div key={key} style={{background:"#fff",borderRadius:20,padding:"16px",marginBottom:12,boxShadow:"0 4px 16px rgba(0,0,0,0.06)"}}>
+            <div style={{display:"flex",alignItems:"center",gap:12}}>
+              <div style={{width:54,height:54,borderRadius:16,background:bg,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,border:`1.5px solid ${color}28`}}>
+                <span style={{fontSize:30,lineHeight:1}}>{flagTeam ? (FLAGS[flagTeam]||"🏳") : icon}</span>
               </div>
               <div style={{flex:1,minWidth:0}}>
-                <div style={{fontSize:10,fontWeight:800,color,letterSpacing:0.8,textTransform:"uppercase",marginBottom:3}}>{label}</div>
-                <div style={{fontSize:16,fontWeight:850,color:pickVal?DARK:"#9CA3AF",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{pickVal||empty}</div>
-                {subtext&&<div style={{fontSize:11,color:"#9CA3AF",fontWeight:600,marginTop:2}}>{subtext}</div>}
+                <div style={{fontSize:10,fontWeight:800,color,letterSpacing:0.8,textTransform:"uppercase",marginBottom:2}}>{label}</div>
+                <div style={{fontSize:15,fontWeight:850,color:pickVal?DARK:"#9CA3AF",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{pickVal||empty}</div>
+                {subtext&&<div style={{fontSize:11,color:"#9CA3AF",fontWeight:600,marginTop:1}}>{subtext}</div>}
               </div>
-              {pickVal&&<div style={{width:24,height:24,borderRadius:"50%",background:GREEN,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:900,color:"#fff",flexShrink:0}}>✓</div>}
-              {!isLocked&&(
-                <button onClick={()=>onChampion(mode)}
-                  style={{border:"none",background:NAVY,borderRadius:10,padding:"8px 14px",fontSize:12,fontWeight:800,color:"#fff",cursor:"pointer",flexShrink:0,whiteSpace:"nowrap",marginLeft:4}}>
-                  {pickVal ? T[lang].changeLabel : T[lang].openBonusLabel}
-                </button>
-              )}
+              {pickVal&&<div style={{width:22,height:22,borderRadius:"50%",background:GREEN,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:900,color:"#fff",flexShrink:0}}>✓</div>}
             </div>
+            {!isLocked&&(
+              <button onClick={()=>onChampion(mode)}
+                style={{marginTop:12,width:"100%",border:`1.5px solid ${pickVal?color+"44":"rgba(10,46,138,0.12)"}`,background:pickVal?"#fff":NAVY,borderRadius:12,padding:"10px 0",fontSize:13,fontWeight:800,color:pickVal?color:"#fff",cursor:"pointer",letterSpacing:0.2}}>
+                {pickVal ? `✎ ${T[lang].changeLabel}` : `${T[lang].openBonusLabel} →`}
+              </button>
+            )}
           </div>
         ))}
       </div>
@@ -8452,14 +8470,15 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
                 const nowM2   = simDay!=null ? (simMin||0)  : _etNow.getUTCMinutes();
                 const nowMins2 = nowH2*60 + nowM2;
                 const kickMins2 = matchH*60 + matchMin2;
-                const isFinished = live?.status==="FT" || (m.day < nowDay2) || (m.day===nowDay2 && nowMins2 > kickMins2+115);
-                const isLive = !isFinished && (isLiveScoreStatus(live?.status) || (!live?.status && m.day===nowDay2 && nowMins2>=kickMins2 && nowMins2<=kickMins2+115));
+                const isSimMode = simDay != null;
+                const isFinished = live?.status==="FT" || (isSimMode && (m.day < nowDay2 || (m.day===nowDay2 && nowMins2 > kickMins2+115)));
+                const isLive = !isFinished && (isLiveScoreStatus(live?.status) || (isSimMode && !live?.status && m.day===nowDay2 && nowMins2>=kickMins2 && nowMins2<=kickMins2+115));
                 const isNS = !isFinished && !isLive;
                 // Minute: 1) api_minute from API  2) elapsed from utcDate  3) local ET estimate
                 const liveMin = isLive ? (
                   live?.min != null ? live.min :
                   live?.utcDate ? Math.min(90, Math.floor((Date.now() - Date.parse(live.utcDate)) / 60000)) :
-                  live?.status ? null :
+                  live?.status || !isSimMode ? null :
                   Math.min(90, nowMins2-kickMins2)
                 ) : 0;
                 const hasLive = live && live.home !== undefined && live.home !== null;
@@ -9008,11 +9027,12 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                                   const _nd=simDay ?? getRealTournamentDay();
                                   const _nh=simDay!=null?(simHour||0):new Date().getHours();
                                   const _kick=_mH*60, _now=_nh*60;
+                                  const isSimMode2 = simDay != null;
                                   const db2ko=live2?.status;
-                                  const isFT2 = db2ko==="FT" || (!db2ko && (m.day<_nd || (m.day===_nd && _now>_kick+115)));
+                                  const isFT2 = db2ko==="FT" || (isSimMode2 && !db2ko && (m.day<_nd || (m.day===_nd && _now>_kick+115)));
                                   const isHT2 = !isFT2 && db2ko==="HT";
-                                  const isLive2 = !isFT2 && !isHT2 && (isLiveScoreStatus(db2ko) || (!db2ko && m.day===_nd && _now>=_kick && _now<=_kick+115));
-                                  const liveScore2 = live2&&live2.home!=null ? live2 : ((isLive2||isHT2)?{home:0,away:0}:null);
+                                  const isLive2 = !isFT2 && !isHT2 && (isLiveScoreStatus(db2ko) || (isSimMode2 && !db2ko && m.day===_nd && _now>=_kick && _now<=_kick+115));
+                                  const liveScore2 = live2&&live2.home!=null ? live2 : (isSimMode2 && (isLive2||isHT2)?{home:0,away:0}:null);
                                   const penDisplay2 = penaltyScoreLabel(live2);
                                   const isPastM = m.day<_nd || (m.day===_nd && _mH<=_nh);
                                   const canEdit=!isLive2&&!isHT2&&!isFT2&&!isPastM&&isWeekUnlocked(m.day,simDay,simHour,simMin);
@@ -9132,11 +9152,12 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                               const _nh=simDay!=null?(simHour||0):new Date().getHours();
                               const _nm=simDay!=null?(simMin||0):new Date().getMinutes();
                               const _kick=_mH*60+_mM, _now=_nh*60+_nm;
+                              const isSimMode2 = simDay != null;
                               const db2=live2?.status;
-                              const isFT2 = db2==="FT" || (!db2 && (m.day<_nd || (m.day===_nd && _now>_kick+115)));
+                              const isFT2 = db2==="FT" || (isSimMode2 && !db2 && (m.day<_nd || (m.day===_nd && _now>_kick+115)));
                               const isHT2 = !isFT2 && db2==="HT";
-                              const isLive2 = !isFT2 && !isHT2 && (isLiveScoreStatus(db2) || (!db2 && m.day===_nd && _now>=_kick && _now<=_kick+115));
-                              const liveScore2 = live2&&live2.home!==null&&live2.home!==undefined ? live2 : ((isLive2||isHT2)?{home:0,away:0}:null);
+                              const isLive2 = !isFT2 && !isHT2 && (isLiveScoreStatus(db2) || (isSimMode2 && !db2 && m.day===_nd && _now>=_kick && _now<=_kick+115));
+                              const liveScore2 = live2&&live2.home!==null&&live2.home!==undefined ? live2 : (isSimMode2 && (isLive2||isHT2)?{home:0,away:0}:null);
                               const hasScore2 = !!liveScore2;
                               const penDisplay2 = penaltyScoreLabel(live2);
                               const matchHourM=parseInt((m.time||"23:00").split(":")[0]);
@@ -9196,12 +9217,13 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                     const _nowH   = simDay!=null?(simHour||0):new Date().getHours();
                     const _nowM   = simDay!=null?(simMin||0):new Date().getMinutes();
                     const _kick = mH2*60+mM2, _now2 = _nowH*60+_nowM;
+                    const isSimMode = simDay != null;
                     const dbStatus = live?.status;
-                    const isFT = dbStatus==="FT" || (!dbStatus && ((sel||0)<_nowDay || (sel===_nowDay && _now2>_kick+115)));
+                    const isFT = dbStatus==="FT" || (isSimMode && !dbStatus && ((sel||0)<_nowDay || (sel===_nowDay && _now2>_kick+115)));
                     const isHT = !isFT && dbStatus==="HT";
-                    const isLive = !isFT && !isHT && (isLiveScoreStatus(dbStatus) || (!dbStatus && sel===_nowDay && _now2>=_kick && _now2<=_kick+115));
+                    const isLive = !isFT && !isHT && (isLiveScoreStatus(dbStatus) || (isSimMode && !dbStatus && sel===_nowDay && _now2>=_kick && _now2<=_kick+115));
                     const isNS2 = !isFT && !isHT && !isLive;
-                    const liveMin2 = isLive ? (live?.min != null ? live.min : dbStatus ? null : Math.min(90,_now2-_kick)) : isHT ? 45 : 0;
+                    const liveMin2 = isLive ? (live?.min != null ? live.min : dbStatus || !isSimMode ? null : Math.min(90,_now2-_kick)) : isHT ? 45 : 0;
                     const hasScore = live && live.home !== undefined && live.home !== null;
                     const penDisplay = penaltyScoreLabel(live);
                     const exactMatch = sc&&hasScore&&isFT&&scH(sc)===live.home&&scA(sc)===live.away;
@@ -9234,7 +9256,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                               :isHT?<span style={{fontSize:10,fontWeight:800,color:"#F59E0B"}}>⏸ HT</span>
                               :<span style={{fontSize:10,fontWeight:700,color:"#bbb",textTransform:"uppercase",letterSpacing:0.5}}>{isFT?"Final":"-"}</span>}
                             <div style={{background:(isLive||isHT)?"rgba(0,0,0,0.06)":hasScore?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:"rgba(0,0,0,0.08)",borderRadius:6,padding:"4px 10px",minWidth:54,textAlign:"center"}}>
-                              <span style={{fontSize:13,fontWeight:900,color:(isLive||isHT)?RED:hasScore?"#fff":"#bbb"}}>{hasScore?`${live.home}-${live.away}`:(isLive||isHT)?"0-0":"-"}</span>
+                              <span style={{fontSize:13,fontWeight:900,color:(isLive||isHT)?RED:hasScore?"#fff":"#bbb"}}>{hasScore?`${live.home}-${live.away}`:isSimMode&&(isLive||isHT)?"0-0":"-"}</span>
                             </div>
                             {penDisplay&&<span style={{fontSize:10,fontWeight:900,color:RED,lineHeight:1}}>{penDisplay}</span>}
                             <span style={{fontSize:10,fontWeight:700,color:"#bbb",textTransform:"uppercase",letterSpacing:0.5}}>{T[lang].prediction}</span>
