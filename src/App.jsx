@@ -831,12 +831,12 @@ const GROUP_STAGE_FINISHED = false;
 
 // Week unlock logic — Sunday after 20:00
 const now = new Date();
-const june = (d) => new Date(2026, 5, d, 8, 0, 0);
+const june = (d) => new Date(Date.UTC(2026, 5, d, 12, 0, 0)); // 08:00 ET = 12:00 UTC
 const WEEK_UNLOCKED = {
-  8:  true,                    // week 1 always open (unlocked before tournament)
-  15: now >= june(14),         // Sun June 14 after 08:00
-  22: now >= june(21),         // Sun June 21
-  29: now >= june(28),         // Sun June 28
+  8:  true,
+  15: now >= june(14),
+  22: now >= june(21),
+  29: now >= june(28),
 };
 // Returns the current day in tournament encoding.
 // May N = N-31 (day -6..0 for May 25-31), June N = N, July N = N+30.
@@ -868,10 +868,10 @@ const isMatchPast = (matchDay, matchTime, simDay=null, simHour=12) => {
 
 const isWeekUnlocked = (day, simDay=null, simHour=12, simMin=0) => {
   // Convert July days: day 36+ = July week
-  const june = (d) => new Date(2026, 5, d, 8, 0, 0);
-  const july = (d) => new Date(2026, 6, d, 8, 0, 0);
+  const june = (d) => new Date(Date.UTC(2026, 5, d, 12, 0, 0)); // 08:00 ET = 12:00 UTC
+  const july = (d) => new Date(Date.UTC(2026, 6, d, 12, 0, 0));
   if(simDay) {
-    const simDate = new Date(2026,5,simDay,simHour,simMin,0);
+    const simDate = new Date(Date.UTC(2026,5,simDay,(simHour||0)+4,simMin||0,0));
     if(day >= 43) return simDate >= july(12);   // Final week
     if(day >= 36) return simDate >= july(5);    // QF/SF week
     if(day >= 28) return simDate >= june(28);   // R32 week (starts Jun 28)
@@ -976,7 +976,7 @@ function useLiveScores(simDay, simHour, simMin) {
 const toLabel = (d) => d <= 0 ? `${d+31} May` : d > 30 ? `${d-30} Jul` : `${d} Jun`;
 
 function useCountdown() {
-  const target = new Date("2026-06-11T18:00:00");
+  const target = new Date("2026-06-11T22:00:00Z"); // 18:00 ET = 22:00 UTC
   const [diff, setDiff] = useState(target - new Date());
   useEffect(() => { const t = setInterval(() => setDiff(target - new Date()), 1000); return () => clearInterval(t); }, []);
   return { d:Math.max(0,Math.floor(diff/86400000)), h:Math.max(0,Math.floor((diff%86400000)/3600000)), m:Math.max(0,Math.floor((diff%3600000)/60000)), s:Math.max(0,Math.floor((diff%60000)/1000)) };
@@ -4706,9 +4706,9 @@ function ChampionScreen({ onBack, initialMode="champion", championPick, topScore
   const tCode = (t) => TEAM_CODE[t]||t.slice(0,3).toUpperCase();
   const showChampion = initialMode !== "scorer";
   const showScorer = initialMode !== "champion";
-  const simNow = simDay ? new Date(2026,5,simDay,simHour,simMin,0) : new Date();
-  const phase1Deadline = new Date(2026,5,11,19,0,0);
-  const phase2Open     = new Date(2026,5,27,21,0,0);
+  const simNow = simDay ? new Date(Date.UTC(2026,5,simDay,(simHour||0)+4,simMin||0,0)) : new Date();
+  const phase1Deadline = new Date(Date.UTC(2026,5,11,23,0,0));  // 19:00 ET
+  const phase2Open     = new Date(Date.UTC(2026,5,28,1,0,0));   // 21:00 ET = 01:00 UTC
   const isPhase1 = simNow < phase1Deadline;
   const isPhase2 = simNow >= phase2Open;
   const isLocked = !isPhase1 && !isPhase2;
@@ -5294,7 +5294,7 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
   const prizeSlots = leaders.filter(u=>u.emoji||u.isMe||u.empty).length;
   const topCount = Math.max(3, prizeSlots || 3);
   const top3 = leaders.slice(0, topCount);
-  const _deadlinePassed = simDay ? (simDay > 11 || (simDay === 11 && (simHour||0) >= 19)) : new Date() >= new Date(2026,5,11,19,0,0);
+  const _deadlinePassed = simDay ? (simDay > 11 || (simDay === 11 && (simHour||0) >= 19)) : Date.now() >= Date.UTC(2026,5,11,23,0,0);
   const predictionProgress = getPredictionProgress(instantPickState || {});
   const task1Done = predictionProgress.complete || instantPickDone || !!predictionsComplete[activeId];
   const _boardDone = task1Done;
@@ -5323,8 +5323,8 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
   const exactWeekTotal = _exWkTotal(exactWeekStart);
   const exactWeekScored = _exWkScored(exactWeekStart);
   const exactWeekDone = exactWeekTotal>0 && exactWeekScored===exactWeekTotal;
-  const _exSimNow = simDay ? new Date(2026,5,simDay,simHour||12,simMin||0,0) : new Date();
-  const _exJune = (d) => new Date(2026,5,d,8,0,0);
+  const _exSimNow = simDay ? new Date(Date.UTC(2026,5,simDay,(simHour||12)+4,simMin||0,0)) : new Date();
+  const _exJune = (d) => new Date(Date.UTC(2026,5,d,12,0,0)); // 08:00 ET = 12:00 UTC
   const exactWeekUnlocked = exactWeekStart===8 ? true
     : exactWeekStart===15 ? _exSimNow >= _exJune(14)
     : exactWeekStart===22 ? _exSimNow >= _exJune(21)
@@ -6793,8 +6793,8 @@ function PredictoLogo({ scale = 1 }) {
 function SplashScreen({ onNext, lang, setLang, simDay, simHour=12, simMin=0, tournamentStarted }) {
   const {d,h,m,s}=useCountdown();
   // Calculate days left based on simDay or real date
-  const target = new Date("2026-06-11T19:00:00");
-  const simNow = simDay ? new Date(2026, 5, simDay, simHour, simMin, 0) : new Date();
+  const target = new Date("2026-06-11T23:00:00Z"); // 19:00 ET = 23:00 UTC
+  const simNow = simDay ? new Date(Date.UTC(2026, 5, simDay, (simHour||0)+4, simMin||0, 0)) : new Date();
   const diffMs = target - simNow;
   const daysLeft = Math.max(0, Math.floor(diffMs / (1000*60*60*24)));
   const hoursLeft = Math.max(0, Math.floor((diffMs % (1000*60*60*24)) / (1000*60*60)));
