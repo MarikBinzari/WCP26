@@ -843,6 +843,15 @@ const WEEK_UNLOCKED = {
 // Match times in worldcup2026.js are in ET (UTC-4 in summer / EDT)
 const ET_OFFSET_MS = 4 * 3600_000;
 
+// Convert ET match time to user's local time for display
+const fmtMatchTime = (day, timeET) => {
+  const month = day <= 30 ? 5 : 6;
+  const dom   = day <= 30 ? day : day - 30;
+  const [h, min] = (timeET || '23:00').split(':').map(Number);
+  return new Date(Date.UTC(2026, month, dom, h + 4, min))
+    .toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+};
+
 const getRealTournamentDay = () => {
   // Use ET date so day boundary aligns with the match schedule timezone
   const et = new Date(Date.now() - ET_OFFSET_MS);
@@ -1115,7 +1124,7 @@ function CalendarSlider() {
               {sm.map((m,i)=>(
                 <div key={i} style={{display:"flex",alignItems:"center",padding:"10px 16px",
                   borderBottom:i<sm.length-1?"1px solid rgba(0,0,0,0.06)":"none",gap:8,background:"#fff"}}>
-                  <span style={{fontSize:11,color:"#aaa",fontWeight:600,width:36}}>{m.time}</span>
+                  <span style={{fontSize:11,color:"#aaa",fontWeight:600,width:36}}>{fmtMatchTime(selDay, m.time)}</span>
                   <span style={{fontSize:12,background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,
                     color:"#fff",borderRadius:5,padding:"2px 5px",fontWeight:700,flexShrink:0}}>{m.group}</span>
                   <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:4}}>
@@ -8301,7 +8310,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
                     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",
                       padding:"5px 12px",
                       background:isLive?"rgba(0,32,91,0.06)":isFinished?"rgba(0,154,68,0.06)":"rgba(0,0,0,0.03)"}}>
-                      <span style={{fontSize:11,color:"#aaa",fontWeight:600}}>{m.day} June · {m.time}</span>
+                      <span style={{fontSize:11,color:"#aaa",fontWeight:600}}>{m.day} June · {fmtMatchTime(m.day, m.time)}</span>
                       {isLive&&<span style={{fontSize:11,fontWeight:800,color:RED,display:"flex",alignItems:"center",gap:3}}>
                         <span style={{width:6,height:6,borderRadius:"50%",background:RED,display:"inline-block"}}/>
                         {liveScorePhaseLabel(live?.status, liveMin)}
@@ -8844,7 +8853,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                                       onClick={()=>canEdit&&onMatchClick&&onMatchClick(m,m.day,m._i)}>
                                       <div style={{flexShrink:0,textAlign:"center",width:32}}>
                                         <p style={{fontSize:12,color:"#aaa",margin:0,fontWeight:600}}>{m.day>30?m.day-30:m.day} {m.day>30?"Jul":"Jun"}</p>
-                                        <p style={{fontSize:11,color:"#bbb",margin:0}}>{m.time}</p>
+                                        <p style={{fontSize:11,color:"#bbb",margin:0}}>{fmtMatchTime(m.day, m.time)}</p>
                                       </div>
                                       <span style={{fontSize:18}}>{m.homeFlag}</span>
                                       <span style={{flex:1,fontSize:12,fontWeight:600,color:isPastM?"#bbb":DARK}}>{m.home.length>7?m.home.split(" ")[0]:m.home}</span>
@@ -8975,7 +8984,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                                   <span style={{fontSize:18}}>{m.homeFlag}</span>
                                   <span style={{flex:1,fontSize:12,fontWeight:600,color:isPastM?"#bbb":DARK}}>{m.home.length>7?m.home.split(" ")[0]:m.home}</span>
                                   <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
-                                    <span style={{fontSize:11,fontWeight:600,color:"#bbb"}}>{m.day} Iun · {m.time}</span>
+                                    <span style={{fontSize:11,fontWeight:600,color:"#bbb"}}>{m.day} Iun · {fmtMatchTime(m.day, m.time)}</span>
                                     {isPastM?<span style={{fontSize:10,color:"#ccc",fontWeight:700}}>{T[lang].finished}</span>
                                       :isLive2?<span style={{fontSize:10,fontWeight:800,color:RED,animation:"blink 1s infinite"}}>● {liveScorePhaseLabel(db2, live2?.min)}</span>
                                       :isHT2?<span style={{fontSize:10,fontWeight:800,color:"#F59E0B"}}>⏸ HT</span>
@@ -9035,7 +9044,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                       <div key={i} data-match-key={key} style={{borderBottom:i<sm.length-1?"1px solid rgba(0,0,0,0.06)":"none",background:"#fff"}}>
                         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",
                           padding:"4px 14px",background:isLive?"rgba(0,32,91,0.06)":isFT?"rgba(0,154,68,0.05)":"rgba(0,0,0,0.02)"}}>
-                          <span style={{fontSize:11,fontWeight:600,color:"#aaa"}}>{m.time} · Gr.{m.group}</span>
+                          <span style={{fontSize:11,fontWeight:600,color:"#aaa"}}>{fmtMatchTime(m.day, m.time)} · Gr.{m.group}</span>
                           {isLive&&<span style={{fontSize:11,fontWeight:800,color:RED,display:"flex",alignItems:"center",gap:3}}>
                             <span style={{width:5,height:5,borderRadius:"50%",background:RED,display:"inline-block"}}/>
                             {liveScorePhaseLabel(dbStatus, liveMin2)}
