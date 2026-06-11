@@ -8022,61 +8022,57 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
               const hasExact  = breakdown.exact.length>0;
               return (<>
                 {/* Predictions section */}
-                {hasGroups&&(
-                  <div style={{marginBottom:16}}>
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
-                      <span style={{fontSize:12,fontWeight:800,color:NAVY,textTransform:"uppercase",letterSpacing:1}}>🎯 Predictions</span>
-                      <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:2}}>
-                        <span style={{fontSize:13,fontWeight:800,color:NAVY}}>{predTotal}p</span>
-                        <span style={{fontSize:9,color:"#9CA3AF",fontStyle:"italic",whiteSpace:"nowrap"}}>
-                          {lang==="en"?"possible · at end of group":lang==="fr"?"possible · fin du groupe":"posibil · la final de grupă"}
-                        </span>
+                <div style={{border:`1.5px solid ${NAVY}22`,borderRadius:12,padding:"10px 12px",marginBottom:10}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:hasGroups?8:0}}>
+                    <span style={{fontSize:12,fontWeight:800,color:NAVY,textTransform:"uppercase",letterSpacing:1}}>🎯 Predictions</span>
+                    <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:2}}>
+                      <span style={{fontSize:13,fontWeight:800,color:NAVY}}>{predTotal}p</span>
+                      <span style={{fontSize:9,color:"#9CA3AF",fontStyle:"italic",whiteSpace:"nowrap"}}>
+                        {lang==="en"?"possible · at end of group":lang==="fr"?"possible · fin du groupe":"posibil · la final de grupă"}
+                      </span>
+                    </div>
+                  </div>
+                  {hasGroups&&breakdown.groups.map(g=>{
+                    const hits = [
+                      g.hit_1st ? `1.${tCode(g.hit_1st)}` : null,
+                      g.hit_2nd ? `2.${tCode(g.hit_2nd)}` : null,
+                      g.hit_3rd ? `3.${tCode(g.hit_3rd)}` : null,
+                    ].filter(Boolean).join("  ");
+                    return (
+                      <div key={g.group_id} style={{display:"flex",justifyContent:"space-between",
+                        alignItems:"center",padding:"5px 0",borderBottom:"1px solid #F9FAFB"}}>
+                        <div style={{display:"flex",gap:10,alignItems:"center"}}>
+                          <span style={{fontSize:11,fontWeight:700,color:"#6B7280",minWidth:46}}>Grp {g.group_id}</span>
+                          <span style={{fontSize:12,fontWeight:600,color:DARK}}>{hits}</span>
+                        </div>
+                        <span style={{fontSize:12,fontWeight:700,color:GREEN}}>{g.pts}p</span>
                       </div>
-                    </div>
-                    {breakdown.groups.map(g=>{
-                      const hits = [
-                        g.hit_1st ? `1.${tCode(g.hit_1st)}` : null,
-                        g.hit_2nd ? `2.${tCode(g.hit_2nd)}` : null,
-                        g.hit_3rd ? `3.${tCode(g.hit_3rd)}` : null,
-                      ].filter(Boolean).join("  ");
-                      return (
-                        <div key={g.group_id} style={{display:"flex",justifyContent:"space-between",
-                          alignItems:"center",padding:"5px 0",borderBottom:"1px solid #F9FAFB"}}>
-                          <div style={{display:"flex",gap:10,alignItems:"center"}}>
-                            <span style={{fontSize:11,fontWeight:700,color:"#6B7280",minWidth:46}}>Grp {g.group_id}</span>
-                            <span style={{fontSize:12,fontWeight:600,color:DARK}}>{hits}</span>
-                          </div>
-                          <span style={{fontSize:12,fontWeight:700,color:GREEN}}>{g.pts}p</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
+                    );
+                  })}
+                </div>
                 {/* Exact Scores section */}
-                {hasExact&&(
-                  <div style={{marginBottom:16}}>
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-                      <span style={{fontSize:12,fontWeight:800,color:NAVY,textTransform:"uppercase",letterSpacing:1}}>⚽ Exact Scores</span>
-                      <span style={{fontSize:13,fontWeight:800,color:NAVY}}>{exactTotal}p</span>
-                    </div>
-                    {breakdown.exact.map(m=>{
-                      const isExact = m.pred_home===m.actual_home && m.pred_away===m.actual_away;
-                      return (
-                        <div key={m.match_key} style={{display:"flex",justifyContent:"space-between",
-                          alignItems:"center",padding:"5px 0",borderBottom:"1px solid #F9FAFB"}}>
-                          <div style={{display:"flex",gap:6,alignItems:"center"}}>
-                            <span style={{fontSize:12,fontWeight:700,color:DARK}}>
-                              {tCode(m.home_team)} {m.actual_home}-{m.actual_away} {tCode(m.away_team)}
-                            </span>
-                            {isExact&&<span style={{fontSize:9,fontWeight:800,color:"#fff",background:GREEN,
-                              borderRadius:4,padding:"1px 5px",letterSpacing:0.5}}>EXACT</span>}
-                          </div>
-                          <span style={{fontSize:12,fontWeight:700,color:GREEN}}>{m.pts}p</span>
-                        </div>
-                      );
-                    })}
+                <div style={{border:`1.5px solid ${NAVY}22`,borderRadius:12,padding:"10px 12px",marginBottom:10}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:hasExact?8:0}}>
+                    <span style={{fontSize:12,fontWeight:800,color:NAVY,textTransform:"uppercase",letterSpacing:1}}>⚽ Exact Scores</span>
+                    <span style={{fontSize:13,fontWeight:800,color:NAVY}}>{exactTotal}p</span>
                   </div>
-                )}
+                  {hasExact&&breakdown.exact.map(m=>{
+                    const isExact = m.pred_home===m.actual_home && m.pred_away===m.actual_away;
+                    return (
+                      <div key={m.match_key} style={{display:"flex",justifyContent:"space-between",
+                        alignItems:"center",padding:"5px 0",borderBottom:"1px solid #F9FAFB"}}>
+                        <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                          <span style={{fontSize:12,fontWeight:700,color:DARK}}>
+                            {tCode(m.home_team)} {m.actual_home}-{m.actual_away} {tCode(m.away_team)}
+                          </span>
+                          {isExact&&<span style={{fontSize:9,fontWeight:800,color:"#fff",background:GREEN,
+                            borderRadius:4,padding:"1px 5px",letterSpacing:0.5}}>EXACT</span>}
+                        </div>
+                        <span style={{fontSize:12,fontWeight:700,color:GREEN}}>{m.pts}p</span>
+                      </div>
+                    );
+                  })}
+                </div>
                 {!hasGroups&&!hasExact&&(
                   <div style={{textAlign:"center",padding:"24px 0",color:"#9CA3AF",fontSize:13}}>
                     Niciun punct câștigat încă
