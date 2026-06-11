@@ -10500,7 +10500,7 @@ function App() {
               : instantPickDone
                 ? {...instantPickState, stage:"groups", groupIdx:0, showIntro:false, showFinalSummary:false, koShowIntro:false}
                 : instantPickState}
-            viewMode={(instantPickDone && !shouldStartAtKo) && task1DeadlinePassed}
+            viewMode={task1DeadlinePassed && !shouldStartAtKo}
             startAtKo={shouldStartAtKo}
             onStateChange={setInstantPickState}
             tournamentStarted={tournamentStarted}
