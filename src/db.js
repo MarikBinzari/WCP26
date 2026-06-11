@@ -241,6 +241,21 @@ export async function createBoard(userId, { name, emoji, type, password, max_pla
   return { data: { ...mapBoard(data), isAdmin: true, isMember: true } }
 }
 
+export async function updateBoard(boardId, { name, emoji, type, password, max_players, prizes, image_url }) {
+  const updates = { name, emoji, type, max_players, prizes: prizes || [] };
+  if (image_url !== undefined) updates.image_url = image_url;
+  // Only send password if the user actually typed one; empty string = no change
+  if (password) updates.password = password;
+  const { data, error } = await supabase
+    .from('boards')
+    .update(updates)
+    .eq('id', boardId)
+    .select(BOARD_SAFE_COLUMNS)
+    .single()
+  if (error) { console.error('updateBoard:', error); return { error } }
+  return { data: mapBoard(data) }
+}
+
 export async function joinBoardByCode(userId, code, password = '') {
   const { data, error } = await supabase.rpc('join_board', {
     p_invite_code: code.trim().toUpperCase(),
@@ -548,12 +563,13 @@ export async function loadLiveScores() {
   const result = {}
   ;(data || []).forEach(row => {
     result[row.match_key] = {
-      status: row.status,
-      home:   row.regular_time_home_score,
-      away:   row.regular_time_away_score,
+      status:  row.status,
+      home:    row.regular_time_home_score,
+      away:    row.regular_time_away_score,
       homePen: row.penalty_home_score,
       awayPen: row.penalty_away_score,
-      min:    row.api_minute,
+      min:     row.api_minute,
+      utcDate: row.utc_date ?? null,
     }
   })
   return result
@@ -569,14 +585,14 @@ export function subscribeLiveScores(onChange) {
 // â”€â”€â”€ BOARD IMAGE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function uploadBoardImage(userId, boardId, file) {
   const ext = file.name.split('.').pop().toLowerCase()
-  const path = `${userId}/${boardId}.${ext}`
+  const path = `${userId}/${boardId}-${Date.now()}.${ext}`
   const { error } = await supabase.storage.from('board-images')
-    .upload(path, file, { contentType: file.type, upsert: true })
+    .upload(path, file, { contentType: file.type })
   if (error) { console.error('uploadBoardImage:', error); return null }
   const { data: { publicUrl } } = supabase.storage.from('board-images').getPublicUrl(path)
-  const urlWithBust = `${publicUrl}?t=${Date.now()}`
-  await supabase.from('boards').update({ image_url: urlWithBust }).eq('id', boardId)
-  return urlWithBust
+  const { error: updateError } = await supabase.from('boards').update({ image_url: publicUrl }).eq('id', boardId)
+  if (updateError) { console.error('uploadBoardImage board update:', updateError); return null }
+  return publicUrl
 }
 
 // â”€â”€â”€ AVATAR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€

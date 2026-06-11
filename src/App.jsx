@@ -9,7 +9,7 @@ import specialPickBadge from "./assets/special-pick-badge.webp";
 import bellIcon from "./assets/bell-icon.svg";
 import { ALL_GROUPS_DATA, FLAGS, TEAM_COLORS, CALENDAR_EVENTS, CL_FINAL } from "./data/worldcup2026.js";
 import { supabase } from "./supabase.js";
-import { savePredictions, saveExactScore, createBoard, joinBoardByCode, joinBoardById, ensureBoardScores, loadLeaderboard, loadMyScoreBreakdown, fetchScoringRules, fetchMemberCounts, removeBoardMember, removeParticipation, deleteBoard, loadBoardMembers, checkDbHealth, checkEmailExists, checkNicknameExists, loadLiveScores, subscribeLiveScores, loadPlayers, loadPlayersByTeam, seedPlayersFromApi, saveSpecialPick, uploadAvatar, uploadBoardImage, loadAllBoards, loadAllUserPicks, loadNotifReads, markNotifRead, loadSystemNotifications, loadRealGroupStandings, loadUserBreakdown, savePushSubscription } from "./db.js";
+import { savePredictions, saveExactScore, createBoard, updateBoard, joinBoardByCode, joinBoardById, ensureBoardScores, loadLeaderboard, loadMyScoreBreakdown, fetchScoringRules, fetchMemberCounts, removeBoardMember, removeParticipation, deleteBoard, loadBoardMembers, checkDbHealth, checkEmailExists, checkNicknameExists, loadLiveScores, subscribeLiveScores, loadPlayers, loadPlayersByTeam, seedPlayersFromApi, saveSpecialPick, uploadAvatar, uploadBoardImage, loadAllBoards, loadAllUserPicks, loadNotifReads, markNotifRead, loadSystemNotifications, loadRealGroupStandings, loadUserBreakdown, savePushSubscription } from "./db.js";
 
 const TEAM_CODE = {"Mexico":"MEX","South Africa":"RSA","South Korea":"KOR","Czechia":"CZE","Canada":"CAN","Switzerland":"SUI","Qatar":"QAT","Bosnia-Herzegovina":"BIH","Brazil":"BRA","Morocco":"MAR","Scotland":"SCO","Haiti":"HAI","USA":"USA","Paraguay":"PAR","Australia":"AUS","Turkiye":"TUR","Germany":"GER","Ecuador":"ECU","Ivory Coast":"CIV","Curacao":"CUW","Netherlands":"NED","Japan":"JPN","Tunisia":"TUN","Sweden":"SWE","Belgium":"BEL","Iran":"IRI","Egypt":"EGY","New Zealand":"NZL","Spain":"ESP","Uruguay":"URU","Saudi Arabia":"KSA","Cape Verde":"CPV","France":"FRA","Senegal":"SEN","Norway":"NOR","Iraq":"IRQ","Argentina":"ARG","Austria":"AUT","Algeria":"ALG","Jordan":"JOR","Portugal":"POR","Colombia":"COL","Uzbekistan":"UZB","DR Congo":"COD","England":"ENG","Croatia":"CRO","Panama":"PAN","Ghana":"GHA"};
 
@@ -840,14 +840,18 @@ const WEEK_UNLOCKED = {
 };
 // Returns the current day in tournament encoding.
 // May N = N-31 (day -6..0 for May 25-31), June N = N, July N = N+30.
+// Match times in worldcup2026.js are in ET (UTC-4 in summer / EDT)
+const ET_OFFSET_MS = 4 * 3600_000;
+
 const getRealTournamentDay = () => {
-  const now = new Date();
-  const y = now.getFullYear(), mo = now.getMonth(), d = now.getDate();
-  if (y < 2026 || (y === 2026 && mo < 4)) return -99; // before May 2026
-  if (y === 2026 && mo === 4) return d - 31;           // May 2026: 25→-6, 30→-1, 31→0
-  if (y === 2026 && mo === 5) return d;                // June 2026
-  if (y === 2026 && mo === 6) return d + 30;           // July 2026
-  return 999;                                          // after tournament
+  // Use ET date so day boundary aligns with the match schedule timezone
+  const et = new Date(Date.now() - ET_OFFSET_MS);
+  const y = et.getUTCFullYear(), mo = et.getUTCMonth(), d = et.getUTCDate();
+  if (y < 2026 || (y === 2026 && mo < 4)) return -99;
+  if (y === 2026 && mo === 4) return d - 31;
+  if (y === 2026 && mo === 5) return d;
+  if (y === 2026 && mo === 6) return d + 30;
+  return 999;
 };
 
 const isMatchPast = (matchDay, matchTime, simDay=null, simHour=12) => {
@@ -856,10 +860,10 @@ const isMatchPast = (matchDay, matchTime, simDay=null, simHour=12) => {
     const nowHour = simHour || 0;
     return matchDay < simDay || (matchDay === simDay && mHour <= nowHour);
   }
-  // matchDay encoding: June N = N (1-30), July N = N+30 (31-61)
-  const matchMonth = matchDay <= 30 ? 5 : 6; // 5=June, 6=July (0-indexed)
+  const matchMonth = matchDay <= 30 ? 5 : 6;
   const matchDom = matchDay <= 30 ? matchDay : matchDay - 30;
-  return new Date() >= new Date(2026, matchMonth, matchDom, mHour, 0, 0);
+  // Times are ET (UTC-4); compare against UTC
+  return Date.now() >= Date.UTC(2026, matchMonth, matchDom, mHour + 4, 0, 0);
 };
 
 const isWeekUnlocked = (day, simDay=null, simHour=12, simMin=0) => {
@@ -900,17 +904,15 @@ const computeLiveScores = (simDay=null, simHour=12, simMin=0) => {
       if (simDay) {
         nowDay = simDay; nowH = simHour; nowM = simMin;
       } else {
-        // matchDay encoding: June N=N (1-30), July N=N+30 (31-61)
         const matchMonth = e.day <= 30 ? 5 : 6;
         const matchDom   = e.day <= 30 ? e.day : e.day - 30;
-        const matchDate  = new Date(2026, matchMonth, matchDom, kickH, kickM, 0);
-        const now = new Date();
-        if (now < matchDate) { scores[key] = {status:"NS"}; return; }
-        const startMins = kickH*60 + kickM;
-        const nowMins   = now.getHours()*60 + now.getMinutes() +
-                          (now.getMonth() !== matchMonth || now.getDate() !== matchDom ? 99999 : 0);
-        if (nowMins > startMins + 115) { scores[key] = {status:"FT",home:null,away:null}; return; }
-        scores[key] = {status:"LIVE", home:0, away:0, min: Math.min(90, nowMins - startMins)};
+        // Times are ET (UTC-4); use UTC for timezone-safe comparison
+        const matchStartUTC = Date.UTC(2026, matchMonth, matchDom, kickH + 4, kickM, 0);
+        const now = Date.now();
+        if (now < matchStartUTC) { scores[key] = {status:"NS"}; return; }
+        const elapsedMins = Math.floor((now - matchStartUTC) / 60000);
+        if (elapsedMins > 115) { scores[key] = {status:"FT",home:null,away:null}; return; }
+        scores[key] = {status:"LIVE", home:0, away:0, min: Math.min(90, elapsedMins)};
         return;
       }
       if(e.day > nowDay) { scores[key] = {status:"NS"}; return; }
@@ -952,12 +954,13 @@ function useLiveScores(simDay, simHour, simMin) {
       setDbScores(prev => ({
         ...prev,
         [row.match_key]: {
-          status: row.status,
-          home:   row.regular_time_home_score,
-          away:   row.regular_time_away_score,
+          status:  row.status,
+          home:    row.regular_time_home_score,
+          away:    row.regular_time_away_score,
           homePen: row.penalty_home_score,
           awayPen: row.penalty_away_score,
-          min:    row.api_minute,
+          min:     row.api_minute,
+          utcDate: row.utc_date ?? null,
         },
       }));
     });
@@ -5562,7 +5565,7 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
 
 
 // ── BOARDS ────────────────────────────────────────────────────────────────────
-function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: createdBoardsProp, setCreatedBoards: setCreatedBoardsProp, availableBoards: availableBoardsProp, setAvailableBoards: setAvailableBoardsProp, showToast, user, onCreateBoard, onJoinByCode, onJoinBoard, onDeleteBoard, onRemoveMember, leaderboardData={}, initialTab="my", onViewChange }) {
+function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: createdBoardsProp, setCreatedBoards: setCreatedBoardsProp, availableBoards: availableBoardsProp, setAvailableBoards: setAvailableBoardsProp, showToast, user, onCreateBoard, onUpdateBoard, onJoinByCode, onJoinBoard, onDeleteBoard, onRemoveMember, leaderboardData={}, initialTab="my", onViewChange }) {
   const displayName = useDisplayName();
   const lang = useLang();
   const [view, setView] = useState("main"); // main | join | create
@@ -5578,6 +5581,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
   const [cEmoji, setCEmoji] = useState("");
   const [cImageFile, setCImageFile] = useState(null);
   const [cImagePreview, setCImagePreview] = useState(null);
+  const [cRemoveImage, setCRemoveImage] = useState(false);
   const boardImageInputRef = useRef(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [cPassword, setCPassword] = useState("");
@@ -5689,7 +5693,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
       if(data) {
         if(showToast) showToast(`"${cName}" league created`, "🏆");
         setCName(""); setCEmoji(""); setCPassword(""); setShowEmojiPicker(false);
-        setCImageFile(null); setCImagePreview(null);
+        setCImageFile(null); setCImagePreview(null); setCRemoveImage(false);
         setEditBoard(null); changeView("main");
       }
       return;
@@ -5711,26 +5715,31 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
       isAdmin: true,
     };
     if(editBoard) {
-      if(cImageFile && user) {
-        if(showToast) showToast("Se încarcă poza...", "⏳");
-        uploadBoardImage(user.id, editBoard.id, cImageFile).then(url => {
-          if(url) {
-            setCreatedBoards(p=>p.map(b=>b.id===editBoard.id?{...b,...newBoard,image_url:url}:b));
-            setMyBoards(p=>p.map(b=>b.id===editBoard.id?{...b,...newBoard,image_url:url}:b));
-            if(showToast) showToast("Poză salvată!", "✅");
-          }
+      if(onUpdateBoard) {
+        const imageFile = cImageFile || null;
+        const result = await onUpdateBoard(editBoard.id, {
+          name: cName,
+          emoji: cEmoji || cName[0].toUpperCase(),
+          type: 'private',
+          password: cPassword,
+          max_players: cMaxPlayers,
+          prizes: cPrizes.slice(0, cSlots).filter(p=>p.trim()),
+          imageFile,
+          removeImage: cRemoveImage,
         });
+        if(!result) return;
       } else {
         setCreatedBoards(p=>p.map(b=>b.id===editBoard.id?newBoard:b));
-        if(showToast) showToast("League updated", "✏️");
       }
+      setMyBoards(p=>p.map(b=>b.id===editBoard.id?{...b,...newBoard}:b));
+      if(showToast) showToast("League updated", "✏️");
     } else {
       setCreatedBoards(p=>[...p, newBoard]);
       if(showToast) showToast(`"${cName}" league created`, "🏆");
       if(onJoin) onJoin(newBoard.id);
     }
     setEditBoard(null); setCEmoji(""); setShowEmojiPicker(false);
-    setCImageFile(null); setCImagePreview(null); changeView("main");
+    setCImageFile(null); setCImagePreview(null); setCRemoveImage(false); changeView("main");
   };
 
   const isJoined = id => myBoards.some(b=>b.id===id);
@@ -5764,7 +5773,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
             <input ref={boardImageInputRef} type="file" accept="image/*" style={{display:"none"}}
               onChange={e=>{
                 const f=e.target.files?.[0]; if(!f) return;
-                setCImageFile(f); setCImagePreview(URL.createObjectURL(f));
+                setCImageFile(f); setCImagePreview(URL.createObjectURL(f)); setCRemoveImage(false);
                 setCEmoji(""); setShowEmojiPicker(false);
                 e.target.value="";
               }}/>
@@ -5780,7 +5789,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
                     : <span style={{fontSize:22,color:"rgba(255,255,255,0.8)"}}>?</span>}
               </div>
               <div style={{display:"flex",gap:4}}>
-                <div onClick={()=>{setShowEmojiPicker(p=>!p); setCImageFile(null); setCImagePreview(null);}}
+                <div onClick={()=>{setShowEmojiPicker(p=>!p); setCImageFile(null); setCImagePreview(null); setCRemoveImage(Boolean(editBoard?.image_url));}}
                   style={{fontSize:10,fontWeight:700,color:showEmojiPicker?NAVY:"#888",cursor:"pointer",
                     padding:"3px 7px",borderRadius:6,background:showEmojiPicker?`${NAVY}15`:"rgba(0,0,0,0.05)"}}>
                   😊 Emoji
@@ -5790,7 +5799,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
                     padding:"3px 7px",borderRadius:6,background:cImagePreview?`${NAVY}15`:"rgba(0,0,0,0.05)"}}>
                   📷 Foto
                 </div>
-                {(cEmoji||cImagePreview)&&<div onClick={()=>{setCEmoji("");setCImageFile(null);setCImagePreview(null);setShowEmojiPicker(false);}}
+                {(cEmoji||cImagePreview)&&<div onClick={()=>{setCEmoji("");setCImageFile(null);setCImagePreview(null);setCRemoveImage(Boolean(editBoard?.image_url));setShowEmojiPicker(false);}}
                   style={{fontSize:10,fontWeight:700,color:"#FF3B30",cursor:"pointer",
                     padding:"3px 7px",borderRadius:6,background:"rgba(255,59,48,0.08)"}}>
                   <XIcon size={15}/>
@@ -5810,7 +5819,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
             <div style={{display:"grid",gridTemplateColumns:"repeat(8,1fr)",gap:6}}>
               {["⚽","🏆","🥇","🎯","🔥","⭐","💪","🦁","🐯","🦅","🌍","🎖️","🏅","🥊","🎮","🎪",
                 "🍕","🍺","🎉","🚀","💎","🌟","👑","🤝","🏋️","🎸","🏄","🎭"].map(e=>(
-                <div key={e} onClick={()=>{ setCEmoji(e); setShowEmojiPicker(false); }}
+                <div key={e} onClick={()=>{ setCEmoji(e); setCImageFile(null); setCImagePreview(null); setCRemoveImage(Boolean(editBoard?.image_url)); setShowEmojiPicker(false); }}
                   style={{width:"100%",aspectRatio:"1",borderRadius:8,display:"flex",alignItems:"center",
                     justifyContent:"center",fontSize:20,cursor:"pointer",
                     background:cEmoji===e?`${NAVY}18`:"#F8FAFC",
@@ -5820,7 +5829,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
               ))}
             </div>
             {cEmoji&&(
-              <Button variant="ghost" onClick={()=>{ setCEmoji(""); setShowEmojiPicker(false); }}
+              <Button variant="ghost" onClick={()=>{ setCEmoji(""); setCRemoveImage(Boolean(editBoard?.image_url)); setShowEmojiPicker(false); }}
                 style={{marginTop:10,width:"100%"}}>
                 {T[lang].del}
               </Button>
@@ -6042,7 +6051,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
             <Card style={{marginBottom:12}}>
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 14px 8px"}}>
                 <span style={{fontSize:11,color:"#bbb"}}>{allAvail.length} {T[lang].boardsCount}</span>
-                <Button onClick={()=>{ setEditBoard(null); setCName(""); setCPassword(""); setCEmoji(""); setCMaxPlayers(10); setCSlots(3); setCPrizes(["","",""]); changeView("create"); }}
+                <Button onClick={()=>{ setEditBoard(null); setCName(""); setCPassword(""); setCEmoji(""); setCImageFile(null); setCImagePreview(null); setCRemoveImage(false); setCMaxPlayers(10); setCSlots(3); setCPrizes(["","",""]); changeView("create"); }}
                   style={{padding:"6px 11px",fontSize:11}}>
                   + {T[lang].createBoard}
                 </Button>
@@ -6104,7 +6113,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
                     </div>
                     <div style={{display:"flex",gap:6}}>
                       <Button variant="ghost" onClick={()=>openMembers(b.id)}>👥</Button>
-                      <Button variant="ghost" onClick={()=>{ setEditBoard(b); setCName(b.name); setCPassword(""); setCMaxPlayers(b.max||10); setCSlots(b.prizes?.length||3); setCPrizes(b.prizes?.length?[...b.prizes,...Array(5).fill("")]:["",...Array(4).fill("")]); changeView("create"); }}>✏️</Button>
+                      <Button variant="ghost" onClick={()=>{ setEditBoard(b); setCName(b.name); setCPassword(""); setCEmoji(b.image_url ? "" : (b.label || "")); setCImageFile(null); setCImagePreview(b.image_url || null); setCRemoveImage(false); setShowEmojiPicker(false); setCMaxPlayers(b.max||10); setCSlots(b.prizes?.length||3); setCPrizes(b.prizes?.length?[...b.prizes,...Array(5).fill("")]:["",...Array(4).fill("")]); changeView("create"); }}>✏️</Button>
                       <Button variant="danger" onClick={()=>setDeleteConfirmBoard(b)} style={{display:"flex",alignItems:"center",justifyContent:"center",width:36,height:36,padding:0}}><TrashIcon size={15}/></Button>
                     </div>
                   </div>
@@ -8256,16 +8265,19 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
                 const matchH = parseInt((m.time||"23:00").split(":")[0]);
                 const matchMin2 = parseInt((m.time||"00:00").split(":")[1]||0);
                 const nowDay2 = simDay ?? getRealTournamentDay();
-                const nowH2   = simDay!=null ? (simHour||0) : new Date().getHours();
-                const nowM2   = simDay!=null ? (simMin||0)  : new Date().getMinutes();
+                // In non-sim mode: convert current time to ET (UTC-4) so it matches match schedule timezone
+                const _etNow  = simDay!=null ? null : new Date(Date.now() - ET_OFFSET_MS);
+                const nowH2   = simDay!=null ? (simHour||0) : _etNow.getUTCHours();
+                const nowM2   = simDay!=null ? (simMin||0)  : _etNow.getUTCMinutes();
                 const nowMins2 = nowH2*60 + nowM2;
                 const kickMins2 = matchH*60 + matchMin2;
                 const isFinished = live?.status==="FT" || (m.day < nowDay2) || (m.day===nowDay2 && nowMins2 > kickMins2+115);
                 const isLive = !isFinished && (isLiveScoreStatus(live?.status) || (!live?.status && m.day===nowDay2 && nowMins2>=kickMins2 && nowMins2<=kickMins2+115));
                 const isNS = !isFinished && !isLive;
-                // Minute: prefer DB value (UTC-based from utcDate); fallback to local time diff
+                // Minute: 1) api_minute from API  2) elapsed from utcDate  3) local ET estimate
                 const liveMin = isLive ? (
                   live?.min != null ? live.min :
+                  live?.utcDate ? Math.min(90, Math.floor((Date.now() - Date.parse(live.utcDate)) / 60000)) :
                   live?.status ? null :
                   Math.min(90, nowMins2-kickMins2)
                 ) : 0;
@@ -10126,6 +10138,22 @@ function App() {
               forgetRemovedBoard(data.id);
               setMyBoards(prev => appendJoinedBoard(prev, { ...data, isMember: true, members: (data.members || 0) + 1 }));
               setActiveBoardId(data.id);
+              return data;
+            }}
+            onUpdateBoard={async (boardId, boardData) => {
+              if (!user) return null;
+              let image_url;
+              if (boardData.imageFile) {
+                if (showToast) showToast("Se încarcă poza...", "⏳");
+                image_url = await uploadBoardImage(user.id, boardId, boardData.imageFile);
+                if (!image_url) { showToast("Eroare la incarcarea pozei", "x"); return null; }
+              } else if (boardData.removeImage) {
+                image_url = null;
+              }
+              const { data, error } = await updateBoard(boardId, { ...boardData, image_url });
+              if (error) { showToast("Eroare la salvare", "❌"); return null; }
+              setCreatedBoards(prev => prev.map(b => b.id === boardId ? { ...b, ...data } : b));
+              setMyBoards(prev => prev.map(b => b.id === boardId ? { ...b, ...data } : b));
               return data;
             }}
             onJoinByCode={async (code) => {

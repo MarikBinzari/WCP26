@@ -341,6 +341,7 @@ Deno.serve(async () => {
     penalty_home_score: number | null; penalty_away_score: number | null;
     raw_api_response: unknown;
     api_minute: number | null; updated_at: string;
+    utc_date: string | null;
     first_half_start?: string | null;
     second_half_start?: string | null;
   }[] = []
@@ -389,6 +390,7 @@ Deno.serve(async () => {
           penalty_away_score: penaltyScore.away,
           raw_api_response: m,
           api_minute: liveMin,
+          utc_date: m.utcDate ?? null,
           updated_at: now.toISOString(),
         })
       }
@@ -427,6 +429,7 @@ Deno.serve(async () => {
           penalty_away_score: clPenaltyScore.away,
           raw_api_response: final,
           api_minute: clMin,
+          utc_date: final.utcDate ?? null,
           updated_at: now.toISOString(),
         })
       }
