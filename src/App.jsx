@@ -8024,9 +8024,12 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
                 {/* Predictions section */}
                 {hasGroups&&(
                   <div style={{marginBottom:16}}>
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:2}}>
                       <span style={{fontSize:12,fontWeight:800,color:NAVY,textTransform:"uppercase",letterSpacing:1}}>🎯 Predictions</span>
                       <span style={{fontSize:13,fontWeight:800,color:NAVY}}>{predTotal}p</span>
+                    </div>
+                    <div style={{fontSize:10,color:"#9CA3AF",marginBottom:8,fontStyle:"italic"}}>
+                      {lang==="en"?"Points added to total when group finishes":lang==="fr"?"Points ajoutés au total à la fin du groupe":"Punctele se adaugă la total când se termină grupa"}
                     </div>
                     {breakdown.groups.map(g=>{
                       const hits = [
@@ -8520,7 +8523,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
                         {(()=>{
                           const isPast = isMatchPast(m.day, m.time, simDay, simHour);
                           const canPredict = !isLive && !isFinished && !isPast && isWeekUnlocked(m.day, simDay, simHour, simMin);
-                          const scoreDisplay = hasLive ? `${live.home}-${live.away}` : isLive ? "0-0" : "-";
+                          const scoreDisplay = hasLive ? `${live.home}-${live.away}` : isSimMode && isLive ? "0-0" : "-";
                           const penDisplay = penaltyScoreLabel(live);
                           const predBox = (isPast||isLive||isFinished) ? (sc ? (
                             isLive ? (
