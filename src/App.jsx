@@ -845,11 +845,13 @@ const ET_OFFSET_MS = 4 * 3600_000;
 
 // Convert ET match time to user's local time for display
 const fmtMatchTime = (day, timeET) => {
+  if (!day || !timeET) return timeET || '';
   const month = day <= 30 ? 5 : 6;
   const dom   = day <= 30 ? day : day - 30;
   const [h, min] = (timeET || '23:00').split(':').map(Number);
-  return new Date(Date.UTC(2026, month, dom, h + 4, min))
-    .toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+  const d = new Date(Date.UTC(2026, month, dom, h + 4, min));
+  if (isNaN(d.getTime())) return timeET;
+  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
 };
 
 const getRealTournamentDay = () => {
