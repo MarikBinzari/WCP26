@@ -5503,6 +5503,9 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
   const exactWeekTotal = _exWkTotal(exactWeekStart);
   const exactWeekScored = _exWkScored(exactWeekStart);
   const exactWeekDone = exactWeekTotal>0 && exactWeekScored===exactWeekTotal;
+  const exactWeekHasStarted = CALENDAR_EVENTS
+    .filter(e => e.day >= exactWeekStart && e.day <= exactWeekStart + 6)
+    .some(e => (e.matches||[]).some(m => isMatchPast(e.day, m.time, simDay, simHour)));
   const _exSimNow = simDay ? new Date(Date.UTC(2026,5,simDay,(simHour||12)+4,simMin||0,0)) : new Date();
   const _exJune = (d) => new Date(Date.UTC(2026,5,d,12,0,0)); // 08:00 ET = 12:00 UTC
   const exactWeekUnlocked = exactWeekStart===8 ? true
@@ -5652,7 +5655,7 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
                 value={exactWeekUnlocked?`${exactWeekScored}/${exactWeekTotal}`:T[lang].locked}
                 active={exactWeekUnlocked}
                 onClick={()=>onOpenGroups&&onOpenGroups(exactWeekStart)}
-                copyEnabled={exactWeekUnlocked&&exactWeekDone}
+                copyEnabled={exactWeekUnlocked&&exactWeekDone&&!exactWeekHasStarted}
                 onCopy={()=>{setCopyDone({});setCopyWeekStart(exactWeekStart);setShowCopySheet("scores");}}
               />
             </div>
