@@ -5474,7 +5474,7 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
   const prizeSlots = leaders.filter(u=>u.emoji||u.isMe||u.empty).length;
   const topCount = Math.max(3, prizeSlots || 3);
   const top3 = leaders.slice(0, topCount);
-  const _deadlinePassed = simDay ? (simDay > 11 || (simDay === 11 && (simHour||0) >= 19)) : Date.now() >= Date.UTC(2026,5,11,23,0,0);
+  const _deadlinePassed = isMatchPast(11, '16:00', simDay, simHour);
   const predictionProgress = getPredictionProgress(instantPickState || {});
   const task1Done = predictionProgress.complete || instantPickDone || !!predictionsComplete[activeId];
   const _boardDone = task1Done;
