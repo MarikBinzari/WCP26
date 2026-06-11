@@ -857,6 +857,11 @@ const WEEK_UNLOCKED = {
 const ET_OFFSET_MS = 4 * 3600_000;
 
 // Convert ET match time to user's local time for display
+const getLocalKickoffDay = (kickoffUtc, fallback) => {
+  if (!kickoffUtc) return fallback;
+  return new Date(kickoffUtc).getDate();
+};
+
 const fmtMatchTime = (day, timeET, kickoffUtc=null) => {
   if (kickoffUtc) {
     return new Date(kickoffUtc).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
@@ -931,10 +936,9 @@ const computeLiveScores = (simDay=null, simHour=12, simMin=0) => {
       if (simDay) {
         nowDay = simDay; nowH = simHour; nowM = simMin;
       } else {
-        const matchMonth = e.day <= 30 ? 5 : 6;
-        const matchDom   = e.day <= 30 ? e.day : e.day - 30;
-        // Times are ET (UTC-4); use UTC for timezone-safe comparison
-        const matchStartUTC = Date.UTC(2026, matchMonth, matchDom, kickH + 4, kickM, 0);
+        const matchStartUTC = m.kickoffUtc
+          ? new Date(m.kickoffUtc).getTime()
+          : (() => { const mm=e.day<=30?5:6,dd=e.day<=30?e.day:e.day-30; return Date.UTC(2026,mm,dd,kickH+4,kickM,0); })();
         const now = Date.now();
         if (now < matchStartUTC) { scores[key] = {status:"NS"}; return; }
         const elapsedMins = Math.floor((now - matchStartUTC) / 60000);
@@ -8510,7 +8514,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
                     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",
                       padding:"5px 12px",
                       background:isLive?"rgba(0,32,91,0.06)":isFinished?"rgba(0,154,68,0.06)":"rgba(0,0,0,0.03)"}}>
-                      <span style={{fontSize:11,color:"#aaa",fontWeight:600}}>{m.day} June · {fmtMatchTime(m.day, m.time, m.kickoffUtc)}</span>
+                      <span style={{fontSize:11,color:"#aaa",fontWeight:600}}>{getLocalKickoffDay(m.kickoffUtc,m.day)} June · {fmtMatchTime(m.day, m.time, m.kickoffUtc)}</span>
                       {isLive&&<span style={{fontSize:11,fontWeight:800,color:RED,display:"flex",alignItems:"center",gap:3}}>
                         <span style={{width:6,height:6,borderRadius:"50%",background:RED,display:"inline-block"}}/>
                         {liveScorePhaseLabel(live?.status, liveMin)}
@@ -9186,7 +9190,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                                   <span style={{fontSize:18}}>{m.homeFlag}</span>
                                   <span style={{flex:1,fontSize:12,fontWeight:600,color:isPastM?"#bbb":DARK}}>{m.home.length>7?m.home.split(" ")[0]:m.home}</span>
                                   <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
-                                    <span style={{fontSize:11,fontWeight:600,color:"#bbb"}}>{m.day} Iun · {fmtMatchTime(m.day, m.time, m.kickoffUtc)}</span>
+                                    <span style={{fontSize:11,fontWeight:600,color:"#bbb"}}>{getLocalKickoffDay(m.kickoffUtc,m.day)} Iun · {fmtMatchTime(m.day, m.time, m.kickoffUtc)}</span>
                                     {isPastM?<span style={{fontSize:10,color:"#ccc",fontWeight:700}}>{T[lang].finished}</span>
                                       :isLive2?<span style={{fontSize:10,fontWeight:800,color:RED,animation:"blink 1s infinite"}}>● {liveScorePhaseLabel(db2, live2?.min)}</span>
                                       :isHT2?<span style={{fontSize:10,fontWeight:800,color:"#F59E0B"}}>⏸ HT</span>
