@@ -66,26 +66,28 @@ export async function savePredictions(userId, boardId, pickState) {
 export async function loadSpecialPick(userId, boardId) {
   const { data } = await supabase
     .from('special_picks')
-    .select('champion, top_scorer_team, top_scorer_player')
+    .select('champion, top_scorer_team, top_scorer_player, runner_up')
     .eq('user_id', userId)
     .eq('board_id', boardId)
     .maybeSingle()
-  if (!data) return { champion: null, topScorer: null }
+  if (!data) return { champion: null, topScorer: null, runnerUp: null }
   return {
     champion: data.champion || null,
     topScorer: data.top_scorer_player
       ? { team: data.top_scorer_team, player: data.top_scorer_player }
       : null,
+    runnerUp: data.runner_up || null,
   }
 }
 
-export async function saveSpecialPick(userId, boardId, { champion, topScorer }) {
+export async function saveSpecialPick(userId, boardId, { champion, topScorer, runnerUp }) {
   const fields = { user_id: userId, board_id: boardId, updated_at: new Date().toISOString() };
   if (champion !== undefined) fields.champion = champion || null;
   if (topScorer !== undefined) {
     fields.top_scorer_team   = topScorer?.team   || null;
     fields.top_scorer_player = topScorer?.player || null;
   }
+  if (runnerUp !== undefined) fields.runner_up = runnerUp || null;
   const { error } = await supabase
     .from('special_picks')
     .upsert(fields, { onConflict: 'user_id,board_id' })
@@ -376,7 +378,7 @@ export async function loadAllUserPicks(userId) {
       .select('team1_score, team2_score, board_id, matches!inner(match_key)')
       .eq('user_id', userId),
     supabase.from('special_picks')
-      .select('champion, top_scorer_team, top_scorer_player, board_id')
+      .select('champion, top_scorer_team, top_scorer_player, runner_up, board_id')
       .eq('user_id', userId),
   ])
 
@@ -394,6 +396,7 @@ export async function loadAllUserPicks(userId) {
     specialPicks[row.board_id] = {
       champion: row.champion || null,
       topScorer: row.top_scorer_player ? { team: row.top_scorer_team, player: row.top_scorer_player } : null,
+      runnerUp: row.runner_up || null,
     }
   })
 
