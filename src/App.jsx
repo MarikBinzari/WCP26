@@ -5728,10 +5728,13 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
           removeImage: cRemoveImage,
         });
         if(!result) return;
+        // Use DB-returned data so has_password and other computed fields are correct
+        setMyBoards(p=>p.map(b=>b.id===editBoard.id?{...b,...result}:b));
+        setAvailBoards(p=>p.map(b=>b.id===editBoard.id?{...b,...result}:b));
       } else {
         setCreatedBoards(p=>p.map(b=>b.id===editBoard.id?newBoard:b));
+        setMyBoards(p=>p.map(b=>b.id===editBoard.id?{...b,...newBoard}:b));
       }
-      setMyBoards(p=>p.map(b=>b.id===editBoard.id?{...b,...newBoard}:b));
       if(showToast) showToast("League updated", "✏️");
     } else {
       setCreatedBoards(p=>[...p, newBoard]);
@@ -10154,6 +10157,8 @@ function App() {
               if (error) { showToast("Eroare la salvare", "❌"); return null; }
               setCreatedBoards(prev => prev.map(b => b.id === boardId ? { ...b, ...data } : b));
               setMyBoards(prev => prev.map(b => b.id === boardId ? { ...b, ...data } : b));
+              setAvailableBoards(prev => prev.map(b => b.id === boardId ? { ...b, ...data } : b));
+              if (showToast) showToast("Liga actualizată!", "✏️");
               return data;
             }}
             onJoinByCode={async (code) => {
