@@ -857,7 +857,10 @@ const WEEK_UNLOCKED = {
 const ET_OFFSET_MS = 4 * 3600_000;
 
 // Convert ET match time to user's local time for display
-const fmtMatchTime = (day, timeET) => {
+const fmtMatchTime = (day, timeET, kickoffUtc=null) => {
+  if (kickoffUtc) {
+    return new Date(kickoffUtc).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+  }
   if (!day || !timeET) return timeET || '';
   const month = day <= 30 ? 5 : 6;
   const dom   = day <= 30 ? day : day - 30;
@@ -878,15 +881,15 @@ const getRealTournamentDay = () => {
   return 999;
 };
 
-const isMatchPast = (matchDay, matchTime, simDay=null, simHour=12) => {
+const isMatchPast = (matchDay, matchTime, simDay=null, simHour=12, kickoffUtc=null) => {
   const mHour = parseInt((matchTime||"23:00").split(":")[0]);
   if (simDay) {
     const nowHour = simHour || 0;
     return matchDay < simDay || (matchDay === simDay && mHour <= nowHour);
   }
+  if (kickoffUtc) return Date.now() >= new Date(kickoffUtc).getTime();
   const matchMonth = matchDay <= 30 ? 5 : 6;
   const matchDom = matchDay <= 30 ? matchDay : matchDay - 30;
-  // Times are ET (UTC-4); compare against UTC
   return Date.now() >= Date.UTC(2026, matchMonth, matchDom, mHour + 4, 0, 0);
 };
 
@@ -1139,7 +1142,7 @@ function CalendarSlider() {
               {sm.map((m,i)=>(
                 <div key={i} style={{display:"flex",alignItems:"center",padding:"10px 16px",
                   borderBottom:i<sm.length-1?"1px solid rgba(0,0,0,0.06)":"none",gap:8,background:"#fff"}}>
-                  <span style={{fontSize:11,color:"#aaa",fontWeight:600,width:36}}>{fmtMatchTime(selDay, m.time)}</span>
+                  <span style={{fontSize:11,color:"#aaa",fontWeight:600,width:36}}>{fmtMatchTime(selDay, m.time, m.kickoffUtc)}</span>
                   <span style={{fontSize:12,background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,
                     color:"#fff",borderRadius:5,padding:"2px 5px",fontWeight:700,flexShrink:0}}>{m.group}</span>
                   <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:4}}>
@@ -5510,7 +5513,7 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
   const exactWeekDone = exactWeekTotal>0 && exactWeekScored===exactWeekTotal;
   const exactWeekHasStarted = CALENDAR_EVENTS
     .filter(e => e.day >= exactWeekStart && e.day <= exactWeekStart + 6)
-    .some(e => (e.matches||[]).some(m => isMatchPast(e.day, m.time, simDay, simHour)));
+    .some(e => (e.matches||[]).some(m => isMatchPast(e.day, m.time, simDay, simHour, m.kickoffUtc)));
   const _exSimNow = simDay ? new Date(Date.UTC(2026,5,simDay,(simHour||12)+4,simMin||0,0)) : new Date();
   const _exJune = (d) => new Date(Date.UTC(2026,5,d,12,0,0)); // 08:00 ET = 12:00 UTC
   const exactWeekUnlocked = exactWeekStart===8 ? true
@@ -8507,7 +8510,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
                     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",
                       padding:"5px 12px",
                       background:isLive?"rgba(0,32,91,0.06)":isFinished?"rgba(0,154,68,0.06)":"rgba(0,0,0,0.03)"}}>
-                      <span style={{fontSize:11,color:"#aaa",fontWeight:600}}>{m.day} June · {fmtMatchTime(m.day, m.time)}</span>
+                      <span style={{fontSize:11,color:"#aaa",fontWeight:600}}>{m.day} June · {fmtMatchTime(m.day, m.time, m.kickoffUtc)}</span>
                       {isLive&&<span style={{fontSize:11,fontWeight:800,color:RED,display:"flex",alignItems:"center",gap:3}}>
                         <span style={{width:6,height:6,borderRadius:"50%",background:RED,display:"inline-block"}}/>
                         {liveScorePhaseLabel(live?.status, liveMin)}
@@ -8527,7 +8530,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
 
                         {/* Scores — compact single center block */}
                         {(()=>{
-                          const isPast = isMatchPast(m.day, m.time, simDay, simHour);
+                          const isPast = isMatchPast(m.day, m.time, simDay, simHour, m.kickoffUtc);
                           const canPredict = !isLive && !isFinished && !isPast && isWeekUnlocked(m.day, simDay, simHour, simMin);
                           const scoreDisplay = hasLive ? `${live.home}-${live.away}` : isSimMode && isLive ? "0-0" : "-";
                           const penDisplay = penaltyScoreLabel(live);
@@ -8546,7 +8549,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
                             <div style={{background:"rgba(0,0,0,0.06)",borderRadius:6,padding:"3px 8px"}}>
                               <span style={{fontSize:11,fontWeight:700,color:"#ccc"}}>?-?</span>
                             </div>
-                          )) : canPredict && !isMatchPast(m.day, m.time, simDay, simHour) ? (
+                          )) : canPredict && !isMatchPast(m.day, m.time, simDay, simHour, m.kickoffUtc) ? (
                             <div onClick={()=>setScorePick({match:m,day:m.day,idx:m.idx,key:m.key})}
                               style={{background:`linear-gradient(135deg,${RED},${GREEN})`,borderRadius:6,padding:"3px 8px",cursor:"pointer"}}>
                               <span style={{fontSize:12,color:"#fff",fontWeight:700}}>+ scor</span>
@@ -8582,7 +8585,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
                       </div>
 
                       {/* Points earned */}
-                      {(isFinished || isMatchPast(m.day, m.time, simDay, simHour)) && (
+                      {(isFinished || isMatchPast(m.day, m.time, simDay, simHour, m.kickoffUtc)) && (
                         <div style={{marginTop:6,display:"flex",justifyContent:"center"}}>
                           <div style={{background:exactMatch?"rgba(0,154,68,0.1)":resultMatch?"rgba(0,32,91,0.07)":"rgba(200,16,46,0.08)",
                             borderRadius:20,padding:"3px 12px",display:"flex",alignItems:"center",gap:6}}>
@@ -8596,7 +8599,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
                     </div>
 
                     {/* Edit prediction */}
-                    {!isMatchPast(m.day, m.time, simDay, simHour) && !isLive && !isFinished && sc && isWeekUnlocked(m.day, simDay, simHour, simMin) && todaySim <= m.day && (
+                    {!isMatchPast(m.day, m.time, simDay, simHour, m.kickoffUtc) && !isLive && !isFinished && sc && isWeekUnlocked(m.day, simDay, simHour, simMin) && todaySim <= m.day && (
                       <button onClick={()=>setScorePick({match:m,day:m.day,idx:m.idx,key:m.key})}
                         style={{width:"100%",padding:"6px 12px",borderTop:"1px solid rgba(0,0,0,0.05)",
                           background:"none",border:"none",borderTop:"1px solid rgba(0,0,0,0.05)",
@@ -9051,7 +9054,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                                       onClick={()=>canEdit&&onMatchClick&&onMatchClick(m,m.day,m._i)}>
                                       <div style={{flexShrink:0,textAlign:"center",width:32}}>
                                         <p style={{fontSize:12,color:"#aaa",margin:0,fontWeight:600}}>{m.day>30?m.day-30:m.day} {m.day>30?"Jul":"Jun"}</p>
-                                        <p style={{fontSize:11,color:"#bbb",margin:0}}>{fmtMatchTime(m.day, m.time)}</p>
+                                        <p style={{fontSize:11,color:"#bbb",margin:0}}>{fmtMatchTime(m.day, m.time, m.kickoffUtc)}</p>
                                       </div>
                                       <span style={{fontSize:18}}>{m.homeFlag}</span>
                                       <span style={{flex:1,fontSize:12,fontWeight:600,color:isPastM?"#bbb":DARK}}>{m.home.length>7?m.home.split(" ")[0]:m.home}</span>
@@ -9183,7 +9186,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                                   <span style={{fontSize:18}}>{m.homeFlag}</span>
                                   <span style={{flex:1,fontSize:12,fontWeight:600,color:isPastM?"#bbb":DARK}}>{m.home.length>7?m.home.split(" ")[0]:m.home}</span>
                                   <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
-                                    <span style={{fontSize:11,fontWeight:600,color:"#bbb"}}>{m.day} Iun · {fmtMatchTime(m.day, m.time)}</span>
+                                    <span style={{fontSize:11,fontWeight:600,color:"#bbb"}}>{m.day} Iun · {fmtMatchTime(m.day, m.time, m.kickoffUtc)}</span>
                                     {isPastM?<span style={{fontSize:10,color:"#ccc",fontWeight:700}}>{T[lang].finished}</span>
                                       :isLive2?<span style={{fontSize:10,fontWeight:800,color:RED,animation:"blink 1s infinite"}}>● {liveScorePhaseLabel(db2, live2?.min)}</span>
                                       :isHT2?<span style={{fontSize:10,fontWeight:800,color:"#F59E0B"}}>⏸ HT</span>
@@ -9244,7 +9247,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                       <div key={i} data-match-key={key} style={{borderBottom:i<sm.length-1?"1px solid rgba(0,0,0,0.06)":"none",background:"#fff"}}>
                         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",
                           padding:"4px 14px",background:isLive?"rgba(0,32,91,0.06)":isFT?"rgba(0,154,68,0.05)":"rgba(0,0,0,0.02)"}}>
-                          <span style={{fontSize:11,fontWeight:600,color:"#aaa"}}>{fmtMatchTime(m.day, m.time)} · Gr.{m.group}</span>
+                          <span style={{fontSize:11,fontWeight:600,color:"#aaa"}}>{fmtMatchTime(m.day, m.time, m.kickoffUtc)} · Gr.{m.group}</span>
                           {isLive&&<span style={{fontSize:11,fontWeight:800,color:RED,display:"flex",alignItems:"center",gap:3}}>
                             <span style={{width:5,height:5,borderRadius:"50%",background:RED,display:"inline-block"}}/>
                             {liveScorePhaseLabel(dbStatus, liveMin2)}
@@ -9255,8 +9258,8 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                         </div>
                         {(()=>{ return (
                         <div role="button" tabIndex={isPastDay2?undefined:0}
-                          onClick={()=>!isMatchPast(m.day||sel,m.time,simDay,simHour)&&!isPastDay2&&onMatchClick&&onMatchClick(m,sel,m._i)}
-                          onKeyDown={isPastDay2?undefined:e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();if(!isMatchPast(m.day||sel,m.time,simDay,simHour))onMatchClick&&onMatchClick(m,sel,m._i);}}}
+                          onClick={()=>!isMatchPast(m.day||sel,m.time,simDay,simHour,m.kickoffUtc)&&!isPastDay2&&onMatchClick&&onMatchClick(m,sel,m._i)}
+                          onKeyDown={isPastDay2?undefined:e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();if(!isMatchPast(m.day||sel,m.time,simDay,simHour,m.kickoffUtc))onMatchClick&&onMatchClick(m,sel,m._i);}}}
                           style={{display:"flex",alignItems:"center",padding:"10px 14px",cursor:isPastDay2?"default":"pointer",gap:6,opacity:isPastDay2?0.6:1}}>
                           <span style={{fontSize:18,flexShrink:0}}>{m.homeFlag}</span>
                           <span style={{flex:1,fontSize:11,fontWeight:600,color:DARK}}>{m.home.length>7?m.home.split(" ")[0]:m.home}</span>
@@ -9270,7 +9273,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                             {penDisplay&&<span style={{fontSize:10,fontWeight:900,color:RED,lineHeight:1}}>{penDisplay}</span>}
                             <span style={{fontSize:10,fontWeight:700,color:"#bbb",textTransform:"uppercase",letterSpacing:0.5}}>{T[lang].prediction}</span>
                             {(()=>{
-                              const isPast = isMatchPast(sel, m.time, simDay, simHour);
+                              const isPast = isMatchPast(sel, m.time, simDay, simHour, m.kickoffUtc);
                               const canPredict = !isLive && !isHT && !isFT && !isPast && isWeekUnlocked(sel||0, simDay, simHour, simMin);
                               // Comparatie live: scorul prezis vs scorul curent
                               const liveHas = (isLive||isHT) && hasScore;
@@ -9316,7 +9319,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                           <span style={{fontSize:18,flexShrink:0}}>{m.awayFlag}</span>
                         </div>
                         ); })()}
-                        {(isFT||isMatchPast(sel,m.time,simDay,simHour))&&(
+                        {(isFT||isMatchPast(sel,m.time,simDay,simHour,m.kickoffUtc))&&(
                           <div style={{padding:"4px 14px 8px",display:"flex",justifyContent:"center"}}>
                             <div style={{background:exactMatch?"rgba(0,154,68,0.1)":resultMatch?"rgba(0,32,91,0.07)":"rgba(0,0,0,0.04)",borderRadius:20,padding:"3px 14px"}}>
                               <span style={{fontSize:12,fontWeight:700,color:exactMatch?GREEN:resultMatch?NAVY:RED}}>
