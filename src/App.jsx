@@ -8024,12 +8024,14 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
                 {/* Predictions section */}
                 {hasGroups&&(
                   <div style={{marginBottom:16}}>
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:2}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
                       <span style={{fontSize:12,fontWeight:800,color:NAVY,textTransform:"uppercase",letterSpacing:1}}>🎯 Predictions</span>
-                      <span style={{fontSize:13,fontWeight:800,color:NAVY}}>{predTotal}p</span>
-                    </div>
-                    <div style={{fontSize:10,color:"#9CA3AF",marginBottom:8,fontStyle:"italic"}}>
-                      {lang==="en"?"Points added to total when group finishes":lang==="fr"?"Points ajoutés au total à la fin du groupe":"Punctele se adaugă la total când se termină grupa"}
+                      <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:2}}>
+                        <span style={{fontSize:13,fontWeight:800,color:NAVY}}>{predTotal}p</span>
+                        <span style={{fontSize:9,color:"#9CA3AF",fontStyle:"italic",whiteSpace:"nowrap"}}>
+                          {lang==="en"?"possible · at end of group":lang==="fr"?"possible · fin du groupe":"posibil · la final de grupă"}
+                        </span>
+                      </div>
                     </div>
                     {breakdown.groups.map(g=>{
                       const hits = [
