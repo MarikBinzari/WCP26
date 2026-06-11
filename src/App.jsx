@@ -3592,6 +3592,11 @@ function InstantPickScreen({ onBack, onComplete, onKoComplete, onModify, savedSt
           </button>
         </div>
       )}
+      {effectiveViewMode&&(
+        <div style={{textAlign:"center",padding:"5px 0",background:"rgba(0,0,0,0.25)",fontSize:11,fontWeight:600,color:"rgba(255,255,255,0.45)",letterSpacing:0.5}}>
+          🔒 {lang==="en"?"View only · task ended":lang==="fr"?"Lecture seule · tâche terminée":"Doar vizualizare · task încheiat"}
+        </div>
+      )}
     </div>
   );
   // ─────────────────────────────────────────────────────────────────────────────
