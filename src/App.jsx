@@ -862,6 +862,48 @@ const getLocalKickoffDay = (kickoffUtc, fallback) => {
   return new Date(kickoffUtc).getDate();
 };
 
+const encodeCalendarDay = (date) => {
+  const y = date.getFullYear();
+  const mo = date.getMonth();
+  const d = date.getDate();
+  if (y === 2026 && mo === 4) return d - 31;
+  if (y === 2026 && mo === 5) return d;
+  if (y === 2026 && mo === 6) return d + 30;
+  return d;
+};
+
+const getMatchDisplayDay = (match, fallbackDay) =>
+  match?.kickoffUtc ? encodeCalendarDay(new Date(match.kickoffUtc)) : fallbackDay;
+
+const getMatchKey = (match, day, idx) =>
+  match?.matchKey || `${day}-${idx}`;
+
+const getDisplayCalendarEvents = () => {
+  const byDay = new Map();
+  CALENDAR_EVENTS.forEach(event => {
+    event.matches.forEach((match, idx) => {
+      const displayDay = getMatchDisplayDay(match, event.day);
+      if (!byDay.has(displayDay)) byDay.set(displayDay, []);
+      byDay.get(displayDay).push({
+        ...match,
+        matchKey: getMatchKey(match, event.day, idx),
+        sourceDay: event.day,
+        sourceIdx: idx,
+      });
+    });
+  });
+  return [...byDay.entries()]
+    .sort(([a], [b]) => a - b)
+    .map(([day, matches]) => ({
+      day,
+      matches: matches.sort((a, b) => {
+        const ta = a.kickoffUtc ? Date.parse(a.kickoffUtc) : 0;
+        const tb = b.kickoffUtc ? Date.parse(b.kickoffUtc) : 0;
+        return ta - tb;
+      }),
+    }));
+};
+
 const fmtMatchTime = (day, timeET, kickoffUtc=null) => {
   if (kickoffUtc) {
     return new Date(kickoffUtc).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
@@ -885,6 +927,8 @@ const getRealTournamentDay = () => {
   if (y === 2026 && mo === 6) return d + 30;
   return 999;
 };
+
+const getLocalTournamentDay = () => encodeCalendarDay(new Date());
 
 const isMatchPast = (matchDay, matchTime, simDay=null, simHour=12, kickoffUtc=null) => {
   const mHour = parseInt((matchTime||"23:00").split(":")[0]);
@@ -929,7 +973,7 @@ const computeLiveScores = (simDay=null, simHour=12, simMin=0) => {
   const MATCH_DURATION_H = 2; // hours after kickoff = finished
   CALENDAR_EVENTS.forEach(e => {
     e.matches.forEach((m, idx) => {
-      const key = `${e.day}-${idx}`;
+      const key = m.matchKey || `${e.day}-${idx}`;
       const kickH = parseInt((m.time||"23:00").split(":")[0]);
       const kickM = parseInt((m.time||"00:00").split(":")[1]||0);
       let nowDay, nowH, nowM;
@@ -5504,18 +5548,19 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
     _pickScrolled.add(activeId);
     setTimeout(()=>scrollTo(exactScoreRef), 700);
   },[instantPickDone,activeId]);
-  const _exWkMM = (()=>{ const mm={}; CALENDAR_EVENTS.forEach(e=>{mm[e.day]=e.matches;}); return mm; })();
+  const _exCalendarEvents = getDisplayCalendarEvents();
+  const _exWkMM = (()=>{ const mm={}; _exCalendarEvents.forEach(e=>{mm[e.day]=e.matches;}); return mm; })();
   const _exWkDays = (s)=>Array.from({length:7},(_,i)=>s+i).filter(d=>d>=1&&d<=50);
   const _exWkTotal = (s)=>_exWkDays(s).reduce((a,d)=>a+(_exWkMM[d]||[]).length,0);
-  const _exWkScored = (s)=>_exWkDays(s).reduce((a,d)=>a+(_exWkMM[d]||[]).filter((_,i)=>(exactScores||{})[`${d}-${i}`]).length,0);
-  const todaySimEx = simDay ?? getRealTournamentDay();
+  const _exWkScored = (s)=>_exWkDays(s).reduce((a,d)=>a+(_exWkMM[d]||[]).filter((m,i)=>(exactScores||{})[getMatchKey(m,d,i)]).length,0);
+  const todaySimEx = simDay ?? getLocalTournamentDay();
   const exactWeekStart = todaySimEx<=14?8:todaySimEx<=21?15:todaySimEx<=28?22:29;
   const _calWeeks = [-6,1,8,15,22,29,36,43];
   const todayCalendarWeek = _calWeeks.find(w=>todaySimEx>=w&&todaySimEx<=w+6) ?? _calWeeks[0];
   const exactWeekTotal = _exWkTotal(exactWeekStart);
   const exactWeekScored = _exWkScored(exactWeekStart);
   const exactWeekDone = exactWeekTotal>0 && exactWeekScored===exactWeekTotal;
-  const exactWeekHasStarted = CALENDAR_EVENTS
+  const exactWeekHasStarted = _exCalendarEvents
     .filter(e => e.day >= exactWeekStart && e.day <= exactWeekStart + 6)
     .some(e => (e.matches||[]).some(m => isMatchPast(e.day, m.time, simDay, simHour, m.kickoffUtc)));
   const _exSimNow = simDay ? new Date(Date.UTC(2026,5,simDay,(simHour||12)+4,simMin||0,0)) : new Date();
@@ -8214,10 +8259,11 @@ const scA = (sc) => Array.isArray(sc) ? sc[1] : (sc?.away ?? 0);
 function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScoresProp, simDay, simHour=12, simMin=0, initialWeek }) {
   const lang = useLang();
   const LIVE_SCORES = useLiveScores(simDay, simHour, simMin);
+  const calendarEvents = getDisplayCalendarEvents();
   // Build GROUPS_DATA dynamically from CALENDAR_EVENTS
   const GROUPS_DATA = (() => {
     const gMap = {};
-    CALENDAR_EVENTS.forEach(e => {
+    calendarEvents.forEach(e => {
       e.matches.forEach(m => {
         if(!m.group || m.group.length > 1) return;
         if(!gMap[m.group]) gMap[m.group] = {};
@@ -8234,10 +8280,10 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
   // weeks: May 25-31 (−6), Jun 1-7 (1), then WC weeks
   const weeks = [-6,1,8,15,22,29,36,43];
   const mm0 = {};
-  CALENDAR_EVENTS.forEach(e => { mm0[e.day] = e.matches; });
+  calendarEvents.forEach(e => { mm0[e.day] = e.matches; });
   // Find first WC match day (Jun 8+)
   const firstMatchDay = Array.from({length:7},(_,i)=>8+i).find(d=>!!mm0[d]) || null;
-  const todayDay = simDay ?? getRealTournamentDay();
+  const todayDay = simDay ?? getLocalTournamentDay();
   const todayHasMatches = !!mm0[todayDay];
   const defaultDay = todayDay;
   // Auto-select the week that contains today (pre-WC weeks included)
@@ -8247,7 +8293,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
     if(initialWeek) {
       setWeekStart(initialWeek);
       const mm_ = {};
-      CALENDAR_EVENTS.forEach(e => { mm_[e.day] = e.matches; });
+      calendarEvents.forEach(e => { mm_[e.day] = e.matches; });
       const wDays = Array.from({length:7},(_,i)=>initialWeek+i);
       // Selectăm ziua de azi dacă e în săptămână (cu sau fără meciuri), altfel prima zi cu meciuri
       const todayInWeek = wDays.find(d => d === todayDay);
@@ -8295,7 +8341,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
 
   const getGroupsForDays = (days) => {
     const groups = new Set();
-    CALENDAR_EVENTS.forEach(e => {
+    calendarEvents.forEach(e => {
       if(days.includes(e.day)) e.matches.forEach(m => { if(m.group) groups.add(m.group); });
     });
     return [...groups].sort();
@@ -8342,12 +8388,12 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
 
   // Compute standing from saved scores for current group
   const mm = {};
-  CALENDAR_EVENTS.forEach(e => { mm[e.day] = e.matches; });
+  calendarEvents.forEach(e => { mm[e.day] = e.matches; });
   const groupMatches = [];
-  CALENDAR_EVENTS.forEach(e => {
+  calendarEvents.forEach(e => {
     e.matches.forEach((m,idx) => {
       if(m.group===selGroup)
-        groupMatches.push({...m, day:e.day, idx, key:`${e.day}-${idx}`});
+        groupMatches.push({...m, day:e.day, idx, key:getMatchKey(m,e.day,idx)});
     });
   });
 
@@ -8370,7 +8416,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
 
   const wDaysHeader = Array.from({length:7},(_,i)=>weekStart+i);
   const weekTotal = wDaysHeader.reduce((s,d)=>s+(mm0[d]||[]).length,0);
-  const weekScored = wDaysHeader.reduce((s,d)=>s+(mm0[d]||[]).filter((_,i)=>scores[`${d}-${i}`]).length,0);
+  const weekScored = wDaysHeader.reduce((s,d)=>s+(mm0[d]||[]).filter((m,i)=>scores[getMatchKey(m,d,i)]).length,0);
   const weekRemaining = weekTotal - weekScored;
 
   return (
@@ -8402,9 +8448,9 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
             if(!isWeekUnlocked(day, simDay, simHour, simMin)) return;
             // UCL Final (day -1): allow prediction before kickoff only
             const isUCL = match.group==="UCL";
-            if(!isUCL && isMatchPast(day, match.time, simDay, simHour)) return;
-            if(isUCL && isMatchPast(day, match.time, null, null)) return;
-            setScorePick({match,day,idx,key:`${day}-${idx}`});
+            if(!isUCL && isMatchPast(day, match.time, simDay, simHour, match.kickoffUtc)) return;
+            if(isUCL && isMatchPast(day, match.time, null, null, match.kickoffUtc)) return;
+            setScorePick({match,day,idx,key:getMatchKey(match,day,idx)});
           }}/>
 
 
@@ -8670,7 +8716,8 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
                   if(_dayMatches.length<=2) return;
                   let nextKey=null;
                   for(let i=_idx+1;i<_dayMatches.length;i++){
-                    if(!scores[`${_day}-${i}`]){ nextKey=`${_day}-${i}`; break; }
+                    const candidateKey = getMatchKey(_dayMatches[i], _day, i);
+                    if(!scores[candidateKey]){ nextKey=candidateKey; break; }
                   }
                   if(!nextKey) return;
                   const container=exactScrollRef.current;
@@ -8722,8 +8769,9 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
   const lang = useLang();
   const LIVE_SCORES = liveScores || LIVE_SCORES_DEFAULT;
   const [collapsedGroups, setCollapsedGroups] = useState({});
+  const calendarEvents = getDisplayCalendarEvents();
   const mm = {};
-  CALENDAR_EVENTS.forEach(e => { mm[e.day] = e.matches; });
+  calendarEvents.forEach(e => { mm[e.day] = e.matches; });
   const dl = ["L","M","M","J","V","S","D"];
   const days = Array.from({length:7},(_,i)=>weekStart+i);
   const sel = selDay !== undefined ? selDay : null;
@@ -8761,12 +8809,12 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
       <div key={week} style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:4,marginBottom:4}}>
         {days.slice(week*7,(week+1)*7).map((day,i)=>{
           const isS=day===11,has=!!mm[day],isSel=sel===day,isSun=i%7===6;
-          const today = simDay ?? getRealTournamentDay();
+          const today = simDay ?? getLocalTournamentDay();
           const isPast = has && day < today;
           const isToday2 = day === today;
           const locked = has && !isWeekUnlocked(day, simDay, simHour, simMin);
           const dayMatches = mm[day]||[];
-          const allPredicted = has && !locked && !isPast && dayMatches.length>0 && dayMatches.every((_,idx)=>scores&&scores[`${day}-${idx}`]);
+          const allPredicted = has && !locked && !isPast && dayMatches.length>0 && dayMatches.every((m,idx)=>scores&&scores[getMatchKey(m,day,idx)]);
           let bg="transparent",border="1.5px solid transparent",shadow="none";
           let tc=isSun?RED:"#777",fw=400;
           if(isSel&&allPredicted&&!isPast){bg="#EEF3FF";border=`1.5px solid ${NAVY}`;tc=GREEN;fw=800;}
@@ -8990,9 +9038,9 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
 
                           // KO matches from calendar
                           const koMatches = [];
-                          CALENDAR_EVENTS.forEach(e=>{
+                          calendarEvents.forEach(e=>{
                             e.matches.forEach((m,idx)=>{
-                              if(m.group===activeGrp) koMatches.push({...m,day:e.day,_i:idx,key:`${e.day}-${idx}`});
+                              if(m.group===activeGrp) koMatches.push({...m,day:e.day,_i:idx,key:getMatchKey(m,e.day,idx)});
                             });
                           });
 
@@ -9091,7 +9139,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                       // Helper to compute standing from a score source
                       const computeStanding = (getScore) => {
                         const st = cur2.teams.map(t=>({...t,pts:0,gf:0,ga:0,gd:0,p:0}));
-                        CALENDAR_EVENTS.forEach(e=>{
+                        calendarEvents.forEach(e=>{
                           e.matches.forEach((m,idx)=>{
                             if(m.group!==activeGrp) return;
                             const sc = getScore(e.day, idx);
@@ -9111,14 +9159,16 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
 
                       // Real standing — from liveScores (FT matches with real scores)
                       const realRows = computeStanding((day,idx)=>{
-                        const live = LIVE_SCORES[`${day}-${idx}`];
+                        const match = (mm[day]||[])[idx];
+                        const live = LIVE_SCORES[getMatchKey(match,day,idx)];
                         if(!live || live.status!=="FT" || live.home===null || live.home===undefined) return null;
                         return [live.home, live.away];
                       });
 
                       // Predicted standing — from user scores
                       const predRows = computeStanding((day,idx)=>{
-                        return scores&&scores[`${day}-${idx}`]||null;
+                        const match = (mm[day]||[])[idx];
+                        return scores&&scores[getMatchKey(match,day,idx)]||null;
                       });
 
                       const rows2 = showReal ? realRows : predRows;
@@ -9153,9 +9203,9 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                         <div style={{borderRadius:10,overflow:"hidden",boxShadow:SHADOW_OUT}}>
                           {(()=>{
                             const allGM = [];
-                            CALENDAR_EVENTS.forEach(e=>{
+                            calendarEvents.forEach(e=>{
                               e.matches.forEach((m,idx)=>{
-                                if(m.group===activeGrp) allGM.push({...m,day:e.day,_i:idx,key:`${e.day}-${idx}`});
+                                if(m.group===activeGrp) allGM.push({...m,day:e.day,_i:idx,key:getMatchKey(m,e.day,idx)});
                               });
                             });
                             return allGM.map((m,idx2)=>{
@@ -9177,7 +9227,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                               const hasScore2 = !!liveScore2;
                               const penDisplay2 = penaltyScoreLabel(live2);
                               const matchHourM=parseInt((m.time||"23:00").split(":")[0]);
-                              const nowDM = simDay ?? getRealTournamentDay();
+                              const nowDM = simDay ?? getLocalTournamentDay();
                               const nowHM = simDay ? (simHour||0) : new Date().getHours();
                               const isPastM = m.day < nowDM || (m.day === nowDM && matchHourM <= nowHM);
                               const canEdit=!isLive2&&!isHT2&&!isFT2&&!isPastM&&isWeekUnlocked(m.day,simDay,simHour,simMin);
@@ -9223,13 +9273,13 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                   /* All matches list */
                   sm.map((m0,i)=>{
                     const m = {...m0, _i:i};
-                    const key=`${sel}-${i}`;
+                    const key=getMatchKey(m0,sel,i);
                     // key used below for data-match-key
                     const sc = scores&&scores[key];
                     const live = LIVE_SCORES[key];
                     const mH2 = parseInt((m.time||"23:00").split(":")[0]);
                     const mM2 = parseInt((m.time||"00:00").split(":")[1]||0);
-                    const _nowDay = simDay ?? getRealTournamentDay();
+                    const _nowDay = simDay ?? getLocalTournamentDay();
                     const _nowH   = simDay!=null?(simHour||0):new Date().getHours();
                     const _nowM   = simDay!=null?(simMin||0):new Date().getMinutes();
                     const _kick = mH2*60+mM2, _now2 = _nowH*60+_nowM;

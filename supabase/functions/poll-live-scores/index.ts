@@ -200,6 +200,21 @@ function isInWindow(dayNum: number, now: Date): boolean {
   return false
 }
 
+function getActiveWindowMatchKeys(dayNum: number, now: Date): string[] {
+  const matches = SCHEDULE[dayNum]
+  if (!matches) return []
+  const etMs = now.getTime() - 4 * 60 * 60 * 1000
+  const et = new Date(etMs)
+  const nowMins = et.getUTCHours() * 60 + et.getUTCMinutes()
+  return matches
+    .filter((m) => {
+      const [h, mn] = m.timeET.split(':').map(Number)
+      const kickoffMins = h * 60 + mn
+      return nowMins >= kickoffMins - 30 && nowMins <= kickoffMins + 150
+    })
+    .map((m) => `${dayNum}-${m.idx}`)
+}
+
 function findMatchKey(homeNorm: string, awayNorm: string): string | null {
   for (const [day, matches] of Object.entries(SCHEDULE)) {
     for (const m of matches) {
@@ -358,6 +373,7 @@ Deno.serve(async () => {
     if (res.ok) {
       const data = await res.json()
       const apiMatches = data.matches ?? []
+      const activeWindowKeys = getActiveWindowMatchKeys(dayNum, now)
 
       for (const m of apiMatches) {
         const homeNorm = normalizeTeam(m.homeTeam?.name ?? '')
@@ -393,6 +409,27 @@ Deno.serve(async () => {
           utc_date: m.utcDate ?? null,
           updated_at: now.toISOString(),
         })
+      }
+
+      if (activeWindowKeys.length) {
+        const seenKeys = new Set(upserts.map((u) => u.match_key))
+        const missingActiveKeys = activeWindowKeys.filter((key) => !seenKeys.has(key))
+        if (missingActiveKeys.length) {
+          await supabase
+            .from('live_scores')
+            .update({
+              status: 'NS',
+              regular_time_home_score: null,
+              regular_time_away_score: null,
+              penalty_home_score: null,
+              penalty_away_score: null,
+              api_minute: null,
+              raw_api_response: data,
+              updated_at: now.toISOString(),
+            })
+            .in('match_key', missingActiveKeys)
+            .in('status', ['LIVE', 'HT', 'ET', 'PEN'])
+        }
       }
     }
   }

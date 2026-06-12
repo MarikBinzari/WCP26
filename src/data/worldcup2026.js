@@ -198,14 +198,14 @@ export const CALENDAR_EVENTS = [
   // 11 Iunie — Grupa A (meci de deschidere)
   {day:11, matches:[
     {home:"Mexico",              homeFlag:"🇲🇽", away:"South Africa",         awayFlag:"🇿🇦", time:"15:00", kickoffUtc:"2026-06-11T19:00:00Z", group:"A", venue:"Estadio Azteca"},
-    {home:"Korea Republic",      homeFlag:"🇰🇷", away:"Czech Republic",        awayFlag:"🇨🇿", time:"22:00", kickoffUtc:"2026-06-12T02:00:00Z", group:"A", venue:"Estadio Akron"},
   ]},
-  // 12 Iunie — Grupele B & D
+  // 12 Iunie — Grupele A (cont.), B & D
   {day:12, matches:[
     {home:"Canada",              homeFlag:"🇨🇦", away:"Bosnia and Herzegovina",awayFlag:"🇧🇦", time:"15:00", kickoffUtc:"2026-06-12T19:00:00Z", group:"B", venue:"BMO Field"},
     {home:"Qatar",               homeFlag:"🇶🇦", away:"Switzerland",           awayFlag:"🇨🇭", time:"15:00", kickoffUtc:"2026-06-13T19:00:00Z", group:"B", venue:"Levi's Stadium"},
     {home:"USA",                 homeFlag:"🇺🇸", away:"Paraguay",              awayFlag:"🇵🇾", time:"21:00", kickoffUtc:"2026-06-13T01:00:00Z", group:"D", venue:"SoFi Stadium"},
     {home:"Australia",           homeFlag:"🇦🇺", away:"Turkey",                awayFlag:"🇹🇷", time:"00:00", kickoffUtc:"2026-06-14T04:00:00Z", group:"D", venue:"BC Place"},
+    {home:"Korea Republic",      homeFlag:"🇰🇷", away:"Czech Republic",        awayFlag:"🇨🇿", time:"05:00", kickoffUtc:"2026-06-12T02:00:00Z", matchKey:"11-1", group:"A", venue:"Estadio Akron"},
   ]},
   // 13 Iunie — Grupa C
   {day:13, matches:[
