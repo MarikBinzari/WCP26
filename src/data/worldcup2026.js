@@ -73,7 +73,7 @@ export const FLAGS = {
   "Uzbekistan":                "🇺🇿",
   "Colombia":                  "🇨🇴",
   // Group L
-  "England":                   "🏴󠁧󠁢󠁥󠁧󠁿",
+  "England":                   "🇬🇧",
   "Croatia":                   "🇭🇷",
   "Ghana":                     "🇬🇭",
   "Panama":                    "🇵🇦",
