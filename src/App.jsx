@@ -8142,15 +8142,20 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
                     const isExact = m.pred_home===m.actual_home && m.pred_away===m.actual_away;
                     return (
                       <div key={m.match_key} style={{display:"flex",justifyContent:"space-between",
-                        alignItems:"center",padding:"5px 0",borderBottom:"1px solid #F9FAFB"}}>
-                        <div style={{display:"flex",gap:6,alignItems:"center"}}>
-                          <span style={{fontSize:12,fontWeight:700,color:DARK}}>
-                            {tCode(m.home_team)} {m.actual_home}-{m.actual_away} {tCode(m.away_team)}
+                        alignItems:"flex-start",padding:"5px 0",borderBottom:"1px solid #F9FAFB"}}>
+                        <div style={{display:"flex",flexDirection:"column",gap:2}}>
+                          <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                            <span style={{fontSize:12,fontWeight:700,color:DARK}}>
+                              {tCode(m.home_team)} {m.actual_home}-{m.actual_away} {tCode(m.away_team)}
+                            </span>
+                            {isExact&&<span style={{fontSize:9,fontWeight:800,color:"#fff",background:GREEN,
+                              borderRadius:4,padding:"1px 5px",letterSpacing:0.5}}>EXACT</span>}
+                          </div>
+                          <span style={{fontSize:10,color:"#9CA3AF",fontWeight:600}}>
+                            prezis: ({m.pred_home}-{m.pred_away})
                           </span>
-                          {isExact&&<span style={{fontSize:9,fontWeight:800,color:"#fff",background:GREEN,
-                            borderRadius:4,padding:"1px 5px",letterSpacing:0.5}}>EXACT</span>}
                         </div>
-                        <span style={{fontSize:12,fontWeight:700,color:GREEN}}>{m.pts}p</span>
+                        <span style={{fontSize:12,fontWeight:700,color:GREEN,paddingTop:1}}>{m.pts}p</span>
                       </div>
                     );
                   })}
