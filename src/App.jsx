@@ -5,6 +5,7 @@ import trophy from "./assets/hands-trophy.webp";
 import trophyHQ from "./assets/hands-trophy-hq.webp";
 import varBg from "./assets/var-bg.webp";
 import predictoLogo from "./assets/predicto-logo.webp";
+import stadiumBg from "./assets/u8hfqj9wqaqodrc48ppk.jpg";
 import specialPickBadge from "./assets/special-pick-badge.webp";
 import bellIcon from "./assets/bell-icon.svg";
 import { ALL_GROUPS_DATA, FLAGS, TEAM_COLORS, CALENDAR_EVENTS, CL_FINAL } from "./data/worldcup2026.js";
@@ -5691,7 +5692,7 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
       </div>
       <div ref={scrollContainerRef} style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",padding:"10px 6px 110px",opacity:boardSwitching?0.72:1,transform:`translateY(${boardSwitching?6:0}px)`,transition:"opacity 0.22s ease, transform 0.22s ease"}}>
         <style>{`@keyframes bonusBadgePulse{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(234,179,8,0.45)}55%{transform:scale(1.1);box-shadow:0 0 0 8px rgba(234,179,8,0)}}`}</style>
-        <button onClick={onBonus} style={{width:"100%",display:"flex",alignItems:"center",gap:14,background:"linear-gradient(135deg,#1a1a2e,#0d1b3e)",borderRadius:20,padding:"15px 16px",border:"none",boxShadow:"0 4px 16px rgba(0,0,0,0.06)",cursor:"pointer",marginBottom:14,WebkitTapHighlightColor:"transparent",textAlign:"left"}}>
+        <button onClick={onBonus} style={{width:"100%",display:"flex",alignItems:"center",gap:14,background:`linear-gradient(135deg, rgba(15,15,32,0.58) 0%, rgba(8,14,40,0.65) 100%), url(${stadiumBg}) center 30%/cover no-repeat`,borderRadius:20,padding:"15px 16px",border:"none",boxShadow:"0 4px 16px rgba(0,0,0,0.06)",cursor:"pointer",marginBottom:14,WebkitTapHighlightColor:"transparent",textAlign:"left"}}>
           <div style={{width:50,height:50,borderRadius:"50%",background:"rgba(234,179,8,0.14)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,border:"2px solid rgba(234,179,8,0.3)"}}>
             <span style={{fontSize:26,lineHeight:1}}>⚡</span>
           </div>
