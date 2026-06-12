@@ -417,8 +417,12 @@ const T = {
     best3Short:"Best Third",
     cdDayAbbr:"d", cdHourAbbr:"h", cdMinAbbr:"m",
     pickChampionHeader:"Pick Champion", pickTopScorerHeader:"Pick Top Scorer",
-    picksLockedTitle:"Picks locked until Knockout Phase",
-    picksLockedBody:"Opens Jun 27 after the last group match. Your current picks are saved.",
+    picksLockedTitle:"Bonus picks locked",
+    picksLockedBody:"The Bonus Prediction deadline was Jun 14. Your current picks are saved.",
+    bonusDueJun14:"Due Jun 14",
+    bonusClosedTitle:"Bonus locked",
+    bonusClosedSub:"Deadline passed - picks saved",
+    bonusClosedEmptySub:"Deadline passed - no bonus picks saved",
     championPickLabel:"Champion Pick", chooseWinner:"Choose your winner",
     selectedLabel:"selected", tapTeamBelow:"Tap a team below",
     clearLabel:"Clear", allTeams:"All teams",
@@ -610,8 +614,12 @@ const T = {
     alreadyPremiumBody:"Mulțumim că faci parte din Predicto. Ai acces complet la toate funcțiile.",
     best3Short:"Locul 3",
     pickChampionHeader:"Alege Campionul", pickTopScorerHeader:"Alege Golgheterul",
-    picksLockedTitle:"Selecții blocate până la Faza Eliminatorie",
-    picksLockedBody:"Se deschide pe 27 Iun după ultimul meci din grupe. Selecțiile actuale sunt salvate.",
+    picksLockedTitle:"Selectii bonus blocate",
+    picksLockedBody:"Termenul pentru Predictia Bonus a fost 14 Iun. Selectiile actuale sunt salvate.",
+    bonusDueJun14:"Termen 14 Iun",
+    bonusClosedTitle:"Bonus blocat",
+    bonusClosedSub:"Termen trecut - selectii salvate",
+    bonusClosedEmptySub:"Termen trecut - nicio selectie salvata",
     championPickLabel:"Selecție Campion", chooseWinner:"Alege câștigătorul",
     selectedLabel:"selectat", tapTeamBelow:"Apasă o echipă mai jos",
     clearLabel:"Șterge", allTeams:"Toate echipele",
@@ -804,8 +812,12 @@ const T = {
     alreadyPremiumBody:"Merci de faire partie de Predicto. Vous bénéficiez de l'expérience complète.",
     best3Short:"Meilleur 3e",
     pickChampionHeader:"Choisir le Champion", pickTopScorerHeader:"Choisir le Meilleur Buteur",
-    picksLockedTitle:"Sélections bloquées jusqu'aux Éliminatoires",
-    picksLockedBody:"Ouvre le 27 Juin après le dernier match de groupes. Vos sélections actuelles sont sauvegardées.",
+    picksLockedTitle:"Selections bonus bloquees",
+    picksLockedBody:"La date limite de la Prediction Bonus etait le 14 Juin. Vos selections actuelles sont sauvegardees.",
+    bonusDueJun14:"Delai 14 Juin",
+    bonusClosedTitle:"Bonus bloque",
+    bonusClosedSub:"Delai passe - selections sauvegardees",
+    bonusClosedEmptySub:"Delai passe - aucune selection sauvegardee",
     championPickLabel:"Sélection Champion", chooseWinner:"Choisissez votre vainqueur",
     selectedLabel:"sélectionné", tapTeamBelow:"Appuyez sur une équipe ci-dessous",
     clearLabel:"Effacer", allTeams:"Toutes les équipes",
@@ -929,6 +941,14 @@ const getRealTournamentDay = () => {
 };
 
 const getLocalTournamentDay = () => encodeCalendarDay(new Date());
+
+const getBonusPickNow = (simDay=null, simHour=12, simMin=0) =>
+  simDay ? new Date(Date.UTC(2026, 5, simDay, (simHour || 0) + 4, simMin || 0, 0)) : new Date();
+
+const getBonusPickDeadline = () => new Date(Date.UTC(2026, 5, 15, 3, 59, 59)); // Jun 14, 23:59 ET
+
+const isBonusPickLocked = (simDay=null, simHour=12, simMin=0) =>
+  getBonusPickNow(simDay, simHour, simMin) > getBonusPickDeadline();
 
 const isMatchPast = (matchDay, matchTime, simDay=null, simHour=12, kickoffUtc=null) => {
   const mHour = parseInt((matchTime||"23:00").split(":")[0]);
@@ -4787,12 +4807,7 @@ function ChampionScreen({ onBack, initialMode="champion", championPick, topScore
   const showChampion = initialMode === "champion";
   const showScorer = initialMode === "scorer";
   const showRunnerUp = initialMode === "runnerup";
-  const simNow = simDay ? new Date(Date.UTC(2026,5,simDay,(simHour||0)+4,simMin||0,0)) : new Date();
-  const phase1Deadline = new Date(Date.UTC(2026,5,11,23,0,0));  // 19:00 ET
-  const phase2Open     = new Date(Date.UTC(2026,5,28,1,0,0));   // 21:00 ET = 01:00 UTC
-  const isPhase1 = simNow < phase1Deadline;
-  const isPhase2 = simNow >= phase2Open;
-  const isLocked = !isPhase1 && !isPhase2;
+  const isLocked = isBonusPickLocked(simDay, simHour, simMin);
   const featuredChampionTeams = ["Argentina","Brazil","France","England","Spain","Portugal"].filter(t=>allTeams.includes(t));
   const otherChampionTeams = allTeams.filter(t=>!featuredChampionTeams.includes(t));
   const pickCardStyle = UI.card;
@@ -5375,12 +5390,7 @@ function LeagueRankingCard({ title, viewLabel, top3, avatarUrl, displayName, onL
 function BonusPredictionScreen({ onBack, onChampion, championPick, runnerUpPick, topScorerPick, simDay=null, simHour=12, simMin=0 }) {
   const lang = useLang();
   const tCode = (t) => TEAM_CODE[t]||t.slice(0,3).toUpperCase();
-  const simNow = simDay ? new Date(Date.UTC(2026,5,simDay,(simHour||0)+4,simMin||0,0)) : new Date();
-  const phase1Deadline = new Date(Date.UTC(2026,5,11,23,0,0));
-  const phase2Open     = new Date(Date.UTC(2026,5,28,1,0,0));
-  const isPhase1 = simNow < phase1Deadline;
-  const isPhase2 = simNow >= phase2Open;
-  const isLocked = !isPhase1 && !isPhase2;
+  const isLocked = isBonusPickLocked(simDay, simHour, simMin);
 
   const picks = [
     { key:"champion", icon:"🏆", color:"#D4820A", bg:"linear-gradient(135deg,#FFF7E1,#FFF3CC)", label:T[lang].championPickLabel, pickVal:championPick, flagTeam:championPick, subtext:championPick?`${tCode(championPick)} · ${T[lang].selectedLabel}`:null, empty:T[lang].chooseWinner, mode:"champion" },
@@ -5431,7 +5441,9 @@ function BonusPredictionScreen({ onBack, onChampion, championPick, runnerUpPick,
             <span style={{fontSize:20}}>🔒</span>
             <div>
               <div style={{fontSize:13,fontWeight:700,color:NAVY}}>{T[lang].picksLockedTitle}</div>
-              <div style={{fontSize:11,color:"#6B7280",marginTop:2}}>{T[lang].picksLockedBody}</div>
+              <div style={{fontSize:11,color:"#6B7280",marginTop:2}}>
+                {[championPick,runnerUpPick,topScorerPick?.player].filter(Boolean).length ? T[lang].picksLockedBody : T[lang].bonusClosedEmptySub}
+              </div>
             </div>
           </div>
         )}
@@ -5475,6 +5487,8 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
   const [boardSwitching, setBoardSwitching] = useState(false);
   const activeId = activeBoardId;
   const setActiveId = setActiveBoardId;
+  const bonusPickLocked = isBonusPickLocked(simDay, simHour, simMin);
+  const bonusPickCount = [championPick, runnerUpPick, topScorerPick?.player].filter(Boolean).length;
   const allSliderItems = myBoards;
   const [sliderPos, setSliderPos] = useState(()=>Math.max(0,myBoards.findIndex(b=>b.id===activeBoardId)));
   const sliderTouchRef = useRef(null);
@@ -5682,13 +5696,20 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
             <span style={{fontSize:26,lineHeight:1}}>⚡</span>
           </div>
           <div style={{flex:1,minWidth:0}}>
-            <div style={{fontSize:15,fontWeight:900,color:"#FFD700",letterSpacing:0.3}}>{T[lang].bonusPrediction}</div>
-            <div style={{fontSize:12,color:"rgba(255,255,255,0.58)",marginTop:3,lineHeight:1.4}}>
-              {[championPick,runnerUpPick,topScorerPick?.player].filter(Boolean).length}/3 {T[lang].selectedLabel}
+            <div style={{display:"flex",alignItems:"center",gap:7,flexWrap:"wrap"}}>
+              <div style={{fontSize:15,fontWeight:900,color:"#FFD700",letterSpacing:0.3}}>{bonusPickLocked ? T[lang].bonusClosedTitle : T[lang].bonusPrediction}</div>
+              <div style={{background:"rgba(255,255,255,0.14)",border:"1px solid rgba(255,215,0,0.36)",borderRadius:999,padding:"3px 7px",fontSize:9,fontWeight:900,color:"#FFD700",letterSpacing:0.4,textTransform:"uppercase",lineHeight:1}}>
+                {bonusPickLocked ? T[lang].locked : T[lang].bonusDueJun14}
+              </div>
+            </div>
+            <div style={{fontSize:12,color:"rgba(255,255,255,0.76)",marginTop:5,lineHeight:1.4,fontWeight:750}}>
+              {bonusPickLocked
+                ? (bonusPickCount ? T[lang].bonusClosedSub : T[lang].bonusClosedEmptySub)
+                : `${bonusPickCount}/3 ${T[lang].selectedLabel}`}
             </div>
           </div>
-          <div style={{background:"#FFD700",borderRadius:8,padding:"4px 8px",fontSize:10,fontWeight:900,color:"#1a1a2e",letterSpacing:0.5,flexShrink:0,animation:"bonusBadgePulse 1.8s ease-in-out infinite"}}>
-            BONUS
+          <div style={{background:"#FFD700",borderRadius:8,padding:"4px 8px",fontSize:10,fontWeight:900,color:"#1a1a2e",letterSpacing:0.5,flexShrink:0,animation:bonusPickLocked?"none":"bonusBadgePulse 1.8s ease-in-out infinite"}}>
+            {bonusPickLocked ? T[lang].locked : "BONUS"}
           </div>
           <span style={{fontSize:18,color:"rgba(255,255,255,0.35)",fontWeight:700,lineHeight:1,marginLeft:4}}>›</span>
         </button>
