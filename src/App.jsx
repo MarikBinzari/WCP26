@@ -946,7 +946,8 @@ const getLocalTournamentDay = () => encodeCalendarDay(new Date());
 const getBonusPickNow = (simDay=null, simHour=12, simMin=0) =>
   simDay ? new Date(Date.UTC(2026, 5, simDay, (simHour || 0) + 4, simMin || 0, 0)) : new Date();
 
-const getBonusPickDeadline = () => new Date(Date.UTC(2026, 5, 15, 3, 59, 59)); // Jun 14, 23:59 ET
+let _bonusDeadlineMs = Date.UTC(2026, 5, 15, 3, 59, 59);
+const getBonusPickDeadline = () => new Date(_bonusDeadlineMs);
 
 const isBonusPickLocked = (simDay=null, simHour=12, simMin=0) =>
   getBonusPickNow(simDay, simHour, simMin) > getBonusPickDeadline();
@@ -1687,6 +1688,14 @@ function GrupeTab({ groupRank, setRank, onComplete }) {
   const [dragOver, setDragOver] = useState(null);
   const [done, setDone] = useState(false);
   const touchStartX = useRef(null);
+  const rankingListRef = useRef(null);
+  useEffect(() => {
+    const el = rankingListRef.current;
+    if (!el) return;
+    const prevent = (e) => { if (dragging !== null) e.preventDefault(); };
+    el.addEventListener('touchmove', prevent, { passive: false });
+    return () => el.removeEventListener('touchmove', prevent);
+  }, [dragging]);
 
   const allComplete = GRUPE_LIST.every(g=>[1,2,3,4].every(p=>!!(groupRank[g]||{})[p]));
   const activeGroup = GRUPE_LIST[gIdx];
@@ -1799,7 +1808,7 @@ function GrupeTab({ groupRank, setRank, onComplete }) {
             );
           })}
         </div>
-        <div style={{background:BG}}>
+        <div ref={rankingListRef} style={{background:BG}}>
           <div style={{padding:"6px 14px 3px"}}>
             <span style={{fontSize:12,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1}}>{T[lang].predictedRank}</span>
           </div>
@@ -1811,8 +1820,6 @@ function GrupeTab({ groupRank, setRank, onComplete }) {
             const onTSR = e => { if(!team) return; e.stopPropagation(); setDragging(pos); };
             const onTMR = e => {
               if(dragging===null) return;
-              // only block scroll when actively dragging a row
-              try { e.preventDefault(); } catch(err) {}
               const touch=e.touches[0];
               const el=document.elementFromPoint(touch.clientX,touch.clientY);
               const rowEl=el?.closest('[data-rank-pos]');
@@ -4177,14 +4184,12 @@ function GroupRankingScreen({ group, teams, existingRanking, onConfirm, onAutoSa
 
   // Touch drag-to-reorder
   const handleTouchStart = (e, idx) => {
-    e.preventDefault();
     e.stopPropagation();
     setDragIdx(idx);
     setDragOverIdx(null);
   };
   const handleTouchMove = (e) => {
     if (dragIdx === null) return;
-    e.preventDefault();
     const y = e.touches[0].clientY;
     let found = null;
     rowRefs.current.forEach((ref, i) => {
@@ -10126,6 +10131,7 @@ function App() {
   const [boardsInitialTab, setBoardsInitialTab] = useState("my");
   const [boardsSubView, setBoardsSubView] = useState("main");
   const [showDevOverlay, setShowDevOverlay] = useState(false);
+  const [appConfig, setAppConfig] = useState({});
   const [simDay, setSimDay] = useState(null);
   const [simHour, setSimHour] = useState(12);
   const [simMin, setSimMin] = useState(0);
@@ -10134,6 +10140,14 @@ function App() {
   const simDate = simDay ? new Date(2026,5,simDay,simHour,simMin,0) : null;
   const [lang, setLang] = useState(() => { try { return localStorage.getItem('predicto_lang')||"en"; } catch { return "en"; } });
   useEffect(()=>{ try { localStorage.setItem('predicto_lang', lang); } catch {} }, [lang]);
+  useEffect(() => {
+    supabase.from('app_config').select('key,value').then(({ data }) => {
+      if (!data) return;
+      const cfg = Object.fromEntries(data.map(r => [r.key, r.value]));
+      setAppConfig(cfg);
+      if (cfg.bonus_pick_deadline) _bonusDeadlineMs = new Date(cfg.bonus_pick_deadline).getTime();
+    });
+  }, []);
   useEffect(() => {
     if (user) loadSystemNotifications(lang).then(setSystemNotifs);
   }, [lang]);
@@ -10268,8 +10282,10 @@ function App() {
       return next;
     });
   };
-  const koUnlocked = simDay ? (simDay > 27 || (simDay === 27 && (simHour||0) >= 21)) : new Date() >= new Date(2026,5,27,21,0,0);
-  const task1DeadlinePassed = simDay ? (simDay > 11 || (simDay === 11 && (simHour||0) >= 19)) : new Date() >= new Date(2026,5,11,19,0,0);
+  const _koUnlockDate = new Date(appConfig.ko_unlock_date || '2026-06-27T18:00:00Z');
+  const _predDeadline = new Date(appConfig.prediction_deadline || '2026-06-11T20:00:00Z');
+  const koUnlocked = simDay ? (simDay > 27 || (simDay === 27 && (simHour||0) >= 21)) : new Date() >= _koUnlockDate;
+  const task1DeadlinePassed = simDay ? (simDay > 11 || (simDay === 11 && (simHour||0) >= 19)) : new Date() >= _predDeadline;
   const shouldStartAtKo = koUnlocked && instantPickDone && !koPickDone;
 
   // Auto-save: persistă selecțiile intermediare în DB (debounced 1s)
@@ -10296,7 +10312,8 @@ function App() {
     return {...a, [boardId]: next};
   });
   // Tournament starts June 11 2026
-  const tournamentStarted = simDate ? simDate >= new Date(2026,5,11,19,0,0) : new Date() >= new Date("2026-06-11T19:00:00");
+  const _tournStart = new Date(appConfig.tournament_start || '2026-06-11T23:00:00Z');
+  const tournamentStarted = simDate ? simDate >= _tournStart : new Date() >= _tournStart;
 
   const noFooter = [SCREENS.SPLASH, SCREENS.LOGIN, SCREENS.INSTANT_PICK, SCREENS.GROUPS_SCHEDULE, SCREENS.CHAMPION, SCREENS.BONUS];
   const showFooter = !noFooter.includes(screen) && !(screen===SCREENS.BOARDS && boardsSubView==="create");
