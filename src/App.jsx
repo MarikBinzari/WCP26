@@ -10,7 +10,7 @@ import specialPickBadge from "./assets/special-pick-badge.webp";
 import bellIcon from "./assets/bell-icon.svg";
 import { ALL_GROUPS_DATA, FLAGS, TEAM_COLORS, CALENDAR_EVENTS, CL_FINAL } from "./data/worldcup2026.js";
 import { supabase } from "./supabase.js";
-import { savePredictions, saveExactScore, createBoard, updateBoard, joinBoardByCode, joinBoardById, ensureBoardScores, loadLeaderboard, loadMyScoreBreakdown, fetchScoringRules, fetchMemberCounts, removeBoardMember, removeParticipation, deleteBoard, loadBoardMembers, checkDbHealth, checkEmailExists, checkNicknameExists, loadLiveScores, subscribeLiveScores, loadPlayers, loadPlayersByTeam, seedPlayersFromApi, saveSpecialPick, uploadAvatar, uploadBoardImage, loadAllBoards, loadAllUserPicks, loadNotifReads, markNotifRead, loadSystemNotifications, loadRealGroupStandings, loadUserBreakdown, savePushSubscription, loadChatMessages, sendChatMessage, editChatMessage, subscribeChatMessages } from "./db.js";
+import { savePredictions, saveExactScore, createBoard, updateBoard, joinBoardByCode, joinBoardById, ensureBoardScores, loadLeaderboard, loadMyScoreBreakdown, fetchScoringRules, fetchMemberCounts, removeBoardMember, removeParticipation, deleteBoard, loadBoardMembers, checkDbHealth, checkEmailExists, checkNicknameExists, loadLiveScores, subscribeLiveScores, loadPlayers, loadPlayersByTeam, seedPlayersFromApi, saveSpecialPick, uploadAvatar, uploadBoardImage, loadAllBoards, loadAllUserPicks, loadNotifReads, markNotifRead, loadSystemNotifications, loadRealGroupStandings, loadUserBreakdown, savePushSubscription, loadChatMessages, sendChatMessage, editChatMessage, toggleChatLike, subscribeChatMessages } from "./db.js";
 
 const TEAM_CODE = {"Mexico":"MEX","South Africa":"RSA","South Korea":"KOR","Czechia":"CZE","Canada":"CAN","Switzerland":"SUI","Qatar":"QAT","Bosnia-Herzegovina":"BIH","Brazil":"BRA","Morocco":"MAR","Scotland":"SCO","Haiti":"HAI","USA":"USA","Paraguay":"PAR","Australia":"AUS","Turkiye":"TUR","Germany":"GER","Ecuador":"ECU","Ivory Coast":"CIV","Curacao":"CUW","Netherlands":"NED","Japan":"JPN","Tunisia":"TUN","Sweden":"SWE","Belgium":"BEL","Iran":"IRI","Egypt":"EGY","New Zealand":"NZL","Spain":"ESP","Uruguay":"URU","Saudi Arabia":"KSA","Cape Verde":"CPV","France":"FRA","Senegal":"SEN","Norway":"NOR","Iraq":"IRQ","Argentina":"ARG","Austria":"AUT","Algeria":"ALG","Jordan":"JOR","Portugal":"POR","Colombia":"COL","Uzbekistan":"UZB","DR Congo":"COD","England":"ENG","Croatia":"CRO","Panama":"PAN","Ghana":"GHA"};
 
@@ -9942,6 +9942,9 @@ function ChatWidget({ boardId, user }) {
       },
       edit => {
         setMessages(prev => prev.map(m => m.id === edit.id ? { ...m, content: edit.content, edited_at: edit.edited_at } : m));
+      },
+      reaction => {
+        setMessages(prev => prev.map(m => m.id === reaction.id ? { ...m, likes: reaction.likes } : m));
       }
     );
     channelRef.current = sub;
@@ -9990,6 +9993,19 @@ function ChatWidget({ boardId, user }) {
     setTimeout(() => editInputRef.current?.focus(), 50);
   };
   const cancelEdit = () => setEditingId(null);
+  const handleLike = async (msg) => {
+    if (!user || msg.is_system || msg.id?.startsWith('tmp_')) return;
+    const uid = user.id;
+    const prev_likes = msg.likes || [];
+    const newLikes = prev_likes.includes(uid) ? prev_likes.filter(id => id !== uid) : [...prev_likes, uid];
+    setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, likes: newLikes } : m));
+    const result = await toggleChatLike(msg.id);
+    if (result.error) {
+      setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, likes: prev_likes } : m));
+    } else {
+      channelRef.current?.broadcastReaction({ id: msg.id, likes: result.likes });
+    }
+  };
   const handleSaveEdit = async () => {
     const content = editText.trim();
     if (!content || !editingId) { setEditingId(null); return; }
@@ -10142,7 +10158,25 @@ function ChatWidget({ boardId, user }) {
                       </div>
                     </div>
                   )}
-                  <span style={{ fontSize:10, color:'#bbb', marginTop:2, marginLeft:4, marginRight:4 }}>{formatTime(msg.created_at)}</span>
+                  <div style={{ display:'flex', alignItems:'center', gap:6, marginTop:2, justifyContent: isMe ? 'flex-end' : 'flex-start' }}>
+                    <span style={{ fontSize:10, color:'#bbb', marginLeft:4, marginRight:4 }}>{formatTime(msg.created_at)}</span>
+                    {!msg.is_system && (() => {
+                      const likes = msg.likes || [];
+                      const iLiked = likes.includes(user?.id);
+                      return (
+                        <button onClick={() => handleLike(msg)} style={{
+                          background: iLiked ? 'rgba(232,17,45,0.08)' : 'none',
+                          border: 'none', borderRadius:12, cursor:'pointer',
+                          padding:'1px 5px', display:'flex', alignItems:'center', gap:2,
+                          fontSize:13, lineHeight:1, transition:'all 0.15s',
+                          WebkitTapHighlightColor:'transparent',
+                        }}>
+                          <span style={{ fontSize:12, filter: iLiked ? 'none' : 'grayscale(1) opacity(0.4)' }}>🚀</span>
+                          {likes.length > 0 && <span style={{ fontSize:10, color: iLiked ? '#E8112D' : '#aaa', fontWeight: iLiked ? 700 : 400 }}>{likes.length}</span>}
+                        </button>
+                      );
+                    })()}
+                  </div>
                 </div>
               );
             })}
