@@ -10471,10 +10471,10 @@ function App() {
   const wasOfflineRef = useRef(false);
   useEffect(() => {
     let cancelled = false;
-    const ping = async () => {
+    const ping = async (timeout = 3000) => {
       try {
         const ctrl = new AbortController();
-        setTimeout(() => ctrl.abort(), 3000);
+        setTimeout(() => ctrl.abort(), timeout);
         await fetch('https://www.google.com/generate_204', { method: 'HEAD', cache: 'no-store', mode: 'no-cors', signal: ctrl.signal });
         if (!cancelled) {
           if (wasOfflineRef.current) { wasOfflineRef.current = false; window.location.reload(); return; }
@@ -10484,7 +10484,7 @@ function App() {
         if (!cancelled) { wasOfflineRef.current = true; setAppOffline(true); }
       }
     };
-    ping();
+    ping(1000);
     const iv = setInterval(ping, 5000);
     window.addEventListener('offline', ping);
     window.addEventListener('online', ping);
