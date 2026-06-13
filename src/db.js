@@ -556,11 +556,15 @@ export async function loadChatMessages(boardId) {
   boardId = resolveChatBoardId(boardId);
   if (!navigator.onLine) return { __offline: true, messages: [] };
   try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 5000);
     const { data, error } = await supabase
       .from('board_chat')
       .select('id, user_id, nickname, content, is_system, created_at, edited_at, likes, dislikes, reply_to_id, reply_to_nickname, reply_to_content')
       .eq('board_id', boardId)
       .order('created_at', { ascending: true })
+      .abortSignal(ctrl.signal);
+    clearTimeout(timer);
     if (error) {
       console.error('loadChatMessages:', error);
       return { __offline: true, messages: [] };
