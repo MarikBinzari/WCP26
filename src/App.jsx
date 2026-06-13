@@ -9925,6 +9925,7 @@ function ChatWidget({ boardId, user, boardName }) {
   const [selectedMsgId, setSelectedMsgId] = React.useState(null);
   const [replyingTo, setReplyingTo] = React.useState(null);
   const [onlineCount, setOnlineCount] = React.useState(0);
+  const [highlightedMsgId, setHighlightedMsgId] = React.useState(null);
   const bottomRef = React.useRef(null);
   const inputRef = React.useRef(null);
   const editInputRef = React.useRef(null);
@@ -10080,6 +10081,14 @@ function ChatWidget({ boardId, user, boardName }) {
 
   const formatTime = ts => { try { return new Date(ts).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' }); } catch { return ''; } };
 
+  const scrollToMessage = (msgId) => {
+    const el = document.getElementById(`chat-msg-${msgId}`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setHighlightedMsgId(msgId);
+    setTimeout(() => setHighlightedMsgId(null), 1500);
+  };
+
   const swipeState = React.useRef({});
   const onMsgTouchStart = (e, msgId) => {
     const t = e.touches[0];
@@ -10218,7 +10227,7 @@ function ChatWidget({ boardId, user, boardName }) {
                 </div>
               );
               return (
-                <div key={msg.id} style={{ display:'flex', flexDirection:'column', alignItems: isMe ? 'flex-end' : 'flex-start' }}>
+                <div key={msg.id} id={`chat-msg-${msg.id}`} style={{ display:'flex', flexDirection:'column', alignItems: isMe ? 'flex-end' : 'flex-start', transition:'background 0.3s', borderRadius:8, background: highlightedMsgId === msg.id ? 'rgba(0,53,128,0.10)' : 'transparent' }}>
                   {!isMe && <span style={{ fontSize:10, color:'#888', marginBottom:2, marginLeft:4 }}>{msg.nickname}</span>}
                   {editingId === msg.id ? (
                     <div style={{ width:'80%', display:'flex', flexDirection:'column', gap:4 }}>
@@ -10267,11 +10276,15 @@ function ChatWidget({ boardId, user, boardName }) {
                           }}
                         >
                           {msg.reply_to_content && (
-                            <div style={{
-                              borderLeft: `3px solid ${isMe ? 'rgba(255,255,255,0.5)' : '#003580'}`,
-                              paddingLeft:8, marginBottom:6,
-                              opacity:0.8, fontSize:11,
-                            }}>
+                            <div
+                              onClick={e => { e.stopPropagation(); scrollToMessage(msg.reply_to_id); }}
+                              style={{
+                                borderLeft: `3px solid ${isMe ? 'rgba(255,255,255,0.5)' : '#003580'}`,
+                                paddingLeft:8, marginBottom:6,
+                                opacity:0.8, fontSize:11, cursor:'pointer',
+                                borderRadius:'0 4px 4px 0',
+                                background: isMe ? 'rgba(255,255,255,0.08)' : 'rgba(0,53,128,0.06)',
+                              }}>
                               <div style={{ fontWeight:700, marginBottom:2 }}>{msg.reply_to_nickname}</div>
                               <div style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', maxWidth:180 }}>{msg.reply_to_content}</div>
                             </div>
