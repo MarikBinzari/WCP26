@@ -10469,6 +10469,7 @@ function App() {
   const [authLoading, setAuthLoading] = useState(true);
   const wasOfflineRef = useRef(false);
   useEffect(() => {
+    let confirmedOnline = false;
     const showOffline = () => {
       if (document.getElementById('__offline_overlay')) return;
       wasOfflineRef.current = true;
@@ -10479,22 +10480,27 @@ function App() {
       document.body.appendChild(el);
     };
     const hideOffline = () => {
+      confirmedOnline = true;
       if (wasOfflineRef.current) { window.location.reload(); return; }
       const el = document.getElementById('__offline_overlay');
       if (el) el.remove();
     };
+    // Fallback: dacă după 4s nu s-a confirmat online, arată offline
+    const fallbackTimer = setTimeout(() => { if (!confirmedOnline) showOffline(); }, 4000);
     const ping = () => {
-      const timeout = new Promise((_, r) => setTimeout(() => r(new Error('t')), 1500));
-      Promise.race([
-        fetch(SUPABASE_URL + '/health?_=' + Date.now(), { method: 'HEAD', cache: 'no-store', mode: 'no-cors' }),
-        timeout,
-      ]).then(hideOffline).catch(showOffline);
+      const xhr = new XMLHttpRequest();
+      xhr.timeout = 2000;
+      xhr.onload = hideOffline;
+      xhr.onerror = showOffline;
+      xhr.ontimeout = showOffline;
+      xhr.open('HEAD', SUPABASE_URL + '/health?_=' + Date.now(), true);
+      xhr.send();
     };
     ping();
     const iv = setInterval(ping, 5000);
     window.addEventListener('offline', showOffline);
     window.addEventListener('online', hideOffline);
-    return () => { clearInterval(iv); window.removeEventListener('offline', showOffline); window.removeEventListener('online', hideOffline); };
+    return () => { clearTimeout(fallbackTimer); clearInterval(iv); window.removeEventListener('offline', showOffline); window.removeEventListener('online', hideOffline); };
   }, []);
 
   const setupPushNotifications = React.useCallback(async (userId) => {
