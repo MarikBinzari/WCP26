@@ -10096,6 +10096,7 @@ function ChatWidget({ boardId, user }) {
   };
   const onMsgClick = (e, msgId) => {
     if (swipeState.current.didSwipe) return;
+    e.stopPropagation();
     setSelectedMsgId(s => s === msgId ? null : msgId);
   };
 
@@ -10163,7 +10164,7 @@ function ChatWidget({ boardId, user }) {
           </div>
 
           {/* Messages */}
-          <div style={{ flex:1, overflowY:'auto', padding:'10px 12px', display:'flex', flexDirection:'column', gap:6 }}>
+          <div onClick={() => setSelectedMsgId(null)} style={{ flex:1, overflowY:'auto', padding:'10px 12px', display:'flex', flexDirection:'column', gap:6 }}>
             <div style={{ textAlign:'center', margin:'4px 0 8px' }}>
               <span style={{
                 display:'inline-block', background:'#f0f4ff', borderRadius:20,
