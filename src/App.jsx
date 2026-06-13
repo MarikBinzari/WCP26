@@ -10103,7 +10103,7 @@ function ChatWidget({ boardId, user }) {
               style={{
                 flex:1, border:'1px solid #dde', borderRadius:16, padding:'8px 14px',
                 fontSize:13, outline:'none', fontFamily:'inherit',
-                background:'#f8f9fc', resize:'none', overflow:'hidden',
+                background:'#f8f9fc', color:'#111', resize:'none', overflow:'hidden',
                 lineHeight:1.4, minHeight:36, maxHeight:100,
               }}
             />
