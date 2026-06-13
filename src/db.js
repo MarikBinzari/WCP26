@@ -556,19 +556,25 @@ export async function loadChatMessages(boardId) {
   boardId = resolveChatBoardId(boardId);
   const { data, error } = await supabase
     .from('board_chat')
-    .select('id, user_id, nickname, content, is_system, created_at, edited_at, likes, dislikes')
+    .select('id, user_id, nickname, content, is_system, created_at, edited_at, likes, dislikes, reply_to_id, reply_to_nickname, reply_to_content')
     .eq('board_id', boardId)
     .order('created_at', { ascending: true })
   if (error) { console.error('loadChatMessages:', error); return [] }
   return data || []
 }
 
-export async function sendChatMessage(boardId, userId, nickname, content) {
+export async function sendChatMessage(boardId, userId, nickname, content, reply = null) {
   boardId = resolveChatBoardId(boardId);
+  const row = { board_id: boardId, user_id: userId, nickname, content };
+  if (reply) {
+    row.reply_to_id      = reply.id;
+    row.reply_to_nickname = reply.nickname;
+    row.reply_to_content  = reply.content;
+  }
   const { data, error } = await supabase
     .from('board_chat')
-    .insert({ board_id: boardId, user_id: userId, nickname, content })
-    .select('id, board_id, user_id, nickname, content, is_system, created_at, edited_at, likes, dislikes')
+    .insert(row)
+    .select('id, board_id, user_id, nickname, content, is_system, created_at, edited_at, likes, dislikes, reply_to_id, reply_to_nickname, reply_to_content')
     .single()
   if (error) { console.error('sendChatMessage:', error); return { error: error.message, data: null } }
   return { error: null, data }

@@ -9906,6 +9906,7 @@ function ChatWidget({ boardId, user }) {
   const [editingId, setEditingId] = React.useState(null);
   const [editText, setEditText] = React.useState('');
   const [selectedMsgId, setSelectedMsgId] = React.useState(null);
+  const [replyingTo, setReplyingTo] = React.useState(null);
   const bottomRef = React.useRef(null);
   const inputRef = React.useRef(null);
   const editInputRef = React.useRef(null);
@@ -9921,6 +9922,7 @@ function ChatWidget({ boardId, user }) {
       if (containerRef.current && !containerRef.current.contains(e.target)) {
         setOpen(false);
         setSelectedMsgId(null);
+        setReplyingTo(null);
         setText('');
         if (inputRef.current) inputRef.current.style.height = '';
       }
@@ -9976,13 +9978,16 @@ function ChatWidget({ boardId, user }) {
   }, [messages, open]);
 
   const handleOpen = () => { setOpen(true); markRead(); setTimeout(() => inputRef.current?.focus(), 100); };
-  const handleClose = () => { setOpen(false); setText(''); if (inputRef.current) inputRef.current.style.height = ''; };
+  const handleClose = () => { setOpen(false); setText(''); setReplyingTo(null); if (inputRef.current) inputRef.current.style.height = ''; };
 
   const handleSend = async () => {
     const content = text.trim();
     if (!content || !user || sending) return;
     setSending(true);
     setText('');
+    if (inputRef.current) inputRef.current.style.height = '';
+    const reply = replyingTo;
+    setReplyingTo(null);
     const nickname = user.user_metadata?.full_name || user.email?.split('@')[0] || '?';
     const optimistic = {
       id: `tmp_${Date.now()}`,
@@ -9992,9 +9997,12 @@ function ChatWidget({ boardId, user }) {
       content,
       is_system: false,
       created_at: new Date().toISOString(),
+      reply_to_id: reply?.id || null,
+      reply_to_nickname: reply?.nickname || null,
+      reply_to_content: reply?.content || null,
     };
     setMessages(prev => [...prev, optimistic]);
-    const result = await sendChatMessage(boardId, user.id, nickname, content);
+    const result = await sendChatMessage(boardId, user.id, nickname, content, reply);
     if (result.error) {
       setMessages(prev => prev.filter(m => m.id !== optimistic.id));
       console.error('Chat send failed:', result.error);
@@ -10187,6 +10195,16 @@ function ChatWidget({ boardId, user }) {
                             WebkitTapHighlightColor:'transparent',
                           }}
                         >
+                          {msg.reply_to_content && (
+                            <div style={{
+                              borderLeft: `3px solid ${isMe ? 'rgba(255,255,255,0.5)' : '#003580'}`,
+                              paddingLeft:8, marginBottom:6,
+                              opacity:0.8, fontSize:11,
+                            }}>
+                              <div style={{ fontWeight:700, marginBottom:2 }}>{msg.reply_to_nickname}</div>
+                              <div style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', maxWidth:180 }}>{msg.reply_to_content}</div>
+                            </div>
+                          )}
                           {msg.content}
                           {msg.edited_at && <span style={{ fontSize:9, opacity:0.55, marginLeft:5 }}>{lang === 'ro' ? '(editat)' : '(edited)'}</span>}
                         </div>
@@ -10194,7 +10212,7 @@ function ChatWidget({ boardId, user }) {
                       {/* Reaction picker — apare la click pe bulă */}
                       {selectedMsgId === msg.id && (
                         <div style={{
-                          display:'flex', gap:4, marginTop:4,
+                          display:'flex', gap:4, marginTop:4, flexWrap:'wrap',
                           justifyContent: isMe ? 'flex-end' : 'flex-start',
                         }}>
                           {[['likes', false, handleLike], ['dislikes', true, handleDislike]].map(([type, rotate, fn]) => {
@@ -10213,6 +10231,18 @@ function ChatWidget({ boardId, user }) {
                               </button>
                             );
                           })}
+                          {!msg.is_system && (
+                            <button onClick={() => {
+                              setReplyingTo({ id: msg.id, nickname: msg.nickname, content: msg.content });
+                              setSelectedMsgId(null);
+                              setTimeout(() => inputRef.current?.focus(), 80);
+                            }} style={{
+                              background:'#f1f3f8', border:'1.5px solid #e0e4ef',
+                              borderRadius:20, cursor:'pointer', padding:'4px 12px',
+                              display:'flex', alignItems:'center', gap:4, fontSize:12, color:'#555',
+                              WebkitTapHighlightColor:'transparent',
+                            }}>↩ {lang === 'ro' ? 'Reply' : 'Reply'}</button>
+                          )}
                         </div>
                       )}
                     </>
@@ -10238,6 +10268,23 @@ function ChatWidget({ boardId, user }) {
             })}
             <div ref={bottomRef}/>
           </div>
+
+          {/* Reply preview */}
+          {replyingTo && (
+            <div style={{
+              padding:'6px 12px', borderTop:'1px solid #eee', background:'#f8f9fc',
+              display:'flex', alignItems:'center', gap:8, flexShrink:0,
+            }}>
+              <div style={{ flex:1, borderLeft:'3px solid #003580', paddingLeft:8, fontSize:11, color:'#555', overflow:'hidden' }}>
+                <div style={{ fontWeight:700, color:'#003580', marginBottom:1 }}>{replyingTo.nickname}</div>
+                <div style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{replyingTo.content}</div>
+              </div>
+              <button onClick={() => setReplyingTo(null)} style={{
+                background:'none', border:'none', cursor:'pointer', color:'#aaa', fontSize:16, padding:2, flexShrink:0,
+                WebkitTapHighlightColor:'transparent',
+              }}>×</button>
+            </div>
+          )}
 
           {/* Input */}
           <div style={{
