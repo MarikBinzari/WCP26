@@ -17,6 +17,16 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      if (!navigator.onLine) {
+        var _od = document.createElement('div');
+        _od.id = 'offline-pre-react';
+        _od.style.cssText = 'position:fixed;inset:0;z-index:99999;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:32px;font-family:-apple-system,sans-serif';
+        _od.innerHTML = '<div style="font-size:56px">📡</div><div style="font-size:20px;font-weight:700;color:#111;text-align:center">Fără conexiune la internet</div><div style="font-size:14px;color:#666;text-align:center;max-width:260px">Verifică WiFi-ul sau datele mobile. Aplicația se va reîncărca automat.</div>';
+        document.body.appendChild(_od);
+        window.addEventListener('online', function() { window.location.reload(); });
+      }
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
