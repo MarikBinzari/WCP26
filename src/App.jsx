@@ -10475,7 +10475,7 @@ function App() {
       try {
         const ctrl = new AbortController();
         setTimeout(() => ctrl.abort(), timeout);
-        await fetch(SUPABASE_URL + '/health', { method: 'HEAD', cache: 'no-store', signal: ctrl.signal });
+        await fetch(SUPABASE_URL + '/health', { method: 'HEAD', cache: 'no-store', mode: 'no-cors', signal: ctrl.signal });
         if (!cancelled) {
           if (wasOfflineRef.current) { wasOfflineRef.current = false; window.location.reload(); return; }
           setAppOffline(false);
