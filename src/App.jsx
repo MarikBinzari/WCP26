@@ -9921,6 +9921,8 @@ function ChatWidget({ boardId, user }) {
       if (containerRef.current && !containerRef.current.contains(e.target)) {
         setOpen(false);
         setSelectedMsgId(null);
+        setText('');
+        if (inputRef.current) inputRef.current.style.height = '';
       }
     };
     document.addEventListener('mousedown', handler);
@@ -9974,7 +9976,7 @@ function ChatWidget({ boardId, user }) {
   }, [messages, open]);
 
   const handleOpen = () => { setOpen(true); markRead(); setTimeout(() => inputRef.current?.focus(), 100); };
-  const handleClose = () => setOpen(false);
+  const handleClose = () => { setOpen(false); setText(''); if (inputRef.current) inputRef.current.style.height = ''; };
 
   const handleSend = async () => {
     const content = text.trim();
