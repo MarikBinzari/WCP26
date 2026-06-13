@@ -550,7 +550,10 @@ export async function updatePlayerStats(date) {
 // â”€â”€â”€ REAL GROUP STANDINGS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Returns { "A": ["Mexico","South Africa",...], "B": [...], ... } sorted by rank
 // ─── BOARD CHAT ───────────────────────────────────────────────────────────────
+const resolveChatBoardId = (id) => id === 'global' ? '00000000-0000-0000-0000-000000000000' : id;
+
 export async function loadChatMessages(boardId) {
+  boardId = resolveChatBoardId(boardId);
   const { data, error } = await supabase
     .from('board_chat')
     .select('id, user_id, nickname, content, is_system, created_at, edited_at, likes, dislikes')
@@ -561,6 +564,7 @@ export async function loadChatMessages(boardId) {
 }
 
 export async function sendChatMessage(boardId, userId, nickname, content) {
+  boardId = resolveChatBoardId(boardId);
   const { data, error } = await supabase
     .from('board_chat')
     .insert({ board_id: boardId, user_id: userId, nickname, content })
@@ -594,6 +598,7 @@ export async function editChatMessage(messageId, content) {
 }
 
 export function subscribeChatMessages(boardId, onNew, onEdit, onReaction) {
+  boardId = resolveChatBoardId(boardId);
   const channel = supabase.channel(`chat_${boardId}`, {
     config: { broadcast: { self: true } },
   })
