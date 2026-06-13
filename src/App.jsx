@@ -10620,6 +10620,7 @@ function App() {
       xhr.onerror = showOffline;
       xhr.ontimeout = showOffline;
       xhr.open('HEAD', SUPABASE_URL + '/health?_=' + Date.now(), true);
+      xhr.setRequestHeader('apikey', import.meta.env.VITE_SUPABASE_ANON_KEY);
       xhr.send();
     };
     ping();

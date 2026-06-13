@@ -633,6 +633,7 @@ export async function editChatMessage(messageId, content) {
 
 export function subscribeChatMessages(boardId, onNew, onEdit, onReaction, onPresence, presenceUser) {
   boardId = resolveChatBoardId(boardId);
+  let connected = false;
   const channel = supabase.channel(`chat_${boardId}`, {
     config: { broadcast: { self: true }, presence: { key: presenceUser?.id || 'anon' } },
   })
@@ -645,15 +646,17 @@ export function subscribeChatMessages(boardId, onNew, onEdit, onReaction, onPres
       onPresence && onPresence(count);
     })
     .subscribe(async (status) => {
-      if (status === 'SUBSCRIBED' && presenceUser) {
-        await channel.track({ user_id: presenceUser.id, nickname: presenceUser.nickname });
+      if (status === 'SUBSCRIBED') {
+        connected = true;
+        if (presenceUser) await channel.track({ user_id: presenceUser.id, nickname: presenceUser.nickname });
       }
     })
+  const safe = (fn) => (...args) => { if (connected) fn(...args); }
   return {
     unsubscribe: () => supabase.removeChannel(channel),
-    broadcast: (msg) => channel.send({ type: 'broadcast', event: 'chat', payload: msg }),
-    broadcastEdit: (edit) => channel.send({ type: 'broadcast', event: 'chat_edit', payload: edit }),
-    broadcastReaction: (r) => channel.send({ type: 'broadcast', event: 'chat_reaction', payload: r }),
+    broadcast:        safe((msg)  => channel.send({ type: 'broadcast', event: 'chat',          payload: msg })),
+    broadcastEdit:    safe((edit) => channel.send({ type: 'broadcast', event: 'chat_edit',     payload: edit })),
+    broadcastReaction:safe((r)    => channel.send({ type: 'broadcast', event: 'chat_reaction', payload: r })),
   }
 }
 
