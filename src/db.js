@@ -554,6 +554,7 @@ const resolveChatBoardId = (id) => id === 'global' ? '00000000-0000-0000-0000-00
 
 export async function loadChatMessages(boardId) {
   boardId = resolveChatBoardId(boardId);
+  if (!navigator.onLine) return { __offline: true, messages: [] };
   const { data, error } = await supabase
     .from('board_chat')
     .select('id, user_id, nickname, content, is_system, created_at, edited_at, likes, dislikes, reply_to_id, reply_to_nickname, reply_to_content')
