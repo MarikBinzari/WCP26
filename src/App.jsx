@@ -11002,7 +11002,7 @@ function App() {
   // Previne pierderea datelor la refresh de browser
   const _autoSaveTimer = useRef(null);
   useEffect(() => {
-    if (!user || !instantPickState) return;
+    if (!user || !instantPickState || tournamentStarted) return;
     const hasData = Object.keys(instantPickState.groupRankings || {}).length > 0 ||
                     (instantPickState.best3 || []).length > 0 ||
                     Object.keys(instantPickState.koPicks || {}).length > 0;
