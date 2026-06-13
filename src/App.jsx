@@ -10247,17 +10247,19 @@ function ChatWidget({ boardId, user }) {
               onChange={e => {
                 setText(e.target.value);
                 e.target.style.height = 'auto';
-                e.target.style.height = Math.min(e.target.scrollHeight, 100) + 'px';
+                const h = Math.min(e.target.scrollHeight, 120);
+                e.target.style.height = h + 'px';
+                e.target.style.overflowY = e.target.scrollHeight > 120 ? 'auto' : 'hidden';
               }}
               onKeyDown={handleKey}
               placeholder={lang === 'ro' ? 'Scrie un mesaj...' : 'Write a message...'}
-              maxLength={300}
+              maxLength={600}
               rows={1}
               style={{
                 flex:1, border:'1px solid #dde', borderRadius:16, padding:'8px 14px',
                 fontSize:13, outline:'none', fontFamily:'inherit',
-                background:'#f8f9fc', color:'#111', resize:'none', overflow:'hidden',
-                lineHeight:1.4, minHeight:36, maxHeight:100,
+                background:'#f8f9fc', color:'#111', resize:'none', overflowY:'hidden',
+                lineHeight:1.4, minHeight:36, maxHeight:120,
               }}
             />
             <button onClick={handleSend} disabled={!text.trim() || sending} style={{
