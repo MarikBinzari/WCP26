@@ -9909,11 +9909,27 @@ function ChatWidget({ boardId, user }) {
   const bottomRef = React.useRef(null);
   const inputRef = React.useRef(null);
   const editInputRef = React.useRef(null);
+  const containerRef = React.useRef(null);
   const openRef = React.useRef(open);
   const channelRef = React.useRef(null);
   const userIdRef = React.useRef(user?.id);
   React.useEffect(() => { openRef.current = open; }, [open]);
   React.useEffect(() => { userIdRef.current = user?.id; }, [user?.id]);
+  React.useEffect(() => {
+    if (!open) return;
+    const handler = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setOpen(false);
+        setSelectedMsgId(null);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    document.addEventListener('touchstart', handler, { passive: true });
+    return () => {
+      document.removeEventListener('mousedown', handler);
+      document.removeEventListener('touchstart', handler);
+    };
+  }, [open]);
 
   const lsKey = `chat_read_${boardId}`;
   const getLastRead = () => { try { return localStorage.getItem(lsKey) || '1970-01-01'; } catch { return '1970-01-01'; } };
@@ -10036,7 +10052,7 @@ function ChatWidget({ boardId, user }) {
   if (!boardId || !user) return null;
 
   return (
-    <div style={{ position:'fixed', bottom:'calc(76px + env(safe-area-inset-bottom, 0px))', right:16, zIndex:1100 }}>
+    <div ref={containerRef} style={{ position:'fixed', bottom:'calc(76px + env(safe-area-inset-bottom, 0px))', right:16, zIndex:1100 }}>
       {/* Floating button */}
       {!open && (
         <button onClick={handleOpen} style={{
