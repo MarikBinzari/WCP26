@@ -59,7 +59,7 @@ export async function savePredictions(userId, boardId, pickState) {
       ko_picks:       pickState.koPicks ?? {},
       updated_at:     new Date().toISOString(),
     }, { onConflict: 'user_id,board_id' })
-  if (error) console.error('savePredictions:', error)
+  if (error && error.code !== '42501') console.error('savePredictions:', error)
 }
 
 // â”€â”€â”€ SPECIAL PICKS (champion + top scorer) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€

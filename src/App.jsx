@@ -10619,7 +10619,8 @@ function App() {
       xhr.onload = hideOffline;
       xhr.onerror = showOffline;
       xhr.ontimeout = showOffline;
-      xhr.open('HEAD', SUPABASE_URL + '/health?_=' + Date.now(), true);
+      xhr.open('GET', SUPABASE_URL + '/rest/v1/?_=' + Date.now(), true);
+      xhr.setRequestHeader('apikey', import.meta.env.VITE_SUPABASE_ANON_KEY);
       xhr.send();
     };
     ping();
