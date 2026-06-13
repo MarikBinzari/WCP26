@@ -9980,7 +9980,7 @@ function ChatWidget({ boardId, user, boardName }) {
     setReplyingTo(null);
     loadChatMessages(boardId).then(res => {
       const msgs = res?.messages ?? res ?? [];
-      if (res?.__offline) {
+      if (res?.__offline || (!navigator.onLine && msgs.length === 0)) {
         setIsOffline(true);
         return;
       }
