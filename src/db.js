@@ -559,8 +559,12 @@ export async function loadChatMessages(boardId) {
     .select('id, user_id, nickname, content, is_system, created_at, edited_at, likes, dislikes, reply_to_id, reply_to_nickname, reply_to_content')
     .eq('board_id', boardId)
     .order('created_at', { ascending: true })
-  if (error) { console.error('loadChatMessages:', error); return [] }
-  return data || []
+  if (error) {
+    console.error('loadChatMessages:', error);
+    const isNetErr = !navigator.onLine || error.message?.toLowerCase().includes('fetch') || error.message?.toLowerCase().includes('network');
+    return { __offline: isNetErr, messages: [] };
+  }
+  return { __offline: false, messages: data || [] };
 }
 
 export async function sendChatMessage(boardId, userId, nickname, content, reply = null) {

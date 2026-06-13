@@ -9940,7 +9940,10 @@ function ChatWidget({ boardId, user, boardName }) {
     const goOffline = () => setIsOffline(true);
     const goOnline  = () => {
       setIsOffline(false);
-      if (boardId) loadChatMessages(boardId).then(msgs => { if (msgs.length) setMessages(msgs); });
+      if (boardId) loadChatMessages(boardId).then(res => {
+        const msgs = res?.messages ?? res ?? [];
+        if (msgs.length) setMessages(msgs);
+      });
     };
     window.addEventListener('offline', goOffline);
     window.addEventListener('online',  goOnline);
@@ -9975,11 +9978,19 @@ function ChatWidget({ boardId, user, boardName }) {
     setMessages([]);
     setSelectedMsgId(null);
     setReplyingTo(null);
-    loadChatMessages(boardId).then(msgs => {
+    loadChatMessages(boardId).then(res => {
+      const msgs = res?.messages ?? res ?? [];
+      if (res?.__offline) {
+        setIsOffline(true);
+        return;
+      }
+      setIsOffline(false);
       setMessages(msgs);
       const lastRead = getLastRead();
       const hasNew = msgs.some(m => !m.is_system && m.user_id !== user?.id && m.created_at > lastRead);
       setHasUnread(hasNew);
+    }).catch(() => {
+      setIsOffline(true);
     });
   }, [boardId]);
 
