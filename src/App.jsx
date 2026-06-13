@@ -9905,6 +9905,7 @@ function ChatWidget({ boardId, user }) {
   const [hasUnread, setHasUnread] = React.useState(false);
   const [editingId, setEditingId] = React.useState(null);
   const [editText, setEditText] = React.useState('');
+  const [selectedMsgId, setSelectedMsgId] = React.useState(null);
   const bottomRef = React.useRef(null);
   const inputRef = React.useRef(null);
   const editInputRef = React.useRef(null);
@@ -9944,7 +9945,7 @@ function ChatWidget({ boardId, user }) {
         setMessages(prev => prev.map(m => m.id === edit.id ? { ...m, content: edit.content, edited_at: edit.edited_at } : m));
       },
       reaction => {
-        setMessages(prev => prev.map(m => m.id === reaction.id ? { ...m, [reaction.type]: reaction.values } : m));
+        setMessages(prev => prev.map(m => m.id === reaction.id ? { ...m, likes: reaction.likes, dislikes: reaction.dislikes } : m));
       }
     );
     channelRef.current = sub;
@@ -9996,14 +9997,22 @@ function ChatWidget({ boardId, user }) {
   const handleReaction = async (msg, type, toggleFn) => {
     if (!user || msg.is_system || msg.id?.startsWith('tmp_')) return;
     const uid = user.id;
-    const prev = msg[type] || [];
-    const next = prev.includes(uid) ? prev.filter(id => id !== uid) : [...prev, uid];
-    setMessages(ms => ms.map(m => m.id === msg.id ? { ...m, [type]: next } : m));
+    const prevLikes    = msg.likes    || [];
+    const prevDislikes = msg.dislikes || [];
+    // Optimistic: mutual exclusivity
+    const newLikes    = type === 'likes'
+      ? (prevLikes.includes(uid) ? prevLikes.filter(id => id !== uid) : [...prevLikes, uid])
+      : prevLikes.filter(id => id !== uid);
+    const newDislikes = type === 'dislikes'
+      ? (prevDislikes.includes(uid) ? prevDislikes.filter(id => id !== uid) : [...prevDislikes, uid])
+      : prevDislikes.filter(id => id !== uid);
+    setMessages(ms => ms.map(m => m.id === msg.id ? { ...m, likes: newLikes, dislikes: newDislikes } : m));
+    setSelectedMsgId(null);
     const result = await toggleFn(msg.id);
     if (result.error) {
-      setMessages(ms => ms.map(m => m.id === msg.id ? { ...m, [type]: prev } : m));
+      setMessages(ms => ms.map(m => m.id === msg.id ? { ...m, likes: prevLikes, dislikes: prevDislikes } : m));
     } else {
-      channelRef.current?.broadcastReaction({ id: msg.id, type, values: result.values });
+      channelRef.current?.broadcastReaction({ id: msg.id, likes: result.likes, dislikes: result.dislikes });
     }
   };
   const handleLike    = (msg) => handleReaction(msg, 'likes',    toggleChatLike);
@@ -10137,52 +10146,71 @@ function ChatWidget({ boardId, user }) {
                       />
                       <div style={{ display:'flex', gap:6, justifyContent:'flex-end' }}>
                         <button onClick={cancelEdit} style={{ fontSize:11, padding:'3px 10px', border:'1px solid #ddd', borderRadius:8, cursor:'pointer', background:'#f5f5f5', color:'#555' }}>✕</button>
-                        <button onClick={handleSaveEdit} style={{ fontSize:11, padding:'3px 10px', border:'none', borderRadius:8, cursor:'pointer', background:'#00205B', color:'#fff' }}>✓</button>
+                        <button onClick={handleSaveEdit} style={{ fontSize:11, padding:'3px 10px', border:'none', borderRadius:8, cursor:'pointer', background:'#00205B', color:'#fff' }}>���</button>
                       </div>
                     </div>
                   ) : (
-                    <div style={{ display:'flex', alignItems:'flex-end', gap:4, flexDirection: isMe ? 'row' : 'row-reverse' }}>
-                      {isMe && (
-                        <button onClick={() => startEdit(msg)} title="Editează" style={{
-                          background:'none', border:'none', cursor:'pointer', padding:'0 2px', color:'#bbb',
-                          fontSize:13, lineHeight:1, flexShrink:0, marginBottom:2,
-                          WebkitTapHighlightColor:'transparent',
-                        }}>✎</button>
-                      )}
-                      <div style={{
-                        maxWidth:'100%', padding:'7px 11px', borderRadius: isMe ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
-                        background: isMe ? '#00205B' : '#f1f3f8',
-                        color: isMe ? '#fff' : '#111',
-                        fontSize:13, lineHeight:1.4, wordBreak:'break-word',
-                      }}>
-                        {msg.content}
-                        {msg.edited_at && <span style={{ fontSize:9, opacity:0.55, marginLeft:5 }}>{lang === 'ro' ? '(editat)' : '(edited)'}</span>}
+                    <>
+                      <div style={{ display:'flex', alignItems:'flex-end', gap:4, flexDirection: isMe ? 'row' : 'row-reverse' }}>
+                        {isMe && (
+                          <button onClick={() => startEdit(msg)} title="Editează" style={{
+                            background:'none', border:'none', cursor:'pointer', padding:'0 2px', color:'#bbb',
+                            fontSize:13, lineHeight:1, flexShrink:0, marginBottom:2,
+                            WebkitTapHighlightColor:'transparent',
+                          }}>✎</button>
+                        )}
+                        <div
+                          onClick={() => !msg.is_system && setSelectedMsgId(s => s === msg.id ? null : msg.id)}
+                          style={{
+                            maxWidth:'100%', padding:'7px 11px', borderRadius: isMe ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
+                            background: isMe ? '#00205B' : '#f1f3f8',
+                            color: isMe ? '#fff' : '#111',
+                            fontSize:13, lineHeight:1.4, wordBreak:'break-word', cursor: msg.is_system ? 'default' : 'pointer',
+                            WebkitTapHighlightColor:'transparent',
+                          }}
+                        >
+                          {msg.content}
+                          {msg.edited_at && <span style={{ fontSize:9, opacity:0.55, marginLeft:5 }}>{lang === 'ro' ? '(editat)' : '(edited)'}</span>}
+                        </div>
                       </div>
-                    </div>
+                      {/* Reaction picker — apare la click pe bulă */}
+                      {selectedMsgId === msg.id && (
+                        <div style={{
+                          display:'flex', gap:4, marginTop:4,
+                          justifyContent: isMe ? 'flex-end' : 'flex-start',
+                        }}>
+                          {[['likes', false, handleLike], ['dislikes', true, handleDislike]].map(([type, rotate, fn]) => {
+                            const arr = msg[type] || [];
+                            const active = arr.includes(user?.id);
+                            return (
+                              <button key={type} onClick={() => fn(msg)} style={{
+                                background: active ? 'rgba(0,32,91,0.12)' : '#f1f3f8',
+                                border: active ? '1.5px solid #003580' : '1.5px solid #e0e4ef',
+                                borderRadius:20, cursor:'pointer', padding:'4px 10px',
+                                display:'flex', alignItems:'center', gap:4,
+                                WebkitTapHighlightColor:'transparent', transition:'all 0.12s',
+                              }}>
+                                <span style={{ fontSize:15, display:'inline-block', transform: rotate ? 'rotate(180deg)' : 'none' }}>🚀</span>
+                                {arr.length > 0 && <span style={{ fontSize:11, color: active ? '#00205B' : '#888', fontWeight: active ? 700 : 400 }}>{arr.length}</span>}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </>
                   )}
-                  <div style={{ display:'flex', alignItems:'center', gap:4, marginTop:2, justifyContent: isMe ? 'flex-end' : 'flex-start' }}>
+                  {/* Timestamp + count-uri permanente */}
+                  <div style={{ display:'flex', alignItems:'center', gap:6, marginTop:2, justifyContent: isMe ? 'flex-end' : 'flex-start' }}>
                     <span style={{ fontSize:10, color:'#bbb', marginLeft:4, marginRight:2 }}>{formatTime(msg.created_at)}</span>
                     {!msg.is_system && (() => {
                       const likes    = msg.likes    || [];
                       const dislikes = msg.dislikes || [];
                       const uid = user?.id;
-                      const iLiked    = likes.includes(uid);
-                      const iDisliked = dislikes.includes(uid);
-                      const btn = (active, count, rotate, onClick) => (
-                        <button onClick={onClick} style={{
-                          background: active ? 'rgba(0,32,91,0.08)' : 'none',
-                          border:'none', borderRadius:12, cursor:'pointer',
-                          padding:'1px 5px', display:'flex', alignItems:'center', gap:2,
-                          lineHeight:1, transition:'all 0.15s', WebkitTapHighlightColor:'transparent',
-                        }}>
-                          <span style={{ fontSize:12, display:'inline-block', transform: rotate ? 'rotate(180deg)' : 'none', filter: active ? 'none' : 'grayscale(1) opacity(0.35)' }}>🚀</span>
-                          {count > 0 && <span style={{ fontSize:10, color: active ? '#00205B' : '#aaa', fontWeight: active ? 700 : 400 }}>{count}</span>}
-                        </button>
-                      );
                       return (
                         <>
-                          {btn(iLiked,    likes.length,    false, () => handleLike(msg))}
-                          {btn(iDisliked, dislikes.length, true,  () => handleDislike(msg))}
+                          {likes.length > 0 && <span style={{ fontSize:11, color: likes.includes(uid) ? '#00205B' : '#aaa', fontWeight: likes.includes(uid) ? 700 : 400 }}>🚀 {likes.length}</span>}
+                          {dislikes.length > 0 && <span style={{ fontSize:11, color: dislikes.includes(uid) ? '#00205B' : '#aaa', fontWeight: dislikes.includes(uid) ? 700 : 400, display:'inline-block', transform:'rotate(180deg)' }}>🚀</span>}
+                          {dislikes.length > 0 && <span style={{ fontSize:11, color: dislikes.includes(uid) ? '#00205B' : '#aaa', fontWeight: dislikes.includes(uid) ? 700 : 400 }}>{dislikes.length}</span>}
                         </>
                       );
                     })()}

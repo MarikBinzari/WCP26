@@ -572,14 +572,14 @@ export async function sendChatMessage(boardId, userId, nickname, content) {
 
 export async function toggleChatLike(messageId) {
   const { data, error } = await supabase.rpc('toggle_chat_like', { p_message_id: messageId })
-  if (error) { console.error('toggleChatLike:', error); return { error: error.message, values: [] } }
-  return { error: null, values: data || [] }
+  if (error) { console.error('toggleChatLike:', error); return { error: error.message } }
+  return { error: null, likes: data?.likes || [], dislikes: data?.dislikes || [] }
 }
 
 export async function toggleChatDislike(messageId) {
   const { data, error } = await supabase.rpc('toggle_chat_dislike', { p_message_id: messageId })
-  if (error) { console.error('toggleChatDislike:', error); return { error: error.message, values: [] } }
-  return { error: null, values: data || [] }
+  if (error) { console.error('toggleChatDislike:', error); return { error: error.message } }
+  return { error: null, likes: data?.likes || [], dislikes: data?.dislikes || [] }
 }
 
 export async function editChatMessage(messageId, content) {
