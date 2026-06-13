@@ -10467,6 +10467,15 @@ function App() {
   },[]);
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [appOffline, setAppOffline] = useState(!navigator.onLine);
+  useEffect(() => {
+    const goOff = () => setAppOffline(true);
+    const goOn  = () => setAppOffline(false);
+    window.addEventListener('offline', goOff);
+    window.addEventListener('online',  goOn);
+    const iv = setInterval(() => setAppOffline(!navigator.onLine), 2000);
+    return () => { window.removeEventListener('offline', goOff); window.removeEventListener('online', goOn); clearInterval(iv); };
+  }, []);
 
   const setupPushNotifications = React.useCallback(async (userId) => {
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
@@ -10876,6 +10885,17 @@ function App() {
     <LangCtx.Provider value={lang}>
     <div style={{width:"100%",height:"100%",background:BG,display:"flex",flexDirection:"column",position:"relative",fontFamily:"-apple-system,'SF Pro Display',sans-serif",paddingTop:"env(safe-area-inset-top, 0px)",boxSizing:"border-box"}}>
         {isDesktop && <DesktopBlocker />}
+        {appOffline && (
+          <div style={{ position:'fixed', inset:0, zIndex:99999, background:'#fff', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:16, padding:32 }}>
+            <div style={{ fontSize:56 }}>📡</div>
+            <div style={{ fontSize:20, fontWeight:700, color:'#111', textAlign:'center' }}>Fără conexiune la internet</div>
+            <div style={{ fontSize:14, color:'#666', textAlign:'center', maxWidth:260 }}>Verifică WiFi-ul sau datele mobile și încearcă din nou.</div>
+            <button onClick={() => { if (navigator.onLine) { setAppOffline(false); window.location.reload(); } }}
+              style={{ marginTop:8, padding:'12px 32px', borderRadius:24, border:'none', background:'#C8102E', color:'#fff', fontSize:16, fontWeight:700, cursor:'pointer' }}>
+              Reîncearcă
+            </button>
+          </div>
+        )}
         <div style={{flex:1,overflow:"hidden",display:"flex",flexDirection:"column"}}>
           {screen==="dev"&&<DevPanel
             onAutoPick={(state)=>{
