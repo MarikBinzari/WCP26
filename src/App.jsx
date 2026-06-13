@@ -10595,8 +10595,9 @@ function App() {
       } else setScreen(SCREENS.SPLASH);
     });
 
-    supabase.auth.getSession().then(() => setAuthLoading(false));
-    return () => subscription.unsubscribe();
+    const authTimeout = setTimeout(() => setAuthLoading(false), 3000);
+    supabase.auth.getSession().then(() => { clearTimeout(authTimeout); setAuthLoading(false); });
+    return () => { subscription.unsubscribe(); clearTimeout(authTimeout); };
   }, []);
 
   useEffect(() => {
