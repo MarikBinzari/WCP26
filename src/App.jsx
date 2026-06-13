@@ -8308,7 +8308,7 @@ function ScorePicker({ match, day, savedScore, onSave, onBack }) {
 const scH = (sc) => Array.isArray(sc) ? sc[0] : (sc?.home ?? 0);
 const scA = (sc) => Array.isArray(sc) ? sc[1] : (sc?.away ?? 0);
 
-function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScoresProp, simDay, simHour=12, simMin=0, initialWeek, boardId }) {
+function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScoresProp, simDay, simHour=12, simMin=0, initialWeek, boardId, boardName }) {
   const lang = useLang();
   const LIVE_SCORES = useLiveScores(simDay, simHour, simMin);
   const calendarEvents = getDisplayCalendarEvents();
@@ -8490,6 +8490,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
           <button onClick={onBack} style={{background:"rgba(255,255,255,0.12)",border:"none",borderRadius:10,width:34,height:34,color:"#fff",fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>‹</button>
           <div style={{flex:1,textAlign:"center"}}>
             <div style={{fontSize:18,fontWeight:800,color:"#fff"}}>{T[lang].exactScores}</div>
+            {boardName&&<div style={{fontSize:11,fontWeight:600,color:"rgba(255,255,255,0.5)",marginTop:2}}>{boardName}</div>}
           </div>
           <div style={{textAlign:"right",flexShrink:0,minWidth:34}}>
             <div style={{fontSize:13,fontWeight:700,color:"#fff"}}>{weekScored}/{weekTotal}</div>
@@ -11356,7 +11357,7 @@ function App() {
           {user&&<div style={{display:screen===SCREENS.RULES?'flex':'none',flex:1,flexDirection:'column',overflow:'hidden',minHeight:0}}>
             <RulesScreen onBack={()=>setScreen(SCREENS.HOME)}/>
           </div>}
-          {screen===SCREENS.GROUPS_SCHEDULE&&<GroupsScheduleScreen boardId={activeBoardId} scores={exactScores} setScores={async (newScores)=>{
+          {screen===SCREENS.GROUPS_SCHEDULE&&<GroupsScheduleScreen boardId={activeBoardId} boardName={myBoards.find(b=>b.id===activeBoardId)?.name||"Global"} scores={exactScores} setScores={async (newScores)=>{
               const oldScores = exactScores;
               setExactScores(newScores);
               if (user) {
