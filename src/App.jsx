@@ -9924,6 +9924,7 @@ function ChatWidget({ boardId, user }) {
   const [editText, setEditText] = React.useState('');
   const [selectedMsgId, setSelectedMsgId] = React.useState(null);
   const [replyingTo, setReplyingTo] = React.useState(null);
+  const [onlineCount, setOnlineCount] = React.useState(0);
   const bottomRef = React.useRef(null);
   const inputRef = React.useRef(null);
   const editInputRef = React.useRef(null);
@@ -9970,6 +9971,7 @@ function ChatWidget({ boardId, user }) {
   // Broadcast subscription — stabil, fără probleme RLS
   React.useEffect(() => {
     if (!boardId) return;
+    const nickname = user?.user_metadata?.full_name || user?.email?.split('@')[0] || '?';
     const sub = subscribeChatMessages(boardId,
       msg => {
         setMessages(prev => {
@@ -9983,7 +9985,9 @@ function ChatWidget({ boardId, user }) {
       },
       reaction => {
         setMessages(prev => prev.map(m => m.id === reaction.id ? { ...m, likes: reaction.likes, dislikes: reaction.dislikes } : m));
-      }
+      },
+      count => setOnlineCount(count),
+      { id: user?.id, nickname }
     );
     channelRef.current = sub;
     return () => sub.unsubscribe();
@@ -10172,6 +10176,12 @@ function ChatWidget({ boardId, user }) {
                 <line x1="9" y1="12" x2="13" y2="12"/>
               </svg>
               CHAT
+              {onlineCount > 0 && (
+                <span style={{ display:'flex', alignItems:'center', gap:4, background:'rgba(255,255,255,0.15)', borderRadius:20, padding:'2px 8px', fontSize:11, fontWeight:700, letterSpacing:0 }}>
+                  <span style={{ width:6, height:6, borderRadius:'50%', background:'#4ade80', display:'inline-block', flexShrink:0 }}/>
+                  {onlineCount} {lang === 'ro' ? 'în chat' : 'online'}
+                </span>
+              )}
             </span>
             <button onClick={handleClose} style={{
               background:'rgba(255,255,255,0.15)', border:'none', borderRadius:8,
