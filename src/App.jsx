@@ -9947,7 +9947,12 @@ function ChatWidget({ boardId, user, boardName }) {
     };
     window.addEventListener('offline', goOffline);
     window.addEventListener('online',  goOnline);
-    return () => { window.removeEventListener('offline', goOffline); window.removeEventListener('online', goOnline); };
+    const interval = setInterval(() => setIsOffline(v => !navigator.onLine ? true : v), 2000);
+    return () => {
+      window.removeEventListener('offline', goOffline);
+      window.removeEventListener('online', goOnline);
+      clearInterval(interval);
+    };
   }, [boardId]);
   React.useEffect(() => {
     if (!open) return;

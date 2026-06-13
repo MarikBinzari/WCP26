@@ -555,17 +555,21 @@ const resolveChatBoardId = (id) => id === 'global' ? '00000000-0000-0000-0000-00
 export async function loadChatMessages(boardId) {
   boardId = resolveChatBoardId(boardId);
   if (!navigator.onLine) return { __offline: true, messages: [] };
-  const { data, error } = await supabase
-    .from('board_chat')
-    .select('id, user_id, nickname, content, is_system, created_at, edited_at, likes, dislikes, reply_to_id, reply_to_nickname, reply_to_content')
-    .eq('board_id', boardId)
-    .order('created_at', { ascending: true })
-  if (error) {
-    console.error('loadChatMessages:', error);
-    const isNetErr = !navigator.onLine || error.message?.toLowerCase().includes('fetch') || error.message?.toLowerCase().includes('network');
-    return { __offline: isNetErr, messages: [] };
+  try {
+    const { data, error } = await supabase
+      .from('board_chat')
+      .select('id, user_id, nickname, content, is_system, created_at, edited_at, likes, dislikes, reply_to_id, reply_to_nickname, reply_to_content')
+      .eq('board_id', boardId)
+      .order('created_at', { ascending: true })
+    if (error) {
+      console.error('loadChatMessages:', error);
+      return { __offline: true, messages: [] };
+    }
+    return { __offline: false, messages: data || [] };
+  } catch (e) {
+    console.error('loadChatMessages catch:', e);
+    return { __offline: true, messages: [] };
   }
-  return { __offline: false, messages: data || [] };
 }
 
 export async function sendChatMessage(boardId, userId, nickname, content, reply = null) {
