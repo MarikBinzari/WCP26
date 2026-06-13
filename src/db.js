@@ -553,7 +553,7 @@ export async function updatePlayerStats(date) {
 export async function loadChatMessages(boardId) {
   const { data, error } = await supabase
     .from('board_chat')
-    .select('id, user_id, nickname, content, is_system, created_at')
+    .select('id, user_id, nickname, content, is_system, created_at, edited_at')
     .eq('board_id', boardId)
     .order('created_at', { ascending: true })
   if (error) { console.error('loadChatMessages:', error); return [] }
@@ -564,22 +564,35 @@ export async function sendChatMessage(boardId, userId, nickname, content) {
   const { data, error } = await supabase
     .from('board_chat')
     .insert({ board_id: boardId, user_id: userId, nickname, content })
-    .select('id, board_id, user_id, nickname, content, is_system, created_at')
+    .select('id, board_id, user_id, nickname, content, is_system, created_at, edited_at')
     .single()
   if (error) { console.error('sendChatMessage:', error); return { error: error.message, data: null } }
   return { error: null, data }
 }
 
-export function subscribeChatMessages(boardId, callback) {
+export async function editChatMessage(messageId, content) {
+  const { data, error } = await supabase
+    .from('board_chat')
+    .update({ content, edited_at: new Date().toISOString() })
+    .eq('id', messageId)
+    .select('id, content, edited_at')
+    .single()
+  if (error) { console.error('editChatMessage:', error); return { error: error.message, data: null } }
+  return { error: null, data }
+}
+
+export function subscribeChatMessages(boardId, onNew, onEdit) {
   const channel = supabase.channel(`chat_${boardId}`, {
     config: { broadcast: { self: true } },
   })
   channel
-    .on('broadcast', { event: 'chat' }, ({ payload }) => callback(payload))
+    .on('broadcast', { event: 'chat' }, ({ payload }) => onNew(payload))
+    .on('broadcast', { event: 'chat_edit' }, ({ payload }) => onEdit && onEdit(payload))
     .subscribe()
   return {
     unsubscribe: () => supabase.removeChannel(channel),
     broadcast: (msg) => channel.send({ type: 'broadcast', event: 'chat', payload: msg }),
+    broadcastEdit: (edit) => channel.send({ type: 'broadcast', event: 'chat_edit', payload: edit }),
   }
 }
 

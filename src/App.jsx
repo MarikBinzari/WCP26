@@ -10,7 +10,7 @@ import specialPickBadge from "./assets/special-pick-badge.webp";
 import bellIcon from "./assets/bell-icon.svg";
 import { ALL_GROUPS_DATA, FLAGS, TEAM_COLORS, CALENDAR_EVENTS, CL_FINAL } from "./data/worldcup2026.js";
 import { supabase } from "./supabase.js";
-import { savePredictions, saveExactScore, createBoard, updateBoard, joinBoardByCode, joinBoardById, ensureBoardScores, loadLeaderboard, loadMyScoreBreakdown, fetchScoringRules, fetchMemberCounts, removeBoardMember, removeParticipation, deleteBoard, loadBoardMembers, checkDbHealth, checkEmailExists, checkNicknameExists, loadLiveScores, subscribeLiveScores, loadPlayers, loadPlayersByTeam, seedPlayersFromApi, saveSpecialPick, uploadAvatar, uploadBoardImage, loadAllBoards, loadAllUserPicks, loadNotifReads, markNotifRead, loadSystemNotifications, loadRealGroupStandings, loadUserBreakdown, savePushSubscription, loadChatMessages, sendChatMessage, subscribeChatMessages } from "./db.js";
+import { savePredictions, saveExactScore, createBoard, updateBoard, joinBoardByCode, joinBoardById, ensureBoardScores, loadLeaderboard, loadMyScoreBreakdown, fetchScoringRules, fetchMemberCounts, removeBoardMember, removeParticipation, deleteBoard, loadBoardMembers, checkDbHealth, checkEmailExists, checkNicknameExists, loadLiveScores, subscribeLiveScores, loadPlayers, loadPlayersByTeam, seedPlayersFromApi, saveSpecialPick, uploadAvatar, uploadBoardImage, loadAllBoards, loadAllUserPicks, loadNotifReads, markNotifRead, loadSystemNotifications, loadRealGroupStandings, loadUserBreakdown, savePushSubscription, loadChatMessages, sendChatMessage, editChatMessage, subscribeChatMessages } from "./db.js";
 
 const TEAM_CODE = {"Mexico":"MEX","South Africa":"RSA","South Korea":"KOR","Czechia":"CZE","Canada":"CAN","Switzerland":"SUI","Qatar":"QAT","Bosnia-Herzegovina":"BIH","Brazil":"BRA","Morocco":"MAR","Scotland":"SCO","Haiti":"HAI","USA":"USA","Paraguay":"PAR","Australia":"AUS","Turkiye":"TUR","Germany":"GER","Ecuador":"ECU","Ivory Coast":"CIV","Curacao":"CUW","Netherlands":"NED","Japan":"JPN","Tunisia":"TUN","Sweden":"SWE","Belgium":"BEL","Iran":"IRI","Egypt":"EGY","New Zealand":"NZL","Spain":"ESP","Uruguay":"URU","Saudi Arabia":"KSA","Cape Verde":"CPV","France":"FRA","Senegal":"SEN","Norway":"NOR","Iraq":"IRQ","Argentina":"ARG","Austria":"AUT","Algeria":"ALG","Jordan":"JOR","Portugal":"POR","Colombia":"COL","Uzbekistan":"UZB","DR Congo":"COD","England":"ENG","Croatia":"CRO","Panama":"PAN","Ghana":"GHA"};
 
@@ -9903,8 +9903,11 @@ function ChatWidget({ boardId, user }) {
   const [text, setText] = React.useState('');
   const [sending, setSending] = React.useState(false);
   const [hasUnread, setHasUnread] = React.useState(false);
+  const [editingId, setEditingId] = React.useState(null);
+  const [editText, setEditText] = React.useState('');
   const bottomRef = React.useRef(null);
   const inputRef = React.useRef(null);
+  const editInputRef = React.useRef(null);
   const openRef = React.useRef(open);
   const channelRef = React.useRef(null);
   const userIdRef = React.useRef(user?.id);
@@ -9929,13 +9932,18 @@ function ChatWidget({ boardId, user }) {
   // Broadcast subscription — stabil, fără probleme RLS
   React.useEffect(() => {
     if (!boardId) return;
-    const sub = subscribeChatMessages(boardId, msg => {
-      setMessages(prev => {
-        const filtered = prev.filter(m => !(m.id?.startsWith('tmp_') && m.user_id === msg.user_id && m.content === msg.content));
-        return [...filtered, msg];
-      });
-      if (!openRef.current && msg.user_id !== userIdRef.current && !msg.is_system) setHasUnread(true);
-    });
+    const sub = subscribeChatMessages(boardId,
+      msg => {
+        setMessages(prev => {
+          const filtered = prev.filter(m => !(m.id?.startsWith('tmp_') && m.user_id === msg.user_id && m.content === msg.content));
+          return [...filtered, msg];
+        });
+        if (!openRef.current && msg.user_id !== userIdRef.current && !msg.is_system) setHasUnread(true);
+      },
+      edit => {
+        setMessages(prev => prev.map(m => m.id === edit.id ? { ...m, content: edit.content, edited_at: edit.edited_at } : m));
+      }
+    );
     channelRef.current = sub;
     return () => sub.unsubscribe();
   }, [boardId]);
@@ -9975,6 +9983,26 @@ function ChatWidget({ boardId, user }) {
   };
 
   const handleKey = e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } };
+
+  const startEdit = (msg) => {
+    setEditingId(msg.id);
+    setEditText(msg.content);
+    setTimeout(() => editInputRef.current?.focus(), 50);
+  };
+  const cancelEdit = () => setEditingId(null);
+  const handleSaveEdit = async () => {
+    const content = editText.trim();
+    if (!content || !editingId) { setEditingId(null); return; }
+    setMessages(prev => prev.map(m => m.id === editingId ? { ...m, content, edited_at: new Date().toISOString() } : m));
+    const id = editingId;
+    setEditingId(null);
+    const result = await editChatMessage(id, content);
+    if (result.error) {
+      console.error('Edit failed:', result.error);
+    } else if (result.data) {
+      channelRef.current?.broadcastEdit(result.data);
+    }
+  };
 
   const formatTime = ts => { try { return new Date(ts).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' }); } catch { return ''; } };
 
@@ -10071,12 +10099,49 @@ function ChatWidget({ boardId, user }) {
               return (
                 <div key={msg.id} style={{ display:'flex', flexDirection:'column', alignItems: isMe ? 'flex-end' : 'flex-start' }}>
                   {!isMe && <span style={{ fontSize:10, color:'#888', marginBottom:2, marginLeft:4 }}>{msg.nickname}</span>}
-                  <div style={{
-                    maxWidth:'78%', padding:'7px 11px', borderRadius: isMe ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
-                    background: isMe ? '#00205B' : '#f1f3f8',
-                    color: isMe ? '#fff' : '#111',
-                    fontSize:13, lineHeight:1.4, wordBreak:'break-word',
-                  }}>{msg.content}</div>
+                  {editingId === msg.id ? (
+                    <div style={{ width:'80%', display:'flex', flexDirection:'column', gap:4 }}>
+                      <textarea
+                        ref={editInputRef}
+                        value={editText}
+                        onChange={e => setEditText(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSaveEdit(); }
+                          if (e.key === 'Escape') cancelEdit();
+                        }}
+                        maxLength={300}
+                        rows={2}
+                        style={{
+                          width:'100%', border:'1.5px solid #003580', borderRadius:10, padding:'6px 10px',
+                          fontSize:13, outline:'none', fontFamily:'inherit',
+                          background:'#fff', color:'#111', resize:'none', lineHeight:1.4, boxSizing:'border-box',
+                        }}
+                      />
+                      <div style={{ display:'flex', gap:6, justifyContent:'flex-end' }}>
+                        <button onClick={cancelEdit} style={{ fontSize:11, padding:'3px 10px', border:'1px solid #ddd', borderRadius:8, cursor:'pointer', background:'#f5f5f5', color:'#555' }}>✕</button>
+                        <button onClick={handleSaveEdit} style={{ fontSize:11, padding:'3px 10px', border:'none', borderRadius:8, cursor:'pointer', background:'#00205B', color:'#fff' }}>✓</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ display:'flex', alignItems:'flex-end', gap:4, flexDirection: isMe ? 'row' : 'row-reverse' }}>
+                      {isMe && (
+                        <button onClick={() => startEdit(msg)} title="Editează" style={{
+                          background:'none', border:'none', cursor:'pointer', padding:'0 2px', color:'#bbb',
+                          fontSize:13, lineHeight:1, flexShrink:0, marginBottom:2,
+                          WebkitTapHighlightColor:'transparent',
+                        }}>✎</button>
+                      )}
+                      <div style={{
+                        maxWidth:'100%', padding:'7px 11px', borderRadius: isMe ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
+                        background: isMe ? '#00205B' : '#f1f3f8',
+                        color: isMe ? '#fff' : '#111',
+                        fontSize:13, lineHeight:1.4, wordBreak:'break-word',
+                      }}>
+                        {msg.content}
+                        {msg.edited_at && <span style={{ fontSize:9, opacity:0.55, marginLeft:5 }}>{lang === 'ro' ? '(editat)' : '(edited)'}</span>}
+                      </div>
+                    </div>
+                  )}
                   <span style={{ fontSize:10, color:'#bbb', marginTop:2, marginLeft:4, marginRight:4 }}>{formatTime(msg.created_at)}</span>
                 </div>
               );
