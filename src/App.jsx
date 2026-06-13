@@ -9913,7 +9913,7 @@ function DesktopBlocker() {
 }
 
 // ─── CHAT WIDGET ──────────────────────────────────────────────────────────────
-function ChatWidget({ boardId, user }) {
+function ChatWidget({ boardId, user, boardName }) {
   const lang = useLang();
   const [open, setOpen] = React.useState(false);
   const [messages, setMessages] = React.useState([]);
@@ -10175,7 +10175,7 @@ function ChatWidget({ boardId, user }) {
                 <line x1="9" y1="8" x2="15" y2="8"/>
                 <line x1="9" y1="12" x2="13" y2="12"/>
               </svg>
-              CHAT
+              CHAT{boardName ? ` · ${boardName}` : ''}
               {onlineCount > 0 && (
                 <span style={{ display:'flex', alignItems:'center', gap:4, background:'rgba(255,255,255,0.15)', borderRadius:20, padding:'2px 8px', fontSize:11, fontWeight:700, letterSpacing:0 }}>
                   <span style={{ width:6, height:6, borderRadius:'50%', background:'#4ade80', display:'inline-block', flexShrink:0 }}/>
@@ -11170,7 +11170,7 @@ function App() {
           </div>}
         </div>
         <Toast message={toast.message} emoji={toast.emoji} visible={toast.visible}/>
-        {screen===SCREENS.HOME && activeBoardId && <ChatWidget boardId={activeBoardId} user={user}/>}
+        {screen===SCREENS.HOME && activeBoardId && <ChatWidget boardId={activeBoardId} user={user} boardName={myBoards.find(b=>b.id===activeBoardId)?.name || (activeBoardId==='global'?'Global League':'')}/>}
         {showFooter&&(
           <div style={{
             position:"fixed",
