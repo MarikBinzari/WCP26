@@ -1907,12 +1907,12 @@ const DEFAULT_PRED_SCORING = {
   r32: 10, r16: 20, qf: 40, sf: 60, final: 100,
 };
 const DEFAULT_EXACT_SCORING = {
-  group_result: 30, group_exact: 90,
-  r32_result: 35, r32_exact_bonus: 15,
-  r16_result: 40, r16_exact_bonus: 20,
-  qf_result: 60, qf_exact_bonus: 30,
-  sf_result: 90, sf_exact_bonus: 40,
-  final_result: 120, final_exact_bonus: 50,
+  group_result: 30, group_diff_bonus: 10, group_exact: 90,
+  r32_result: 35, r32_diff_bonus: 10, r32_exact_bonus: 15,
+  r16_result: 40, r16_diff_bonus: 10, r16_exact_bonus: 20,
+  qf_result: 60, qf_diff_bonus: 10, qf_exact_bonus: 30,
+  sf_result: 90, sf_diff_bonus: 10, sf_exact_bonus: 40,
+  final_result: 120, final_diff_bonus: 10, final_exact_bonus: 50,
 };
 const computePredMax = (s) => {
   const groups = INTERACTIVE_GROUPS.length * (s.group1st + s.group2nd + s.group3rd);
@@ -8161,7 +8161,8 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
                     <span style={{fontSize:13,fontWeight:800,color:NAVY}}>{exactTotal}p</span>
                   </div>
                   {hasExact&&breakdown.exact.map(m=>{
-                    const isExact = m.pred_home===m.actual_home && m.pred_away===m.actual_away;
+                    const isExact = m.label==='exact' || (m.pred_home===m.actual_home && m.pred_away===m.actual_away);
+                    const isDiff  = m.label==='diff';
                     return (
                       <div key={m.match_key} style={{display:"flex",justifyContent:"space-between",
                         alignItems:"flex-start",padding:"5px 0",borderBottom:"1px solid #F9FAFB"}}>
@@ -8172,12 +8173,14 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
                             </span>
                             {isExact&&<span style={{fontSize:9,fontWeight:800,color:"#fff",background:GREEN,
                               borderRadius:4,padding:"1px 5px",letterSpacing:0.5}}>EXACT</span>}
+                            {isDiff&&<span style={{fontSize:9,fontWeight:800,color:"#fff",background:"#F59E0B",
+                              borderRadius:4,padding:"1px 5px",letterSpacing:0.5}}>+DIFF</span>}
                           </div>
                           <span style={{fontSize:10,color:"#9CA3AF",fontWeight:600}}>
                             prezis: ({m.pred_home}-{m.pred_away})
                           </span>
                         </div>
-                        <span style={{fontSize:12,fontWeight:700,color:GREEN,paddingTop:1}}>{m.pts}p</span>
+                        <span style={{fontSize:12,fontWeight:700,color:isDiff?"#F59E0B":GREEN,paddingTop:1}}>{m.pts}p</span>
                       </div>
                     );
                   })}
@@ -9675,13 +9678,19 @@ function RulesScreen({ onBack }) {
     { phase:"🏆 Final",            pts:pred.final,    desc:T[lang].rulesDescFinal },
   ];
   const exactRules = [
-    { phase:"⚽ Groups · Result",      pts:exact.group_result,  desc:"Correct winner or draw" },
-    { phase:"⚽ Groups · Exact Score", pts:exact.group_exact,   desc:"Exact match score" },
-    { phase:"🏆 R32 · Winner",         pts:exact.r32_result,    desc:"Correct match winner" },
-    { phase:"🏆 R16 · Winner",         pts:exact.r16_result,    desc:"Correct match winner" },
-    { phase:"🏆 QF · Winner",          pts:exact.qf_result,     desc:"Correct match winner" },
-    { phase:"🏆 SF · Winner",          pts:exact.sf_result,     desc:"Correct match winner" },
-    { phase:"🏆 Final · Winner",       pts:exact.final_result,  desc:"Tournament winner" },
+    { phase:"⚽ Groups · Result",        pts:exact.group_result,      desc:"Correct winner or draw" },
+    { phase:"⚽ Groups · Goal Diff",     pts:exact.group_diff_bonus,  desc:"Correct winner + goal difference (non-draw)", diff:true },
+    { phase:"⚽ Groups · Exact Score",   pts:exact.group_exact,       desc:"Exact match score" },
+    { phase:"🏆 R32 · Winner",           pts:exact.r32_result,        desc:"Correct match winner" },
+    { phase:"🏆 R32 · Goal Diff",        pts:exact.r32_diff_bonus,    desc:"Correct winner + goal difference (non-draw)", diff:true },
+    { phase:"🏆 R16 · Winner",           pts:exact.r16_result,        desc:"Correct match winner" },
+    { phase:"🏆 R16 · Goal Diff",        pts:exact.r16_diff_bonus,    desc:"Correct winner + goal difference (non-draw)", diff:true },
+    { phase:"🏆 QF · Winner",            pts:exact.qf_result,         desc:"Correct match winner" },
+    { phase:"🏆 QF · Goal Diff",         pts:exact.qf_diff_bonus,     desc:"Correct winner + goal difference (non-draw)", diff:true },
+    { phase:"🏆 SF · Winner",            pts:exact.sf_result,         desc:"Correct match winner" },
+    { phase:"🏆 SF · Goal Diff",         pts:exact.sf_diff_bonus,     desc:"Correct winner + goal difference (non-draw)", diff:true },
+    { phase:"🏆 Final · Winner",         pts:exact.final_result,      desc:"Tournament winner" },
+    { phase:"🏆 Final · Goal Diff",      pts:exact.final_diff_bonus,  desc:"Correct winner + goal difference (non-draw)", diff:true },
   ];
 
   return (
@@ -9766,14 +9775,14 @@ function RulesScreen({ onBack }) {
         })() : (
           <div style={{...UI.card,marginBottom:12}}>
             {exactRules.map((r,i)=>(
-              <div key={i} style={{display:"flex",alignItems:"center",padding:"12px 16px",background:"#fff",borderBottom:i<exactRules.length-1?"1px solid rgba(10,46,138,0.05)":"none",gap:12}}>
+              <div key={i} style={{display:"flex",alignItems:"center",padding:"12px 16px",background:r.diff?"#FFFBF0":"#fff",borderBottom:i<exactRules.length-1?"1px solid rgba(10,46,138,0.05)":"none",gap:12}}>
                 <div style={{flex:1}}>
                   <p style={{fontSize:13,fontWeight:700,color:DARK,margin:"0 0 2px"}}>
                     {r.phase.split("⚽").flatMap((p,j)=>j===0?[p]:[<span key={j} style={{colorScheme:"light",filter:"saturate(0) contrast(3) brightness(1.1)"}}>⚽</span>,p])}
                   </p>
                   <p style={{fontSize:11,color:"#aaa",margin:0}}>{r.desc}</p>
                 </div>
-                <div style={{background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,borderRadius:10,padding:"5px 0",flexShrink:0,width:56,textAlign:"center"}}>
+                <div style={{background:r.diff?"linear-gradient(135deg,#F59E0B,#D97706)":"linear-gradient(135deg,"+NAVY+"cc,#001840cc)",borderRadius:10,padding:"5px 0",flexShrink:0,width:56,textAlign:"center"}}>
                   <span style={{fontSize:13,fontWeight:900,color:"#fff"}}>+{r.pts}</span>
                 </div>
               </div>
