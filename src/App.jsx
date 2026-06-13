@@ -10468,6 +10468,7 @@ function App() {
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [appOffline, setAppOffline] = useState(false);
+  const wasOfflineRef = useRef(false);
   useEffect(() => {
     let cancelled = false;
     const ping = async () => {
@@ -10475,9 +10476,12 @@ function App() {
         const ctrl = new AbortController();
         setTimeout(() => ctrl.abort(), 3000);
         await fetch('https://www.google.com/generate_204', { method: 'HEAD', cache: 'no-store', mode: 'no-cors', signal: ctrl.signal });
-        if (!cancelled) setAppOffline(false);
+        if (!cancelled) {
+          if (wasOfflineRef.current) { wasOfflineRef.current = false; window.location.reload(); return; }
+          setAppOffline(false);
+        }
       } catch {
-        if (!cancelled) setAppOffline(true);
+        if (!cancelled) { wasOfflineRef.current = true; setAppOffline(true); }
       }
     };
     ping();
@@ -10899,11 +10903,7 @@ function App() {
           <div style={{ position:'fixed', inset:0, zIndex:99999, background:'#fff', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:16, padding:32 }}>
             <div style={{ fontSize:56 }}>📡</div>
             <div style={{ fontSize:20, fontWeight:700, color:'#111', textAlign:'center' }}>Fără conexiune la internet</div>
-            <div style={{ fontSize:14, color:'#666', textAlign:'center', maxWidth:260 }}>Verifică WiFi-ul sau datele mobile și încearcă din nou.</div>
-            <button onClick={() => { if (navigator.onLine) { setAppOffline(false); window.location.reload(); } }}
-              style={{ marginTop:8, padding:'12px 32px', borderRadius:24, border:'none', background:'#C8102E', color:'#fff', fontSize:16, fontWeight:700, cursor:'pointer' }}>
-              Reîncearcă
-            </button>
+            <div style={{ fontSize:14, color:'#666', textAlign:'center', maxWidth:260 }}>Verifică WiFi-ul sau datele mobile. Aplicația se va reîncărca automat.</div>
           </div>
         )}
         <div style={{flex:1,overflow:"hidden",display:"flex",flexDirection:"column"}}>
