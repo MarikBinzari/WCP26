@@ -855,15 +855,9 @@ const REAL_GROUP_STATS = {};
 const REAL_BEST3 = [];
 const GROUP_STAGE_FINISHED = false;
 
-// Week unlock logic — Sunday after 20:00
-const now = new Date();
-const june = (d) => new Date(Date.UTC(2026, 5, d, 12, 0, 0)); // 08:00 ET = 12:00 UTC
-const WEEK_UNLOCKED = {
-  8:  true,
-  15: now >= june(14),
-  22: now >= june(21),
-  29: now >= june(28),
-};
+// Week unlock logic — 08:00 Romania (EEST = UTC+3 → 05:00 UTC)
+const june = (d) => new Date(Date.UTC(2026, 5, d, 5, 0, 0));
+const july = (d) => new Date(Date.UTC(2026, 6, d, 5, 0, 0));
 // Returns the current day in tournament encoding.
 // May N = N-31 (day -6..0 for May 25-31), June N = N, July N = N+30.
 // Match times in worldcup2026.js are in ET (UTC-4 in summer / EDT)
@@ -965,14 +959,11 @@ const isMatchPast = (matchDay, matchTime, simDay=null, simHour=12, kickoffUtc=nu
 };
 
 const isWeekUnlocked = (day, simDay=null, simHour=12, simMin=0) => {
-  // Convert July days: day 36+ = July week
-  const june = (d) => new Date(Date.UTC(2026, 5, d, 12, 0, 0)); // 08:00 ET = 12:00 UTC
-  const july = (d) => new Date(Date.UTC(2026, 6, d, 12, 0, 0));
   if(simDay) {
     const simDate = new Date(Date.UTC(2026,5,simDay,(simHour||0)+4,simMin||0,0));
-    if(day >= 43) return simDate >= july(12);   // Final week
-    if(day >= 36) return simDate >= july(5);    // QF/SF week
-    if(day >= 28) return simDate >= june(28);   // R32 week (starts Jun 28)
+    if(day >= 43) return simDate >= july(12);
+    if(day >= 36) return simDate >= july(5);
+    if(day >= 28) return simDate >= june(28);
     if(day >= 22) return simDate >= june(21);
     if(day >= 15) return simDate >= june(14);
     return true;
@@ -980,10 +971,10 @@ const isWeekUnlocked = (day, simDay=null, simHour=12, simMin=0) => {
   const now2 = new Date();
   if(day >= 43) return now2 >= july(12);
   if(day >= 36) return now2 >= july(5);
-  if(day >= 28) return WEEK_UNLOCKED[29];
-  if(day >= 22) return WEEK_UNLOCKED[22];
-  if(day >= 15) return WEEK_UNLOCKED[15];
-  return WEEK_UNLOCKED[8];
+  if(day >= 28) return now2 >= june(28);
+  if(day >= 22) return now2 >= june(21);
+  if(day >= 15) return now2 >= june(14);
+  return true;
 };
 
 
@@ -10570,6 +10561,11 @@ function ChatWidget({ boardId, user, boardName }) {
 function App() {
   const isTouchDevice = () => navigator.maxTouchPoints > 0 || 'ontouchstart' in window;
   const [isDesktop, setIsDesktop] = useState(() => window.innerWidth > 768 && !isTouchDevice());
+  const [, _unlockTick] = useState(0);
+  useEffect(() => {
+    const iv = setInterval(() => _unlockTick(n => n + 1), 60_000);
+    return () => clearInterval(iv);
+  }, []);
   useEffect(() => {
     const check = () => setIsDesktop(window.innerWidth > 768 && !isTouchDevice());
     window.addEventListener("resize", check);
