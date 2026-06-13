@@ -10,7 +10,7 @@ import specialPickBadge from "./assets/special-pick-badge.webp";
 import bellIcon from "./assets/bell-icon.svg";
 import { ALL_GROUPS_DATA, FLAGS, TEAM_COLORS, CALENDAR_EVENTS, CL_FINAL } from "./data/worldcup2026.js";
 import { supabase } from "./supabase.js";
-import { savePredictions, saveExactScore, createBoard, updateBoard, joinBoardByCode, joinBoardById, ensureBoardScores, loadLeaderboard, loadMyScoreBreakdown, fetchScoringRules, fetchMemberCounts, removeBoardMember, removeParticipation, deleteBoard, loadBoardMembers, checkDbHealth, checkEmailExists, checkNicknameExists, loadLiveScores, subscribeLiveScores, loadPlayers, loadPlayersByTeam, seedPlayersFromApi, saveSpecialPick, uploadAvatar, uploadBoardImage, loadAllBoards, loadAllUserPicks, loadNotifReads, markNotifRead, loadSystemNotifications, loadRealGroupStandings, loadUserBreakdown, savePushSubscription } from "./db.js";
+import { savePredictions, saveExactScore, createBoard, updateBoard, joinBoardByCode, joinBoardById, ensureBoardScores, loadLeaderboard, loadMyScoreBreakdown, fetchScoringRules, fetchMemberCounts, removeBoardMember, removeParticipation, deleteBoard, loadBoardMembers, checkDbHealth, checkEmailExists, checkNicknameExists, loadLiveScores, subscribeLiveScores, loadPlayers, loadPlayersByTeam, seedPlayersFromApi, saveSpecialPick, uploadAvatar, uploadBoardImage, loadAllBoards, loadAllUserPicks, loadNotifReads, markNotifRead, loadSystemNotifications, loadRealGroupStandings, loadUserBreakdown, savePushSubscription, loadChatMessages, sendChatMessage, subscribeChatMessages } from "./db.js";
 
 const TEAM_CODE = {"Mexico":"MEX","South Africa":"RSA","South Korea":"KOR","Czechia":"CZE","Canada":"CAN","Switzerland":"SUI","Qatar":"QAT","Bosnia-Herzegovina":"BIH","Brazil":"BRA","Morocco":"MAR","Scotland":"SCO","Haiti":"HAI","USA":"USA","Paraguay":"PAR","Australia":"AUS","Turkiye":"TUR","Germany":"GER","Ecuador":"ECU","Ivory Coast":"CIV","Curacao":"CUW","Netherlands":"NED","Japan":"JPN","Tunisia":"TUN","Sweden":"SWE","Belgium":"BEL","Iran":"IRI","Egypt":"EGY","New Zealand":"NZL","Spain":"ESP","Uruguay":"URU","Saudi Arabia":"KSA","Cape Verde":"CPV","France":"FRA","Senegal":"SEN","Norway":"NOR","Iraq":"IRQ","Argentina":"ARG","Austria":"AUT","Algeria":"ALG","Jordan":"JOR","Portugal":"POR","Colombia":"COL","Uzbekistan":"UZB","DR Congo":"COD","England":"ENG","Croatia":"CRO","Panama":"PAN","Ghana":"GHA"};
 
@@ -9895,6 +9895,231 @@ function DesktopBlocker() {
   );
 }
 
+// ─── CHAT WIDGET ──────────────────────────────────────────────────────────────
+function ChatWidget({ boardId, user }) {
+  const lang = useLang();
+  const [open, setOpen] = React.useState(false);
+  const [messages, setMessages] = React.useState([]);
+  const [text, setText] = React.useState('');
+  const [sending, setSending] = React.useState(false);
+  const [hasUnread, setHasUnread] = React.useState(false);
+  const bottomRef = React.useRef(null);
+  const inputRef = React.useRef(null);
+  const openRef = React.useRef(open);
+  const channelRef = React.useRef(null);
+  const userIdRef = React.useRef(user?.id);
+  React.useEffect(() => { openRef.current = open; }, [open]);
+  React.useEffect(() => { userIdRef.current = user?.id; }, [user?.id]);
+
+  const lsKey = `chat_read_${boardId}`;
+  const getLastRead = () => { try { return localStorage.getItem(lsKey) || '1970-01-01'; } catch { return '1970-01-01'; } };
+  const markRead = () => { try { localStorage.setItem(lsKey, new Date().toISOString()); } catch {} setHasUnread(false); };
+
+  // Load messages when boardId changes
+  React.useEffect(() => {
+    if (!boardId) return;
+    loadChatMessages(boardId).then(msgs => {
+      setMessages(msgs);
+      const lastRead = getLastRead();
+      const hasNew = msgs.some(m => !m.is_system && m.user_id !== user?.id && m.created_at > lastRead);
+      setHasUnread(hasNew);
+    });
+  }, [boardId]);
+
+  // Broadcast subscription — stabil, fără probleme RLS
+  React.useEffect(() => {
+    if (!boardId) return;
+    const sub = subscribeChatMessages(boardId, msg => {
+      setMessages(prev => {
+        const filtered = prev.filter(m => !(m.id?.startsWith('tmp_') && m.user_id === msg.user_id && m.content === msg.content));
+        return [...filtered, msg];
+      });
+      if (!openRef.current && msg.user_id !== userIdRef.current && !msg.is_system) setHasUnread(true);
+    });
+    channelRef.current = sub;
+    return () => sub.unsubscribe();
+  }, [boardId]);
+
+  // Scroll to bottom when messages change
+  React.useEffect(() => {
+    if (open) bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, open]);
+
+  const handleOpen = () => { setOpen(true); markRead(); setTimeout(() => inputRef.current?.focus(), 100); };
+  const handleClose = () => setOpen(false);
+
+  const handleSend = async () => {
+    const content = text.trim();
+    if (!content || !user || sending) return;
+    setSending(true);
+    setText('');
+    const nickname = user.user_metadata?.full_name || user.email?.split('@')[0] || '?';
+    const optimistic = {
+      id: `tmp_${Date.now()}`,
+      board_id: boardId,
+      user_id: user.id,
+      nickname,
+      content,
+      is_system: false,
+      created_at: new Date().toISOString(),
+    };
+    setMessages(prev => [...prev, optimistic]);
+    const result = await sendChatMessage(boardId, user.id, nickname, content);
+    if (result.error) {
+      setMessages(prev => prev.filter(m => m.id !== optimistic.id));
+      console.error('Chat send failed:', result.error);
+    } else if (result.data) {
+      channelRef.current?.broadcast(result.data);
+    }
+    setSending(false);
+  };
+
+  const handleKey = e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } };
+
+  const formatTime = ts => { try { return new Date(ts).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' }); } catch { return ''; } };
+
+  if (!boardId || !user) return null;
+
+  return (
+    <div style={{ position:'fixed', bottom:'calc(76px + env(safe-area-inset-bottom, 0px))', right:16, zIndex:1100 }}>
+      {/* Floating button */}
+      {!open && (
+        <button onClick={handleOpen} style={{
+          width:52, height:52, borderRadius:'50%', border:'none', cursor:'pointer',
+          background:`linear-gradient(135deg,#00205B,#003580)`,
+          boxShadow:'0 4px 16px rgba(0,32,91,0.4)',
+          display:'flex', alignItems:'center', justifyContent:'center', position:'relative',
+          WebkitTapHighlightColor:'transparent',
+        }}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" fill="rgba(255,255,255,0.15)"/>
+            <line x1="9" y1="8" x2="15" y2="8"/>
+            <line x1="9" y1="12" x2="13" y2="12"/>
+          </svg>
+          {hasUnread && (
+            <div style={{
+              position:'absolute', top:4, right:4,
+              width:12, height:12, borderRadius:'50%',
+              background:'#E8112D', border:'2px solid #fff',
+            }}/>
+          )}
+        </button>
+      )}
+
+      {/* Chat popup */}
+      {open && (
+        <div style={{
+          position:'fixed',
+          bottom:'calc(76px + env(safe-area-inset-bottom, 0px))',
+          right:16,
+          width: Math.min(340, window.innerWidth - 32),
+          height: Math.min(440, window.innerHeight - 160),
+          borderRadius:20, overflow:'hidden',
+          boxShadow:'0 8px 40px rgba(0,0,0,0.25)',
+          display:'flex', flexDirection:'column',
+          background:'#fff',
+          border:'1px solid rgba(0,32,91,0.1)',
+          zIndex:1100,
+        }}>
+          {/* Header */}
+          <div style={{
+            background:`linear-gradient(135deg,#00205B,#003580)`,
+            padding:'12px 16px', display:'flex', alignItems:'center', justifyContent:'space-between', flexShrink:0,
+          }}>
+            <span style={{ color:'#fff', fontWeight:900, fontSize:14, letterSpacing:0.5, display:'flex', alignItems:'center', gap:6 }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" fill="rgba(255,255,255,0.2)"/>
+                <line x1="9" y1="8" x2="15" y2="8"/>
+                <line x1="9" y1="12" x2="13" y2="12"/>
+              </svg>
+              CHAT
+            </span>
+            <button onClick={handleClose} style={{
+              background:'rgba(255,255,255,0.15)', border:'none', borderRadius:8,
+              color:'#fff', fontSize:18, cursor:'pointer', lineHeight:1, padding:'2px 8px',
+              WebkitTapHighlightColor:'transparent',
+            }}>×</button>
+          </div>
+
+          {/* Messages */}
+          <div style={{ flex:1, overflowY:'auto', padding:'10px 12px', display:'flex', flexDirection:'column', gap:6 }}>
+            <div style={{ textAlign:'center', margin:'4px 0 8px' }}>
+              <span style={{
+                display:'inline-block', background:'#f0f4ff', borderRadius:20,
+                padding:'5px 14px', fontSize:11, color:'#666', fontStyle:'italic', lineHeight:1.5,
+              }}>
+                💬 {lang === 'ro'
+                  ? 'Ultimele 50 mesaje păstrate · reset zilnic la 00:00 ora României'
+                  : 'Last 50 messages kept · daily reset at 00:00 Romania time'}
+              </span>
+            </div>
+            {messages.length === 0 && (
+              <div style={{ textAlign:'center', color:'#aaa', fontSize:12, marginTop:20 }}>
+                {lang === 'ro' ? 'Niciun mesaj încă. Fii primul!' : 'No messages yet. Be the first!'}
+              </div>
+            )}
+            {messages.map(msg => {
+              const isMe = msg.user_id === user?.id;
+              if (msg.is_system) return (
+                <div key={msg.id} style={{ textAlign:'center', margin:'4px 0' }}>
+                  <span style={{
+                    display:'inline-block', background:'#f0f4ff', borderRadius:20,
+                    padding:'4px 14px', fontSize:11, color:'#555', fontStyle:'italic',
+                  }}>{msg.content}</span>
+                </div>
+              );
+              return (
+                <div key={msg.id} style={{ display:'flex', flexDirection:'column', alignItems: isMe ? 'flex-end' : 'flex-start' }}>
+                  {!isMe && <span style={{ fontSize:10, color:'#888', marginBottom:2, marginLeft:4 }}>{msg.nickname}</span>}
+                  <div style={{
+                    maxWidth:'78%', padding:'7px 11px', borderRadius: isMe ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
+                    background: isMe ? '#00205B' : '#f1f3f8',
+                    color: isMe ? '#fff' : '#111',
+                    fontSize:13, lineHeight:1.4, wordBreak:'break-word',
+                  }}>{msg.content}</div>
+                  <span style={{ fontSize:10, color:'#bbb', marginTop:2, marginLeft:4, marginRight:4 }}>{formatTime(msg.created_at)}</span>
+                </div>
+              );
+            })}
+            <div ref={bottomRef}/>
+          </div>
+
+          {/* Input */}
+          <div style={{
+            padding:'8px 10px', borderTop:'1px solid #eee', display:'flex', gap:8, flexShrink:0, background:'#fff',
+          }}>
+            <textarea
+              ref={inputRef}
+              value={text}
+              onChange={e => {
+                setText(e.target.value);
+                e.target.style.height = 'auto';
+                e.target.style.height = Math.min(e.target.scrollHeight, 100) + 'px';
+              }}
+              onKeyDown={handleKey}
+              placeholder={lang === 'ro' ? 'Scrie un mesaj...' : 'Write a message...'}
+              maxLength={300}
+              rows={1}
+              style={{
+                flex:1, border:'1px solid #dde', borderRadius:16, padding:'8px 14px',
+                fontSize:13, outline:'none', fontFamily:'inherit',
+                background:'#f8f9fc', resize:'none', overflow:'hidden',
+                lineHeight:1.4, minHeight:36, maxHeight:100,
+              }}
+            />
+            <button onClick={handleSend} disabled={!text.trim() || sending} style={{
+              width:38, height:38, borderRadius:'50%', border:'none', cursor:'pointer', flexShrink:0,
+              background: text.trim() ? `linear-gradient(135deg,#00205B,#003580)` : '#eee',
+              color: text.trim() ? '#fff' : '#aaa', fontSize:16, display:'flex', alignItems:'center', justifyContent:'center',
+              WebkitTapHighlightColor:'transparent', transition:'all 0.15s',
+            }}>➤</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function App() {
   const isTouchDevice = () => navigator.maxTouchPoints > 0 || 'ontouchstart' in window;
   const [isDesktop, setIsDesktop] = useState(() => window.innerWidth > 768 && !isTouchDevice());
@@ -10668,6 +10893,7 @@ function App() {
           </div>}
         </div>
         <Toast message={toast.message} emoji={toast.emoji} visible={toast.visible}/>
+        {screen===SCREENS.HOME && activeBoardId && <ChatWidget boardId={activeBoardId} user={user}/>}
         {showFooter&&(
           <div style={{
             position:"fixed",

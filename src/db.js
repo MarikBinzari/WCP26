@@ -549,6 +549,40 @@ export async function updatePlayerStats(date) {
 
 // â”€â”€â”€ REAL GROUP STANDINGS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Returns { "A": ["Mexico","South Africa",...], "B": [...], ... } sorted by rank
+// ─── BOARD CHAT ───────────────────────────────────────────────────────────────
+export async function loadChatMessages(boardId) {
+  const { data, error } = await supabase
+    .from('board_chat')
+    .select('id, user_id, nickname, content, is_system, created_at')
+    .eq('board_id', boardId)
+    .order('created_at', { ascending: true })
+  if (error) { console.error('loadChatMessages:', error); return [] }
+  return data || []
+}
+
+export async function sendChatMessage(boardId, userId, nickname, content) {
+  const { data, error } = await supabase
+    .from('board_chat')
+    .insert({ board_id: boardId, user_id: userId, nickname, content })
+    .select('id, board_id, user_id, nickname, content, is_system, created_at')
+    .single()
+  if (error) { console.error('sendChatMessage:', error); return { error: error.message, data: null } }
+  return { error: null, data }
+}
+
+export function subscribeChatMessages(boardId, callback) {
+  const channel = supabase.channel(`chat_${boardId}`, {
+    config: { broadcast: { self: true } },
+  })
+  channel
+    .on('broadcast', { event: 'chat' }, ({ payload }) => callback(payload))
+    .subscribe()
+  return {
+    unsubscribe: () => supabase.removeChannel(channel),
+    broadcast: (msg) => channel.send({ type: 'broadcast', event: 'chat', payload: msg }),
+  }
+}
+
 export async function loadRealGroupStandings() {
   const { data, error } = await supabase.rpc('get_group_standings')
   if (error) { console.error('loadRealGroupStandings:', error); return {} }
