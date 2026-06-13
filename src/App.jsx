@@ -10467,14 +10467,24 @@ function App() {
   },[]);
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
-  const [appOffline, setAppOffline] = useState(!navigator.onLine);
+  const [appOffline, setAppOffline] = useState(false);
   useEffect(() => {
-    const goOff = () => setAppOffline(true);
-    const goOn  = () => setAppOffline(false);
-    window.addEventListener('offline', goOff);
-    window.addEventListener('online',  goOn);
-    const iv = setInterval(() => setAppOffline(!navigator.onLine), 2000);
-    return () => { window.removeEventListener('offline', goOff); window.removeEventListener('online', goOn); clearInterval(iv); };
+    let cancelled = false;
+    const ping = async () => {
+      try {
+        const ctrl = new AbortController();
+        setTimeout(() => ctrl.abort(), 3000);
+        await fetch('https://www.google.com/generate_204', { method: 'HEAD', cache: 'no-store', mode: 'no-cors', signal: ctrl.signal });
+        if (!cancelled) setAppOffline(false);
+      } catch {
+        if (!cancelled) setAppOffline(true);
+      }
+    };
+    ping();
+    const iv = setInterval(ping, 5000);
+    window.addEventListener('offline', ping);
+    window.addEventListener('online', ping);
+    return () => { cancelled = true; clearInterval(iv); window.removeEventListener('offline', ping); window.removeEventListener('online', ping); };
   }, []);
 
   const setupPushNotifications = React.useCallback(async (userId) => {
