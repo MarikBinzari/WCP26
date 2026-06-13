@@ -4570,7 +4570,7 @@ function CircleTab({ label, imageUrl, name, isActive, onClick, lightBg=false, di
         transition:"all 0.4s ease",
       }}>
         {imageUrl
-          ? <img src={imageUrl} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+          ? <img src={imageUrl} alt="" loading="eager" decoding="async" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
           : label}
       </div>
       {!!name&&<span style={{
@@ -10565,6 +10565,8 @@ function App() {
       const counts = await fetchMemberCounts(allIds);
       const freshBoards = allMyBoards.map(b => ({ ...b, members: counts[b.id] ?? b.members }));
       setMyBoards(freshBoards);
+      // Preîncarcă imaginile boardurilor ca să nu apară cu delay în slider
+      freshBoards.forEach(b => { if (b.image_url) { const i = new Image(); i.src = b.image_url; } });
       if (!freshBoards.some(b => b.id === activeBoardIdRef.current)) {
         setActiveBoardId('global');
       }
