@@ -10467,30 +10467,34 @@ function App() {
   },[]);
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
-  const [appOffline, setAppOffline] = useState(!navigator.onLine);
   const wasOfflineRef = useRef(false);
   useEffect(() => {
-    let cancelled = false;
-    const ping = async (timeout = 3000) => {
-      const timeoutP = new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), timeout));
-      try {
-        await Promise.race([
-          fetch(SUPABASE_URL + '/health', { method: 'HEAD', cache: 'no-store', mode: 'no-cors' }),
-          timeoutP,
-        ]);
-        if (!cancelled) {
-          if (wasOfflineRef.current) { wasOfflineRef.current = false; window.location.reload(); return; }
-          setAppOffline(false);
-        }
-      } catch {
-        if (!cancelled) { wasOfflineRef.current = true; setAppOffline(true); }
-      }
+    const showOffline = () => {
+      if (document.getElementById('__offline_overlay')) return;
+      wasOfflineRef.current = true;
+      const el = document.createElement('div');
+      el.id = '__offline_overlay';
+      el.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;z-index:999999;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:32px;box-sizing:border-box;font-family:-apple-system,sans-serif;';
+      el.innerHTML = '<div style="font-size:64px">📡</div><div style="font-size:22px;font-weight:800;color:#111;text-align:center">Fără conexiune la internet</div><div style="font-size:14px;color:#555;text-align:center;max-width:260px">Verifică WiFi-ul sau datele mobile. Aplicația se va reîncărca automat.</div>';
+      document.body.appendChild(el);
     };
-    ping(1500);
+    const hideOffline = () => {
+      if (wasOfflineRef.current) { window.location.reload(); return; }
+      const el = document.getElementById('__offline_overlay');
+      if (el) el.remove();
+    };
+    const ping = () => {
+      const timeout = new Promise((_, r) => setTimeout(() => r(new Error('t')), 1500));
+      Promise.race([
+        fetch(SUPABASE_URL + '/health?_=' + Date.now(), { method: 'HEAD', cache: 'no-store', mode: 'no-cors' }),
+        timeout,
+      ]).then(hideOffline).catch(showOffline);
+    };
+    ping();
     const iv = setInterval(ping, 5000);
-    window.addEventListener('offline', ping);
-    window.addEventListener('online', ping);
-    return () => { cancelled = true; clearInterval(iv); window.removeEventListener('offline', ping); window.removeEventListener('online', ping); };
+    window.addEventListener('offline', showOffline);
+    window.addEventListener('online', hideOffline);
+    return () => { clearInterval(iv); window.removeEventListener('offline', showOffline); window.removeEventListener('online', hideOffline); };
   }, []);
 
   const setupPushNotifications = React.useCallback(async (userId) => {
@@ -10894,13 +10898,6 @@ function App() {
   if (!_nonSaveable.includes(screen)) { try { localStorage.setItem('lastScreen', screen); } catch {} }
   const footerActive = screen===SCREENS.RULES?SCREENS.RULES:screen===SCREENS.LEADERBOARD?SCREENS.LEADERBOARD:screen===SCREENS.BOARDS?SCREENS.BOARDS:screen===SCREENS.ACCOUNT?SCREENS.ACCOUNT:SCREENS.HOME;
 
-  if (appOffline) return (
-    <div style={{ position:'fixed', inset:0, zIndex:99999, background:'#fff', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:16, padding:32 }}>
-      <div style={{ fontSize:56 }}>📡</div>
-      <div style={{ fontSize:20, fontWeight:700, color:'#111', textAlign:'center' }}>Fără conexiune la internet</div>
-      <div style={{ fontSize:14, color:'#666', textAlign:'center', maxWidth:260 }}>Verifică WiFi-ul sau datele mobile. Aplicația se va reîncărca automat.</div>
-    </div>
-  );
   if (authLoading || (user && boardsLoading)) return <LoadingState title={authLoading ? T[lang].loadingTitle : T[lang].loadingLeagues} body={authLoading ? T[lang].loadingSession : T[lang].loadingBoards} />;
 
   return (
