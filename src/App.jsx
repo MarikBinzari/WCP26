@@ -9928,6 +9928,7 @@ function ChatWidget({ boardId, user, boardName }) {
   const [highlightedMsgId, setHighlightedMsgId] = React.useState(null);
   const [isOffline, setIsOffline] = React.useState(!navigator.onLine);
   const bottomRef = React.useRef(null);
+  const initialScrollDoneRef = React.useRef(false);
   const inputRef = React.useRef(null);
   const editInputRef = React.useRef(null);
   const containerRef = React.useRef(null);
@@ -9983,6 +9984,7 @@ function ChatWidget({ boardId, user, boardName }) {
     setMessages([]);
     setSelectedMsgId(null);
     setReplyingTo(null);
+    initialScrollDoneRef.current = false;
     loadChatMessages(boardId).then(res => {
       const msgs = res?.messages ?? res ?? [];
       if (res?.__offline || (!navigator.onLine && msgs.length === 0)) {
@@ -10024,12 +10026,18 @@ function ChatWidget({ boardId, user, boardName }) {
     return () => sub.unsubscribe();
   }, [boardId]);
 
-  // Scroll to bottom when messages change
+  // Scroll to bottom when messages change — instant la prima încărcare, smooth pentru mesaje noi
   React.useEffect(() => {
-    if (open) bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (!open) return;
+    if (!initialScrollDoneRef.current && messages.length > 0) {
+      initialScrollDoneRef.current = true;
+      bottomRef.current?.scrollIntoView({ behavior: 'instant' });
+    } else if (initialScrollDoneRef.current) {
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
   }, [messages, open]);
 
-  const handleOpen = () => { setOpen(true); markRead(); setTimeout(() => inputRef.current?.focus(), 100); };
+  const handleOpen = () => { initialScrollDoneRef.current = false; setOpen(true); markRead(); setTimeout(() => inputRef.current?.focus(), 100); };
   const handleClose = () => { setOpen(false); setText(''); setReplyingTo(null); if (inputRef.current) inputRef.current.style.height = ''; };
 
   const handleSend = async () => {
