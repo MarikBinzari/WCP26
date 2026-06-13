@@ -553,7 +553,7 @@ export async function updatePlayerStats(date) {
 export async function loadChatMessages(boardId) {
   const { data, error } = await supabase
     .from('board_chat')
-    .select('id, user_id, nickname, content, is_system, created_at, edited_at, likes')
+    .select('id, user_id, nickname, content, is_system, created_at, edited_at, likes, dislikes')
     .eq('board_id', boardId)
     .order('created_at', { ascending: true })
   if (error) { console.error('loadChatMessages:', error); return [] }
@@ -564,7 +564,7 @@ export async function sendChatMessage(boardId, userId, nickname, content) {
   const { data, error } = await supabase
     .from('board_chat')
     .insert({ board_id: boardId, user_id: userId, nickname, content })
-    .select('id, board_id, user_id, nickname, content, is_system, created_at, edited_at, likes')
+    .select('id, board_id, user_id, nickname, content, is_system, created_at, edited_at, likes, dislikes')
     .single()
   if (error) { console.error('sendChatMessage:', error); return { error: error.message, data: null } }
   return { error: null, data }
@@ -572,8 +572,14 @@ export async function sendChatMessage(boardId, userId, nickname, content) {
 
 export async function toggleChatLike(messageId) {
   const { data, error } = await supabase.rpc('toggle_chat_like', { p_message_id: messageId })
-  if (error) { console.error('toggleChatLike:', error); return { error: error.message, likes: [] } }
-  return { error: null, likes: data || [] }
+  if (error) { console.error('toggleChatLike:', error); return { error: error.message, values: [] } }
+  return { error: null, values: data || [] }
+}
+
+export async function toggleChatDislike(messageId) {
+  const { data, error } = await supabase.rpc('toggle_chat_dislike', { p_message_id: messageId })
+  if (error) { console.error('toggleChatDislike:', error); return { error: error.message, values: [] } }
+  return { error: null, values: data || [] }
 }
 
 export async function editChatMessage(messageId, content) {

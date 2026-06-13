@@ -10,7 +10,7 @@ import specialPickBadge from "./assets/special-pick-badge.webp";
 import bellIcon from "./assets/bell-icon.svg";
 import { ALL_GROUPS_DATA, FLAGS, TEAM_COLORS, CALENDAR_EVENTS, CL_FINAL } from "./data/worldcup2026.js";
 import { supabase } from "./supabase.js";
-import { savePredictions, saveExactScore, createBoard, updateBoard, joinBoardByCode, joinBoardById, ensureBoardScores, loadLeaderboard, loadMyScoreBreakdown, fetchScoringRules, fetchMemberCounts, removeBoardMember, removeParticipation, deleteBoard, loadBoardMembers, checkDbHealth, checkEmailExists, checkNicknameExists, loadLiveScores, subscribeLiveScores, loadPlayers, loadPlayersByTeam, seedPlayersFromApi, saveSpecialPick, uploadAvatar, uploadBoardImage, loadAllBoards, loadAllUserPicks, loadNotifReads, markNotifRead, loadSystemNotifications, loadRealGroupStandings, loadUserBreakdown, savePushSubscription, loadChatMessages, sendChatMessage, editChatMessage, toggleChatLike, subscribeChatMessages } from "./db.js";
+import { savePredictions, saveExactScore, createBoard, updateBoard, joinBoardByCode, joinBoardById, ensureBoardScores, loadLeaderboard, loadMyScoreBreakdown, fetchScoringRules, fetchMemberCounts, removeBoardMember, removeParticipation, deleteBoard, loadBoardMembers, checkDbHealth, checkEmailExists, checkNicknameExists, loadLiveScores, subscribeLiveScores, loadPlayers, loadPlayersByTeam, seedPlayersFromApi, saveSpecialPick, uploadAvatar, uploadBoardImage, loadAllBoards, loadAllUserPicks, loadNotifReads, markNotifRead, loadSystemNotifications, loadRealGroupStandings, loadUserBreakdown, savePushSubscription, loadChatMessages, sendChatMessage, editChatMessage, toggleChatLike, toggleChatDislike, subscribeChatMessages } from "./db.js";
 
 const TEAM_CODE = {"Mexico":"MEX","South Africa":"RSA","South Korea":"KOR","Czechia":"CZE","Canada":"CAN","Switzerland":"SUI","Qatar":"QAT","Bosnia-Herzegovina":"BIH","Brazil":"BRA","Morocco":"MAR","Scotland":"SCO","Haiti":"HAI","USA":"USA","Paraguay":"PAR","Australia":"AUS","Turkiye":"TUR","Germany":"GER","Ecuador":"ECU","Ivory Coast":"CIV","Curacao":"CUW","Netherlands":"NED","Japan":"JPN","Tunisia":"TUN","Sweden":"SWE","Belgium":"BEL","Iran":"IRI","Egypt":"EGY","New Zealand":"NZL","Spain":"ESP","Uruguay":"URU","Saudi Arabia":"KSA","Cape Verde":"CPV","France":"FRA","Senegal":"SEN","Norway":"NOR","Iraq":"IRQ","Argentina":"ARG","Austria":"AUT","Algeria":"ALG","Jordan":"JOR","Portugal":"POR","Colombia":"COL","Uzbekistan":"UZB","DR Congo":"COD","England":"ENG","Croatia":"CRO","Panama":"PAN","Ghana":"GHA"};
 
@@ -9944,7 +9944,7 @@ function ChatWidget({ boardId, user }) {
         setMessages(prev => prev.map(m => m.id === edit.id ? { ...m, content: edit.content, edited_at: edit.edited_at } : m));
       },
       reaction => {
-        setMessages(prev => prev.map(m => m.id === reaction.id ? { ...m, likes: reaction.likes } : m));
+        setMessages(prev => prev.map(m => m.id === reaction.id ? { ...m, [reaction.type]: reaction.values } : m));
       }
     );
     channelRef.current = sub;
@@ -9993,19 +9993,21 @@ function ChatWidget({ boardId, user }) {
     setTimeout(() => editInputRef.current?.focus(), 50);
   };
   const cancelEdit = () => setEditingId(null);
-  const handleLike = async (msg) => {
+  const handleReaction = async (msg, type, toggleFn) => {
     if (!user || msg.is_system || msg.id?.startsWith('tmp_')) return;
     const uid = user.id;
-    const prev_likes = msg.likes || [];
-    const newLikes = prev_likes.includes(uid) ? prev_likes.filter(id => id !== uid) : [...prev_likes, uid];
-    setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, likes: newLikes } : m));
-    const result = await toggleChatLike(msg.id);
+    const prev = msg[type] || [];
+    const next = prev.includes(uid) ? prev.filter(id => id !== uid) : [...prev, uid];
+    setMessages(ms => ms.map(m => m.id === msg.id ? { ...m, [type]: next } : m));
+    const result = await toggleFn(msg.id);
     if (result.error) {
-      setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, likes: prev_likes } : m));
+      setMessages(ms => ms.map(m => m.id === msg.id ? { ...m, [type]: prev } : m));
     } else {
-      channelRef.current?.broadcastReaction({ id: msg.id, likes: result.likes });
+      channelRef.current?.broadcastReaction({ id: msg.id, type, values: result.values });
     }
   };
+  const handleLike    = (msg) => handleReaction(msg, 'likes',    toggleChatLike);
+  const handleDislike = (msg) => handleReaction(msg, 'dislikes', toggleChatDislike);
   const handleSaveEdit = async () => {
     const content = editText.trim();
     if (!content || !editingId) { setEditingId(null); return; }
@@ -10158,22 +10160,30 @@ function ChatWidget({ boardId, user }) {
                       </div>
                     </div>
                   )}
-                  <div style={{ display:'flex', alignItems:'center', gap:6, marginTop:2, justifyContent: isMe ? 'flex-end' : 'flex-start' }}>
-                    <span style={{ fontSize:10, color:'#bbb', marginLeft:4, marginRight:4 }}>{formatTime(msg.created_at)}</span>
+                  <div style={{ display:'flex', alignItems:'center', gap:4, marginTop:2, justifyContent: isMe ? 'flex-end' : 'flex-start' }}>
+                    <span style={{ fontSize:10, color:'#bbb', marginLeft:4, marginRight:2 }}>{formatTime(msg.created_at)}</span>
                     {!msg.is_system && (() => {
-                      const likes = msg.likes || [];
-                      const iLiked = likes.includes(user?.id);
-                      return (
-                        <button onClick={() => handleLike(msg)} style={{
-                          background: iLiked ? 'rgba(232,17,45,0.08)' : 'none',
-                          border: 'none', borderRadius:12, cursor:'pointer',
+                      const likes    = msg.likes    || [];
+                      const dislikes = msg.dislikes || [];
+                      const uid = user?.id;
+                      const iLiked    = likes.includes(uid);
+                      const iDisliked = dislikes.includes(uid);
+                      const btn = (active, count, rotate, onClick) => (
+                        <button onClick={onClick} style={{
+                          background: active ? 'rgba(0,32,91,0.08)' : 'none',
+                          border:'none', borderRadius:12, cursor:'pointer',
                           padding:'1px 5px', display:'flex', alignItems:'center', gap:2,
-                          fontSize:13, lineHeight:1, transition:'all 0.15s',
-                          WebkitTapHighlightColor:'transparent',
+                          lineHeight:1, transition:'all 0.15s', WebkitTapHighlightColor:'transparent',
                         }}>
-                          <span style={{ fontSize:12, filter: iLiked ? 'none' : 'grayscale(1) opacity(0.4)' }}>🚀</span>
-                          {likes.length > 0 && <span style={{ fontSize:10, color: iLiked ? '#E8112D' : '#aaa', fontWeight: iLiked ? 700 : 400 }}>{likes.length}</span>}
+                          <span style={{ fontSize:12, display:'inline-block', transform: rotate ? 'rotate(180deg)' : 'none', filter: active ? 'none' : 'grayscale(1) opacity(0.35)' }}>🚀</span>
+                          {count > 0 && <span style={{ fontSize:10, color: active ? '#00205B' : '#aaa', fontWeight: active ? 700 : 400 }}>{count}</span>}
                         </button>
+                      );
+                      return (
+                        <>
+                          {btn(iLiked,    likes.length,    false, () => handleLike(msg))}
+                          {btn(iDisliked, dislikes.length, true,  () => handleDislike(msg))}
+                        </>
                       );
                     })()}
                   </div>
