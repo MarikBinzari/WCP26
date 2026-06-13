@@ -10472,10 +10472,12 @@ function App() {
   useEffect(() => {
     let cancelled = false;
     const ping = async (timeout = 3000) => {
+      const timeoutP = new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), timeout));
       try {
-        const ctrl = new AbortController();
-        setTimeout(() => ctrl.abort(), timeout);
-        await fetch(SUPABASE_URL + '/health', { method: 'HEAD', cache: 'no-store', mode: 'no-cors', signal: ctrl.signal });
+        await Promise.race([
+          fetch(SUPABASE_URL + '/health', { method: 'HEAD', cache: 'no-store', mode: 'no-cors' }),
+          timeoutP,
+        ]);
         if (!cancelled) {
           if (wasOfflineRef.current) { wasOfflineRef.current = false; window.location.reload(); return; }
           setAppOffline(false);
@@ -10484,7 +10486,7 @@ function App() {
         if (!cancelled) { wasOfflineRef.current = true; setAppOffline(true); }
       }
     };
-    ping(1000);
+    ping(1500);
     const iv = setInterval(ping, 5000);
     window.addEventListener('offline', ping);
     window.addEventListener('online', ping);
