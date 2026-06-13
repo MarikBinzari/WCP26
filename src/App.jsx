@@ -9961,6 +9961,9 @@ function ChatWidget({ boardId, user, boardName }) {
   // Load messages when boardId changes
   React.useEffect(() => {
     if (!boardId) return;
+    setMessages([]);
+    setSelectedMsgId(null);
+    setReplyingTo(null);
     loadChatMessages(boardId).then(msgs => {
       setMessages(msgs);
       const lastRead = getLastRead();
