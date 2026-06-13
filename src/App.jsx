@@ -9926,6 +9926,7 @@ function ChatWidget({ boardId, user, boardName }) {
   const [replyingTo, setReplyingTo] = React.useState(null);
   const [onlineCount, setOnlineCount] = React.useState(0);
   const [highlightedMsgId, setHighlightedMsgId] = React.useState(null);
+  const [isOffline, setIsOffline] = React.useState(!navigator.onLine);
   const bottomRef = React.useRef(null);
   const inputRef = React.useRef(null);
   const editInputRef = React.useRef(null);
@@ -9935,6 +9936,16 @@ function ChatWidget({ boardId, user, boardName }) {
   const userIdRef = React.useRef(user?.id);
   React.useEffect(() => { openRef.current = open; }, [open]);
   React.useEffect(() => { userIdRef.current = user?.id; }, [user?.id]);
+  React.useEffect(() => {
+    const goOffline = () => setIsOffline(true);
+    const goOnline  = () => {
+      setIsOffline(false);
+      if (boardId) loadChatMessages(boardId).then(msgs => { if (msgs.length) setMessages(msgs); });
+    };
+    window.addEventListener('offline', goOffline);
+    window.addEventListener('online',  goOnline);
+    return () => { window.removeEventListener('offline', goOffline); window.removeEventListener('online', goOnline); };
+  }, [boardId]);
   React.useEffect(() => {
     if (!open) return;
     const handler = (e) => {
@@ -10216,7 +10227,9 @@ function ChatWidget({ boardId, user, boardName }) {
             </div>
             {messages.length === 0 && (
               <div style={{ textAlign:'center', color:'#aaa', fontSize:12, marginTop:20 }}>
-                {lang === 'ro' ? 'Niciun mesaj încă. Fii primul!' : 'No messages yet. Be the first!'}
+                {isOffline
+                  ? '📡 Fără conexiune la internet'
+                  : lang === 'ro' ? 'Niciun mesaj încă. Fii primul!' : 'No messages yet. Be the first!'}
               </div>
             )}
             {messages.map(msg => {
