@@ -7805,6 +7805,7 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
   const [selectedUser, setSelectedUser] = useState(null); // {userId, name, pts, rank}
   const [breakdown, setBreakdown] = useState(null);
   const [breakdownLoading, setBreakdownLoading] = useState(false);
+  const [zoomedAvatar, setZoomedAvatar] = useState(null);
 
   const openBreakdown = (u) => {
     if (!u.userId) return;
@@ -7856,6 +7857,22 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
   const me = leaders.find(u=>u.isMe);
 
   return (<>
+    {zoomedAvatar && (
+      <div onClick={() => setZoomedAvatar(null)} style={{
+        position:'fixed', inset:0, zIndex:9999,
+        background:'rgba(0,0,0,0.85)',
+        display:'flex', alignItems:'center', justifyContent:'center',
+        cursor:'zoom-out',
+      }}>
+        <img src={zoomedAvatar} alt="" style={{
+          width: Math.min(window.innerWidth - 48, 320),
+          height: Math.min(window.innerWidth - 48, 320),
+          borderRadius:'50%', objectFit:'cover',
+          boxShadow:'0 8px 48px rgba(0,0,0,0.6)',
+          border:'4px solid rgba(255,255,255,0.9)',
+        }}/>
+      </div>
+    )}
     <div style={{flex:1,display:"flex",flexDirection:"column",background:"transparent",position:"relative",overflow:"hidden"}}>
       <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.055,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
       <div style={{flex:1,display:"flex",flexDirection:"column",background:"linear-gradient(to bottom, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0.10) 28%, rgba(255,255,255,0.02) 48%, transparent 65%)",borderRadius:26,margin:"10px 14px 0",boxShadow:"0 8px 32px rgba(10,46,138,0.10), inset 0 1px 0 rgba(255,255,255,0.80)",border:"1px solid rgba(255,255,255,0.22)",overflow:"hidden",position:"relative",willChange:"transform",transform:"translateZ(0)"}}>
@@ -7958,7 +7975,7 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
                     overflow:"hidden",background:u.isMe?`${NAVY}22`:"rgba(0,0,0,0.07)",
                     display:"flex",alignItems:"center",justifyContent:"center",marginBottom:5,flexShrink:0}}>
                     {u.avatarUrl
-                      ?<img src={u.avatarUrl} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                      ?<img src={u.avatarUrl} alt="" onClick={e=>{e.stopPropagation();setZoomedAvatar(u.avatarUrl);}} style={{width:"100%",height:"100%",objectFit:"cover",cursor:"zoom-in"}}/>
                       :<span style={{fontSize:rank===1?17:14,fontWeight:800,color:u.isMe?NAVY:"#555"}}>{initials}</span>}
                   </div>
                   <div style={{fontSize:11,fontWeight:800,color:u.isMe?NAVY:DARK,textAlign:"center",
@@ -7990,7 +8007,7 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
                     background:u.isMe?`${NAVY}22`:"rgba(0,0,0,0.07)",
                     display:"flex",alignItems:"center",justifyContent:"center"}}>
                     {u.avatarUrl
-                      ?<img src={u.avatarUrl} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                      ?<img src={u.avatarUrl} alt="" onClick={e=>{e.stopPropagation();setZoomedAvatar(u.avatarUrl);}} style={{width:"100%",height:"100%",objectFit:"cover",cursor:"zoom-in"}}/>
                       :<span style={{fontSize:11,fontWeight:700,color:u.isMe?NAVY:"#888"}}>{initials}</span>}
                   </div>
                   <div style={{flex:1,minWidth:0}}>
@@ -8042,7 +8059,7 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
                   background:u.isMe?`${NAVY}22`:"rgba(0,0,0,0.07)",
                   display:"flex",alignItems:"center",justifyContent:"center"}}>
                   {u.avatarUrl
-                    ?<img src={u.avatarUrl} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                    ?<img src={u.avatarUrl} alt="" onClick={e=>{e.stopPropagation();setZoomedAvatar(u.avatarUrl);}} style={{width:"100%",height:"100%",objectFit:"cover",cursor:"zoom-in"}}/>
                     :<span style={{fontSize:11,fontWeight:700,color:u.isMe?NAVY:"#888"}}>{initials}</span>}
                 </div>
                 <div style={{flex:1,minWidth:0}}>
@@ -8083,7 +8100,7 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
             <div style={{width:40,height:40,borderRadius:"50%",background:`${NAVY}15`,
               display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,overflow:"hidden"}}>
               {selectedUser.avatarUrl
-                ?<img src={selectedUser.avatarUrl} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                ?<img src={selectedUser.avatarUrl} alt="" onClick={e=>{e.stopPropagation();setZoomedAvatar(selectedUser.avatarUrl);}} style={{width:"100%",height:"100%",objectFit:"cover",cursor:"zoom-in"}}/>
                 :<span style={{fontSize:14,fontWeight:800,color:NAVY}}>
                   {selectedUser.name?.split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2)||"?"}
                 </span>}
