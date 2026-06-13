@@ -10059,6 +10059,46 @@ function ChatWidget({ boardId, user }) {
 
   const formatTime = ts => { try { return new Date(ts).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' }); } catch { return ''; } };
 
+  const swipeState = React.useRef({});
+  const onMsgTouchStart = (e, msgId) => {
+    const t = e.touches[0];
+    swipeState.current = { id: msgId, startX: t.clientX, startY: t.clientY, moved: false, didSwipe: false };
+  };
+  const onMsgTouchMove = (e, msgId) => {
+    const s = swipeState.current;
+    if (s.id !== msgId) return;
+    const t = e.touches[0];
+    const dx = t.clientX - s.startX;
+    const dy = Math.abs(t.clientY - s.startY);
+    if (!s.moved && Math.abs(dx) < 8) return;
+    if (!s.moved && dy > Math.abs(dx)) { s.id = null; return; }
+    s.moved = true;
+    if (dx > 0) {
+      const el = e.currentTarget;
+      el.style.transition = 'none';
+      el.style.transform = `translateX(${Math.min(dx * 0.5, 65)}px)`;
+    }
+  };
+  const onMsgTouchEnd = (e, msgId, msg) => {
+    const s = swipeState.current;
+    if (s.id !== msgId || !s.moved) return;
+    const el = e.currentTarget;
+    el.style.transition = 'transform 0.25s ease';
+    el.style.transform = '';
+    const dx = e.changedTouches[0].clientX - s.startX;
+    if (dx > 50) {
+      s.didSwipe = true;
+      setReplyingTo({ id: msg.id, nickname: msg.nickname, content: msg.content });
+      setSelectedMsgId(null);
+      setTimeout(() => inputRef.current?.focus(), 80);
+    }
+    swipeState.current = {};
+  };
+  const onMsgClick = (e, msgId) => {
+    if (swipeState.current.didSwipe) return;
+    setSelectedMsgId(s => s === msgId ? null : msgId);
+  };
+
   if (!boardId || !user) return null;
 
   return (
@@ -10186,13 +10226,16 @@ function ChatWidget({ boardId, user }) {
                           }}>✎</button>
                         )}
                         <div
-                          onClick={() => !msg.is_system && setSelectedMsgId(s => s === msg.id ? null : msg.id)}
+                          onTouchStart={msg.is_system ? undefined : e => onMsgTouchStart(e, msg.id)}
+                          onTouchMove={msg.is_system ? undefined : e => onMsgTouchMove(e, msg.id)}
+                          onTouchEnd={msg.is_system ? undefined : e => onMsgTouchEnd(e, msg.id, msg)}
+                          onClick={msg.is_system ? undefined : e => onMsgClick(e, msg.id)}
                           style={{
                             maxWidth:'100%', padding:'7px 11px', borderRadius: isMe ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
                             background: isMe ? '#00205B' : '#f1f3f8',
                             color: isMe ? '#fff' : '#111',
                             fontSize:13, lineHeight:1.4, wordBreak:'break-word', cursor: msg.is_system ? 'default' : 'pointer',
-                            WebkitTapHighlightColor:'transparent',
+                            WebkitTapHighlightColor:'transparent', willChange:'transform',
                           }}
                         >
                           {msg.reply_to_content && (
