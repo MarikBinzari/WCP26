@@ -8828,42 +8828,50 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
         </div>
       )}
 
-      {/* Match Predictions Modal */}
+      {/* Match Predictions Modal — same design as ranking breakdown */}
       {matchPreview&&(
-        <div style={{position:"fixed",inset:0,zIndex:2000,display:"flex",flexDirection:"column",justifyContent:"flex-end",touchAction:"none"}}
+        <div style={{position:"fixed",inset:0,zIndex:2000,display:"flex",flexDirection:"column",justifyContent:"flex-end"}}
           onClick={()=>setMatchPreview(null)}>
-          <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.5)"}}/>
+          <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.45)",animation:"fadeIn 0.2s ease forwards"}}/>
           <div onClick={e=>e.stopPropagation()}
-            style={{position:"relative",background:"#f5f5f5",borderRadius:"20px 20px 0 0",maxHeight:"80vh",display:"flex",flexDirection:"column",zIndex:1}}>
+            style={{position:"relative",background:"#fff",borderRadius:"20px 20px 0 0",
+              maxHeight:"78vh",display:"flex",flexDirection:"column",
+              boxShadow:"0 -4px 32px rgba(0,0,0,0.18)",
+              animation:"slideUp 0.28s cubic-bezier(0.32,0.72,0,1) forwards"}}>
+            {/* Handle */}
             <div style={{display:"flex",justifyContent:"center",padding:"10px 0 0"}}>
-              <div style={{width:36,height:4,borderRadius:2,background:"rgba(0,0,0,0.15)"}}/>
+              <div style={{width:36,height:4,borderRadius:2,background:"#E5E7EB"}}/>
             </div>
-            {/* Header */}
-            <div style={{padding:"10px 20px 12px",borderBottom:"1px solid rgba(0,0,0,0.07)",background:"#fff",borderRadius:"16px 16px 0 0"}}>
-              <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
-                <span style={{fontSize:30}}>{matchPreview.match.homeFlag}</span>
-                <div style={{textAlign:"center"}}>
+            {/* Header — match info */}
+            <div style={{padding:"12px 20px 14px",borderBottom:"1px solid #F3F4F6"}}>
+              <div style={{display:"flex",alignItems:"center",gap:10}}>
+                <span style={{fontSize:28,flexShrink:0}}>{matchPreview.match.homeFlag}</span>
+                <div style={{flex:1,textAlign:"center"}}>
                   {(()=>{
                     const live=LIVE_SCORES[matchPreview.key];
                     return live&&live.home!=null?(
-                      <div style={{background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,borderRadius:10,padding:"4px 16px",display:"inline-block"}}>
-                        <span style={{fontSize:22,fontWeight:900,color:"#fff",letterSpacing:3}}>{live.home} – {live.away}</span>
-                      </div>
+                      <div style={{fontSize:20,fontWeight:900,color:NAVY,letterSpacing:2}}>{live.home} – {live.away}</div>
                     ):(
-                      <span style={{fontSize:18,fontWeight:700,color:"#bbb",letterSpacing:2}}>vs</span>
+                      <div style={{fontSize:16,fontWeight:700,color:"#bbb"}}>vs</div>
                     );
                   })()}
-                  <p style={{margin:"4px 0 0",fontSize:12,color:"#999",fontWeight:600}}>{matchPreview.match.home} · {matchPreview.match.away}</p>
+                  <div style={{fontSize:11,color:"#9CA3AF",fontWeight:600,marginTop:2}}>{matchPreview.match.home} · {matchPreview.match.away}</div>
                 </div>
-                <span style={{fontSize:30}}>{matchPreview.match.awayFlag}</span>
+                <span style={{fontSize:28,flexShrink:0}}>{matchPreview.match.awayFlag}</span>
               </div>
             </div>
             {/* List */}
-            <div style={{overflowY:"auto",flex:1,padding:"6px 0 28px"}}>
+            <div style={{overflowY:"auto",flex:1,padding:"6px 20px 40px"}}>
               {matchPreviewData.loading?(
-                <div style={{padding:"24px",textAlign:"center",color:"#aaa",fontSize:13}}>Se încarcă...</div>
+                <div style={{display:"flex",justifyContent:"center",padding:"32px 0",color:"#9CA3AF",fontSize:13}}>
+                  <span style={{width:18,height:18,borderRadius:"50%",border:`2px solid ${NAVY}22`,
+                    borderTopColor:NAVY,animation:"spin 0.9s linear infinite",display:"inline-block",marginRight:8}}/>
+                  Se încarcă...
+                </div>
               ):matchPreviewData.items.length===0?(
-                <div style={{padding:"24px",textAlign:"center",color:"#aaa",fontSize:13}}>Niciun jucător din acest grup nu a prezis acest meci.</div>
+                <div style={{textAlign:"center",padding:"32px 0",color:"#9CA3AF",fontSize:13}}>
+                  Niciun jucător din acest grup nu a prezis acest meci.
+                </div>
               ):(()=>{
                 const live=LIVE_SCORES[matchPreview.key];
                 const hasFinal=live&&live.home!=null;
@@ -8871,33 +8879,42 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
                   if(!hasFinal) return -1;
                   if(p.predHome===live.home&&p.predAway===live.away) return 3;
                   const pd=p.predHome-p.predAway, rd=live.home-live.away;
-                  if(pd===rd&&pd!==0) return 2;
+                  if(pd===rd&&pd!==0&&Math.sign(pd)===Math.sign(rd)) return 2;
                   if(Math.sign(p.predHome-p.predAway)===Math.sign(live.home-live.away)) return 1;
                   return 0;
                 };
-                return [...matchPreviewData.items].sort((a,b)=>scoreOf(b)-scoreOf(a)).map((item,i,arr)=>{
-                  const sc=scoreOf(item);
-                  const isExact=sc===3, isDiff=sc===2, isResult=sc===1, isMiss=hasFinal&&sc===0;
-                  const badgeBg=isExact?"#22C55E":isDiff?"#F59E0B":isResult?NAVY:isMiss?"#EF4444":"#ccc";
-                  const badgeTxt=isExact?"🎯 EXACT":isDiff?"+DIFF":isResult?"✓ WIN":isMiss?"✗":"";
-                  const scoreTxt=`${item.predHome}-${item.predAway}`;
-                  return (
-                    <div key={item.userId} style={{display:"flex",alignItems:"center",gap:10,padding:"9px 20px",background:"#fff",borderBottom:i<arr.length-1?"1px solid rgba(0,0,0,0.05)":"none"}}>
-                      <div style={{width:34,height:34,borderRadius:"50%",background:NAVY,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,overflow:"hidden"}}>
-                        {item.avatarUrl?(
-                          <img src={item.avatarUrl} style={{width:"100%",height:"100%",objectFit:"cover"}} alt=""/>
-                        ):(
-                          <span style={{fontSize:14,color:"#fff",fontWeight:700}}>{(item.name[0]||"?").toUpperCase()}</span>
-                        )}
-                      </div>
-                      <span style={{flex:1,fontSize:13,fontWeight:600,color:DARK}}>{item.name}</span>
-                      <div style={{display:"flex",alignItems:"center",gap:6}}>
-                        {badgeTxt&&<span style={{fontSize:9,fontWeight:800,color:"#fff",background:badgeBg,borderRadius:4,padding:"2px 6px",letterSpacing:0.5,whiteSpace:"nowrap"}}>{badgeTxt}</span>}
-                        <span style={{fontSize:14,fontWeight:800,color:isExact?"#22C55E":isDiff?"#F59E0B":isResult?NAVY:isMiss?"#EF4444":"#888",background:isExact?"rgba(34,197,94,0.1)":isDiff?"rgba(245,158,11,0.1)":isResult?"rgba(0,32,91,0.07)":isMiss?"rgba(239,68,68,0.07)":"rgba(0,0,0,0.05)",borderRadius:8,padding:"4px 10px"}}>{scoreTxt}</span>
-                      </div>
-                    </div>
-                  );
-                });
+                return (
+                  <div style={{border:`1.5px solid ${NAVY}22`,borderRadius:12,overflow:"hidden",marginTop:10}}>
+                    {[...matchPreviewData.items].sort((a,b)=>scoreOf(b)-scoreOf(a)).map((item,i,arr)=>{
+                      const sc=scoreOf(item);
+                      const isExact=sc===3, isDiff=sc===2, isResult=sc===1, isMiss=hasFinal&&sc===0;
+                      const badgeTxt=isExact?"🎯 EXACT":isDiff?"+DIFF":isResult?"✓ WIN":isMiss?"✗":"";
+                      const badgeBg=isExact?GREEN:isDiff?"#F59E0B":isResult?NAVY:isMiss?"#EF4444":"#ccc";
+                      const scoreColor=isExact?GREEN:isDiff?"#F59E0B":isResult?NAVY:isMiss?"#EF4444":"#888";
+                      return (
+                        <div key={item.userId} style={{display:"flex",alignItems:"center",gap:10,
+                          padding:"9px 12px",borderBottom:i<arr.length-1?"1px solid #F9FAFB":"none"}}>
+                          <div style={{width:34,height:34,borderRadius:"50%",background:`${NAVY}15`,
+                            display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,overflow:"hidden"}}>
+                            {item.avatarUrl?(
+                              <img src={item.avatarUrl} style={{width:"100%",height:"100%",objectFit:"cover"}} alt=""/>
+                            ):(
+                              <span style={{fontSize:13,fontWeight:800,color:NAVY}}>
+                                {(item.name?.split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2))||"?"}
+                              </span>
+                            )}
+                          </div>
+                          <span style={{flex:1,fontSize:13,fontWeight:700,color:DARK}}>{item.name}</span>
+                          <div style={{display:"flex",alignItems:"center",gap:6}}>
+                            {badgeTxt&&<span style={{fontSize:9,fontWeight:800,color:"#fff",background:badgeBg,
+                              borderRadius:4,padding:"1px 5px",letterSpacing:0.5,whiteSpace:"nowrap"}}>{badgeTxt}</span>}
+                            <span style={{fontSize:13,fontWeight:800,color:scoreColor}}>{item.predHome}-{item.predAway}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
               })()}
             </div>
           </div>
