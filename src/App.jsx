@@ -10,7 +10,7 @@ import specialPickBadge from "./assets/special-pick-badge.webp";
 import bellIcon from "./assets/bell-icon.svg";
 import { ALL_GROUPS_DATA, FLAGS, TEAM_COLORS, CALENDAR_EVENTS, CL_FINAL } from "./data/worldcup2026.js";
 import { supabase, SUPABASE_URL } from "./supabase.js";
-import { savePredictions, saveExactScore, createBoard, updateBoard, joinBoardByCode, joinBoardById, ensureBoardScores, loadLeaderboard, loadMyScoreBreakdown, fetchScoringRules, fetchMemberCounts, removeBoardMember, removeParticipation, deleteBoard, loadBoardMembers, checkDbHealth, checkEmailExists, checkNicknameExists, loadLiveScores, subscribeLiveScores, loadPlayers, loadPlayersByTeam, seedPlayersFromApi, saveSpecialPick, uploadAvatar, uploadBoardImage, loadAllBoards, loadAllUserPicks, loadNotifReads, markNotifRead, loadSystemNotifications, loadRealGroupStandings, loadUserBreakdown, savePushSubscription, loadChatMessages, sendChatMessage, editChatMessage, toggleChatLike, toggleChatDislike, subscribeChatMessages } from "./db.js";
+import { savePredictions, saveExactScore, createBoard, updateBoard, joinBoardByCode, joinBoardById, ensureBoardScores, loadLeaderboard, loadMyScoreBreakdown, fetchScoringRules, fetchMemberCounts, removeBoardMember, removeParticipation, deleteBoard, loadBoardMembers, checkDbHealth, checkEmailExists, checkNicknameExists, loadLiveScores, subscribeLiveScores, loadPlayers, loadPlayersByTeam, seedPlayersFromApi, saveSpecialPick, uploadAvatar, uploadBoardImage, loadAllBoards, loadAllUserPicks, loadNotifReads, markNotifRead, loadSystemNotifications, loadRealGroupStandings, loadUserBreakdown, savePushSubscription, loadChatMessages, sendChatMessage, editChatMessage, toggleChatLike, toggleChatDislike, subscribeChatMessages, loadMatchPredictions } from "./db.js";
 
 const TEAM_CODE = {"Mexico":"MEX","South Africa":"RSA","South Korea":"KOR","Czechia":"CZE","Canada":"CAN","Switzerland":"SUI","Qatar":"QAT","Bosnia-Herzegovina":"BIH","Brazil":"BRA","Morocco":"MAR","Scotland":"SCO","Haiti":"HAI","USA":"USA","Paraguay":"PAR","Australia":"AUS","Turkiye":"TUR","Germany":"GER","Ecuador":"ECU","Ivory Coast":"CIV","Curacao":"CUW","Netherlands":"NED","Japan":"JPN","Tunisia":"TUN","Sweden":"SWE","Belgium":"BEL","Iran":"IRI","Egypt":"EGY","New Zealand":"NZL","Spain":"ESP","Uruguay":"URU","Saudi Arabia":"KSA","Cape Verde":"CPV","France":"FRA","Senegal":"SEN","Norway":"NOR","Iraq":"IRQ","Argentina":"ARG","Austria":"AUT","Algeria":"ALG","Jordan":"JOR","Portugal":"POR","Colombia":"COL","Uzbekistan":"UZB","DR Congo":"COD","England":"ENG","Croatia":"CRO","Panama":"PAN","Ghana":"GHA"};
 
@@ -8308,7 +8308,7 @@ function ScorePicker({ match, day, savedScore, onSave, onBack }) {
 const scH = (sc) => Array.isArray(sc) ? sc[0] : (sc?.home ?? 0);
 const scA = (sc) => Array.isArray(sc) ? sc[1] : (sc?.away ?? 0);
 
-function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScoresProp, simDay, simHour=12, simMin=0, initialWeek }) {
+function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScoresProp, simDay, simHour=12, simMin=0, initialWeek, boardId }) {
   const lang = useLang();
   const LIVE_SCORES = useLiveScores(simDay, simHour, simMin);
   const calendarEvents = getDisplayCalendarEvents();
@@ -8366,6 +8366,8 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
     _setV(v=>v+1);
   };
   const [scorePick, setScorePick] = useState(null);
+  const [matchPreview, setMatchPreview] = useState(null);
+  const [matchPreviewData, setMatchPreviewData] = useState({ loading: false, items: [] });
   const [showReal, setShowReal] = useState(true);
   const [showStanding, setShowStanding] = useState(false);
   const [pickerHome, setPickerHome] = useState(0);
@@ -8389,6 +8391,15 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
       }, 50);
     }
   },[scorePick]);
+
+  useEffect(()=>{
+    if(!matchPreview||!boardId) return;
+    setMatchPreviewData({loading:true,items:[]});
+    loadMatchPredictions(matchPreview.key, boardId).then(items=>{
+      setMatchPreviewData({loading:false,items});
+    });
+  },[matchPreview?.key, boardId]);
+
   const weekIdx = weeks.indexOf(weekStart);
 
   const getGroupsForDays = (days) => {
@@ -8496,6 +8507,9 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
           GROUPS_DATA={GROUPS_DATA} showReal={showReal} setShowReal={setShowReal}
           standing={standing} isGroupLocked={isGroupLocked} simDay={simDay} simHour={simHour} simMin={simMin}
           liveScores={LIVE_SCORES}
+          onMatchPreview={(match,day,idx)=>{
+            setMatchPreview({match,day,idx,key:getMatchKey(match,day,idx)});
+          }}
           onMatchClick={(match,day,idx)=>{
             if(!isWeekUnlocked(day, simDay, simHour, simMin)) return;
             // UCL Final (day -1): allow prediction before kickoff only
@@ -8813,11 +8827,87 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
           </div>
         </div>
       )}
+
+      {/* Match Predictions Modal */}
+      {matchPreview&&(
+        <div style={{position:"fixed",inset:0,zIndex:2000,display:"flex",flexDirection:"column",justifyContent:"flex-end",touchAction:"none"}}
+          onClick={()=>setMatchPreview(null)}>
+          <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.5)"}}/>
+          <div onClick={e=>e.stopPropagation()}
+            style={{position:"relative",background:"#f5f5f5",borderRadius:"20px 20px 0 0",maxHeight:"80vh",display:"flex",flexDirection:"column",zIndex:1}}>
+            <div style={{display:"flex",justifyContent:"center",padding:"10px 0 0"}}>
+              <div style={{width:36,height:4,borderRadius:2,background:"rgba(0,0,0,0.15)"}}/>
+            </div>
+            {/* Header */}
+            <div style={{padding:"10px 20px 12px",borderBottom:"1px solid rgba(0,0,0,0.07)",background:"#fff",borderRadius:"16px 16px 0 0"}}>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
+                <span style={{fontSize:30}}>{matchPreview.match.homeFlag}</span>
+                <div style={{textAlign:"center"}}>
+                  {(()=>{
+                    const live=LIVE_SCORES[matchPreview.key];
+                    return live&&live.home!=null?(
+                      <div style={{background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,borderRadius:10,padding:"4px 16px",display:"inline-block"}}>
+                        <span style={{fontSize:22,fontWeight:900,color:"#fff",letterSpacing:3}}>{live.home} – {live.away}</span>
+                      </div>
+                    ):(
+                      <span style={{fontSize:18,fontWeight:700,color:"#bbb",letterSpacing:2}}>vs</span>
+                    );
+                  })()}
+                  <p style={{margin:"4px 0 0",fontSize:12,color:"#999",fontWeight:600}}>{matchPreview.match.home} · {matchPreview.match.away}</p>
+                </div>
+                <span style={{fontSize:30}}>{matchPreview.match.awayFlag}</span>
+              </div>
+            </div>
+            {/* List */}
+            <div style={{overflowY:"auto",flex:1,padding:"6px 0 28px"}}>
+              {matchPreviewData.loading?(
+                <div style={{padding:"24px",textAlign:"center",color:"#aaa",fontSize:13}}>Se încarcă...</div>
+              ):matchPreviewData.items.length===0?(
+                <div style={{padding:"24px",textAlign:"center",color:"#aaa",fontSize:13}}>Niciun jucător din acest grup nu a prezis acest meci.</div>
+              ):(()=>{
+                const live=LIVE_SCORES[matchPreview.key];
+                const hasFinal=live&&live.home!=null;
+                const scoreOf=p=>{
+                  if(!hasFinal) return -1;
+                  if(p.predHome===live.home&&p.predAway===live.away) return 3;
+                  const pd=p.predHome-p.predAway, rd=live.home-live.away;
+                  if(pd===rd&&pd!==0) return 2;
+                  if(Math.sign(p.predHome-p.predAway)===Math.sign(live.home-live.away)) return 1;
+                  return 0;
+                };
+                return [...matchPreviewData.items].sort((a,b)=>scoreOf(b)-scoreOf(a)).map((item,i,arr)=>{
+                  const sc=scoreOf(item);
+                  const isExact=sc===3, isDiff=sc===2, isResult=sc===1, isMiss=hasFinal&&sc===0;
+                  const badgeBg=isExact?"#22C55E":isDiff?"#F59E0B":isResult?NAVY:isMiss?"#EF4444":"#ccc";
+                  const badgeTxt=isExact?"🎯 EXACT":isDiff?"+DIFF":isResult?"✓ WIN":isMiss?"✗":"";
+                  const scoreTxt=`${item.predHome}-${item.predAway}`;
+                  return (
+                    <div key={item.userId} style={{display:"flex",alignItems:"center",gap:10,padding:"9px 20px",background:"#fff",borderBottom:i<arr.length-1?"1px solid rgba(0,0,0,0.05)":"none"}}>
+                      <div style={{width:34,height:34,borderRadius:"50%",background:NAVY,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,overflow:"hidden"}}>
+                        {item.avatarUrl?(
+                          <img src={item.avatarUrl} style={{width:"100%",height:"100%",objectFit:"cover"}} alt=""/>
+                        ):(
+                          <span style={{fontSize:14,color:"#fff",fontWeight:700}}>{(item.name[0]||"?").toUpperCase()}</span>
+                        )}
+                      </div>
+                      <span style={{flex:1,fontSize:13,fontWeight:600,color:DARK}}>{item.name}</span>
+                      <div style={{display:"flex",alignItems:"center",gap:6}}>
+                        {badgeTxt&&<span style={{fontSize:9,fontWeight:800,color:"#fff",background:badgeBg,borderRadius:4,padding:"2px 6px",letterSpacing:0.5,whiteSpace:"nowrap"}}>{badgeTxt}</span>}
+                        <span style={{fontSize:14,fontWeight:800,color:isExact?"#22C55E":isDiff?"#F59E0B":isResult?NAVY:isMiss?"#EF4444":"#888",background:isExact?"rgba(34,197,94,0.1)":isDiff?"rgba(245,158,11,0.1)":isResult?"rgba(0,32,91,0.07)":isMiss?"rgba(239,68,68,0.07)":"rgba(0,0,0,0.05)",borderRadius:8,padding:"4px 10px"}}>{scoreTxt}</span>
+                      </div>
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDaySelect, scores, onMatchClick, showStanding, setShowStanding, selGroup, setSelGroup, GROUPS_DATA, showReal, setShowReal, standing, isGroupLocked, simDay, simHour=12, simMin=0, liveScores, scoresVersion }) {
+function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDaySelect, scores, onMatchClick, onMatchPreview, showStanding, setShowStanding, selGroup, setSelGroup, GROUPS_DATA, showReal, setShowReal, standing, isGroupLocked, simDay, simHour=12, simMin=0, liveScores, scoresVersion }) {
   const lang = useLang();
   const LIVE_SCORES = liveScores || LIVE_SCORES_DEFAULT;
   const [collapsedGroups, setCollapsedGroups] = useState({});
@@ -9152,10 +9242,11 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                                   const penDisplay2 = penaltyScoreLabel(live2);
                                   const isPastM = m.day<_nd || (m.day===_nd && _mH<=_nh);
                                   const canEdit=!isLive2&&!isHT2&&!isFT2&&!isPastM&&isWeekUnlocked(m.day,simDay,simHour,simMin);
+                                  const isPreviewable=(isFT2||isPastM)&&!!onMatchPreview;
                                   return (
                                     <div key={idx2} style={{background:"#fff",borderBottom:idx2<koMatches.length-1?"1px solid rgba(0,0,0,0.05)":"none",
-                                      padding:"10px 14px",display:"flex",alignItems:"center",gap:8,cursor:canEdit?"pointer":"default"}}
-                                      onClick={()=>canEdit&&onMatchClick&&onMatchClick(m,m.day,m._i)}>
+                                      padding:"10px 14px",display:"flex",alignItems:"center",gap:8,cursor:(canEdit||isPreviewable)?"pointer":"default"}}
+                                      onClick={()=>{if(canEdit&&onMatchClick)onMatchClick(m,m.day,m._i);else if(isPreviewable)onMatchPreview(m,m.day,m._i);}}>
                                       <div style={{flexShrink:0,textAlign:"center",width:32}}>
                                         <p style={{fontSize:12,color:"#aaa",margin:0,fontWeight:600}}>{m.day>30?m.day-30:m.day} {m.day>30?"Jul":"Jun"}</p>
                                         <p style={{fontSize:11,color:"#bbb",margin:0}}>{fmtMatchTime(m.day, m.time, m.kickoffUtc)}</p>
@@ -9283,12 +9374,13 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                               const nowHM = simDay ? (simHour||0) : new Date().getHours();
                               const isPastM = m.day < nowDM || (m.day === nowDM && matchHourM <= nowHM);
                               const canEdit=!isLive2&&!isHT2&&!isFT2&&!isPastM&&isWeekUnlocked(m.day,simDay,simHour,simMin);
+                              const isPreviewable2=(isFT2||isPastM)&&!!onMatchPreview;
                               return (
-                                <div key={idx2} role={canEdit?"button":undefined} tabIndex={canEdit?0:undefined}
+                                <div key={idx2} role={(canEdit||isPreviewable2)?"button":undefined} tabIndex={(canEdit||isPreviewable2)?0:undefined}
                                   style={{background:"#fff",borderBottom:idx2<allGM.length-1?"1px solid rgba(0,0,0,0.05)":"none",
                                   padding:"10px 14px",display:"flex",alignItems:"center",gap:8}}
-                                  onClick={()=>canEdit&&onMatchClick&&onMatchClick(m,m.day,m._i)}
-                                  onKeyDown={canEdit?e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();onMatchClick&&onMatchClick(m,m.day,m._i);}}:undefined}>
+                                  onClick={()=>{if(canEdit&&onMatchClick)onMatchClick(m,m.day,m._i);else if(isPreviewable2)onMatchPreview(m,m.day,m._i);}}
+                                  onKeyDown={(canEdit||isPreviewable2)?e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();if(canEdit&&onMatchClick)onMatchClick(m,m.day,m._i);else if(isPreviewable2)onMatchPreview(m,m.day,m._i);}}:undefined}>
                                   <span style={{fontSize:18}}>{m.homeFlag}</span>
                                   <span style={{flex:1,fontSize:12,fontWeight:600,color:isPastM?"#bbb":DARK}}>{m.home.length>7?m.home.split(" ")[0]:m.home}</span>
                                   <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
@@ -9362,11 +9454,11 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                           {isFT&&<span style={{fontSize:11,fontWeight:700,color:GREEN}}>FT</span>}
                           {isNS2&&<span style={{fontSize:11,color:"#ccc"}}>{T[lang].notStarted}</span>}
                         </div>
-                        {(()=>{ return (
-                        <div role="button" tabIndex={isPastDay2?undefined:0}
-                          onClick={()=>!isMatchPast(m.day||sel,m.time,simDay,simHour,m.kickoffUtc)&&!isPastDay2&&onMatchClick&&onMatchClick(m,sel,m._i)}
-                          onKeyDown={isPastDay2?undefined:e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();if(!isMatchPast(m.day||sel,m.time,simDay,simHour,m.kickoffUtc))onMatchClick&&onMatchClick(m,sel,m._i);}}}
-                          style={{display:"flex",alignItems:"center",padding:"10px 14px",cursor:isPastDay2?"default":"pointer",gap:6,opacity:isPastDay2?0.6:1}}>
+                        {(()=>{ const _isPast3=isMatchPast(m.day||sel,m.time,simDay,simHour,m.kickoffUtc); const _isPreviewable3=(isFT||_isPast3)&&!!onMatchPreview; return (
+                        <div role="button" tabIndex={0}
+                          onClick={()=>{if(!_isPast3&&!isPastDay2&&onMatchClick)onMatchClick(m,sel,m._i);else if(_isPreviewable3)onMatchPreview(m,sel,m._i);}}
+                          onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();if(!_isPast3&&!isPastDay2&&onMatchClick)onMatchClick(m,sel,m._i);else if(_isPreviewable3)onMatchPreview(m,sel,m._i);}}}
+                          style={{display:"flex",alignItems:"center",padding:"10px 14px",cursor:(_isPreviewable3||(!_isPast3&&!isPastDay2))?"pointer":isPastDay2?"default":"pointer",gap:6,opacity:isPastDay2?0.6:1}}>
                           <span style={{fontSize:18,flexShrink:0}}>{m.homeFlag}</span>
                           <span style={{flex:1,fontSize:11,fontWeight:600,color:DARK}}>{m.home.length>7?m.home.split(" ")[0]:m.home}</span>
                           <div style={{flexShrink:0,display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
@@ -11246,7 +11338,7 @@ function App() {
           {user&&<div style={{display:screen===SCREENS.RULES?'flex':'none',flex:1,flexDirection:'column',overflow:'hidden',minHeight:0}}>
             <RulesScreen onBack={()=>setScreen(SCREENS.HOME)}/>
           </div>}
-          {screen===SCREENS.GROUPS_SCHEDULE&&<GroupsScheduleScreen scores={exactScores} setScores={async (newScores)=>{
+          {screen===SCREENS.GROUPS_SCHEDULE&&<GroupsScheduleScreen boardId={activeBoardId} scores={exactScores} setScores={async (newScores)=>{
               const oldScores = exactScores;
               setExactScores(newScores);
               if (user) {

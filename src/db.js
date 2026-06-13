@@ -289,6 +289,34 @@ export async function loadBoardMembers(boardId) {
   }))
 }
 
+export async function loadMatchPredictions(matchKey, boardId) {
+  const { data: matchRow } = await supabase
+    .from('matches')
+    .select('id')
+    .eq('match_key', matchKey)
+    .maybeSingle()
+  if (!matchRow) return []
+  const { data: picks } = await supabase
+    .from('exact_scores')
+    .select('user_id, team1_score, team2_score')
+    .eq('match_id', matchRow.id)
+    .eq('board_id', boardId)
+  if (!picks?.length) return []
+  const { data: profiles } = await supabase
+    .from('profiles')
+    .select('id, display_name, avatar_url')
+    .in('id', picks.map(r => r.user_id))
+  const pMap = {}
+  ;(profiles || []).forEach(p => { pMap[p.id] = p })
+  return picks.map(row => ({
+    userId: row.user_id,
+    name: pMap[row.user_id]?.display_name || '?',
+    avatarUrl: pMap[row.user_id]?.avatar_url || null,
+    predHome: row.team1_score,
+    predAway: row.team2_score,
+  }))
+}
+
 export async function joinBoardById(userId, boardId, password = '') {
   const { error } = await supabase.rpc('join_board', {
     p_board_id: boardId,
