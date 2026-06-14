@@ -5565,23 +5565,22 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
   const _exWkTotal = (s)=>_exWkDays(s).reduce((a,d)=>a+(_exWkMM[d]||[]).length,0);
   const _exWkScored = (s)=>_exWkDays(s).reduce((a,d)=>a+(_exWkMM[d]||[]).filter((m,i)=>(exactScores||{})[getMatchKey(m,d,i)]).length,0);
   const todaySimEx = simDay ?? getLocalTournamentDay();
-  const exactWeekStart = todaySimEx<=14?8:todaySimEx<=21?15:todaySimEx<=28?22:29;
   const _calWeeks = [-6,1,8,15,22,29,36,43];
   const todayCalendarWeek = _calWeeks.find(w=>todaySimEx>=w&&todaySimEx<=w+6) ?? _calWeeks[0];
+  const _exSimNow = simDay ? new Date(Date.UTC(2026,5,simDay,(simHour||12)+4,simMin||0,0)) : new Date();
+  const _exJune = (d) => new Date(Date.UTC(2026,5,d,5,0,0)); // 08:00 Romania (EEST = UTC+3) = 05:00 UTC
+  // Advance week as soon as unlock fires, even if still same calendar day
+  const exactWeekStart = _exSimNow>=_exJune(28)?29:_exSimNow>=_exJune(21)?22:_exSimNow>=_exJune(14)?15:8;
   const exactWeekTotal = _exWkTotal(exactWeekStart);
   const exactWeekScored = _exWkScored(exactWeekStart);
   const exactWeekDone = exactWeekTotal>0 && exactWeekScored===exactWeekTotal;
   const exactWeekHasStarted = _exCalendarEvents
     .filter(e => e.day >= exactWeekStart && e.day <= exactWeekStart + 6)
     .some(e => (e.matches||[]).some(m => isMatchPast(e.day, m.time, simDay, simHour, m.kickoffUtc)));
-  const _exSimNow = simDay ? new Date(Date.UTC(2026,5,simDay,(simHour||12)+4,simMin||0,0)) : new Date();
-  const _exJune = (d) => new Date(Date.UTC(2026,5,d,12,0,0)); // 08:00 ET = 12:00 UTC
-  const exactWeekUnlocked = exactWeekStart===8 ? true
-    : exactWeekStart===15 ? _exSimNow >= _exJune(14)
-    : exactWeekStart===22 ? _exSimNow >= _exJune(21)
-    : _exSimNow >= _exJune(28);
+  const exactWeekUnlocked = true;
+  const exactWeekStartLabel = lang==="ro"?`Incepe ${exactWeekStart} Iun`:lang==="fr"?`Commence ${exactWeekStart} juin`:`Starts Jun ${exactWeekStart}`;
   const nextTask =
-    !_boardDone ? 0 :
+    (!_boardDone && !_deadlinePassed) ? 0 :
     (!exactWeekDone && exactWeekUnlocked) ? 1 :
     null;
   const predDoneCount = Math.max(predictionProgress.done, groupsDoneCount !== null ? groupsDoneCount : 0);
@@ -5589,7 +5588,7 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
   const _predStepsDone = _boardDone ? _predStepsTotal : predDoneCount;
   const naCard = (()=>{
     if(nextTask===0) return { title:T[lang].predCardTitle, sub:T[lang].predCardSub, due:!_deadlinePassed?T[lang].dueJun11:null, progress:_predStepsDone, total:_predStepsTotal, label:predDoneCount>0?T[lang].continuePredictions:T[lang].startPredictions, onClick:()=>onPredict(activeId), badge:T[lang].nextActionLabel };
-    if(nextTask===1) return { title:T[lang].exactCardTitle, sub:T[lang].exactCardSub, due:!_deadlinePassed?T[lang].dueJun11:null, progress:exactWeekScored, total:Math.max(2, exactWeekTotal), label:T[lang].openScores, onClick:()=>onOpenGroups&&onOpenGroups(exactWeekStart), badge:T[lang].nextActionLabel };
+    if(nextTask===1) return { title:T[lang].exactCardTitle, sub:T[lang].exactCardSub, due:!exactWeekHasStarted&&exactWeekStart>8?exactWeekStartLabel:null, progress:exactWeekScored, total:Math.max(2, exactWeekTotal), label:T[lang].openScores, onClick:()=>onOpenGroups&&onOpenGroups(exactWeekStart), badge:T[lang].nextActionLabel };
     return { title:T[lang].allDoneTitle, sub:T[lang].allDoneSub, due:null, progress:1, total:1, label:"", onClick:()=>{}, badge:T[lang].upToDateLabel };
   })();
   const naPct = naCard.total>0 ? Math.round((naCard.progress/naCard.total)*100) : 100;
@@ -5739,10 +5738,10 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:14}}>
           <ThisWeekCard
             title={T[lang].thisWeekLabel}
-            body={exactWeekUnlocked?exactWeekDone?T[lang].weekComplete+" ✓":(exactWeekTotal-exactWeekScored)+" "+T[lang].scoresLeftThisWeek:T[lang].exactScoresUnlock+" Sun 8:00"}
+            body={exactWeekDone?T[lang].weekComplete+" ✓":!exactWeekHasStarted?exactWeekStartLabel:(exactWeekTotal-exactWeekScored)+" "+T[lang].scoresLeftThisWeek}
             buttonLabel={exactWeekUnlocked?T[lang].openScores:T[lang].locked}
             locked={!exactWeekUnlocked}
-            onOpen={()=>onOpenGroups&&onOpenGroups(todayCalendarWeek)}
+            onOpen={()=>onOpenGroups&&onOpenGroups(exactWeekStart)}
             date={simDay?new Date(2026,5,simDay,simHour||12):new Date()}
           />
           <LeagueRankingCard
