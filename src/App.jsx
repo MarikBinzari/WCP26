@@ -10354,8 +10354,8 @@ function ChatWidget({ boardId, user, boardName }) {
                 padding:'5px 14px', fontSize:11, color:'#666', fontStyle:'italic', lineHeight:1.5,
               }}>
                 💬 {lang === 'ro'
-                  ? 'Ultimele 50 mesaje păstrate · reset zilnic la 00:00 ora României'
-                  : 'Last 50 messages kept · daily reset at 00:00 Romania time'}
+                  ? 'Ultimele 50 mesaje păstrate · cel mai vechi șters automat'
+                  : 'Last 50 messages kept · oldest auto-deleted when full'}
               </span>
             </div>
             {messages.length === 0 && (
