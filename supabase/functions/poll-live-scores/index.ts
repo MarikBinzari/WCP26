@@ -322,6 +322,11 @@ Deno.serve(async () => {
       const apiMatches = data.matches ?? []
       const activeWindowKeys = getActiveWindowMatchKeys(now)
 
+      console.log(`[poll] API returned ${apiMatches.length} matches, activeWindow: [${activeWindowKeys.join(',')}]`)
+      for (const m of apiMatches) {
+        console.log(`[poll] match: ${m.homeTeam?.name} vs ${m.awayTeam?.name} | status: ${m.status} | score: ${m.score?.fullTime?.home}-${m.score?.fullTime?.away} | min: ${m.minute ?? m.score?.fullTime?.home}`)
+      }
+
       for (const m of apiMatches) {
         const homeNorm = normalizeTeam(m.homeTeam?.name ?? '')
         const awayNorm = normalizeTeam(m.awayTeam?.name ?? '')
@@ -337,7 +342,10 @@ Deno.serve(async () => {
           }
         }
 
-        if (!matchKey) continue
+        if (!matchKey) {
+          console.log(`[poll] NO MATCH KEY for: ${homeNorm} vs ${awayNorm}`)
+          continue
+        }
 
         const status = mapMatchStatus(m, now)
         const apiScore = getApiScore(m)

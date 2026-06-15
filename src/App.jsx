@@ -10,7 +10,7 @@ import specialPickBadge from "./assets/special-pick-badge.webp";
 import bellIcon from "./assets/bell-icon.svg";
 import { ALL_GROUPS_DATA, FLAGS, TEAM_COLORS, CALENDAR_EVENTS, CL_FINAL } from "./data/worldcup2026.js";
 import { supabase, SUPABASE_URL } from "./supabase.js";
-import { savePredictions, saveExactScore, createBoard, updateBoard, joinBoardByCode, joinBoardById, ensureBoardScores, loadLeaderboard, loadMyScoreBreakdown, fetchScoringRules, fetchMemberCounts, removeBoardMember, removeParticipation, deleteBoard, loadBoardMembers, checkDbHealth, checkEmailExists, checkNicknameExists, loadLiveScores, subscribeLiveScores, loadPlayers, loadPlayersByTeam, seedPlayersFromApi, saveSpecialPick, uploadAvatar, uploadBoardImage, loadAllBoards, loadAllUserPicks, loadNotifReads, markNotifRead, loadSystemNotifications, loadRealGroupStandings, loadUserBreakdown, savePushSubscription, loadChatMessages, sendChatMessage, editChatMessage, toggleChatLike, toggleChatDislike, subscribeChatMessages, loadMatchPredictions } from "./db.js";
+import { savePredictions, saveExactScore, createBoard, updateBoard, joinBoardByCode, joinBoardById, ensureBoardScores, loadLeaderboard, loadMyScoreBreakdown, fetchScoringRules, fetchMemberCounts, removeBoardMember, removeParticipation, deleteBoard, loadBoardMembers, checkDbHealth, checkEmailExists, checkNicknameExists, loadLiveScores, subscribeLiveScores, loadPlayers, loadPlayersByTeam, seedPlayersFromApi, saveSpecialPick, uploadAvatar, uploadBoardImage, loadAllBoards, loadAllUserPicks, loadNotifReads, markNotifRead, loadSystemNotifications, loadRealGroupStandings, loadUserBreakdown, savePushSubscription, loadChatMessages, sendChatMessage, editChatMessage, toggleChatLike, toggleChatDislike, subscribeChatMessages, loadMatchPredictions, loadCentralStats, loadBoardExactScores } from "./db.js";
 
 const TEAM_CODE = {"Mexico":"MEX","South Africa":"RSA","South Korea":"KOR","Czechia":"CZE","Canada":"CAN","Switzerland":"SUI","Qatar":"QAT","Bosnia-Herzegovina":"BIH","Brazil":"BRA","Morocco":"MAR","Scotland":"SCO","Haiti":"HAI","USA":"USA","Paraguay":"PAR","Australia":"AUS","Turkiye":"TUR","Germany":"GER","Ecuador":"ECU","Ivory Coast":"CIV","Curacao":"CUW","Netherlands":"NED","Japan":"JPN","Tunisia":"TUN","Sweden":"SWE","Belgium":"BEL","Iran":"IRI","Egypt":"EGY","New Zealand":"NZL","Spain":"ESP","Uruguay":"URU","Saudi Arabia":"KSA","Cape Verde":"CPV","France":"FRA","Senegal":"SEN","Norway":"NOR","Iraq":"IRQ","Argentina":"ARG","Austria":"AUT","Algeria":"ALG","Jordan":"JOR","Portugal":"POR","Colombia":"COL","Uzbekistan":"UZB","DR Congo":"COD","England":"ENG","Croatia":"CRO","Panama":"PAN","Ghana":"GHA"};
 
@@ -51,6 +51,7 @@ const SCREENS = {
   CHAMPION:"champion",
   BOOSTER:"booster",
   BONUS:"bonus",
+  CENTRAL_STATS:"central_stats",
 };
 
 const INITIAL_BOARDS = [{ id:"global", label:"🌍", name:"Global League", members:48291, isGlobal:true }];
@@ -4888,7 +4889,7 @@ function ChampionScreen({ onBack, initialMode="champion", championPick, topScore
                   {championPick ? `${tCode(championPick)} ${T[lang].selectedLabel}` : T[lang].tapTeamBelow}
                 </div>
               </div>
-              {championPick&&(
+              {championPick&&!isLocked&&(
                 <button onClick={()=>selectChampion(championPick)} style={{border:"none",background:"#F3F4F6",borderRadius:10,padding:"8px 10px",fontSize:11,fontWeight:800,color:"#6B7280",cursor:"pointer",flexShrink:0}}>
                   {T[lang].clearLabel}
                 </button>
@@ -4945,7 +4946,7 @@ function ChampionScreen({ onBack, initialMode="champion", championPick, topScore
                   {runnerUpPick ? `${tCode(runnerUpPick)} ${T[lang].selectedLabel}` : T[lang].tapTeamBelow}
                 </div>
               </div>
-              {runnerUpPick&&(
+              {runnerUpPick&&!isLocked&&(
                 <button onClick={()=>selectRunnerUp(runnerUpPick)} style={{border:"none",background:"#F3F4F6",borderRadius:10,padding:"8px 10px",fontSize:11,fontWeight:800,color:"#6B7280",cursor:"pointer",flexShrink:0}}>
                   {T[lang].clearLabel}
                 </button>
@@ -5075,10 +5076,10 @@ function ChampionScreen({ onBack, initialMode="champion", championPick, topScore
           borderTop:"2px solid #FFD700",
           padding:"12px 20px 28px",
           display:"flex",alignItems:"center",gap:12}}>
-          <button onClick={()=>setTopScorerPick(null)}
+          {!isLocked&&<button onClick={()=>setTopScorerPick(null)}
             style={{background:"rgba(255,255,255,0.12)",border:"1px solid rgba(255,255,255,0.2)",borderRadius:10,padding:"7px 14px",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",flexShrink:0}}>
             {T[lang].changeLabel}
-          </button>
+          </button>}
           <span style={{fontSize:24,lineHeight:1,flexShrink:0}}>{FLAGS[topScorerPick.team]||"🏳"}</span>
           <div style={{flex:1,minWidth:0}}>
             <div style={{fontSize:10,fontWeight:700,color:"#FFD700",letterSpacing:1,textTransform:"uppercase"}}>{T[lang].topScorer}</div>
@@ -5472,7 +5473,7 @@ function BonusPredictionScreen({ onBack, onChampion, championPick, runnerUpPick,
 }
 
 // ── HOME ────────────────────────────────────────────────────────────────────
-function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateBoard, onOpenGroups, onCopyPredictions, onCopyExactScores, onCopySpecial, onAccount, onNotifications, onChampion, onBooster, onBonus, myBoards, predictionsComplete, instantPickState=null, instantPickDone, allGroupsDone=false, groupsDoneCount=null, koPickDone, koUnlocked, exactScores, activeBoardId, setActiveBoardId, tournamentStarted, simDay, simHour, simMin, createdBoards=[], showFirstAction, leaderboardData={}, boardsLoading=false, predictionsLoaded={}, championPick=null, runnerUpPick=null, topScorerPick=null, setChampionPick=()=>{}, setTopScorerPick=()=>{}, myScoreBreakdown=null, hasUnread=false }) {
+function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateBoard, onOpenGroups, onCentralStats, onCopyPredictions, onCopyExactScores, onCopySpecial, onAccount, onNotifications, onChampion, onBooster, onBonus, myBoards, predictionsComplete, instantPickState=null, instantPickDone, allGroupsDone=false, groupsDoneCount=null, koPickDone, koUnlocked, exactScores, activeBoardId, setActiveBoardId, tournamentStarted, simDay, simHour, simMin, createdBoards=[], showFirstAction, leaderboardData={}, boardsLoading=false, predictionsLoaded={}, championPick=null, runnerUpPick=null, topScorerPick=null, setChampionPick=()=>{}, setTopScorerPick=()=>{}, myScoreBreakdown=null, hasUnread=false }) {
   const lang = useLang();
   const user = useUser();
   const displayName = useDisplayName();
@@ -5711,7 +5712,13 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
         </button>
         <NextActionCard card={naCard} pct={naPct} nextTask={nextTask} />
         <div style={{marginBottom:14}}>
-          <HomeSectionLabel>{T[lang].yourProgress}</HomeSectionLabel>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+            <HomeSectionLabel style={{marginBottom:0}}>{T[lang].yourProgress}</HomeSectionLabel>
+            <button onClick={()=>onCentralStats&&onCentralStats()} style={{background:"none",border:"none",padding:"4px 2px",cursor:"pointer",display:"flex",alignItems:"center",gap:4,WebkitTapHighlightColor:"transparent",fontFamily:"inherit"}}>
+              <span style={{fontSize:11,fontWeight:700,color:NAVY}}>Central Stats</span>
+              <span style={{fontSize:13,color:NAVY}}>→</span>
+            </button>
+          </div>
           <HomeCard>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr"}}>
               <ProgressTile
@@ -8298,6 +8305,213 @@ function ScorePicker({ match, day, savedScore, onSave, onBack }) {
 const scH = (sc) => Array.isArray(sc) ? sc[0] : (sc?.home ?? 0);
 const scA = (sc) => Array.isArray(sc) ? sc[1] : (sc?.away ?? 0);
 
+function CentralStatsScreen({ onBack, boardId, boardName, simDay, simHour=12, simMin=0 }) {
+  const lang = useLang();
+  const LIVE_SCORES = useLiveScores(simDay, simHour, simMin);
+  const calendarEvents = getDisplayCalendarEvents();
+  const [members, setMembers] = useState([]);
+  const [predsByMatch, setPredsByMatch] = useState({}); // { matchKey: [{userId, predHome, predAway}] }
+  const [loadingMembers, setLoadingMembers] = useState(true);
+  const [loadingPreds, setLoadingPreds] = useState(false);
+  const [offset, setOffset] = useState(null);
+
+  // load members once
+  useEffect(() => {
+    if (!boardId) return;
+    setLoadingMembers(true);
+    loadLeaderboard(boardId).then(rows => {
+      setMembers(rows.map(r => ({ userId: r.userId, name: r.name, avatarUrl: r.avatarUrl || null, pts: r.pts || 0, rank: r.rank })));
+      setLoadingMembers(false);
+    });
+  }, [boardId]);
+
+  // build matchByKey from calendar
+  const matchByKey = {};
+  calendarEvents.forEach(e => {
+    (e.matches || []).forEach((m, i) => {
+      const k = getMatchKey(m, e.day, i);
+      matchByKey[k] = { ...m, day: e.day };
+    });
+  });
+
+  // all played WC matches from LIVE_SCORES, sorted by utcDate then match_key
+  const allMatches = Object.entries(LIVE_SCORES)
+    .filter(([k, v]) => /^\d/.test(k) && (v.status === 'FT' || v.status === 'LIVE' || v.status === 'HT' || v.status === 'ET' || v.status === 'PEN'))
+    .map(([k]) => k)
+    .sort((a, b) => {
+      const da = LIVE_SCORES[a]?.utcDate, db = LIVE_SCORES[b]?.utcDate;
+      if (da && db) return da < db ? -1 : da > db ? 1 : 0;
+      const [ad, ai] = a.split('-').map(Number);
+      const [bd, bi] = b.split('-').map(Number);
+      return ad !== bd ? ad - bd : ai - bi;
+    });
+
+  const visibleCount = 2;
+  const maxOffset = Math.max(0, allMatches.length - visibleCount);
+
+  // initialize to last 2; also follow if new matches appear at the end while user is at maxOffset
+  useEffect(() => {
+    if (allMatches.length === 0) return;
+    if (offset === null) { setOffset(maxOffset); return; }
+    if (offset >= maxOffset) setOffset(maxOffset);
+  }, [allMatches.length, maxOffset]);
+
+  const currentOffset = offset ?? maxOffset;
+  const visibleMatches = allMatches.slice(currentOffset, currentOffset + visibleCount);
+
+  // fetch predictions for visible matches via loadMatchPredictions (bypasses RLS)
+  useEffect(() => {
+    if (!boardId || visibleMatches.length === 0) return;
+    setLoadingPreds(true);
+    Promise.all(visibleMatches.map(k => loadMatchPredictions(k, boardId).then(rows => ({ key: k, rows }))))
+      .then(results => {
+        const newPreds = {};
+        results.forEach(({ key, rows }) => { newPreds[key] = rows; });
+        setPredsByMatch(prev => ({ ...prev, ...newPreds }));
+        setLoadingPreds(false);
+      });
+  }, [boardId, visibleMatches.join(',')]);
+
+  const getPred = (userId, matchKey) => {
+    const rows = predsByMatch[matchKey] || [];
+    const r = rows.find(r => r.userId === userId);
+    return r ? { home: r.predHome, away: r.predAway } : null;
+  };
+
+  const scoreOf = (pred, live) => {
+    if (!pred || live?.home == null) return null;
+    if (pred.home === live.home && pred.away === live.away) return 3;
+    const pd = pred.home - pred.away, rd = live.home - live.away;
+    if (pd === rd && pd !== 0 && Math.sign(pd) === Math.sign(rd)) return 2;
+    if (Math.sign(pred.home - pred.away) === Math.sign(live.home - live.away)) return 1;
+    return 0;
+  };
+  const scoreColor = (sc) => sc === 3 ? GREEN : sc === 2 ? '#F59E0B' : sc === 1 ? NAVY : '#EF4444';
+
+  const thStyle = { padding: '6px 8px', textAlign: 'center', fontWeight: 700, borderBottom: '2px solid #E5E7EB', minWidth: 70 };
+  const statThStyle = { padding: '6px 8px', textAlign: 'center', fontWeight: 700, color: '#6B7280', fontSize: 10, borderBottom: '2px solid #E5E7EB', minWidth: 28 };
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 900, background: '#F5F7FA', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      {/* Header */}
+      <div style={{ background: NAVY, color: '#fff', padding: '0 16px', paddingTop: 'max(env(safe-area-inset-top,0px),14px)', paddingBottom: 12, flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <button onClick={onBack} style={{ background: 'none', border: 'none', color: '#fff', fontSize: 22, cursor: 'pointer', padding: '4px 8px 4px 0', lineHeight: 1, WebkitTapHighlightColor: 'transparent' }}>{'←'}</button>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 15, fontWeight: 800, letterSpacing: 0.3 }}>Central Stats</div>
+            <div style={{ fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.65)', marginTop: 1 }}>{boardName || '—'}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
+        {loadingMembers ? (
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 120, color: '#9CA3AF', fontSize: 13 }}>
+            <span style={{ width: 18, height: 18, borderRadius: '50%', border: `2px solid ${NAVY}22`, borderTopColor: NAVY, animation: 'spin 0.9s linear infinite', display: 'inline-block', marginRight: 8 }} />
+            {lang === 'ro' ? 'Se încarcă...' : 'Loading...'}
+          </div>
+        ) : (
+          <table style={{ borderCollapse: 'collapse', width: '100%', tableLayout: 'fixed', fontSize: 11 }}>
+            <thead>
+              <tr style={{ background: '#fff', position: 'sticky', top: 0, zIndex: 2 }}>
+                <th style={{ padding: '8px 8px', textAlign: 'left', fontWeight: 700, color: '#6B7280', fontSize: 11, whiteSpace: 'nowrap', borderBottom: '2px solid #E5E7EB', width: '28%', overflow: 'hidden' }}>
+                  {lang === 'ro' ? 'Jucător' : 'Player'}
+                </th>
+                <th style={{ padding: '0 4px', borderBottom: '2px solid #E5E7EB', width: 28, textAlign: 'center' }}>
+                  <button onClick={() => setOffset(o => Math.max(0, (o ?? maxOffset) - 1))}
+                    disabled={currentOffset === 0}
+                    style={{ width: 24, height: 24, borderRadius: 6, border: 'none', background: currentOffset === 0 ? '#F3F4F6' : NAVY+'22', color: currentOffset === 0 ? '#D1D5DB' : NAVY, fontSize: 13, cursor: currentOffset === 0 ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit', margin: '0 auto' }}>‹</button>
+                </th>
+                {visibleMatches.map(k => {
+                  const live = LIVE_SCORES[k];
+                  const mInfo = matchByKey[k];
+                  const hasScore = live?.home != null;
+                  const abbr = name => (name || '').slice(0, 3).toUpperCase();
+                  const d = mInfo?.day ?? Number(String(k).split('-')[0]);
+                  const dateLabel = `${d}.${d >= 11 ? 'Jun' : 'Jul'}`;
+                  const timeLabel = live?.utcDate ? new Date(live.utcDate).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Bucharest' }) : null;
+                  return (
+                    <th key={k} style={thStyle}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: DARK, letterSpacing: 0.3 }}>{abbr(mInfo?.home)}–{abbr(mInfo?.away)}</div>
+                      <div style={{ fontSize: 10, color: '#9CA3AF', fontWeight: 600, marginTop: 2 }}>{dateLabel}{timeLabel ? ` ${timeLabel}` : ''}</div>
+                      <div style={{ fontSize: 12, fontWeight: 800, color: hasScore ? (['LIVE','HT','ET','PEN'].includes(live?.status) ? '#EF4444' : NAVY) : '#C7C7CC', marginTop: 2 }}>
+                        {hasScore ? `${live.home}–${live.away}` : '· · ·'}
+                      </div>
+                      <div style={{ fontSize: 9, fontWeight: 800, marginTop: 2, letterSpacing: 0.3, height: 13,
+                        color: live?.status === 'LIVE' ? '#EF4444' : live?.status === 'HT' ? '#F59E0B' : 'transparent',
+                        animation: live?.status === 'LIVE' ? 'livePulse 1.4s ease-in-out infinite' : 'none' }}>
+                        {live?.status === 'LIVE' ? `● LIVE${live.min ? ` ${live.min}'` : ''}` : live?.status === 'HT' ? 'HT' : '·'}
+                      </div>
+                    </th>
+                  );
+                })}
+                <th style={{ padding: '0 4px', borderBottom: '2px solid #E5E7EB', width: 28, textAlign: 'center' }}>
+                  <button onClick={() => setOffset(o => Math.min(maxOffset, (o ?? maxOffset) + 1))}
+                    disabled={currentOffset >= maxOffset}
+                    style={{ width: 24, height: 24, borderRadius: 6, border: 'none', background: currentOffset >= maxOffset ? '#F3F4F6' : NAVY+'22', color: currentOffset >= maxOffset ? '#D1D5DB' : NAVY, fontSize: 13, cursor: currentOffset >= maxOffset ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit', margin: '0 auto' }}>›</button>
+                </th>
+                <th style={{ padding: '6px 4px', textAlign: 'center', fontWeight: 700, color: '#6B7280', fontSize: 10, borderBottom: '2px solid #E5E7EB', borderLeft: '2px solid #E5E7EB', width: 44 }}>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {members.length === 0 ? (
+                <tr><td colSpan={visibleMatches.length + 4} style={{ textAlign: 'center', padding: '32px 0', color: '#9CA3AF', fontSize: 13 }}>
+                  {lang === 'ro' ? 'Nicio predicție înregistrată' : 'No predictions recorded'}
+                </td></tr>
+              ) : members.map((member, ri) => {
+                const rowBg = ri % 2 === 0 ? '#fff' : '#FAFAFA';
+                return (
+                  <tr key={member.userId} style={{ background: rowBg, borderBottom: '1px solid #F3F4F6' }}>
+                    <td style={{ padding: '6px 8px', overflow: 'hidden' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                        <div style={{ width: 22, textAlign: 'center', flexShrink: 0 }}>
+                          {member.rank <= 3
+                            ? <span style={{ fontSize: 16 }}>{member.rank===1?'🥇':member.rank===2?'🥈':'🥉'}</span>
+                            : <div style={{ width: 22, height: 22, borderRadius: 6, background: 'rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <span style={{ fontSize: 9, fontWeight: 700, color: '#6B7280' }}>#{member.rank}</span>
+                              </div>
+                          }
+                        </div>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: DARK, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block', minWidth: 0 }}>{member.name}</span>
+                      </div>
+                    </td>
+                    <td style={{ width: 30 }} />
+                    {visibleMatches.map(k => {
+                      const pred = getPred(member.userId, k);
+                      const live = LIVE_SCORES[k];
+                      const sc = scoreOf(pred, live);
+                      const col = sc !== null ? scoreColor(sc) : '#9CA3AF';
+                      const isFinal = live?.status === 'FT';
+                      const ptsLabel = isFinal ? (sc === 3 ? '90' : sc === 2 ? '40' : sc === 1 ? '30' : sc === 0 ? '0' : null) : null;
+                      return (
+                        <td key={k} style={{ padding: '6px 4px', textAlign: 'center', position: 'relative' }}>
+                          {pred != null ? (
+                            <span style={{ fontSize: 13, fontWeight: 800, color: col }}>
+                              {pred.home}–{pred.away}
+                              {ptsLabel !== null && (
+                                <sub style={{ fontSize: 8, fontWeight: 700, color: col, marginLeft: 1, verticalAlign: 'sub' }}>{ptsLabel}</sub>
+                              )}
+                            </span>
+                          ) : (
+                            <span style={{ fontSize: 11, color: '#D1D5DB' }}>—</span>
+                          )}
+                        </td>
+                      );
+                    })}
+                    <td style={{ width: 30 }} />
+                    <td style={{ padding: '8px 4px', textAlign: 'center', fontWeight: 800, color: DARK, fontSize: 12, borderLeft: '2px solid #E5E7EB' }}>{member.pts ?? '—'}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScoresProp, simDay, simHour=12, simMin=0, initialWeek, boardId, boardName }) {
   const lang = useLang();
   const LIVE_SCORES = useLiveScores(simDay, simHour, simMin);
@@ -10576,6 +10790,7 @@ function App() {
     style.textContent = `
       @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
       @keyframes pulse { 0%,100%{transform:scale(1);box-shadow:0 4px 20px rgba(200,16,46,0.25)} 50%{transform:scale(1.025);box-shadow:0 12px 40px rgba(200,16,46,0.7)} }
+      @keyframes livePulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
       @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
       @keyframes tabPop { 0%{transform:scale(1)} 40%{transform:scale(1.22)} 70%{transform:scale(0.95)} 100%{transform:scale(1)} }
       @keyframes cdSlideIn { 0%{opacity:0;transform:translateY(6px)} 100%{opacity:1;transform:translateY(0)} }
@@ -10968,6 +11183,7 @@ function App() {
   const topScorerPick = allTopScorerPicks[activeBoardId]||null;
   const runnerUpPick = allRunnerUpPicks[activeBoardId]||null;
   const setChampionPick = (v) => {
+    if (isBonusPickLocked(simDay, simHour, simMin)) return;
     setAllChampionPicks(p => {
       const next = { ...p, [activeBoardId]: v };
       if (user) saveSpecialPick(user.id, activeBoardId, { champion: v, topScorer: allTopScorerPicks[activeBoardId] || null, runnerUp: allRunnerUpPicks[activeBoardId] || null });
@@ -10975,6 +11191,7 @@ function App() {
     });
   };
   const setTopScorerPick = (v) => {
+    if (isBonusPickLocked(simDay, simHour, simMin)) return;
     setAllTopScorerPicks(p => {
       const next = { ...p, [activeBoardId]: v };
       if (user) saveSpecialPick(user.id, activeBoardId, { champion: allChampionPicks[activeBoardId] || null, topScorer: v, runnerUp: allRunnerUpPicks[activeBoardId] || null });
@@ -10982,6 +11199,7 @@ function App() {
     });
   };
   const setRunnerUpPick = (v) => {
+    if (isBonusPickLocked(simDay, simHour, simMin)) return;
     setAllRunnerUpPicks(p => {
       const next = { ...p, [activeBoardId]: v };
       if (user) saveSpecialPick(user.id, activeBoardId, { champion: allChampionPicks[activeBoardId] || null, topScorer: allTopScorerPicks[activeBoardId] || null, runnerUp: v });
@@ -11069,6 +11287,7 @@ function App() {
               onLeaderboard={()=>setScreen(SCREENS.LEADERBOARD)}
               onBoards={(tab)=>{ setBoardsInitialTab(tab||"my"); setScreen(SCREENS.BOARDS); }}
               onOpenGroups={(week)=>{ setGroupsInitialWeek(week||null); setScreen(SCREENS.GROUPS_SCHEDULE); }}
+              onCentralStats={()=>setScreen(SCREENS.CENTRAL_STATS)}
               onCopyExactScores={async (targetBoardId, weekStart)=>{
                 if(!user) return;
                 const scores = exactScoresByBoard[activeBoardId] || {};
@@ -11138,6 +11357,12 @@ function App() {
               myScoreBreakdown={myScoreBreakdowns[activeBoardId]}
               hasUnread={hasUnread}/>
           </div>}
+          {screen===SCREENS.CENTRAL_STATS&&<CentralStatsScreen
+            onBack={()=>setScreen(SCREENS.HOME)}
+            boardId={activeBoardId}
+            boardName={myBoards.find(b=>b.id===activeBoardId)?.name||""}
+            simDay={simDay} simHour={simHour} simMin={simMin}
+          />}
           {screen===SCREENS.NOTIFICATIONS&&<NotificationsScreen onBack={()=>setScreen(notificationsBackRef.current)} notifs={systemNotifs} readIds={notifReadIds} onMarkRead={(id)=>{ setNotifReadIds(p=>[...p,id]); }}/>}
           {screen===SCREENS.PREMIUM&&<PremiumScreen onBack={()=>setScreen(SCREENS.ACCOUNT)}/>}
           {screen===SCREENS.CHAMPION&&<ChampionScreen

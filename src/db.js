@@ -304,6 +304,22 @@ export async function loadMatchPredictions(matchKey, boardId) {
   }))
 }
 
+export async function loadCentralStats(boardId) {
+  const resolvedId = boardId === '00000000-0000-0000-0000-000000000000' ? 'global' : boardId
+  const { data, error } = await supabase.rpc('get_central_stats', { p_board_id: resolvedId })
+  if (error) { console.error('loadCentralStats:', error); return { members: [], matches: [] } }
+  const membersMap = {}
+  ;(data || []).forEach(row => {
+    if (!membersMap[row.user_id]) {
+      membersMap[row.user_id] = { userId: row.user_id, name: row.name || '?', avatarUrl: row.avatar_url || null, predictions: {} }
+    }
+    if (row.match_key) {
+      membersMap[row.user_id].predictions[row.match_key] = { home: row.pred_home, away: row.pred_away }
+    }
+  })
+  return { members: Object.values(membersMap) }
+}
+
 export async function joinBoardById(userId, boardId, password = '') {
   const { error } = await supabase.rpc('join_board', {
     p_board_id: boardId,
@@ -853,6 +869,18 @@ export async function loadLeaderboard(boardId, search = null, userId = null) {
     })
   }
   return rows
+}
+
+export async function loadBoardExactScores(boardId) {
+  const { data, error } = await supabase.rpc('get_central_stats', { p_board_id: boardId })
+  if (error) { console.error('loadBoardExactScores:', error); return {} }
+  const byUser = {}
+  ;(data || []).forEach(row => {
+    if (!row.match_key) return
+    if (!byUser[row.user_id]) byUser[row.user_id] = {}
+    byUser[row.user_id][row.match_key] = { home: row.pred_home, away: row.pred_away }
+  })
+  return byUser
 }
 
 export async function loadUserBreakdown(userId, boardId) {
