@@ -130,6 +130,19 @@ const SCHEDULE: { matchKey: string; kickoffUtc: string; home: string; away: stri
   { matchKey:'49-0', home:'TBD', away:'TBD', kickoffUtc:'2026-07-20T01:00:00Z' },
 ]
 
+// ── api-sports.io status → our status ────────────────────────────────────────
+function mapApiSportsStatus(short: string): string {
+  switch (short) {
+    case '1H': case '2H': case 'LIVE': return 'LIVE'
+    case 'HT': case 'BT': case 'INT': return 'HT'
+    case 'ET': return 'ET'
+    case 'P': return 'PEN'
+    case 'FT': case 'AET': case 'AWD': case 'WO': return 'FT'
+    case 'PEN': return 'FT'
+    default: return 'NS'
+  }
+}
+
 // ── Team name normalization (football-data.org → our app) ────────────────────
 const TEAM_NORM: Record<string, string> = {
   // Exact matches
@@ -143,7 +156,7 @@ const TEAM_NORM: Record<string, string> = {
   'Qatar': 'Qatar', 'Iran': 'Iran', 'Iraq': 'Iraq', 'Jordan': 'Jordan',
   'Saudi Arabia': 'Saudi Arabia', 'Uzbekistan': 'Uzbekistan', 'Panama': 'Panama',
   'Haiti': 'Haiti', 'Scotland': 'Scotland', 'New Zealand': 'New Zealand',
-  'Cape Verde': 'Cape Verde', 'DR Congo': 'DR Congo',
+  'Cape Verde': 'Cape Verde', 'Cape Verde Islands': 'Cape Verde', 'DR Congo': 'DR Congo',
   // Name variants
   'Korea Republic': 'Korea Republic', 'South Korea': 'Korea Republic',
   'Czechia': 'Czech Republic', 'Czech Republic': 'Czech Republic',
@@ -159,7 +172,6 @@ const TEAM_NORM: Record<string, string> = {
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-// Returns true if now is within [-30, +150] minutes of any scheduled kickoff
 function isInWindow(now: Date): boolean {
   const nowMs = now.getTime()
   return SCHEDULE.some(m => {
@@ -169,7 +181,6 @@ function isInWindow(now: Date): boolean {
   })
 }
 
-// Returns match keys for all matches whose window is active right now
 function getActiveWindowMatchKeys(now: Date): string[] {
   const nowMs = now.getTime()
   return SCHEDULE
@@ -185,7 +196,6 @@ function findMatchKey(homeNorm: string, awayNorm: string): string | null {
   return SCHEDULE.find(m => m.home === homeNorm && m.away === awayNorm)?.matchKey ?? null
 }
 
-// Pentru meciurile KO (echipe TBD în SCHEDULE), identificăm slotul după kickoffUtc
 function findKoMatchKey(utcDateStr: string): string | null {
   if (!utcDateStr) return null
   const matchMs = new Date(utcDateStr).getTime()
@@ -206,12 +216,11 @@ function normalizeTeam(name: string): string {
   return TEAM_NORM[name] ?? name
 }
 
-// ── CL Final window check (May 30, 2026 · 16:00–21:00 UTC = 18:00–23:00 CEST) ─
 function isCLFinalWindow(now: Date): boolean {
   const y = now.getUTCFullYear(), mo = now.getUTCMonth() + 1, d = now.getUTCDate()
   if (y !== 2026 || mo !== 5 || d !== 30) return false
   const utcMins = now.getUTCHours() * 60 + now.getUTCMinutes()
-  return utcMins >= 15 * 60 && utcMins <= 23 * 60   // 15:00–23:00 UTC (include extra time + penalties)
+  return utcMins >= 15 * 60 && utcMins <= 23 * 60
 }
 
 function mapMatchStatus(match: any, now: Date): string {
@@ -233,7 +242,6 @@ function mapMatchStatus(match: any, now: Date): string {
 
 function getLiveMinute(match: any, status: string): number | null {
   if (status !== 'LIVE' && status !== 'ET') return null
-
   if (match.minute != null) return match.minute + (match.injuryTime ?? 0)
   return null
 }
@@ -250,7 +258,6 @@ function getApiScore(match: any): { home: number | null; away: number | null } {
     scorePair(match.score?.fullTime) ??
     scorePair(match.score?.extraTime) ??
     scorePair(match.score?.halfTime)
-
   return { home: score?.home ?? null, away: score?.away ?? null }
 }
 
@@ -268,7 +275,6 @@ function getPenaltyScore(match: any, mappedStatus: string): { home: number | nul
   const score =
     scorePair(match.score?.penalties) ??
     scorePair(match.score?.penaltyShootout)
-
   return { home: score?.home ?? null, away: score?.away ?? null }
 }
 
@@ -281,7 +287,6 @@ Deno.serve(async () => {
   const inCLWindow = isCLFinalWindow(now)
 
   if (!inWCWindow && !inCLWindow) {
-    // Still poll if there are LIVE matches in DB (handles extra time / delays)
     const { data: stillLive } = await supabase
       .from('live_scores')
       .select('match_key')
@@ -312,78 +317,151 @@ Deno.serve(async () => {
 
   // ── WC 2026 matches ────────────────────────────────────────────────────────
   if (inWCWindow || now >= TOURNAMENT_START) {
-    const res = await fetch(
-      'https://api.football-data.org/v4/competitions/2000/matches?status=IN_PLAY,PAUSED,EXTRA_TIME,PENALTY_SHOOTOUT,FINISHED',
-      { headers: { 'X-Auth-Token': apiKey } }
-    )
+    const activeWindowKeys = getActiveWindowMatchKeys(now)
 
-    if (res.ok) {
-      const data = await res.json()
-      const apiMatches = data.matches ?? []
-      const activeWindowKeys = getActiveWindowMatchKeys(now)
+    // ── Primar: api-sports.io ─────────────────────────────────────────────────
+    const apifbKey = Deno.env.get('API_FOOTBALL_KEY')
+    if (apifbKey) {
+      const todayUtc = now.toISOString().slice(0, 10)
+      const ctrl = new AbortController()
+      const timer = setTimeout(() => ctrl.abort(), 8000)
+      try {
+        const [liveRes, todayRes] = await Promise.all([
+          fetch('https://v3.football.api-sports.io/fixtures?league=1&season=2026&live=all',
+            { headers: { 'x-apisports-key': apifbKey }, signal: ctrl.signal }),
+          fetch(`https://v3.football.api-sports.io/fixtures?league=1&season=2026&date=${todayUtc}`,
+            { headers: { 'x-apisports-key': apifbKey }, signal: ctrl.signal }),
+        ])
+        clearTimeout(timer)
 
-      console.log(`[poll] API returned ${apiMatches.length} matches, activeWindow: [${activeWindowKeys.join(',')}]`)
-      for (const m of apiMatches) {
-        console.log(`[poll] match: ${m.homeTeam?.name} vs ${m.awayTeam?.name} | status: ${m.status} | score: ${m.score?.fullTime?.home}-${m.score?.fullTime?.away} | min: ${m.minute ?? m.score?.fullTime?.home}`)
-      }
+        if (liveRes.ok && todayRes.ok) {
+          const liveData = await liveRes.json()
+          const todayData = await todayRes.json()
 
-      for (const m of apiMatches) {
-        const homeNorm = normalizeTeam(m.homeTeam?.name ?? '')
-        const awayNorm = normalizeTeam(m.awayTeam?.name ?? '')
-
-        let matchKey = findMatchKey(homeNorm, awayNorm)
-
-        // Meci KO — echipele sunt TBD în SCHEDULE, identificăm după dată/oră
-        if (!matchKey && m.utcDate) {
-          const koKey = findKoMatchKey(m.utcDate)
-          if (koKey) {
-            matchKey = koKey
-            koTeamUpdates.push({ matchKey: koKey, home: homeNorm, away: awayNorm })
+          const seenIds = new Set<number>()
+          const allFixtures: any[] = []
+          for (const f of [...(liveData.response ?? []), ...(todayData.response ?? [])]) {
+            if (!seenIds.has(f.fixture.id)) { seenIds.add(f.fixture.id); allFixtures.push(f) }
           }
-        }
 
-        if (!matchKey) {
-          console.log(`[poll] NO MATCH KEY for: ${homeNorm} vs ${awayNorm}`)
-          continue
-        }
+          console.log(`[api-sports] live: ${liveData.response?.length ?? 0} | today: ${todayData.response?.length ?? 0} | total unique: ${allFixtures.length}`)
 
-        const status = mapMatchStatus(m, now)
-        const apiScore = getApiScore(m)
-        const penaltyScore = getPenaltyScore(m, status)
-        const liveMin = getLiveMinute(m, status)
+          for (const f of allFixtures) {
+            const homeNorm = normalizeTeam(f.teams?.home?.name ?? '')
+            const awayNorm = normalizeTeam(f.teams?.away?.name ?? '')
+            const statusShort: string = f.fixture?.status?.short ?? 'NS'
+            const matchKey = findMatchKey(homeNorm, awayNorm)
 
-        upserts.push({
-          match_key: matchKey,
-          status,
-          regular_time_home_score: apiScore.home,
-          regular_time_away_score: apiScore.away,
-          penalty_home_score: penaltyScore.home,
-          penalty_away_score: penaltyScore.away,
-          raw_api_response: m,
-          api_minute: liveMin,
-          utc_date: m.utcDate ?? null,
-          updated_at: now.toISOString(),
-        })
-      }
+            if (!matchKey) {
+              console.log(`[api-sports] NO MATCH KEY: ${homeNorm} vs ${awayNorm} | status: ${statusShort}`)
+              continue
+            }
 
-      if (activeWindowKeys.length) {
-        const seenKeys = new Set(upserts.map((u) => u.match_key))
-        const missingActiveKeys = activeWindowKeys.filter((key) => !seenKeys.has(key))
-        if (missingActiveKeys.length) {
-          await supabase
-            .from('live_scores')
-            .update({
-              status: 'NS',
-              regular_time_home_score: null,
-              regular_time_away_score: null,
-              penalty_home_score: null,
-              penalty_away_score: null,
-              api_minute: null,
-              raw_api_response: data,
+            const mappedStatus = mapApiSportsStatus(statusShort)
+            const isAfterRegular = statusShort === 'AET' || statusShort === 'PEN'
+            const regularHome: number | null = isAfterRegular
+              ? (f.score?.fulltime?.home ?? f.goals?.home ?? null)
+              : (f.goals?.home ?? null)
+            const regularAway: number | null = isAfterRegular
+              ? (f.score?.fulltime?.away ?? f.goals?.away ?? null)
+              : (f.goals?.away ?? null)
+
+            console.log(`[api-sports] ${homeNorm} vs ${awayNorm} | status: ${statusShort}→${mappedStatus} | score: ${regularHome}-${regularAway} | min: ${f.fixture?.status?.elapsed}`)
+
+            upserts.push({
+              match_key: matchKey,
+              status: mappedStatus,
+              regular_time_home_score: regularHome,
+              regular_time_away_score: regularAway,
+              penalty_home_score: f.score?.penalty?.home ?? null,
+              penalty_away_score: f.score?.penalty?.away ?? null,
+              raw_api_response: f,
+              api_minute: (mappedStatus === 'LIVE' || mappedStatus === 'ET')
+                ? (f.fixture?.status?.elapsed ?? null) : null,
+              utc_date: f.fixture?.date ?? null,
               updated_at: now.toISOString(),
             })
-            .in('match_key', missingActiveKeys)
-            .in('status', ['LIVE', 'HT', 'ET', 'PEN'])
+          }
+        } else {
+          console.log(`[api-sports] fetch failed: live=${liveRes.status} today=${todayRes.status}`)
+        }
+      } catch (e) {
+        clearTimeout(timer)
+        console.log(`[api-sports] error: ${e}`)
+      }
+    }
+
+    // ── Fallback: football-data.org dacă api-sports.io n-a returnat nimic ────
+    if (upserts.length === 0) {
+      console.log('[fallback] using football-data.org')
+      const res = await fetch(
+        'https://api.football-data.org/v4/competitions/2000/matches?status=IN_PLAY,PAUSED,EXTRA_TIME,PENALTY_SHOOTOUT,FINISHED',
+        { headers: { 'X-Auth-Token': apiKey } }
+      )
+
+      if (res.ok) {
+        const data = await res.json()
+        const apiMatches = data.matches ?? []
+        console.log(`[fallback] API returned ${apiMatches.length} matches`)
+
+        for (const m of apiMatches) {
+          const homeNorm = normalizeTeam(m.homeTeam?.name ?? '')
+          const awayNorm = normalizeTeam(m.awayTeam?.name ?? '')
+          let matchKey = findMatchKey(homeNorm, awayNorm)
+
+          if (!matchKey && m.utcDate) {
+            const koKey = findKoMatchKey(m.utcDate)
+            if (koKey) {
+              matchKey = koKey
+              koTeamUpdates.push({ matchKey: koKey, home: homeNorm, away: awayNorm })
+            }
+          }
+
+          if (!matchKey) {
+            console.log(`[fallback] NO MATCH KEY: ${homeNorm} vs ${awayNorm}`)
+            continue
+          }
+
+          const status = mapMatchStatus(m, now)
+          const apiScore = getApiScore(m)
+          console.log(`[fallback] ${homeNorm} vs ${awayNorm} | status: ${status} | score: ${apiScore.home}-${apiScore.away}`)
+
+          const penaltyScore = getPenaltyScore(m, status)
+          const liveMin = getLiveMinute(m, status)
+
+          upserts.push({
+            match_key: matchKey,
+            status,
+            regular_time_home_score: apiScore.home,
+            regular_time_away_score: apiScore.away,
+            penalty_home_score: penaltyScore.home,
+            penalty_away_score: penaltyScore.away,
+            raw_api_response: m,
+            api_minute: liveMin,
+            utc_date: m.utcDate ?? null,
+            updated_at: now.toISOString(),
+          })
+        }
+
+        if (activeWindowKeys.length) {
+          const seenKeys = new Set(upserts.map((u) => u.match_key))
+          const missingActiveKeys = activeWindowKeys.filter((key) => !seenKeys.has(key))
+          if (missingActiveKeys.length) {
+            await supabase
+              .from('live_scores')
+              .update({
+                status: 'NS',
+                regular_time_home_score: null,
+                regular_time_away_score: null,
+                penalty_home_score: null,
+                penalty_away_score: null,
+                api_minute: null,
+                raw_api_response: data,
+                updated_at: now.toISOString(),
+              })
+              .in('match_key', missingActiveKeys)
+              .in('status', ['LIVE', 'HT', 'ET', 'PEN'])
+          }
         }
       }
     }
@@ -399,17 +477,14 @@ Deno.serve(async () => {
     if (clRes.ok) {
       const clData = await clRes.json()
       const clMatches = clData.matches ?? []
-      // The final is the only CL match on this date
       const final = clMatches.find((m: { stage?: string }) =>
         m.stage === 'FINAL' || clMatches.length === 1
       ) ?? clMatches[0]
 
       if (final) {
         const clStatus = mapMatchStatus(final, now)
-
         const clScore = getApiScore(final)
         const clPenaltyScore = getPenaltyScore(final, clStatus)
-
         const clMin = getLiveMinute(final, clStatus)
 
         upserts.push({
@@ -492,14 +567,11 @@ Deno.serve(async () => {
       return new Response(JSON.stringify({ error: error.message }), { status: 500 })
     }
 
-    // ── Trigger apply_bracket_scores() când o grupă se termină ───────────────
-    // Luăm match_key-urile de grupă care sunt FT în acest poll
     const ftGroupMatchKeys = upserts
       .filter(u => u.status === 'FT')
       .map(u => u.match_key)
 
     if (ftGroupMatchKeys.length > 0) {
-      // Găsim group_id-urile afectate
       const { data: ftGroupData } = await supabase
         .from('matches')
         .select('group_id')
@@ -512,7 +584,6 @@ Deno.serve(async () => {
       )]
 
       for (const gid of affectedGroups) {
-        // Toate match_key-urile din grupa respectivă
         const { data: groupKeys } = await supabase
           .from('matches')
           .select('match_key')
@@ -521,7 +592,6 @@ Deno.serve(async () => {
 
         const allKeys = (groupKeys ?? []).map((m: { match_key: string }) => m.match_key)
 
-        // Câte sunt FT?
         const { count: ftCount } = await supabase
           .from('live_scores')
           .select('match_key', { count: 'exact', head: true })
@@ -529,20 +599,18 @@ Deno.serve(async () => {
           .eq('status', 'FT')
 
         if (ftCount === allKeys.length && allKeys.length > 0) {
-          // Toate meciurile din grupă terminate → aplicăm scorurile
           await supabase.rpc('apply_bracket_scores')
           await supabase.rpc('apply_exact_scores')
-          break // o singură dată per poll este suficient
+          break
         }
       }
     }
 
-    // ── Trigger scoring după fiecare meci FT (grupă sau KO) ──────────────────
     const hasNewFt = upserts.some(u => u.status === 'FT')
     const hasNewKoFt = upserts.some(u => {
       if (u.status !== 'FT') return false
       const dayNum = parseInt(u.match_key.split('-')[0], 10)
-      return dayNum >= 28 // meciurile KO încep din ziua 28
+      return dayNum >= 28
     })
 
     if (hasNewKoFt) {
@@ -553,6 +621,8 @@ Deno.serve(async () => {
       await supabase.rpc('apply_exact_scores')
     }
   }
+
+  console.log(`[poll] done | upserts: ${upserts.length} | wcWindow: ${inWCWindow} | clWindow: ${inCLWindow}`)
 
   return new Response(JSON.stringify({
     ok: true,
