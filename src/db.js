@@ -884,14 +884,42 @@ export async function loadBoardExactScores(boardId) {
 }
 
 export async function loadUserBreakdown(userId, boardId) {
-  const [groupRes, exactRes] = await Promise.all([
+  const [groupRes, exactRes, specialRes] = await Promise.all([
     supabase.rpc('get_user_group_breakdown', { p_user_id: userId, p_board_id: boardId }),
     supabase.rpc('get_user_exact_breakdown', { p_user_id: userId, p_board_id: boardId }),
+    supabase
+      .from('special_picks')
+      .select('champion, runner_up, top_scorer_player, top_scorer_team, champion_pts, top_scorer_pts')
+      .eq('user_id', userId)
+      .eq('board_id', boardId)
+      .maybeSingle(),
   ])
   if (groupRes.error) console.error('loadUserBreakdown groups:', groupRes.error)
   if (exactRes.error) console.error('loadUserBreakdown exact:', exactRes.error)
+
+  let topScorerGoals = 0
+  if (specialRes.data?.top_scorer_player) {
+    const { count } = await supabase
+      .from('match_events')
+      .select('*', { count: 'exact', head: true })
+      .eq('player_name', specialRes.data.top_scorer_player)
+      .eq('type', 'Goal')
+      .neq('detail', 'Own Goal')
+    topScorerGoals = count ?? 0
+  }
+
+  const sp = specialRes.data
   return {
     groups: groupRes.data || [],
     exact:  exactRes.data || [],
+    bonus: sp ? {
+      champion:          sp.champion ?? null,
+      champion_pts:      sp.champion_pts ?? 0,
+      runner_up:         sp.runner_up ?? null,
+      runner_up_pts:     0,
+      top_scorer_player: sp.top_scorer_player ?? null,
+      top_scorer_team:   sp.top_scorer_team ?? null,
+      top_scorer_pts:    topScorerGoals * 5,
+    } : null,
   }
 }

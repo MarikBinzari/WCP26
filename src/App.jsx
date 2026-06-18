@@ -8122,6 +8122,34 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
               const hasGroups = breakdown.groups.length>0;
               const hasExact  = breakdown.exact.length>0;
               return (<>
+                {/* Bonus section */}
+                {breakdown.bonus&&(()=>{
+                  const b = breakdown.bonus;
+                  const bonusTotal = (b.champion_pts||0)+(b.runner_up_pts||0)+(b.top_scorer_pts||0);
+                  const rows = [
+                    { icon:"🏆", label: b.champion ? `${FLAGS[b.champion]||""} ${b.champion}` : "—", pts: b.champion_pts||0 },
+                    { icon:"🥈", label: b.runner_up ? `${FLAGS[b.runner_up]||""} ${b.runner_up}` : "—", pts: b.runner_up_pts||0 },
+                    { icon:"⚽", label: b.top_scorer_player || "—", pts: b.top_scorer_pts||0 },
+                  ];
+                  return (
+                    <div style={{border:`1.5px solid ${NAVY}22`,borderRadius:12,padding:"10px 12px",marginBottom:10}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                        <span style={{fontSize:12,fontWeight:800,color:NAVY,textTransform:"uppercase",letterSpacing:1}}>⚡ Bonus</span>
+                        <span style={{fontSize:13,fontWeight:800,color:NAVY}}>{bonusTotal}p</span>
+                      </div>
+                      {rows.map(({icon,label,pts})=>(
+                        <div key={icon} style={{display:"flex",justifyContent:"space-between",alignItems:"center",
+                          padding:"5px 0",borderBottom:"1px solid #F9FAFB"}}>
+                          <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                            <span style={{fontSize:14}}>{icon}</span>
+                            <span style={{fontSize:12,fontWeight:600,color:DARK}}>{label}</span>
+                          </div>
+                          <span style={{fontSize:12,fontWeight:700,color:NAVY}}>{pts}p</span>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
                 {/* Predictions section */}
                 <div style={{border:`1.5px solid ${NAVY}22`,borderRadius:12,padding:"10px 12px",marginBottom:10}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:hasGroups?8:0}}>
@@ -8182,19 +8210,22 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
                     );
                   })}
                 </div>
-                {!hasGroups&&!hasExact&&(
+                {!hasGroups&&!hasExact&&!breakdown.bonus&&(
                   <div style={{textAlign:"center",padding:"24px 0",color:"#9CA3AF",fontSize:13}}>
                     Niciun punct câștigat încă
                   </div>
                 )}
                 {/* Total */}
-                {(hasGroups||hasExact)&&(
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",
-                    borderTop:`2px solid ${NAVY}22`,paddingTop:10,marginTop:4}}>
-                    <span style={{fontSize:13,fontWeight:800,color:DARK}}>Total</span>
-                    <span style={{fontSize:15,fontWeight:900,color:NAVY}}>{predTotal+exactTotal}p</span>
-                  </div>
-                )}
+                {(hasGroups||hasExact||breakdown.bonus)&&(()=>{
+                  const bonusTotal = breakdown.bonus ? (breakdown.bonus.champion_pts||0)+(breakdown.bonus.runner_up_pts||0)+(breakdown.bonus.top_scorer_pts||0) : 0;
+                  return (
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",
+                      borderTop:`2px solid ${NAVY}22`,paddingTop:10,marginTop:4}}>
+                      <span style={{fontSize:13,fontWeight:800,color:DARK}}>Total</span>
+                      <span style={{fontSize:15,fontWeight:900,color:NAVY}}>{predTotal+exactTotal+bonusTotal}p</span>
+                    </div>
+                  );
+                })()}
               </>);
             })()}
           </div>

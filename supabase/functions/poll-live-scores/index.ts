@@ -323,13 +323,16 @@ Deno.serve(async () => {
     const apifbKey = Deno.env.get('API_FOOTBALL_KEY')
     if (apifbKey) {
       const todayUtc = now.toISOString().slice(0, 10)
+      const yesterdayUtc = new Date(now.getTime() - 86_400_000).toISOString().slice(0, 10)
       const ctrl = new AbortController()
       const timer = setTimeout(() => ctrl.abort(), 8000)
       try {
-        const [liveRes, todayRes] = await Promise.all([
+        const [liveRes, todayRes, yesterdayRes] = await Promise.all([
           fetch('https://v3.football.api-sports.io/fixtures?league=1&season=2026&live=all',
             { headers: { 'x-apisports-key': apifbKey }, signal: ctrl.signal }),
           fetch(`https://v3.football.api-sports.io/fixtures?league=1&season=2026&date=${todayUtc}`,
+            { headers: { 'x-apisports-key': apifbKey }, signal: ctrl.signal }),
+          fetch(`https://v3.football.api-sports.io/fixtures?league=1&season=2026&date=${yesterdayUtc}`,
             { headers: { 'x-apisports-key': apifbKey }, signal: ctrl.signal }),
         ])
         clearTimeout(timer)
@@ -337,14 +340,15 @@ Deno.serve(async () => {
         if (liveRes.ok && todayRes.ok) {
           const liveData = await liveRes.json()
           const todayData = await todayRes.json()
+          const yesterdayData = yesterdayRes.ok ? await yesterdayRes.json() : { response: [] }
 
           const seenIds = new Set<number>()
           const allFixtures: any[] = []
-          for (const f of [...(liveData.response ?? []), ...(todayData.response ?? [])]) {
+          for (const f of [...(liveData.response ?? []), ...(todayData.response ?? []), ...(yesterdayData.response ?? [])]) {
             if (!seenIds.has(f.fixture.id)) { seenIds.add(f.fixture.id); allFixtures.push(f) }
           }
 
-          console.log(`[api-sports] live: ${liveData.response?.length ?? 0} | today: ${todayData.response?.length ?? 0} | total unique: ${allFixtures.length}`)
+          console.log(`[api-sports] live: ${liveData.response?.length ?? 0} | today: ${todayData.response?.length ?? 0} | yesterday: ${yesterdayData.response?.length ?? 0} | total unique: ${allFixtures.length}`)
 
           for (const f of allFixtures) {
             const homeNorm = normalizeTeam(f.teams?.home?.name ?? '')
@@ -381,6 +385,29 @@ Deno.serve(async () => {
               utc_date: f.fixture?.date ?? null,
               updated_at: now.toISOString(),
             })
+
+            // Salvează events în match_events dacă există în response
+            const events: any[] = f.events ?? []
+            if (events.length > 0) {
+              const eventRows = events
+                .filter((e: any) => e.player?.name)
+                .map((e: any) => ({
+                  match_key:    matchKey,
+                  minute:       e.time?.elapsed ?? null,
+                  extra_minute: e.time?.extra ?? null,
+                  team_name:    normalizeTeam(e.team?.name ?? ''),
+                  player_name:  e.player?.name ?? null,
+                  assist_name:  e.assist?.name ?? null,
+                  type:         e.type ?? null,
+                  detail:       e.detail ?? null,
+                  updated_at:   now.toISOString(),
+                }))
+              if (eventRows.length > 0) {
+                await supabase
+                  .from('match_events')
+                  .upsert(eventRows, { onConflict: 'match_key,minute,extra_minute,player_name,type' })
+              }
+            }
           }
         } else {
           console.log(`[api-sports] fetch failed: live=${liveRes.status} today=${todayRes.status}`)
