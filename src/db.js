@@ -834,6 +834,13 @@ export async function deletePushSubscription(endpoint) {
 }
 
 // ─── LEADERBOARD ──────────────────────────────────────────────────────────────
+export async function hasLiveMatches() {
+  const { count } = await supabase
+    .from('live_scores')
+    .select('*', { count: 'exact', head: true })
+    .in('status', ['LIVE', 'HT', 'ET', 'PEN'])
+  return (count ?? 0) > 0
+}
 export async function loadLeaderboard(boardId, search = null, userId = null) {
   const [rpcRes, profileRes] = await Promise.all([
     supabase.rpc('get_leaderboard', {
@@ -851,9 +858,10 @@ export async function loadLeaderboard(boardId, search = null, userId = null) {
     return {
       rank:      i + 1,
       userId:    row.user_id || null,
-      name:      row.display_name || 'â€”',
+      name:      row.display_name || '—',
       pts:       row.total_pts || 0,
       avatarUrl: row.avatar_url || null,
+      movement:  row.movement ?? null,
       accent:    isMe ? '#E8F0FF' : '#fff',
       isMe,
     }

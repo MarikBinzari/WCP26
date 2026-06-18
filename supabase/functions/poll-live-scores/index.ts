@@ -283,6 +283,14 @@ function getPenaltyScore(match: any, mappedStatus: string): { home: number | nul
 Deno.serve(async () => {
   const now = new Date()
 
+  // Verifică dacă există meciuri live ÎNAINTE de procesare (pentru detectarea tranziției)
+  const { data: liveBeforeData } = await supabase
+    .from('live_scores')
+    .select('match_key')
+    .in('status', ['LIVE', 'HT', 'ET', 'PEN'])
+    .limit(1)
+  const wasLiveBefore = (liveBeforeData?.length ?? 0) > 0
+
   const inWCWindow = isInWindow(now)
   const inCLWindow = isCLFinalWindow(now)
 
@@ -545,6 +553,13 @@ Deno.serve(async () => {
       .update({ team1_id: t1.id, team2_id: t2.id })
       .eq('match_key', upd.matchKey)
       .is('team1_id', null)
+  }
+
+  // Snapshot: tranziție no-live → live → salvează clasamentul curent
+  const nowHasLive = upserts.some(u => ['LIVE', 'HT', 'ET', 'PEN'].includes(u.status))
+  if (!wasLiveBefore && nowHasLive) {
+    console.log('[snapshot] matches went live — taking ranking snapshot')
+    await supabase.rpc('take_ranking_snapshot')
   }
 
   if (upserts.length) {

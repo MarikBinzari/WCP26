@@ -10,7 +10,7 @@ import specialPickBadge from "./assets/special-pick-badge.webp";
 import bellIcon from "./assets/bell-icon.svg";
 import { ALL_GROUPS_DATA, FLAGS, TEAM_COLORS, CALENDAR_EVENTS, CL_FINAL } from "./data/worldcup2026.js";
 import { supabase, SUPABASE_URL } from "./supabase.js";
-import { savePredictions, saveExactScore, createBoard, updateBoard, joinBoardByCode, joinBoardById, ensureBoardScores, loadLeaderboard, loadMyScoreBreakdown, fetchScoringRules, fetchMemberCounts, removeBoardMember, removeParticipation, deleteBoard, loadBoardMembers, checkDbHealth, checkEmailExists, checkNicknameExists, loadLiveScores, subscribeLiveScores, loadPlayers, loadPlayersByTeam, seedPlayersFromApi, saveSpecialPick, uploadAvatar, uploadBoardImage, loadAllBoards, loadAllUserPicks, loadNotifReads, markNotifRead, loadSystemNotifications, loadRealGroupStandings, loadUserBreakdown, savePushSubscription, loadChatMessages, sendChatMessage, editChatMessage, toggleChatLike, toggleChatDislike, subscribeChatMessages, loadMatchPredictions, loadCentralStats, loadBoardExactScores } from "./db.js";
+import { savePredictions, saveExactScore, createBoard, updateBoard, joinBoardByCode, joinBoardById, ensureBoardScores, loadLeaderboard, loadMyScoreBreakdown, fetchScoringRules, fetchMemberCounts, removeBoardMember, removeParticipation, deleteBoard, loadBoardMembers, checkDbHealth, checkEmailExists, checkNicknameExists, loadLiveScores, subscribeLiveScores, loadPlayers, loadPlayersByTeam, seedPlayersFromApi, saveSpecialPick, uploadAvatar, uploadBoardImage, loadAllBoards, loadAllUserPicks, loadNotifReads, markNotifRead, loadSystemNotifications, loadRealGroupStandings, loadUserBreakdown, savePushSubscription, loadChatMessages, sendChatMessage, editChatMessage, toggleChatLike, toggleChatDislike, subscribeChatMessages, loadMatchPredictions, loadCentralStats, loadBoardExactScores, hasLiveMatches } from "./db.js";
 
 const TEAM_CODE = {"Mexico":"MEX","South Africa":"RSA","South Korea":"KOR","Czechia":"CZE","Canada":"CAN","Switzerland":"SUI","Qatar":"QAT","Bosnia-Herzegovina":"BIH","Brazil":"BRA","Morocco":"MAR","Scotland":"SCO","Haiti":"HAI","USA":"USA","Paraguay":"PAR","Australia":"AUS","Turkiye":"TUR","Germany":"GER","Ecuador":"ECU","Ivory Coast":"CIV","Curacao":"CUW","Netherlands":"NED","Japan":"JPN","Tunisia":"TUN","Sweden":"SWE","Belgium":"BEL","Iran":"IRI","Egypt":"EGY","New Zealand":"NZL","Spain":"ESP","Uruguay":"URU","Saudi Arabia":"KSA","Cape Verde":"CPV","France":"FRA","Senegal":"SEN","Norway":"NOR","Iraq":"IRQ","Argentina":"ARG","Austria":"AUT","Algeria":"ALG","Jordan":"JOR","Portugal":"POR","Colombia":"COL","Uzbekistan":"UZB","DR Congo":"COD","England":"ENG","Croatia":"CRO","Panama":"PAN","Ghana":"GHA"};
 
@@ -7803,6 +7803,11 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
   const [breakdown, setBreakdown] = useState(null);
   const [breakdownLoading, setBreakdownLoading] = useState(false);
   const [zoomedAvatar, setZoomedAvatar] = useState(null);
+  const [liveActive, setLiveActive] = useState(false);
+
+  useEffect(() => {
+    hasLiveMatches().then(setLiveActive);
+  }, [leaders]);
 
   const openBreakdown = (u) => {
     if (!u.userId) return;
@@ -7978,7 +7983,16 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
                   <div style={{fontSize:11,fontWeight:800,color:u.isMe?NAVY:DARK,textAlign:"center",
                     width:"100%",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",
                     padding:"0 4px",marginBottom:3}}>{u.name}</div>
-                  <div style={{fontSize:rank===1?15:13,fontWeight:900,color:color,marginBottom:8}}>{u.pts}p</div>
+                  <div style={{display:"flex",alignItems:"center",gap:4,marginBottom:8}}>
+                    <span style={{fontSize:rank===1?15:13,fontWeight:900,color:color}}>{u.pts}p</span>
+                    <span style={{fontSize:9,fontWeight:800,
+                      color:u.movement>0?"#16A34A":"#DC2626",
+                      background:(!liveActive&&u.movement!=null&&u.movement!==0)?(u.movement>0?"#F0FDF4":"#FEF2F2"):"transparent",
+                      borderRadius:5,padding:"1px 4px",
+                      visibility:(!liveActive&&u.movement!=null&&u.movement!==0)?"visible":"hidden"}}>
+                      {u.movement>0?`▲${u.movement}`:`▼${Math.abs(u.movement)}`}
+                    </span>
+                  </div>
                   <div style={{width:"100%",height:PLATFORM_H[rank],
                     background:`linear-gradient(180deg,${color}cc 0%,${color}77 100%)`,
                     borderRadius:"8px 8px 0 0",display:"flex",alignItems:"center",justifyContent:"center"}}>
@@ -8007,6 +8021,13 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
                       ?<img src={u.avatarUrl} alt="" onClick={e=>{e.stopPropagation();setZoomedAvatar(u.avatarUrl);}} style={{width:"100%",height:"100%",objectFit:"cover",cursor:"zoom-in"}}/>
                       :<span style={{fontSize:11,fontWeight:700,color:u.isMe?NAVY:"#888"}}>{initials}</span>}
                   </div>
+                  <span style={{fontSize:10,fontWeight:800,flexShrink:0,width:28,textAlign:"center",
+                    color:u.movement>0?"#16A34A":"#DC2626",
+                    background:(!liveActive&&u.movement!=null&&u.movement!==0)?(u.movement>0?"#F0FDF4":"#FEF2F2"):"transparent",
+                    borderRadius:6,padding:"2px 4px",
+                    visibility:(!liveActive&&u.movement!=null&&u.movement!==0)?"visible":"hidden"}}>
+                    {u.movement>0?`▲${u.movement}`:`▼${Math.abs(u.movement)}`}
+                  </span>
                   <div style={{flex:1,minWidth:0}}>
                     <span style={{fontSize:13,fontWeight:700,color:u.isMe?NAVY:DARK}}>{u.name}</span>
                   </div>
@@ -8059,6 +8080,13 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
                     ?<img src={u.avatarUrl} alt="" onClick={e=>{e.stopPropagation();setZoomedAvatar(u.avatarUrl);}} style={{width:"100%",height:"100%",objectFit:"cover",cursor:"zoom-in"}}/>
                     :<span style={{fontSize:11,fontWeight:700,color:u.isMe?NAVY:"#888"}}>{initials}</span>}
                 </div>
+                <span style={{fontSize:10,fontWeight:800,flexShrink:0,width:28,textAlign:"center",
+                  color:u.movement>0?"#16A34A":"#DC2626",
+                  background:(!liveActive&&u.movement!=null&&u.movement!==0)?(u.movement>0?"#F0FDF4":"#FEF2F2"):"transparent",
+                  borderRadius:6,padding:"2px 4px",
+                  visibility:(!liveActive&&u.movement!=null&&u.movement!==0)?"visible":"hidden"}}>
+                  {u.movement>0?`▲${u.movement}`:`▼${Math.abs(u.movement)}`}
+                </span>
                 <div style={{flex:1,minWidth:0}}>
                   <span style={{fontSize:13,fontWeight:700,color:u.isMe?NAVY:DARK}}>{u.name}</span>
                 </div>
@@ -8345,13 +8373,14 @@ function CentralStatsScreen({ onBack, boardId, boardName, simDay, simHour=12, si
   const [loadingMembers, setLoadingMembers] = useState(true);
   const [loadingPreds, setLoadingPreds] = useState(false);
   const [offset, setOffset] = useState(null);
+  const liveActive = Object.values(LIVE_SCORES).some(v => ['LIVE','HT','ET','PEN'].includes(v?.status));
 
   // load members once
   useEffect(() => {
     if (!boardId) return;
     setLoadingMembers(true);
     loadLeaderboard(boardId).then(rows => {
-      setMembers(rows.map(r => ({ userId: r.userId, name: r.name, avatarUrl: r.avatarUrl || null, pts: r.pts || 0, rank: r.rank })));
+      setMembers(rows.map(r => ({ userId: r.userId, name: r.name, avatarUrl: r.avatarUrl || null, pts: r.pts || 0, rank: r.rank, movement: r.movement ?? null })));
       setLoadingMembers(false);
     });
   }, [boardId]);
@@ -8446,7 +8475,7 @@ function CentralStatsScreen({ onBack, boardId, boardName, simDay, simHour=12, si
           <table style={{ borderCollapse: 'collapse', width: '100%', tableLayout: 'fixed', fontSize: 11 }}>
             <thead>
               <tr style={{ background: '#fff', position: 'sticky', top: 0, zIndex: 2 }}>
-                <th style={{ padding: '8px 8px', textAlign: 'left', fontWeight: 700, color: '#6B7280', fontSize: 11, whiteSpace: 'nowrap', borderBottom: '2px solid #E5E7EB', width: '28%', overflow: 'hidden' }}>
+                <th style={{ padding: '8px 8px', textAlign: 'left', fontWeight: 700, color: '#6B7280', fontSize: 11, whiteSpace: 'nowrap', borderBottom: '2px solid #E5E7EB', borderRight: '2px solid #E5E7EB', width: '28%', overflow: 'hidden' }}>
                   {lang === 'ro' ? 'Jucător' : 'Player'}
                 </th>
                 <th style={{ padding: '0 4px', borderBottom: '2px solid #E5E7EB', width: 28, textAlign: 'center' }}>
@@ -8494,7 +8523,7 @@ function CentralStatsScreen({ onBack, boardId, boardName, simDay, simHour=12, si
                 const rowBg = ri % 2 === 0 ? '#fff' : '#FAFAFA';
                 return (
                   <tr key={member.userId} style={{ background: rowBg, borderBottom: '1px solid #F3F4F6' }}>
-                    <td style={{ padding: '6px 8px', overflow: 'hidden' }}>
+                    <td style={{ padding: '6px 8px', overflow: 'hidden', borderRight: '2px solid #E5E7EB' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
                         <div style={{ width: 22, textAlign: 'center', flexShrink: 0 }}>
                           {member.rank <= 3
@@ -8504,6 +8533,13 @@ function CentralStatsScreen({ onBack, boardId, boardName, simDay, simHour=12, si
                               </div>
                           }
                         </div>
+                        <span style={{fontSize:9,fontWeight:800,flexShrink:0,width:24,textAlign:"center",
+                          color:member.movement>0?"#16A34A":"#DC2626",
+                          background:(!liveActive&&member.movement!=null&&member.movement!==0)?(member.movement>0?"#F0FDF4":"#FEF2F2"):"transparent",
+                          borderRadius:5,padding:"1px 3px",
+                          visibility:(!liveActive&&member.movement!=null&&member.movement!==0)?"visible":"hidden"}}>
+                          {member.movement>0?`▲${member.movement}`:`▼${Math.abs(member.movement)}`}
+                        </span>
                         <span style={{ fontSize: 12, fontWeight: 700, color: DARK, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block', minWidth: 0 }}>{member.name}</span>
                       </div>
                     </td>
@@ -8719,7 +8755,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
 
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",position:"relative"}}>
-      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.055,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.055,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)",transform:"translateZ(0)",willChange:"transform"}}/>
       <div style={{background:"rgba(0,32,91,0.88)",flexShrink:0,position:"relative",zIndex:1,overflow:"hidden"}}>
         <div style={{display:"flex",alignItems:"center",gap:10,padding:"28px 14px 28px"}}>
           <button onClick={onBack} style={{background:"rgba(255,255,255,0.12)",border:"none",borderRadius:10,width:34,height:34,color:"#fff",fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>‹</button>
@@ -9224,7 +9260,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
             <div key={day} onClick={()=>onDaySelect&&onDaySelect(day)}
               style={{position:"relative",display:"flex",flexDirection:"column",alignItems:"center",
                 justifyContent:"center",borderRadius:10,padding:"8px 2px",
-                cursor:"pointer",background:bg,border,boxShadow:shadow,transition:"all 0.15s",
+                cursor:"pointer",background:bg,border,boxShadow:shadow,transition:"background-color 0.15s, border-color 0.15s",
                 opacity:locked?0.6:1}}>
               <span style={{fontSize:13,fontWeight:fw,color:tc,lineHeight:1}}>{day<=0?day+31:day>30?day-30:day}</span>
               {has&&(
@@ -10863,6 +10899,7 @@ function App() {
       xhr.ontimeout = showOffline;
       xhr.open('GET', SUPABASE_URL + '/rest/v1/?_=' + Date.now(), true);
       xhr.setRequestHeader('apikey', import.meta.env.VITE_SUPABASE_ANON_KEY);
+      xhr.setRequestHeader('Authorization', 'Bearer ' + import.meta.env.VITE_SUPABASE_ANON_KEY);
       xhr.send();
     };
     ping();
@@ -10968,7 +11005,9 @@ function App() {
         } else if (event === 'SIGNED_IN') {
           Promise.all([loadSystemNotifications(lang), loadNotifReads(u.id)]).then(([notifs, ids]) => { setSystemNotifs(notifs); setNotifReadIds(ids); });
           setupPushNotifications(u.id);
-          setScreen(SCREENS.HOME);
+          const nonRestorable = [SCREENS.SPLASH, SCREENS.LOGIN, SCREENS.RESET_PASSWORD, SCREENS.SET_PASSWORD];
+          const saved = (() => { try { return localStorage.getItem('lastScreen'); } catch { return null; } })();
+          setScreen(saved && !nonRestorable.includes(saved) ? saved : SCREENS.HOME);
         }
         // USER_UPDATED, TOKEN_REFRESHED — only update user state, don't navigate
       } else setScreen(SCREENS.SPLASH);
