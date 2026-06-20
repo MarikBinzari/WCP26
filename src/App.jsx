@@ -8600,7 +8600,7 @@ function CentralStatsScreen({ onBack, boardId, boardName, simDay, simHour=12, si
   );
 }
 
-function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScoresProp, simDay, simHour=12, simMin=0, initialWeek, initialDay, boardId, boardName }) {
+function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScoresProp, simDay, simHour=12, simMin=0, initialWeek, initialDay, boardId, boardName, myBoards=[], onCopyDayScores }) {
   const lang = useLang();
   const LIVE_SCORES = useLiveScores(simDay, simHour, simMin);
   const calendarEvents = getDisplayCalendarEvents();
@@ -8662,6 +8662,8 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
   const [scorePick, setScorePick] = useState(null);
   const [matchPreview, setMatchPreview] = useState(null);
   const [matchPreviewData, setMatchPreviewData] = useState({ loading: false, items: [] });
+  const [copyDayPayload, setCopyDayPayload] = useState(null);
+  const [copyDayDone, setCopyDayDone] = useState({});
   const [showReal, setShowReal] = useState(true);
   const [showStanding, setShowStanding] = useState(false);
   const [pickerHome, setPickerHome] = useState(0);
@@ -8813,6 +8815,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
           GROUPS_DATA={GROUPS_DATA} showReal={showReal} setShowReal={setShowReal}
           standing={standing} isGroupLocked={isGroupLocked} simDay={simDay} simHour={simHour} simMin={simMin}
           liveScores={LIVE_SCORES}
+          onCopyDay={myBoards.filter(b=>b.id!==boardId).length>0 ? (day, matchKeys)=>{ setCopyDayDone({}); setCopyDayPayload({ day, matchKeys }); } : null}
           onMatchPreview={(match,day,idx)=>{
             setMatchPreview({match,day,idx,key:getMatchKey(match,day,idx)});
           }}
@@ -8827,6 +8830,54 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
           }}/>
 
 
+
+        {copyDayPayload&&(
+          <div style={{position:"fixed",inset:0,zIndex:1300,display:"flex",flexDirection:"column",justifyContent:"flex-end"}}
+            onClick={()=>setCopyDayPayload(null)}>
+            <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.5)"}}/>
+            <div onClick={e=>e.stopPropagation()}
+              style={{position:"relative",background:"#1C1C1E",borderRadius:"20px 20px 0 0",padding:"0 0 calc(env(safe-area-inset-bottom, 10px) + 24px)",maxHeight:"60vh",display:"flex",flexDirection:"column"}}>
+              <div style={{display:"flex",justifyContent:"center",padding:"10px 0 4px"}}>
+                <div style={{width:36,height:4,borderRadius:2,background:"rgba(255,255,255,0.2)"}}/>
+              </div>
+              <div style={{padding:"8px 20px 14px",borderBottom:"1px solid rgba(255,255,255,0.08)"}}>
+                <div style={{display:"flex",alignItems:"center",gap:8}}>
+                  <CopyGlyph color={GREEN}/>
+                  <span style={{fontSize:15,fontWeight:800,color:"#fff"}}>{T[lang].copyExactScoresTitle}</span>
+                </div>
+                <p style={{fontSize:12,color:"rgba(255,255,255,0.45)",margin:"4px 0 0"}}>
+                  {copyDayPayload.matchKeys.length} {T[lang].matchesToPredict} · {toLabel(copyDayPayload.day)}
+                </p>
+              </div>
+              <div style={{overflowY:"auto",flex:1,padding:"10px 16px 0"}}>
+                {myBoards.filter(b=>b.id!==boardId).length===0?(
+                  <div style={{textAlign:"center",padding:"24px 0",color:"rgba(255,255,255,0.35)",fontSize:13}}>
+                    {T[lang].noOtherBoards}
+                  </div>
+                ):myBoards.filter(b=>b.id!==boardId).map(b=>(
+                  <div key={b.id}
+                    onClick={async()=>{
+                      if(copyDayDone[b.id]) return;
+                      await onCopyDayScores?.(b.id, copyDayPayload.matchKeys);
+                      setCopyDayDone(p=>({...p,[b.id]:true}));
+                    }}
+                    style={{display:"flex",alignItems:"center",gap:12,padding:"12px 4px",borderBottom:"1px solid rgba(255,255,255,0.07)",cursor:"pointer"}}>
+                    <span style={{fontSize:22,display:"inline-block",width:30,flexShrink:0}}>{b.emoji||"âš½"}</span>
+                    <span style={{flex:1,fontSize:13,fontWeight:700,color:"#fff"}}>{b.name}</span>
+                    {copyDayDone[b.id]?(
+                      <span style={{fontSize:12,fontWeight:700,color:GREEN}}>{T[lang].copiedLabel}</span>
+                    ):(
+                      <div style={{background:`linear-gradient(135deg,${GREEN},#007A36)`,borderRadius:8,padding:"5px 12px",display:"flex",alignItems:"center",gap:5}}>
+                        <CopyGlyph color="#fff"/>
+                        <span style={{fontSize:12,fontWeight:700,color:"#fff"}}>{T[lang].pasteLabel}</span>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
         {false && !isGroupLocked(selGroup) && (
           <>
@@ -9231,7 +9282,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
   );
 }
 
-function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDaySelect, scores, onMatchClick, onMatchPreview, showStanding, setShowStanding, selGroup, setSelGroup, GROUPS_DATA, showReal, setShowReal, standing, isGroupLocked, simDay, simHour=12, simMin=0, liveScores, scoresVersion }) {
+function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDaySelect, scores, onMatchClick, onMatchPreview, onCopyDay, showStanding, setShowStanding, selGroup, setSelGroup, GROUPS_DATA, showReal, setShowReal, standing, isGroupLocked, simDay, simHour=12, simMin=0, liveScores, scoresVersion }) {
   const lang = useLang();
   const LIVE_SCORES = liveScores || LIVE_SCORES_DEFAULT;
   const [collapsedGroups, setCollapsedGroups] = useState({});
@@ -9242,6 +9293,15 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
   const days = Array.from({length:7},(_,i)=>weekStart+i);
   const sel = selDay !== undefined ? selDay : null;
   const sm = (sel !== null && sel !== undefined && mm[sel]) ? mm[sel] : null;
+  const copyableDayMatches = sm ? sm
+    .map((m, idx) => ({ match: m, idx, key: getMatchKey(m, sel, idx) }))
+    .filter(({ match }) => match.homeFlag !== '🏆' && isWeekUnlocked(sel || 0, simDay, simHour, simMin)) : [];
+  const dayAllPredicted = copyableDayMatches.length > 0 && copyableDayMatches.every(({ key }) => !!scores?.[key]);
+  const dayNotStarted = copyableDayMatches.length > 0 && copyableDayMatches.every(({ match, key }) => {
+    const status = LIVE_SCORES[key]?.status;
+    return (!status || status === 'NS') && !isMatchPast(sel, match.time, simDay, simHour, match.kickoffUtc);
+  });
+  const canCopySelectedDay = !!onCopyDay && dayAllPredicted && dayNotStarted;
   const weekEnd = weekStart+6;
   const weekLabel = `${toLabel(weekStart)} – ${toLabel(weekEnd)}`;
   const weekMonthLabel = weekStart<=0?"May 2026":weekEnd>30?"July 2026":"June 2026";
@@ -9738,8 +9798,9 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                     })()}
                   </div>
                 ) : (
-                  /* All matches list */
-                  sm.map((m0,i)=>{
+                  <>
+                  {/* All matches list */}
+                  {sm.map((m0,i)=>{
                     const m = {...m0, _i:i};
                     const key=getMatchKey(m0,sel,i);
                     // key used below for data-match-key
@@ -9852,7 +9913,17 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                         )}
                       </div>
                     );
-                  })
+                  })}
+                  {canCopySelectedDay&&(
+                    <div style={{background:"#fff",padding:"12px 14px 14px",borderTop:"1px solid rgba(0,0,0,0.06)"}}>
+                      <button onClick={()=>onCopyDay(sel, copyableDayMatches.map(m=>m.key))}
+                        style={{width:"100%",border:"none",borderRadius:10,padding:"10px 12px",background:`linear-gradient(135deg,${GREEN},#007A36)`,color:"#fff",fontSize:12,fontWeight:800,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:7}}>
+                        <CopyGlyph color="#fff"/>
+                        <span>Copy day</span>
+                      </button>
+                    </div>
+                  )}
+                  </>
                 )}
               </div>
             );
@@ -11712,7 +11783,24 @@ function App() {
                 if (saveOk) showToast("Exact Score saved", "⚽");
                 else showToast("Save failed — retry", "❌");
               }
-            }} simDay={simDay} simHour={simHour} simMin={simMin} initialWeek={groupsInitialWeek} initialDay={groupsInitialDay} onBack={()=>{ setGroupsInitialWeek(null); setGroupsInitialDay(null); setScreen(SCREENS.HOME); }}/>}
+            }} simDay={simDay} simHour={simHour} simMin={simMin} initialWeek={groupsInitialWeek} initialDay={groupsInitialDay}
+              myBoards={myBoards}
+              onCopyDayScores={async (targetBoardId, matchKeys)=>{
+                if(!user) return;
+                const scores = exactScoresByBoard[activeBoardId] || {};
+                for(const matchKey of matchKeys){
+                  const sc = scores[matchKey];
+                  if(sc) await saveExactScore(user.id,targetBoardId,matchKey,sc.home,sc.away);
+                }
+                setExactScoresByBoard(prev => {
+                  const target = prev[targetBoardId] || {};
+                  const copied = {};
+                  matchKeys.forEach(k => { if(scores[k]) copied[k] = scores[k]; });
+                  return { ...prev, [targetBoardId]: { ...target, ...copied } };
+                });
+                showToast("Scores copied!","⚽");
+              }}
+              onBack={()=>{ setGroupsInitialWeek(null); setGroupsInitialDay(null); setScreen(SCREENS.HOME); }}/>}
           {user&&<div style={{display:screen===SCREENS.ACCOUNT?'flex':'none',flex:1,flexDirection:'column',overflow:'hidden',minHeight:0}}>
             <AccountScreen setLang={setLang} onBoards={()=>{ setBoardsInitialTab("my"); setScreen(SCREENS.BOARDS); }} onSignOut={()=>setScreen(SCREENS.SPLASH)} onShowGuide={()=>{ setShowOnboarding(true); }} onPremium={()=>setScreen(SCREENS.PREMIUM)} onNotifications={()=>{ notificationsBackRef.current=SCREENS.ACCOUNT; setScreen(SCREENS.NOTIFICATIONS); }} user={user} isActive={screen===SCREENS.ACCOUNT}/>
           </div>}
