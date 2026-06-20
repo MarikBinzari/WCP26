@@ -15,11 +15,35 @@ const mapBoard = (b) => ({
 let _matchKeyMap = null
 async function getMatchKeyMap() {
   if (_matchKeyMap && Object.keys(_matchKeyMap).length > 0) return _matchKeyMap
-  const { data } = await supabase.from('matches').select('id, match_key')
+  const { data, error } = await supabase.from('matches').select('id, match_key')
+  if (error) {
+    console.error('getMatchKeyMap:', error)
+    return {}
+  }
   if (!data || data.length === 0) return {}
   _matchKeyMap = {}
   data.forEach(m => { _matchKeyMap[m.match_key] = m.id })
   return _matchKeyMap
+}
+
+async function getMatchIdByKey(matchKey) {
+  const map = await getMatchKeyMap()
+  if (map[matchKey]) return map[matchKey]
+
+  const { data, error } = await supabase
+    .from('matches')
+    .select('id, match_key')
+    .eq('match_key', matchKey)
+    .maybeSingle()
+
+  if (error) {
+    console.error('getMatchIdByKey:', error)
+    return null
+  }
+  if (!data?.id) return null
+
+  _matchKeyMap = { ...(_matchKeyMap || {}), [data.match_key]: data.id }
+  return data.id
 }
 
 // â”€â”€â”€ SCORING RULES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -114,23 +138,31 @@ export async function loadExactScores(userId, boardId) {
 }
 
 export async function saveExactScore(userId, boardId, matchKey, home, away) {
-  const map = await getMatchKeyMap()
-  const matchId = map[matchKey]
+  const matchId = await getMatchIdByKey(matchKey)
   if (!matchId) {
     const msg = `match_key not found in DB: "${matchKey}". Matches table may be empty or use a different key format.`
     console.error('saveExactScore:', msg)
     return { error: msg }
   }
-  const { error } = await supabase
-    .from('exact_scores')
-    .upsert({
+  const row = {
       user_id:     userId,
       board_id:    boardId,
       match_id:    matchId,
       team1_score: home,
       team2_score: away,
       updated_at:  new Date().toISOString(),
-    }, { onConflict: 'user_id,board_id,match_id' })
+    }
+  let { error } = await supabase
+    .from('exact_scores')
+    .upsert(row, { onConflict: 'user_id,board_id,match_id' })
+
+  if (error) {
+    await new Promise(resolve => setTimeout(resolve, 250))
+    ;({ error } = await supabase
+      .from('exact_scores')
+      .upsert({ ...row, updated_at: new Date().toISOString() }, { onConflict: 'user_id,board_id,match_id' }))
+  }
+
   if (error) { console.error('saveExactScore:', error); return { error: error.message } }
   return { error: null }
 }

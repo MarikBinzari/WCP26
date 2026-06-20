@@ -883,8 +883,17 @@ const encodeCalendarDay = (date) => {
 const getMatchDisplayDay = (match, fallbackDay) =>
   match?.kickoffUtc ? encodeCalendarDay(new Date(match.kickoffUtc)) : fallbackDay;
 
-const getMatchKey = (match, day, idx) =>
-  match?.matchKey || `${day}-${idx}`;
+const CANONICAL_MATCH_KEYS = {
+  '27-2': '26-2',
+  '27-3': '26-3',
+  '27-4': '26-4',
+  '27-5': '26-5',
+};
+
+const getMatchKey = (match, day, idx) => {
+  const key = match?.matchKey || `${day}-${idx}`;
+  return CANONICAL_MATCH_KEYS[key] || key;
+};
 
 const getDisplayCalendarEvents = () => {
   const byDay = new Map();
@@ -5563,26 +5572,22 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
   const _exCalendarEvents = getDisplayCalendarEvents();
   const _exWkMM = (()=>{ const mm={}; _exCalendarEvents.forEach(e=>{mm[e.day]=e.matches;}); return mm; })();
   const _exWkDays = (s)=>Array.from({length:7},(_,i)=>s+i).filter(d=>d>=1&&d<=50);
-  // Only count display-days that are currently unlocked (same logic as GroupsScheduleScreen)
-  const _exUnlockedDays = new Set(
-    _exCalendarEvents.filter(e=>isWeekUnlocked(e.day,simDay,simHour,simMin)).map(e=>e.day)
-  );
-  // Index matches by source day, skipping locked display-days
-  const _exSrcMM = (()=>{
-    const mm={};
-    _exCalendarEvents.forEach(e=>{
-      if(!_exUnlockedDays.has(e.day)) return;
-      (e.matches||[]).forEach(m=>{
-        const sd=m.sourceDay??e.day;
-        if(!mm[sd])mm[sd]=[];
-        mm[sd].push(m);
-      });
+  // Count exact-score progress by the local display day, matching what is currently possible to predict.
+  const _exDisplayMM = (() => {
+    const mm = {};
+    _exCalendarEvents.forEach(e => {
+      if (!isWeekUnlocked(e.day, simDay, simHour, simMin)) return;
+      mm[e.day] = (e.matches || []).filter(m =>
+        m.homeFlag !== '🏆' &&
+        !isMatchPast(e.day, m.time, simDay, simHour, m.kickoffUtc)
+      );
     });
     return mm;
   })();
-  const _exWkFuture = (s)=>_exWkDays(s).reduce((a,d)=>a+(_exSrcMM[d]||[]).filter(m=>!isMatchPast(d,m.time,simDay,simHour,m.kickoffUtc)&&m.homeFlag!=='🏆').length,0);
-  const _exWkTotal = _exWkFuture;
-  const _exWkScored = (s)=>_exWkDays(s).reduce((a,d)=>a+(_exSrcMM[d]||[]).filter(m=>!isMatchPast(d,m.time,simDay,simHour,m.kickoffUtc)&&m.homeFlag!=='🏆'&&!!(exactScores||{})[m.matchKey]).length,0);
+  const _exWkTotal = (s) => _exWkDays(s)
+    .reduce((a, d) => a + (_exDisplayMM[d] || []).length, 0);
+  const _exWkScored = (s) => _exWkDays(s)
+    .reduce((a, d) => a + (_exDisplayMM[d] || []).filter(m => !!(exactScores || {})[m.matchKey]).length, 0);
   const todaySimEx = simDay ?? getLocalTournamentDay();
   const _calWeeks = [-6,1,8,15,22,29,36,43];
   const todayCalendarWeek = _calWeeks.find(w=>todaySimEx>=w&&todaySimEx<=w+6) ?? _calWeeks[0];
@@ -8767,8 +8772,19 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
   standing.sort((a,b)=>b.pts-a.pts||b.gd-a.gd||b.gf-a.gf);
 
   const wDaysHeader = Array.from({length:7},(_,i)=>weekStart+i);
-  const weekTotal = wDaysHeader.reduce((s,d)=>s+(mm0[d]||[]).length,0);
-  const weekScored = wDaysHeader.reduce((s,d)=>s+(mm0[d]||[]).filter((m,i)=>scores[getMatchKey(m,d,i)]).length,0);
+  const weekPredictableMatches = wDaysHeader.flatMap(d =>
+    (mm0[d] || [])
+      .filter(m =>
+        m.homeFlag !== '🏆' &&
+        isWeekUnlocked(d, simDay, simHour, simMin) &&
+        !isMatchPast(d, m.time, simDay, simHour, m.kickoffUtc)
+      )
+      .map((m, i) => ({ match: m, day: d, idx: i }))
+  );
+  const weekTotal = weekPredictableMatches.length;
+  const weekScored = weekPredictableMatches.filter(({ match, day, idx }) =>
+    scores[getMatchKey(match, day, idx)]
+  ).length;
   const weekRemaining = weekTotal - weekScored;
 
   return (
