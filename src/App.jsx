@@ -5759,8 +5759,6 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
                 value={exactWeekUnlocked?`${exactWeekScored}/${exactWeekTotal}`:T[lang].locked}
                 active={exactWeekUnlocked}
                 onClick={()=>onOpenGroups&&onOpenGroups(exactWeekStart)}
-                copyEnabled={exactWeekUnlocked&&exactWeekDone&&!exactWeekHasStarted}
-                onCopy={()=>{setCopyDone({});setCopyWeekStart(exactWeekStart);setShowCopySheet("scores");}}
               />
             </div>
           </HomeCard>
@@ -5771,7 +5769,7 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
             body={exactWeekDone?T[lang].weekComplete+" ✓":!exactWeekHasStarted?exactWeekStartLabel:(exactWeekTotal-exactWeekScored)+" "+T[lang].scoresLeftThisWeek}
             buttonLabel={exactWeekUnlocked?T[lang].openScores:T[lang].locked}
             locked={!exactWeekUnlocked}
-            onOpen={()=>onOpenGroups&&onOpenGroups(exactWeekStart)}
+            onOpen={()=>onOpenGroups&&onOpenGroups(todayCalendarWeek, todaySimEx)}
             date={simDay?new Date(2026,5,simDay,simHour||12):new Date()}
           />
           <LeagueRankingCard
@@ -8498,7 +8496,7 @@ function CentralStatsScreen({ onBack, boardId, boardName, simDay, simHour=12, si
           <table style={{ borderCollapse: 'collapse', width: '100%', tableLayout: 'fixed', fontSize: 11 }}>
             <thead>
               <tr style={{ background: '#fff', position: 'sticky', top: 0, zIndex: 2 }}>
-                <th style={{ padding: '8px 8px', textAlign: 'left', fontWeight: 700, color: '#6B7280', fontSize: 11, whiteSpace: 'nowrap', borderBottom: '2px solid #E5E7EB', borderRight: '2px solid #E5E7EB', width: '28%', overflow: 'hidden' }}>
+                <th style={{ padding: '8px 6px', textAlign: 'left', fontWeight: 700, color: '#6B7280', fontSize: 11, whiteSpace: 'nowrap', borderBottom: '2px solid #E5E7EB', borderRight: '2px solid #E5E7EB', width: '28%', overflow: 'hidden' }}>
                   {lang === 'ro' ? 'Jucător' : 'Player'}
                 </th>
                 <th style={{ padding: '0 4px', borderBottom: '2px solid #E5E7EB', width: 28, textAlign: 'center' }}>
@@ -8546,9 +8544,9 @@ function CentralStatsScreen({ onBack, boardId, boardName, simDay, simHour=12, si
                 const rowBg = ri % 2 === 0 ? '#fff' : '#FAFAFA';
                 return (
                   <tr key={member.userId} style={{ background: rowBg, borderBottom: '1px solid #F3F4F6' }}>
-                    <td style={{ padding: '6px 8px', overflow: 'hidden', borderRight: '2px solid #E5E7EB' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                        <div style={{ width: 22, textAlign: 'center', flexShrink: 0 }}>
+                    <td style={{ padding: '6px 6px', overflow: 'hidden', borderRight: '2px solid #E5E7EB' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <div style={{ width: 18, textAlign: 'center', flexShrink: 0 }}>
                           {member.rank <= 3
                             ? <span style={{ fontSize: 16 }}>{member.rank===1?'🥇':member.rank===2?'🥈':'🥉'}</span>
                             : <div style={{ width: 22, height: 22, borderRadius: 6, background: 'rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -8556,10 +8554,10 @@ function CentralStatsScreen({ onBack, boardId, boardName, simDay, simHour=12, si
                               </div>
                           }
                         </div>
-                        <span style={{fontSize:9,fontWeight:800,flexShrink:0,width:24,textAlign:"center",
+                        <span style={{fontSize:8,fontWeight:800,flexShrink:0,width:18,textAlign:"center",
                           color:member.movement>0?"#16A34A":"#DC2626",
                           background:(!liveActive&&member.movement!=null&&member.movement!==0)?(member.movement>0?"#F0FDF4":"#FEF2F2"):"transparent",
-                          borderRadius:5,padding:"1px 3px",
+                          borderRadius:4,padding:"1px 2px",
                           visibility:(!liveActive&&member.movement!=null&&member.movement!==0)?"visible":"hidden"}}>
                           {member.movement>0?`▲${member.movement}`:`▼${Math.abs(member.movement)}`}
                         </span>
@@ -8602,7 +8600,7 @@ function CentralStatsScreen({ onBack, boardId, boardName, simDay, simHour=12, si
   );
 }
 
-function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScoresProp, simDay, simHour=12, simMin=0, initialWeek, boardId, boardName }) {
+function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScoresProp, simDay, simHour=12, simMin=0, initialWeek, initialDay, boardId, boardName }) {
   const lang = useLang();
   const LIVE_SCORES = useLiveScores(simDay, simHour, simMin);
   const calendarEvents = getDisplayCalendarEvents();
@@ -8631,22 +8629,24 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
   const firstMatchDay = Array.from({length:7},(_,i)=>8+i).find(d=>!!mm0[d]) || null;
   const todayDay = simDay ?? getLocalTournamentDay();
   const todayHasMatches = !!mm0[todayDay];
-  const defaultDay = todayDay;
+  const requestedDay = initialDay ?? todayDay;
+  const defaultDay = requestedDay;
   // Auto-select the week that contains today (pre-WC weeks included)
-  const defaultWeek = initialWeek || [-6,1,8,15,22,29].find(w=>todayDay>=w&&todayDay<=w+6) || -6;
+  const defaultWeek = initialWeek || [-6,1,8,15,22,29].find(w=>requestedDay>=w&&requestedDay<=w+6) || -6;
   const [weekStart, setWeekStart] = useState(defaultWeek);
   useEffect(()=>{
-    if(initialWeek) {
-      setWeekStart(initialWeek);
+    if(initialWeek || initialDay != null) {
+      const nextWeek = initialWeek || [-6,1,8,15,22,29].find(w=>requestedDay>=w&&requestedDay<=w+6) || -6;
+      setWeekStart(nextWeek);
       const mm_ = {};
       calendarEvents.forEach(e => { mm_[e.day] = e.matches; });
-      const wDays = Array.from({length:7},(_,i)=>initialWeek+i);
+      const wDays = Array.from({length:7},(_,i)=>nextWeek+i);
       // Selectăm ziua de azi dacă e în săptămână (cu sau fără meciuri), altfel prima zi cu meciuri
-      const todayInWeek = wDays.find(d => d === todayDay);
+      const todayInWeek = wDays.find(d => d === requestedDay);
       const firstDay = todayInWeek ?? wDays.find(d=>!!mm_[d]) ?? wDays[0];
       setSelDay(firstDay);
     }
-  },[initialWeek]);
+  },[initialWeek, initialDay]);
   const [selGroup, setSelGroup] = useState(null);
   const [selDay, setSelDay] = useState(defaultDay);
   const [scores, _setScores] = useState(scoresProp||{});
@@ -11185,6 +11185,7 @@ function App() {
   const [skipOnboarding, setSkipOnboarding] = useState(false);
   const [showFirstAction, setShowFirstAction] = useState(false);
   const [groupsInitialWeek, setGroupsInitialWeek] = useState(null);
+  const [groupsInitialDay, setGroupsInitialDay] = useState(null);
   const [createdBoards, setCreatedBoards] = useState([]);
   const [leaderboardData, setLeaderboardData] = useState({});
 
@@ -11401,7 +11402,7 @@ function App() {
               onPredictKo={(boardId)=>{ setActiveBoardId(boardId); setShowFirstAction(false); setScreen(SCREENS.INSTANT_PICK); }}
               onLeaderboard={()=>setScreen(SCREENS.LEADERBOARD)}
               onBoards={(tab)=>{ setBoardsInitialTab(tab||"my"); setScreen(SCREENS.BOARDS); }}
-              onOpenGroups={(week)=>{ setGroupsInitialWeek(week||null); setScreen(SCREENS.GROUPS_SCHEDULE); }}
+              onOpenGroups={(week, day)=>{ setGroupsInitialWeek(week||null); setGroupsInitialDay(day??null); setScreen(SCREENS.GROUPS_SCHEDULE); }}
               onCentralStats={()=>setScreen(SCREENS.CENTRAL_STATS)}
               onCopyExactScores={async (targetBoardId, weekStart)=>{
                 if(!user) return;
@@ -11711,7 +11712,7 @@ function App() {
                 if (saveOk) showToast("Exact Score saved", "⚽");
                 else showToast("Save failed — retry", "❌");
               }
-            }} simDay={simDay} simHour={simHour} simMin={simMin} initialWeek={groupsInitialWeek} onBack={()=>{ setGroupsInitialWeek(null); setScreen(SCREENS.HOME); }}/>}
+            }} simDay={simDay} simHour={simHour} simMin={simMin} initialWeek={groupsInitialWeek} initialDay={groupsInitialDay} onBack={()=>{ setGroupsInitialWeek(null); setGroupsInitialDay(null); setScreen(SCREENS.HOME); }}/>}
           {user&&<div style={{display:screen===SCREENS.ACCOUNT?'flex':'none',flex:1,flexDirection:'column',overflow:'hidden',minHeight:0}}>
             <AccountScreen setLang={setLang} onBoards={()=>{ setBoardsInitialTab("my"); setScreen(SCREENS.BOARDS); }} onSignOut={()=>setScreen(SCREENS.SPLASH)} onShowGuide={()=>{ setShowOnboarding(true); }} onPremium={()=>setScreen(SCREENS.PREMIUM)} onNotifications={()=>{ notificationsBackRef.current=SCREENS.ACCOUNT; setScreen(SCREENS.NOTIFICATIONS); }} user={user} isActive={screen===SCREENS.ACCOUNT}/>
           </div>}
