@@ -96,14 +96,18 @@ export async function saveSpecialPick(userId, boardId, { champion, topScorer, ru
 
 // â”€â”€â”€ EXACT SCORES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function loadExactScores(userId, boardId) {
+  const map = await getMatchKeyMap()
+  const reverseMap = {}
+  Object.entries(map).forEach(([mk, id]) => { reverseMap[id] = mk })
   const { data } = await supabase
     .from('exact_scores')
-    .select('team1_score, team2_score, matches!inner(match_key)')
+    .select('match_id, team1_score, team2_score')
     .eq('user_id', userId)
     .eq('board_id', boardId)
   const result = {}
   ;(data || []).forEach(row => {
-    result[row.matches.match_key] = { home: row.team1_score, away: row.team2_score }
+    const mk = reverseMap[row.match_id]
+    if (mk) result[mk] = { home: row.team1_score, away: row.team2_score }
   })
   return result
 }
