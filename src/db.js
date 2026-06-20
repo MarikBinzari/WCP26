@@ -14,10 +14,11 @@ const mapBoard = (b) => ({
 // â”€â”€â”€ MATCH KEY â†’ ID MAP (cached) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 let _matchKeyMap = null
 async function getMatchKeyMap() {
-  if (_matchKeyMap) return _matchKeyMap
+  if (_matchKeyMap && Object.keys(_matchKeyMap).length > 0) return _matchKeyMap
   const { data } = await supabase.from('matches').select('id, match_key')
+  if (!data || data.length === 0) return {}
   _matchKeyMap = {}
-  ;(data || []).forEach(m => { _matchKeyMap[m.match_key] = m.id })
+  data.forEach(m => { _matchKeyMap[m.match_key] = m.id })
   return _matchKeyMap
 }
 

@@ -11681,16 +11681,19 @@ function App() {
               setExactScores(newScores);
               if (user) {
                 const fmt = ()=>new Date().toLocaleTimeString("ro-RO",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
+                let saveOk = true;
                 for (const matchKey of Object.keys(newScores)) {
                   const o = oldScores[matchKey], n = newScores[matchKey];
                   if (!o || o.home !== n.home || o.away !== n.away) {
                     const result = await saveExactScore(user.id, activeBoardId, matchKey, n.home, n.away);
                     if (result?.error) {
+                      saveOk = false;
                       setBugLog(p=>[...p,{message:`Save failed for match ${matchKey}: ${result.error}`,source:"saveExactScore",line:null,stack:null,time:fmt()}]);
                     }
                   }
                 }
-                showToast("Exact Score saved", "⚽");
+                if (saveOk) showToast("Exact Score saved", "⚽");
+                else showToast("Save failed — retry", "❌");
               }
             }} simDay={simDay} simHour={simHour} simMin={simMin} initialWeek={groupsInitialWeek} onBack={()=>{ setGroupsInitialWeek(null); setScreen(SCREENS.HOME); }}/>}
           {user&&<div style={{display:screen===SCREENS.ACCOUNT?'flex':'none',flex:1,flexDirection:'column',overflow:'hidden',minHeight:0}}>
