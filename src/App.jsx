@@ -11235,16 +11235,15 @@ function App() {
     });
   };
   useEffect(() => {
-    if (!user || !activeBoardId) return;
+    if (screen !== SCREENS.HOME || !user || !activeBoardId) return;
     loadExactScores(user.id, activeBoardId).then(dbScores => {
-      console.log('[loadExactScores]', activeBoardId, 'keys:', Object.keys(dbScores||{}).length, Object.keys(dbScores||{}));
       if (dbScores && Object.keys(dbScores).length > 0)
         setExactScoresByBoard(prev => ({
           ...prev,
           [activeBoardId]: { ...dbScores, ...(prev[activeBoardId] || {}) },
         }));
     });
-  }, [user?.id, activeBoardId]);
+  }, [screen, user?.id, activeBoardId]);
   const [allInstantPickDone, setAllInstantPickDone] = useState({});
   const [allGroupsDoneByBoard, setAllGroupsDoneByBoard] = useState({});
   const [groupsDoneCountByBoard, setGroupsDoneCountByBoard] = useState({});
