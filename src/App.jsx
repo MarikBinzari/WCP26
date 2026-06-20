@@ -248,7 +248,7 @@ const T = {
     predictions:"Predictions", completed:"✓ Completed", deadlinePassed:"Deadline passed", dueJun11:"Due Jun 11",
     koUnlockedLabel:"⚡ Knockout available", koDueJun27:"Due Jun 27",
     exactScores:"Exact Scores", weekComplete:"✓ Week complete", thisWeek:"this week",
-    pathToTrophy:"Path to the Trophy", unlocksEvery:"Unlocks every Sunday 8AM",
+    pathToTrophy:"Path to the Trophy", unlocksEvery:"Available by Sunday 8AM at the latest",
     groupStage:"Group Stage", week:"Week", roundOf16QF:"R32 · R16 · QF · SF",
     final:"Final", locked:"Locked", past:"Past", viewAll:"View all ›",
     tournamentStarts:"Tournament starts Jun 11", ptsTotal:"pts total",
@@ -288,7 +288,7 @@ const T = {
     predictionsDesc:"Two phases: rank all 12 groups + pick 8 best-third teams before Jun 11. The knockout bracket unlocks Jun 27 after the last group match.",
     rulesTask1Header:"Task 1 · Groups & Best Third", rulesTask1Due:"Deadline Jun 11",
     rulesTask2Header:"Task 2 · Knockout Phase", rulesTask2Due:"Unlocks Jun 27",
-    exactDesc:"Predict the exact score of each match every week. Unlocks on Sundays after 8:00 PM.",
+    exactDesc:"Predict the exact score of each match every week. New matches available at the latest by Sunday 8:00 AM.",
     exactScore:"EXACT SCORE", confirmScore:"Confirm Score",
     save:"Save", cancel:"Cancel", del:"Delete", done:"Done",
     semiFinalsDone:"Semi-Finals complete", theFinalsAwait:"The Finals Await",
@@ -310,8 +310,8 @@ const T = {
     onb0Title:"Two Prediction Phases", onb0Sub:"Groups + Best Third · Knockout",
     onb0Desc:"Phase 1 (before Jun 11): Rank all 12 groups and pick your 8 best-third teams. Phase 2: The knockout bracket unlocks Jun 27 after the last group match — build your path to the trophy.",
     onb0Next:"Show me scores →",
-    onb1Title:"Weekly Exact Score", onb1Sub:"Unlocks every Sunday at 8:00 AM",
-    onb1Desc:"Predict the exact score of each week's matches for bonus points. New matches every Sunday.",
+    onb1Title:"Weekly Exact Score", onb1Sub:"New matches available at the latest by Sunday",
+    onb1Desc:"Predict the exact score of each week's matches for bonus points. New matches available every week, at the latest by Sunday.",
     onb1Next:"Invite friends →",
     onb2Title:"Compete With Friends", onb2Sub:"Private leagues · Custom prizes",
     onb2Desc:"Create a private group, invite your friends and set your own prizes. May the best predictor win.",
@@ -446,7 +446,7 @@ const T = {
     predictions:"Predicții", completed:"✓ Completat", deadlinePassed:"Termen expirat", dueJun11:"Termen 11 Iun",
     koUnlockedLabel:"⚡ Knockout disponibil", koDueJun27:"Termen 27 Iun",
     exactScores:"Scoruri Exacte", weekComplete:"✓ Săptămâna completă", thisWeek:"această săptămână",
-    pathToTrophy:"Drumul spre Trofeu", unlocksEvery:"Se deschide duminică la 8:00",
+    pathToTrophy:"Drumul spre Trofeu", unlocksEvery:"Disponibil cel târziu duminică la 8:00",
     groupStage:"Faza Grupelor", week:"Săptămâna", roundOf16QF:"R32 · Optimi · Sferturi · Semi",
     final:"Finală", locked:"Blocat", past:"Trecut", viewAll:"Vezi tot ›",
     tournamentStarts:"Turneul începe pe 11 Iun", ptsTotal:"pts total",
@@ -486,7 +486,7 @@ const T = {
     predictionsDesc:"Două etape: clasează cele 12 grupe + alege 8 echipe de pe locul 3 înainte de 11 Iun. Faza eliminatorie se deblochează pe 27 Iun după ultimul meci din grupe.",
     rulesTask1Header:"Task 1 · Grupe & Cel mai bun loc 3", rulesTask1Due:"Termen 11 Iun",
     rulesTask2Header:"Task 2 · Faza Eliminatorie", rulesTask2Due:"Disponibil din 27 Iun",
-    exactDesc:"Prezice scorul exact al fiecărui meci în fiecare săptămână. Se deschide duminicile după 20:00.",
+    exactDesc:"Prezice scorul exact al fiecărui meci în fiecare săptămână. Meciuri noi disponibile cel târziu duminică la 8:00.",
     exactScore:"SCOR EXACT", confirmScore:"Confirmă Scorul",
     save:"Salvează", cancel:"Anulează", del:"Șterge", done:"Gata",
     semiFinalsDone:"Semi-Finale Complete", theFinalsAwait:"Finala Te Așteaptă",
@@ -508,8 +508,8 @@ const T = {
     onb0Title:"Predicții în Două Etape", onb0Sub:"Grupe + Locul 3 · Eliminatorii",
     onb0Desc:"Etapa 1 (înainte de 11 Iun): Clasează cele 12 grupe și alege 8 echipe de pe locul 3. Etapa 2: Faza eliminatorie se deblochează pe 27 Iun după ultimul meci din grupe.",
     onb0Next:"Arată-mi scorurile →",
-    onb1Title:"Scor Exact Săptămânal", onb1Sub:"Se deschide duminică la 8:00",
-    onb1Desc:"Prezice scorul exact al meciurilor săptămânii pentru puncte bonus. Meciuri noi în fiecare duminică.",
+    onb1Title:"Scor Exact Săptămânal", onb1Sub:"Meciuri noi disponibile cel târziu duminică",
+    onb1Desc:"Prezice scorul exact al meciurilor săptămânii pentru puncte bonus. Meciuri noi disponibile în fiecare săptămână, cel târziu duminică.",
     onb1Next:"Invită prieteni →",
     onb2Title:"Concurează cu Prietenii", onb2Sub:"Ligi private · Premii personalizate",
     onb2Desc:"Creează un grup privat, invită prietenii și setează propriile premii. Câștige cel mai bun prezicător.",
@@ -644,7 +644,7 @@ const T = {
     predictions:"Pronostics", completed:"✓ Complété", deadlinePassed:"Délai expiré", dueJun11:"Délai 11 Juin",
     koUnlockedLabel:"⚡ Knockout disponible", koDueJun27:"Délai 27 Juin",
     exactScores:"Scores Exacts", weekComplete:"✓ Semaine complète", thisWeek:"cette semaine",
-    pathToTrophy:"Chemin vers le Trophée", unlocksEvery:"Ouvre chaque dimanche à 8h",
+    pathToTrophy:"Chemin vers le Trophée", unlocksEvery:"Disponible au plus tard dimanche à 8h",
     groupStage:"Phase de Groupes", week:"Semaine", roundOf16QF:"R32 · H.d.F. · Quarts · Demi",
     final:"Finale", locked:"Bloqué", past:"Passé", viewAll:"Voir tout ›",
     tournamentStarts:"Tournoi débute le 11 Juin", ptsTotal:"pts total",
@@ -684,7 +684,7 @@ const T = {
     predictionsDesc:"Deux phases : classez les 12 groupes + choisissez 8 équipes meilleur 3e avant le 11 Juin. Les éliminatoires se déverrouillent le 27 Juin après le dernier match de groupes.",
     rulesTask1Header:"Tâche 1 · Groupes & Meilleur 3e", rulesTask1Due:"Date limite 11 Juin",
     rulesTask2Header:"Tâche 2 · Phase Éliminatoire", rulesTask2Due:"Disponible dès le 27 Juin",
-    exactDesc:"Prédisez le score exact de chaque match chaque semaine. Déverrouillé le dimanche après 20h.",
+    exactDesc:"Prédisez le score exact de chaque match chaque semaine. Nouveaux matchs disponibles au plus tard le dimanche à 8h.",
     exactScore:"SCORE EXACT", confirmScore:"Confirmer le Score",
     save:"Enregistrer", cancel:"Annuler", del:"Supprimer", done:"Terminé",
     semiFinalsDone:"Demi-Finales terminées", theFinalsAwait:"La Finale Vous Attend",
@@ -706,8 +706,8 @@ const T = {
     onb0Title:"Deux Phases de Pronostics", onb0Sub:"Groupes + Meilleur 3e · Éliminatoires",
     onb0Desc:"Phase 1 (avant le 11 Juin) : Classez les 12 groupes et choisissez 8 équipes meilleur 3e. Phase 2 : Les éliminatoires se déverrouillent le 27 Juin après le dernier match de groupes.",
     onb0Next:"Montrez-moi les scores →",
-    onb1Title:"Score Exact Hebdomadaire", onb1Sub:"Déverrouillé chaque dimanche à 8h",
-    onb1Desc:"Prédisez le score exact des matchs de la semaine pour des points bonus. Nouveaux matchs chaque dimanche.",
+    onb1Title:"Score Exact Hebdomadaire", onb1Sub:"Nouveaux matchs disponibles au plus tard dimanche",
+    onb1Desc:"Prédisez le score exact des matchs de la semaine pour des points bonus. Nouveaux matchs disponibles chaque semaine, au plus tard le dimanche.",
     onb1Next:"Inviter des amis →",
     onb2Title:"Affrontez Vos Amis", onb2Sub:"Ligues privées · Prix personnalisés",
     onb2Desc:"Créez un groupe privé, invitez vos amis et fixez vos propres prix. Que le meilleur pronostiqueur gagne.",
@@ -964,7 +964,7 @@ const isWeekUnlocked = (day, simDay=null, simHour=12, simMin=0) => {
     const simDate = new Date(Date.UTC(2026,5,simDay,(simHour||0)+4,simMin||0,0));
     if(day >= 43) return simDate >= july(12);
     if(day >= 36) return simDate >= july(5);
-    if(day >= 28) return simDate >= june(28);
+    if(day >= 29) return simDate >= june(28);
     if(day >= 22) return simDate >= june(21);
     if(day >= 15) return simDate >= june(14);
     return true;
@@ -972,8 +972,8 @@ const isWeekUnlocked = (day, simDay=null, simHour=12, simMin=0) => {
   const now2 = new Date();
   if(day >= 43) return now2 >= july(12);
   if(day >= 36) return now2 >= july(5);
-  if(day >= 28) return now2 >= june(28);
-  if(day >= 22) return now2 >= june(21);
+  if(day >= 29) return now2 >= june(28);
+  if(day >= 22) return now2 >= june(20);
   if(day >= 15) return now2 >= june(14);
   return true;
 };
@@ -5563,18 +5563,36 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
   const _exCalendarEvents = getDisplayCalendarEvents();
   const _exWkMM = (()=>{ const mm={}; _exCalendarEvents.forEach(e=>{mm[e.day]=e.matches;}); return mm; })();
   const _exWkDays = (s)=>Array.from({length:7},(_,i)=>s+i).filter(d=>d>=1&&d<=50);
-  const _exWkTotal = (s)=>_exWkDays(s).reduce((a,d)=>a+(_exWkMM[d]||[]).length,0);
-  const _exWkScored = (s)=>_exWkDays(s).reduce((a,d)=>a+(_exWkMM[d]||[]).filter((m,i)=>(exactScores||{})[getMatchKey(m,d,i)]).length,0);
+  // Only count display-days that are currently unlocked (same logic as GroupsScheduleScreen)
+  const _exUnlockedDays = new Set(
+    _exCalendarEvents.filter(e=>isWeekUnlocked(e.day,simDay,simHour,simMin)).map(e=>e.day)
+  );
+  // Index matches by source day, skipping locked display-days
+  const _exSrcMM = (()=>{
+    const mm={};
+    _exCalendarEvents.forEach(e=>{
+      if(!_exUnlockedDays.has(e.day)) return;
+      (e.matches||[]).forEach(m=>{
+        const sd=m.sourceDay??e.day;
+        if(!mm[sd])mm[sd]=[];
+        mm[sd].push(m);
+      });
+    });
+    return mm;
+  })();
+  const _exWkFuture = (s)=>_exWkDays(s).reduce((a,d)=>a+(_exSrcMM[d]||[]).filter(m=>!isMatchPast(d,m.time,simDay,simHour,m.kickoffUtc)&&m.homeFlag!=='🏆').length,0);
+  const _exWkTotal = _exWkFuture;
+  const _exWkScored = (s)=>_exWkDays(s).reduce((a,d)=>a+(_exSrcMM[d]||[]).filter(m=>!isMatchPast(d,m.time,simDay,simHour,m.kickoffUtc)&&m.homeFlag!=='🏆'&&!!(exactScores||{})[m.matchKey]).length,0);
   const todaySimEx = simDay ?? getLocalTournamentDay();
   const _calWeeks = [-6,1,8,15,22,29,36,43];
   const todayCalendarWeek = _calWeeks.find(w=>todaySimEx>=w&&todaySimEx<=w+6) ?? _calWeeks[0];
   const _exSimNow = simDay ? new Date(Date.UTC(2026,5,simDay,(simHour||12)+4,simMin||0,0)) : new Date();
   const _exJune = (d) => new Date(Date.UTC(2026,5,d,5,0,0)); // 08:00 Romania (EEST = UTC+3) = 05:00 UTC
   // Advance week as soon as unlock fires, even if still same calendar day
-  const exactWeekStart = _exSimNow>=_exJune(28)?29:_exSimNow>=_exJune(21)?22:_exSimNow>=_exJune(14)?15:8;
+  const exactWeekStart = _exSimNow>=_exJune(28)?29:_exSimNow>=_exJune(20)?22:_exSimNow>=_exJune(14)?15:8;
   const exactWeekTotal = _exWkTotal(exactWeekStart);
   const exactWeekScored = _exWkScored(exactWeekStart);
-  const exactWeekDone = exactWeekTotal>0 && exactWeekScored===exactWeekTotal;
+  const exactWeekDone = exactWeekTotal===0 || exactWeekScored===exactWeekTotal;
   const exactWeekHasStarted = _exCalendarEvents
     .filter(e => e.day >= exactWeekStart && e.day <= exactWeekStart + 6)
     .some(e => (e.matches||[]).some(m => isMatchPast(e.day, m.time, simDay, simHour, m.kickoffUtc)));
@@ -8784,6 +8802,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
           }}
           onMatchClick={(match,day,idx)=>{
             if(!isWeekUnlocked(day, simDay, simHour, simMin)) return;
+            if(match.homeFlag==='🏆') return; // teams not determined yet
             // UCL Final (day -1): allow prediction before kickoff only
             const isUCL = match.group==="UCL";
             if(!isUCL && isMatchPast(day, match.time, simDay, simHour, match.kickoffUtc)) return;
@@ -8919,7 +8938,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
                         {/* Scores — compact single center block */}
                         {(()=>{
                           const isPast = isMatchPast(m.day, m.time, simDay, simHour, m.kickoffUtc);
-                          const canPredict = !isLive && !isFinished && !isPast && isWeekUnlocked(m.day, simDay, simHour, simMin);
+                          const canPredict = !isLive && !isFinished && !isPast && isWeekUnlocked(m.day, simDay, simHour, simMin) && m.homeFlag!=='🏆';
                           const scoreDisplay = hasLive ? `${live.home}-${live.away}` : isSimMode && isLive ? "0-0" : "-";
                           const penDisplay = penaltyScoreLabel(live);
                           const predBox = (isPast||isLive||isFinished) ? (sc ? (
@@ -8987,7 +9006,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
                     </div>
 
                     {/* Edit prediction */}
-                    {!isMatchPast(m.day, m.time, simDay, simHour, m.kickoffUtc) && !isLive && !isFinished && sc && isWeekUnlocked(m.day, simDay, simHour, simMin) && todaySim <= m.day && (
+                    {!isMatchPast(m.day, m.time, simDay, simHour, m.kickoffUtc) && !isLive && !isFinished && sc && isWeekUnlocked(m.day, simDay, simHour, simMin) && m.homeFlag!=='🏆' && todaySim <= m.day && (
                       <button onClick={()=>setScorePick({match:m,day:m.day,idx:m.idx,key:m.key})}
                         style={{width:"100%",padding:"6px 12px",borderTop:"1px solid rgba(0,0,0,0.05)",
                           background:"none",border:"none",borderTop:"1px solid rgba(0,0,0,0.05)",
@@ -9761,7 +9780,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                             <span style={{fontSize:10,fontWeight:700,color:"#bbb",textTransform:"uppercase",letterSpacing:0.5}}>{T[lang].prediction}</span>
                             {(()=>{
                               const isPast = isMatchPast(sel, m.time, simDay, simHour, m.kickoffUtc);
-                              const canPredict = !isLive && !isHT && !isFT && !isPast && isWeekUnlocked(sel||0, simDay, simHour, simMin);
+                              const canPredict = !isLive && !isHT && !isFT && !isPast && isWeekUnlocked(sel||0, simDay, simHour, simMin) && m.homeFlag!=='🏆';
                               // Comparatie live: scorul prezis vs scorul curent
                               const liveHas = (isLive||isHT) && hasScore;
                               const predRes2 = sc ? (scH(sc)>scA(sc)?"H":scH(sc)<scA(sc)?"A":"D") : null;
