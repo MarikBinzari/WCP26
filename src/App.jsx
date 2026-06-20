@@ -11237,6 +11237,7 @@ function App() {
   useEffect(() => {
     if (!user || !activeBoardId) return;
     loadExactScores(user.id, activeBoardId).then(dbScores => {
+      console.log('[loadExactScores]', activeBoardId, 'keys:', Object.keys(dbScores||{}).length, Object.keys(dbScores||{}));
       if (dbScores && Object.keys(dbScores).length > 0)
         setExactScoresByBoard(prev => ({
           ...prev,

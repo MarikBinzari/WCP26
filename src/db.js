@@ -96,19 +96,19 @@ export async function saveSpecialPick(userId, boardId, { champion, topScorer, ru
 
 // â”€â”€â”€ EXACT SCORES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function loadExactScores(userId, boardId) {
-  const map = await getMatchKeyMap()
-  const reverseMap = {}
-  Object.entries(map).forEach(([mk, id]) => { reverseMap[id] = mk })
-  const { data } = await supabase
-    .from('exact_scores')
-    .select('match_id, team1_score, team2_score')
-    .eq('user_id', userId)
-    .eq('board_id', boardId)
+  const [scoresRes, matchesRes] = await Promise.all([
+    supabase.from('exact_scores').select('match_id, team1_score, team2_score').eq('user_id', userId).eq('board_id', boardId),
+    supabase.from('matches').select('id, match_key'),
+  ])
+  const keyById = {}
+  ;(matchesRes.data || []).forEach(m => { keyById[m.id] = m.match_key })
   const result = {}
-  ;(data || []).forEach(row => {
-    const mk = reverseMap[row.match_id]
+  ;(scoresRes.data || []).forEach(row => {
+    const mk = keyById[row.match_id]
     if (mk) result[mk] = { home: row.team1_score, away: row.team2_score }
   })
+  if (scoresRes.error) console.error('loadExactScores scores:', scoresRes.error)
+  if (matchesRes.error) console.error('loadExactScores matches:', matchesRes.error)
   return result
 }
 
