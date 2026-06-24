@@ -1041,10 +1041,12 @@ let LIVE_SCORES = LIVE_SCORES_DEFAULT;
 function useLiveScores(simDay, simHour, simMin) {
   const [dbScores, setDbScores] = useState({});
 
+  const applyScores = (scores) => {
+    if (Object.keys(scores).length > 0) setDbScores(scores);
+  };
+
   useEffect(() => {
-    loadLiveScores().then(scores => {
-      if (Object.keys(scores).length > 0) setDbScores(scores);
-    });
+    loadLiveScores().then(applyScores);
 
     const channel = subscribeLiveScores((payload) => {
       const row = payload.new;
@@ -1063,7 +1065,22 @@ function useLiveScores(simDay, simHour, simMin) {
       }));
     });
 
-    return () => { channel.unsubscribe(); };
+    // Fallback poll every 60s — catches missed realtime events (dropped WS)
+    const interval = setInterval(() => {
+      loadLiveScores().then(applyScores);
+    }, 60_000);
+
+    // Reload when app comes back to foreground (after phone sleep / tab switch)
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') loadLiveScores().then(applyScores);
+    };
+    document.addEventListener('visibilitychange', onVisible);
+
+    return () => {
+      channel.unsubscribe();
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
   }, []);
 
   const computed = simDay != null ? computeLiveScores(simDay, simHour, simMin) : {};
