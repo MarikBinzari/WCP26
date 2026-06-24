@@ -8970,12 +8970,13 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
                 const hasLive = live && live.home !== undefined && live.home !== null;
 
                 // Check prediction accuracy
-                let exactMatch = false, resultMatch = false;
+                let exactMatch = false, resultMatch = false, diffMatch = false;
                 if(sc && hasLive && isFinished) {
                   exactMatch = scH(sc)===live.home && scA(sc)===live.away;
                   const predResult = scH(sc)>scA(sc)?"H":scH(sc)<scA(sc)?"A":"D";
                   const realResult = live.home>live.away?"H":live.home<live.away?"A":"D";
                   resultMatch = predResult===realResult;
+                  diffMatch = !exactMatch && resultMatch && predResult!=="D" && (scH(sc)-scA(sc))===(live.home-live.away);
                 }
 
                 return (
@@ -9061,11 +9062,11 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
                       {/* Points earned */}
                       {(isFinished || isMatchPast(m.day, m.time, simDay, simHour, m.kickoffUtc)) && (
                         <div style={{marginTop:6,display:"flex",justifyContent:"center"}}>
-                          <div style={{background:exactMatch?"rgba(0,154,68,0.1)":resultMatch?"rgba(0,32,91,0.07)":"rgba(200,16,46,0.08)",
+                          <div style={{background:exactMatch?"rgba(0,154,68,0.1)":diffMatch?"rgba(245,158,11,0.1)":resultMatch?"rgba(0,32,91,0.07)":"rgba(200,16,46,0.08)",
                             borderRadius:20,padding:"3px 12px",display:"flex",alignItems:"center",gap:6}}>
                             <span style={{fontSize:12,fontWeight:700,
-                              color:exactMatch?GREEN:resultMatch?NAVY:RED}}>
-                              {exactMatch?"🎯 +90 pts · Scor exact":resultMatch?"✓ +30 pts · Rezultat corect":"✗ +0 pts"}
+                              color:exactMatch?GREEN:diffMatch?"#D97706":resultMatch?NAVY:RED}}>
+                              {exactMatch?"🎯 +90 pts · Scor exact":diffMatch?"⚡ +40 pts · Diferență goluri":resultMatch?"✓ +30 pts · Rezultat corect":"✗ +0 pts"}
                             </span>
                           </div>
                         </div>
@@ -9825,6 +9826,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                     const predRes = sc?scH(sc)>scA(sc)?"H":scH(sc)<scA(sc)?"A":"D":null;
                     const realRes = hasScore?live.home>live.away?"H":live.home<live.away?"A":"D":null;
                     const resultMatch = predRes&&realRes&&predRes===realRes&&isFT;
+                    const diffMatch = !exactMatch&&resultMatch&&predRes!=="D"&&hasScore&&(scH(sc)-scA(sc))===(live.home-live.away);
                     const isPastDay2 = !!(simDay && sel < simDay);
                     return (
                       <div key={i} data-match-key={key} style={{borderBottom:i<sm.length-1?"1px solid rgba(0,0,0,0.06)":"none",background:"#fff"}}>
@@ -9904,9 +9906,9 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                         ); })()}
                         {(isFT||isMatchPast(sel,m.time,simDay,simHour,m.kickoffUtc))&&(
                           <div style={{padding:"4px 14px 8px",display:"flex",justifyContent:"center"}}>
-                            <div style={{background:exactMatch?"rgba(0,154,68,0.1)":resultMatch?"rgba(0,32,91,0.07)":"rgba(0,0,0,0.04)",borderRadius:20,padding:"3px 14px"}}>
-                              <span style={{fontSize:12,fontWeight:700,color:exactMatch?GREEN:resultMatch?NAVY:RED}}>
-                                {exactMatch?"🎯 +90 pts":resultMatch?"✓ +30 pts":"✗ +0 pts"}
+                            <div style={{background:exactMatch?"rgba(0,154,68,0.1)":diffMatch?"rgba(245,158,11,0.1)":resultMatch?"rgba(0,32,91,0.07)":"rgba(0,0,0,0.04)",borderRadius:20,padding:"3px 14px"}}>
+                              <span style={{fontSize:12,fontWeight:700,color:exactMatch?GREEN:diffMatch?"#D97706":resultMatch?NAVY:RED}}>
+                                {exactMatch?"🎯 +90 pts":diffMatch?"⚡ +40 pts":resultMatch?"✓ +30 pts":"✗ +0 pts"}
                               </span>
                             </div>
                           </div>
