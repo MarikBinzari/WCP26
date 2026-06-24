@@ -11386,9 +11386,9 @@ function App() {
       return next;
     });
   };
-  const _koUnlockDate = new Date(appConfig.ko_unlock_date || '2026-06-27T18:00:00Z');
+  const _koUnlockDate = new Date(appConfig.ko_unlock_date || '2026-06-28T04:00:00Z');
   const _predDeadline = new Date(appConfig.prediction_deadline || '2026-06-11T20:00:00Z');
-  const koUnlocked = simDay ? (simDay > 27 || (simDay === 27 && (simHour||0) >= 21)) : new Date() >= _koUnlockDate;
+  const koUnlocked = simDay ? simDay > 27 : new Date() >= _koUnlockDate;
   const task1DeadlinePassed = simDay ? (simDay > 11 || (simDay === 11 && (simHour||0) >= 19)) : new Date() >= _predDeadline;
   const shouldStartAtKo = koUnlocked && instantPickDone && !koPickDone;
 
