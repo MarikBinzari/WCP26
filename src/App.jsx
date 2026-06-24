@@ -5578,7 +5578,7 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
     _exCalendarEvents.forEach(e => {
       if (!isWeekUnlocked(e.day, simDay, simHour, simMin)) return;
       mm[e.day] = (e.matches || []).filter(m =>
-        (m.homeFlag !== '🏆' || !!koTeams[m.matchKey]) &&
+        m.homeFlag !== '🏆' &&
         !isMatchPast(e.day, m.time, simDay, simHour, m.kickoffUtc)
       );
     });
