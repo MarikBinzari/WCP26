@@ -3383,7 +3383,7 @@ function GroupIntroScreen({ group, teams: teamsProp, isKo, onStart, hideHeader=f
 }
 
 
-function InstantPickScreen({ onBack, onComplete, onKoComplete, onModify, savedState, onStateChange, tournamentStarted, viewMode=false, koUnlocked=false, startAtKo=false, realStandings={} }) {
+function InstantPickScreen({ onBack, onComplete, onKoComplete, onModify, savedState, onStateChange, tournamentStarted, viewMode=false, koUnlocked=false, startAtKo=false, realStandings={}, koTeams={} }) {
   const lang = useLang();
   const { pred: PRED_SCORING, predMax: PRED_MAX } = useScoringRules();
   const GROUPS = INTERACTIVE_GROUPS;
@@ -3474,28 +3474,11 @@ function InstantPickScreen({ onBack, onComplete, onKoComplete, onModify, savedSt
   const W = (i) => groupWinners[i] || "TBD";
   const R = (i) => groupRunners[i]  || "TBD";
   const B = (i) => best3Teams[i]    || "TBD";
-  const r32Matchups = [
-    // Grupa A-D cross
-    {home:W(0), away:R(2)}, // 1A vs 2C
-    {home:W(2), away:R(0)}, // 1C vs 2A
-    {home:W(1), away:R(3)}, // 1B vs 2D
-    {home:W(3), away:R(1)}, // 1D vs 2B
-    // Grupa E-H cross
-    {home:W(4), away:R(6)}, // 1E vs 2G
-    {home:W(6), away:R(4)}, // 1G vs 2E
-    {home:W(5), away:R(7)}, // 1F vs 2H
-    {home:W(7), away:R(5)}, // 1H vs 2F
-    // Grupa I-L cross
-    {home:W(8),  away:R(10)}, // 1I vs 2K
-    {home:W(10), away:R(8)},  // 1K vs 2I
-    {home:W(9),  away:R(11)}, // 1J vs 2L
-    {home:W(11), away:R(9)},  // 1L vs 2J
-    // Best 3rd joacă între ele (4 meciuri)
-    {home:B(0), away:B(1)},
-    {home:B(2), away:B(3)},
-    {home:B(4), away:B(5)},
-    {home:B(6), away:B(7)},
-  ]; // = 16 meciuri
+  const R32_KEYS = ['28-0','29-0','29-1','29-2','30-0','30-1','30-2','31-0','31-1','31-2','32-0','32-1','32-2','33-0','33-1','33-2'];
+  const r32Matchups = R32_KEYS.map(key => ({
+    home: koTeams[key]?.home || 'TBD',
+    away: koTeams[key]?.away || 'TBD',
+  })); // = 16 meciuri, ordine FIFA reală
 
   const getWinners = (roundKey) =>
     Object.entries(koPicks)
@@ -11728,6 +11711,7 @@ function App() {
               ];
             })()}/>}
           {screen===SCREENS.INSTANT_PICK&&<InstantPickScreen
+            koTeams={koTeams}
             realStandings={realStandings}
             savedState={shouldStartAtKo
               ? {...(instantPickState||{}), stage:"ko", koRound:"R32", koIdx:0, showIntro:false, showFinalSummary:false, koShowIntro:true}
