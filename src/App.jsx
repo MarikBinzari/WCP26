@@ -5497,43 +5497,87 @@ function BonusPredictionScreen({ onBack, onChampion, championPick, runnerUpPick,
   );
 }
 
-function LiveMatchCard({ match, score, events }) {
+function LiveMatchCard({ match, score, events, expanded, onToggleExpand }) {
   const getIcon = (e) => {
     if (e.type === 'Goal') return e.detail === 'Own Goal' ? '⚽🔙' : '⚽';
     if (e.type === 'Card') return (e.detail?.toLowerCase().includes('red') || e.detail?.includes('Second')) ? '🟥' : '🟨';
     if (e.type === 'subst' || e.type === 'Substitution') return '🔄';
     return '•';
   };
-  const allEvents = [...events].sort((a, b) => (a.minute||0) - (b.minute||0));
+  // Goals anulate de VAR la aceeași minută + jucător = filtrate
+  const varDisallowed = new Set(
+    events.filter(e => e.type === 'Var' && e.detail?.includes('Goal Disallowed'))
+      .map(e => `${e.minute}-${e.player_name}`)
+  );
+  const allEvents = [...events]
+    .filter(e => {
+      if (e.type === 'Var') return false;
+      if (e.type === 'Goal' && varDisallowed.has(`${e.minute}-${e.player_name}`)) return false;
+      return true;
+    })
+    .sort((a, b) => (a.minute||0) - (b.minute||0));
   const statusLabel = score.status === 'HT' ? 'HT' : score.status === 'ET' ? 'ET' : `${score.min ?? ''}′`;
+  const isSubst = (e) => e.type === 'subst' || e.type === 'Substitution';
   return (
-    <div style={{width:'100%',background:`linear-gradient(135deg, rgba(15,15,32,0.62) 0%, rgba(8,14,40,0.70) 100%), url(${stadiumBg}) center 30%/cover no-repeat`,borderRadius:20,padding:'13px 16px',boxSizing:'border-box',minHeight:96}}>
+    <div style={{width:'100%',background:`linear-gradient(135deg, rgba(15,15,32,0.62) 0%, rgba(8,14,40,0.70) 100%), url(${stadiumBg}) center 30%/cover no-repeat`,borderRadius:20,padding:'13px 16px',boxSizing:'border-box'}}>
+      {/* Header */}
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
         <span style={{fontSize:10,fontWeight:900,color:'rgba(255,255,255,0.45)',letterSpacing:1.2}}>LIVE</span>
         <span style={{background:'#ef4444',borderRadius:999,padding:'2px 9px',fontSize:10,fontWeight:900,color:'#fff',letterSpacing:0.5}}>{statusLabel}</span>
       </div>
-      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8}}>
+      {/* Score row */}
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8,marginBottom:10}}>
         <div style={{flex:1,textAlign:'center'}}>
-          <div style={{fontSize:28,lineHeight:1}}>{match.homeFlag}</div>
-          <div style={{fontSize:10,fontWeight:700,color:'rgba(255,255,255,0.8)',marginTop:4,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{match.home}</div>
+          <div style={{fontSize:26,lineHeight:1}}>{match.homeFlag}</div>
+          <div style={{fontSize:10,fontWeight:700,color:'rgba(255,255,255,0.8)',marginTop:3,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{match.home}</div>
         </div>
-        <div style={{background:'rgba(255,255,255,0.13)',borderRadius:12,padding:'7px 14px',minWidth:70,textAlign:'center',flexShrink:0}}>
+        <div style={{background:'rgba(255,255,255,0.13)',borderRadius:12,padding:'6px 14px',minWidth:68,textAlign:'center',flexShrink:0}}>
           <div style={{fontSize:22,fontWeight:900,color:'#fff',lineHeight:1}}>{score.home??0} - {score.away??0}</div>
         </div>
         <div style={{flex:1,textAlign:'center'}}>
-          <div style={{fontSize:28,lineHeight:1}}>{match.awayFlag}</div>
-          <div style={{fontSize:10,fontWeight:700,color:'rgba(255,255,255,0.8)',marginTop:4,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{match.away}</div>
+          <div style={{fontSize:26,lineHeight:1}}>{match.awayFlag}</div>
+          <div style={{fontSize:10,fontWeight:700,color:'rgba(255,255,255,0.8)',marginTop:3,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{match.away}</div>
         </div>
       </div>
-      {allEvents.length>0&&(
-        <div style={{marginTop:10,borderTop:'1px solid rgba(255,255,255,0.10)',paddingTop:8,display:'flex',flexDirection:'column',gap:2}}>
-          {allEvents.slice(-5).map((e,i)=>(
-            <div key={i} style={{display:'flex',alignItems:'center',gap:5}}>
-              <span style={{fontSize:9,color:'rgba(255,255,255,0.4)',minWidth:22,textAlign:'right',flexShrink:0}}>{e.minute}'</span>
-              <span style={{fontSize:11,flexShrink:0}}>{getIcon(e)}</span>
-              <span style={{fontSize:11,color:'rgba(255,255,255,0.82)',fontWeight:600,flex:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{e.player_name}</span>
-            </div>
-          ))}
+      {/* Expand button */}
+      {allEvents.length > 0 && (
+        <button onClick={onToggleExpand} style={{width:'100%',background:'none',border:'none',borderTop:'1px solid rgba(255,255,255,0.10)',paddingTop:6,marginTop:8,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:4,WebkitTapHighlightColor:'transparent'}}>
+          <span style={{fontSize:10,fontWeight:700,color:'rgba(255,255,255,0.45)',letterSpacing:0.5}}>{expanded ? 'ASCUNDE' : `DETALII (${allEvents.length})`}</span>
+          <span style={{fontSize:10,color:'rgba(255,255,255,0.35)',transform:expanded?'rotate(180deg)':'none',transition:'transform 0.2s'}}> ▼</span>
+        </button>
+      )}
+      {/* Events two-column */}
+      {expanded && allEvents.length > 0 && (
+        <div style={{paddingTop:6,display:'flex',flexDirection:'column',gap:3}}>
+          {allEvents.map((e, i) => {
+            const isHome = e.team_name === match.home;
+            const icon = getIcon(e);
+            const sub = isSubst(e);
+            const minTxt = `${e.minute}'`;
+            const nameStyle = {fontSize:11,fontWeight:650,color:'rgba(255,255,255,0.88)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'};
+            const subStyle = {fontSize:10,color:'rgba(255,255,255,0.45)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'};
+            const minStyle = {fontSize:9,color:'rgba(255,255,255,0.4)',flexShrink:0};
+            return (
+              <div key={i} style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:4}}>
+                {/* Home side */}
+                <div style={{display:'flex',alignItems:'center',gap:3,minWidth:0,visibility:isHome?'visible':'hidden'}}>
+                  <span style={{fontSize:12,flexShrink:0}}>{icon}</span>
+                  <span style={minStyle}>{minTxt}</span>
+                  <span style={{...nameStyle,flexShrink:1}}>
+                    {e.player_name}{sub && e.assist_name ? <span style={{color:'rgba(255,255,255,0.4)'}}> / {e.assist_name}</span> : ''}
+                  </span>
+                </div>
+                {/* Away side */}
+                <div style={{display:'flex',alignItems:'center',gap:3,justifyContent:'flex-end',minWidth:0,visibility:isHome?'hidden':'visible'}}>
+                  <span style={{...nameStyle,flexShrink:1,textAlign:'right'}}>
+                    {e.player_name}{sub && e.assist_name ? <span style={{color:'rgba(255,255,255,0.4)'}}> / {e.assist_name}</span> : ''}
+                  </span>
+                  <span style={minStyle}>{minTxt}</span>
+                  <span style={{fontSize:12,flexShrink:0}}>{icon}</span>
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
@@ -5557,6 +5601,9 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
   const [matchEventsMap, setMatchEventsMap] = useState({});
   const bonusTouchRef = useRef(null);
   const autoAdvRef = useRef(null);
+  const sliderInnerRef = useRef(null);
+  const [sliderHeight, setSliderHeight] = useState('auto');
+  const [expandedMatches, setExpandedMatches] = useState({});
   const liveMatches = (() => {
     const res = [];
     CALENDAR_EVENTS.forEach(ev => {
@@ -5579,6 +5626,14 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
     autoAdvRef.current = setInterval(() => setBonusSlide(p => (p + 1) % totalBonusSlides), 5000);
     return () => clearInterval(autoAdvRef.current);
   }, [totalBonusSlides]);
+  useEffect(() => {
+    setExpandedMatches({});
+  }, [bonusSlide]);
+  useEffect(() => {
+    if (!sliderInnerRef.current) return;
+    const slide = sliderInnerRef.current.children[bonusSlide];
+    if (slide) setSliderHeight(slide.offsetHeight);
+  }, [bonusSlide, totalBonusSlides, matchEventsMap, expandedMatches]);
   const handleBonusTouchStart = (e) => { bonusTouchRef.current = e.touches[0].clientX; clearInterval(autoAdvRef.current); };
   const handleBonusTouchEnd = (e) => {
     if (bonusTouchRef.current === null) return;
@@ -5831,9 +5886,9 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
         </button>
         ) : (
         <div style={{marginBottom:14}}>
-          <div style={{overflow:'hidden',borderRadius:20,touchAction:'pan-y',boxShadow:"0 4px 16px rgba(0,0,0,0.06)"}}
+          <div style={{overflow:'hidden',borderRadius:20,touchAction:'pan-y',boxShadow:"0 4px 16px rgba(0,0,0,0.06)",height:sliderHeight==='auto'?undefined:sliderHeight,transition:'height 0.35s ease'}}
             onTouchStart={handleBonusTouchStart} onTouchEnd={handleBonusTouchEnd}>
-            <div style={{display:'flex',transition:'transform 0.35s ease',transform:`translateX(${-bonusSlide*100}%)`}}>
+            <div ref={sliderInnerRef} style={{display:'flex',alignItems:'flex-start',transition:'transform 0.35s ease',transform:`translateX(${-bonusSlide*100}%)`}}>
               {/* Slide 0: Bonus */}
               <div style={{minWidth:'100%',flexShrink:0}}>
                 <button onClick={onBonus} style={{width:"100%",display:"flex",alignItems:"center",gap:14,background:`linear-gradient(135deg, rgba(15,15,32,0.58) 0%, rgba(8,14,40,0.65) 100%), url(${stadiumBg}) center 30%/cover no-repeat`,borderRadius:20,padding:"15px 16px",border:"none",cursor:"pointer",WebkitTapHighlightColor:"transparent",textAlign:"left",boxSizing:'border-box'}}>
@@ -5860,7 +5915,7 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
               {/* Live match slides */}
               {liveMatches.map(({ key, match, score }) => (
                 <div key={key} style={{minWidth:'100%',flexShrink:0}}>
-                  <LiveMatchCard match={match} score={score} events={matchEventsMap[key]||[]} />
+                  <LiveMatchCard match={match} score={score} events={matchEventsMap[key]||[]} expanded={!!expandedMatches[key]} onToggleExpand={()=>setExpandedMatches(p=>({...p,[key]:!p[key]}))} />
                 </div>
               ))}
             </div>

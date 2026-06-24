@@ -898,7 +898,7 @@ export async function hasLiveMatches() {
 export async function loadMatchEvents(matchKey) {
   const { data } = await supabase
     .from('match_events')
-    .select('type, detail, player_name, team, minute')
+    .select('type, detail, player_name, assist_name, team_name, minute')
     .eq('match_key', matchKey)
     .order('minute', { ascending: true })
   return data || []
