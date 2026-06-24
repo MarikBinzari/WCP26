@@ -1036,6 +1036,23 @@ const computeLiveScores = (simDay=null, simHour=12, simMin=0) => {
 const LIVE_SCORES_DEFAULT = {};
 let LIVE_SCORES = LIVE_SCORES_DEFAULT;
 
+// Image with fade-in on load + lazy loading
+function FadeImg({ src, alt="", style={}, lazy=true, ...rest }) {
+  const [loaded, setLoaded] = useState(false);
+  if (!src) return null;
+  return (
+    <img
+      src={src}
+      alt={alt}
+      loading={lazy ? "lazy" : "eager"}
+      decoding="async"
+      onLoad={() => setLoaded(true)}
+      style={{ ...style, opacity: loaded ? 1 : 0, transition: loaded ? "opacity 0.25s ease" : "none" }}
+      {...rest}
+    />
+  );
+}
+
 // Hook: merge scoruri reale din Supabase peste scoruri simulate.
 // DB suprascrie simularea; dacă DB e gol (înainte de turneu), simularea rămâne.
 function useLiveScores(simDay, simHour, simMin) {
@@ -5643,7 +5660,7 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
           <div style={{display:"flex",flexDirection:"column",alignItems:"center",flexShrink:0,paddingTop:20,position:"relative"}}>
             <button onClick={onAccount} style={{width:44,height:44,background:"none",border:"none",padding:0,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",WebkitTapHighlightColor:"transparent"}}>
               {avatarUrl
-                ? <img src={avatarUrl} style={{width:36,height:36,borderRadius:"50%",objectFit:"cover"}} alt=""/>
+                ? <FadeImg src={avatarUrl} lazy={false} style={{width:36,height:36,borderRadius:"50%",objectFit:"cover"}}/>
                 : <div style={{width:36,height:36,borderRadius:"50%",background:NAVY,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,color:"#fff",fontWeight:700}}>{initials}</div>
               }
             </button>
@@ -6325,7 +6342,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
                   <div key={b.id}>
                     <div style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",cursor:"pointer"}} onClick={()=>onJoin&&onJoin(b.id)}>
                       <div style={{width:44,height:44,borderRadius:"50%",background:b.isGlobal?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:`linear-gradient(135deg,#5856D6,#3634A3)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0,overflow:"hidden"}}>
-                        {latest.image_url ? <img src={latest.image_url} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/> : latest.label}
+                        {latest.image_url ? <FadeImg src={latest.image_url} lazy={false} style={{width:"100%",height:"100%",objectFit:"cover"}}/> : latest.label}
                       </div>
                       <div style={{flex:1,minWidth:0}}>
                         <p style={{fontSize:13,fontWeight:700,color:DARK,margin:0}}>{latest.name}</p>
@@ -6380,7 +6397,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
                     <div key={b.id}>
                       <div style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px"}}>
                         <div style={{width:44,height:44,borderRadius:"50%",background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0,overflow:"hidden"}}>
-                          {b.image_url?<img src={b.image_url} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>:b.label}
+                          {b.image_url?<FadeImg src={b.image_url} lazy={false} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:b.label}
                         </div>
                         <div style={{flex:1,minWidth:0}}>
                           <p style={{fontSize:13,fontWeight:700,color:DARK,margin:0}}>{b.name}</p>
@@ -7998,7 +8015,7 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
                     overflow:"hidden",background:u.isMe?`${NAVY}22`:"rgba(0,0,0,0.07)",
                     display:"flex",alignItems:"center",justifyContent:"center",marginBottom:5,flexShrink:0}}>
                     {u.avatarUrl
-                      ?<img src={u.avatarUrl} alt="" onClick={e=>{e.stopPropagation();setZoomedAvatar(u.avatarUrl);}} style={{width:"100%",height:"100%",objectFit:"cover",cursor:"zoom-in"}}/>
+                      ?<FadeImg src={u.avatarUrl} onClick={e=>{e.stopPropagation();setZoomedAvatar(u.avatarUrl);}} style={{width:"100%",height:"100%",objectFit:"cover",cursor:"zoom-in"}}/>
                       :<span style={{fontSize:rank===1?17:14,fontWeight:800,color:u.isMe?NAVY:"#555"}}>{initials}</span>}
                   </div>
                   <div style={{fontSize:11,fontWeight:800,color:u.isMe?NAVY:DARK,textAlign:"center",
@@ -8039,7 +8056,7 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
                     background:u.isMe?`${NAVY}22`:"rgba(0,0,0,0.07)",
                     display:"flex",alignItems:"center",justifyContent:"center"}}>
                     {u.avatarUrl
-                      ?<img src={u.avatarUrl} alt="" onClick={e=>{e.stopPropagation();setZoomedAvatar(u.avatarUrl);}} style={{width:"100%",height:"100%",objectFit:"cover",cursor:"zoom-in"}}/>
+                      ?<FadeImg src={u.avatarUrl} onClick={e=>{e.stopPropagation();setZoomedAvatar(u.avatarUrl);}} style={{width:"100%",height:"100%",objectFit:"cover",cursor:"zoom-in"}}/>
                       :<span style={{fontSize:11,fontWeight:700,color:u.isMe?NAVY:"#888"}}>{initials}</span>}
                   </div>
                   <span style={{fontSize:10,fontWeight:800,flexShrink:0,width:28,textAlign:"center",
@@ -8098,7 +8115,7 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
                   background:u.isMe?`${NAVY}22`:"rgba(0,0,0,0.07)",
                   display:"flex",alignItems:"center",justifyContent:"center"}}>
                   {u.avatarUrl
-                    ?<img src={u.avatarUrl} alt="" onClick={e=>{e.stopPropagation();setZoomedAvatar(u.avatarUrl);}} style={{width:"100%",height:"100%",objectFit:"cover",cursor:"zoom-in"}}/>
+                    ?<FadeImg src={u.avatarUrl} onClick={e=>{e.stopPropagation();setZoomedAvatar(u.avatarUrl);}} style={{width:"100%",height:"100%",objectFit:"cover",cursor:"zoom-in"}}/>
                     :<span style={{fontSize:11,fontWeight:700,color:u.isMe?NAVY:"#888"}}>{initials}</span>}
                 </div>
                 <span style={{fontSize:10,fontWeight:800,flexShrink:0,width:28,textAlign:"center",
@@ -8146,7 +8163,7 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
             <div style={{width:40,height:40,borderRadius:"50%",background:`${NAVY}15`,
               display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,overflow:"hidden"}}>
               {selectedUser.avatarUrl
-                ?<img src={selectedUser.avatarUrl} alt="" onClick={e=>{e.stopPropagation();setZoomedAvatar(selectedUser.avatarUrl);}} style={{width:"100%",height:"100%",objectFit:"cover",cursor:"zoom-in"}}/>
+                ?<FadeImg src={selectedUser.avatarUrl} onClick={e=>{e.stopPropagation();setZoomedAvatar(selectedUser.avatarUrl);}} style={{width:"100%",height:"100%",objectFit:"cover",cursor:"zoom-in"}}/>
                 :<span style={{fontSize:14,fontWeight:800,color:NAVY}}>
                   {selectedUser.name?.split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2)||"?"}
                 </span>}
@@ -9256,7 +9273,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
                           <div style={{width:34,height:34,borderRadius:"50%",background:`${NAVY}15`,
                             display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,overflow:"hidden"}}>
                             {item.avatarUrl?(
-                              <img src={item.avatarUrl} style={{width:"100%",height:"100%",objectFit:"cover"}} alt=""/>
+                              <FadeImg src={item.avatarUrl} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
                             ):(
                               <span style={{fontSize:13,fontWeight:800,color:NAVY}}>
                                 {(item.name?.split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2))||"?"}
@@ -10090,7 +10107,7 @@ function AccountScreen({ setLang, onBoards, onSignOut, onShowGuide, onPremium, o
                 {avatarUploading
                   ? <span style={{fontSize:13,color:"#888"}}>...</span>
                   : avatarUrl
-                    ? <img src={avatarUrl} alt="avatar" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                    ? <FadeImg src={avatarUrl} lazy={false} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
                     : "👤"}
               </div>
               <div style={{position:"absolute",bottom:0,right:0,width:18,height:18,borderRadius:"50%",background:NAVY,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:"#fff",fontWeight:700,lineHeight:1}}>+</div>
