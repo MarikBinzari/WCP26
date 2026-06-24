@@ -10,7 +10,7 @@ import specialPickBadge from "./assets/special-pick-badge.webp";
 import bellIcon from "./assets/bell-icon.svg";
 import { ALL_GROUPS_DATA, FLAGS, TEAM_COLORS, CALENDAR_EVENTS, CL_FINAL } from "./data/worldcup2026.js";
 import { supabase, SUPABASE_URL } from "./supabase.js";
-import { savePredictions, saveExactScore, loadExactScores, createBoard, updateBoard, joinBoardByCode, joinBoardById, ensureBoardScores, loadLeaderboard, loadMyScoreBreakdown, fetchScoringRules, fetchMemberCounts, removeBoardMember, removeParticipation, deleteBoard, loadBoardMembers, checkDbHealth, checkEmailExists, checkNicknameExists, loadLiveScores, subscribeLiveScores, loadPlayers, loadPlayersByTeam, seedPlayersFromApi, saveSpecialPick, uploadAvatar, uploadBoardImage, loadAllBoards, loadAllUserPicks, loadNotifReads, markNotifRead, loadSystemNotifications, loadRealGroupStandings, loadUserBreakdown, savePushSubscription, loadChatMessages, sendChatMessage, editChatMessage, toggleChatLike, toggleChatDislike, subscribeChatMessages, loadMatchPredictions, loadCentralStats, loadBoardExactScores, hasLiveMatches } from "./db.js";
+import { savePredictions, saveExactScore, loadExactScores, createBoard, updateBoard, joinBoardByCode, joinBoardById, ensureBoardScores, loadLeaderboard, loadMyScoreBreakdown, fetchScoringRules, fetchMemberCounts, removeBoardMember, removeParticipation, deleteBoard, loadBoardMembers, checkDbHealth, checkEmailExists, checkNicknameExists, loadLiveScores, subscribeLiveScores, loadPlayers, loadPlayersByTeam, seedPlayersFromApi, saveSpecialPick, uploadAvatar, uploadBoardImage, loadAllBoards, loadAllUserPicks, loadNotifReads, markNotifRead, loadSystemNotifications, loadRealGroupStandings, loadUserBreakdown, savePushSubscription, loadChatMessages, sendChatMessage, editChatMessage, toggleChatLike, toggleChatDislike, subscribeChatMessages, loadMatchPredictions, loadCentralStats, loadBoardExactScores, hasLiveMatches, loadKoTeams } from "./db.js";
 
 const TEAM_CODE = {"Mexico":"MEX","South Africa":"RSA","South Korea":"KOR","Czechia":"CZE","Canada":"CAN","Switzerland":"SUI","Qatar":"QAT","Bosnia-Herzegovina":"BIH","Brazil":"BRA","Morocco":"MAR","Scotland":"SCO","Haiti":"HAI","USA":"USA","Paraguay":"PAR","Australia":"AUS","Turkiye":"TUR","Germany":"GER","Ecuador":"ECU","Ivory Coast":"CIV","Curacao":"CUW","Netherlands":"NED","Japan":"JPN","Tunisia":"TUN","Sweden":"SWE","Belgium":"BEL","Iran":"IRI","Egypt":"EGY","New Zealand":"NZL","Spain":"ESP","Uruguay":"URU","Saudi Arabia":"KSA","Cape Verde":"CPV","France":"FRA","Senegal":"SEN","Norway":"NOR","Iraq":"IRQ","Argentina":"ARG","Austria":"AUT","Algeria":"ALG","Jordan":"JOR","Portugal":"POR","Colombia":"COL","Uzbekistan":"UZB","DR Congo":"COD","England":"ENG","Croatia":"CRO","Panama":"PAN","Ghana":"GHA"};
 
@@ -5578,7 +5578,7 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
     _exCalendarEvents.forEach(e => {
       if (!isWeekUnlocked(e.day, simDay, simHour, simMin)) return;
       mm[e.day] = (e.matches || []).filter(m =>
-        m.homeFlag !== '🏆' &&
+        (m.homeFlag !== '🏆' || !!koTeams[m.matchKey]) &&
         !isMatchPast(e.day, m.time, simDay, simHour, m.kickoffUtc)
       );
     });
@@ -8600,7 +8600,7 @@ function CentralStatsScreen({ onBack, boardId, boardName, simDay, simHour=12, si
   );
 }
 
-function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScoresProp, simDay, simHour=12, simMin=0, initialWeek, initialDay, boardId, boardName, myBoards=[], onCopyDayScores }) {
+function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScoresProp, simDay, simHour=12, simMin=0, initialWeek, initialDay, boardId, boardName, myBoards=[], onCopyDayScores, koTeams={} }) {
   const lang = useLang();
   const LIVE_SCORES = useLiveScores(simDay, simHour, simMin);
   const calendarEvents = getDisplayCalendarEvents();
@@ -8776,12 +8776,12 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
   const wDaysHeader = Array.from({length:7},(_,i)=>weekStart+i);
   const weekPredictableMatches = wDaysHeader.flatMap(d =>
     (mm0[d] || [])
-      .filter(m =>
-        m.homeFlag !== '🏆' &&
+      .map((m, i) => ({ match: m, day: d, idx: i, key: getMatchKey(m, d, i) }))
+      .filter(({ match: m, key }) =>
+        (m.homeFlag !== '🏆' || !!koTeams[key]) &&
         isWeekUnlocked(d, simDay, simHour, simMin) &&
         !isMatchPast(d, m.time, simDay, simHour, m.kickoffUtc)
       )
-      .map((m, i) => ({ match: m, day: d, idx: i }))
   );
   const weekTotal = weekPredictableMatches.length;
   const weekScored = weekPredictableMatches.filter(({ match, day, idx }) =>
@@ -8814,7 +8814,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
           selGroup={selGroup} setSelGroup={setSelGroup}
           GROUPS_DATA={GROUPS_DATA} showReal={showReal} setShowReal={setShowReal}
           standing={standing} isGroupLocked={isGroupLocked} simDay={simDay} simHour={simHour} simMin={simMin}
-          liveScores={LIVE_SCORES}
+          liveScores={LIVE_SCORES} koTeams={koTeams}
           onCopyDay={myBoards.filter(b=>b.id!==boardId).length>0 ? (day, matchKeys)=>{ setCopyDayDone({}); setCopyDayPayload({ day, matchKeys }); } : null}
           onMatchPreview={(match,day,idx)=>{
             setMatchPreview({match,day,idx,key:getMatchKey(match,day,idx)});
@@ -9283,7 +9283,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
   );
 }
 
-function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDaySelect, scores, onMatchClick, onMatchPreview, onCopyDay, showStanding, setShowStanding, selGroup, setSelGroup, GROUPS_DATA, showReal, setShowReal, standing, isGroupLocked, simDay, simHour=12, simMin=0, liveScores, scoresVersion }) {
+function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDaySelect, scores, onMatchClick, onMatchPreview, onCopyDay, showStanding, setShowStanding, selGroup, setSelGroup, GROUPS_DATA, showReal, setShowReal, standing, isGroupLocked, simDay, simHour=12, simMin=0, liveScores, scoresVersion, koTeams={} }) {
   const lang = useLang();
   const LIVE_SCORES = liveScores || LIVE_SCORES_DEFAULT;
   const [collapsedGroups, setCollapsedGroups] = useState({});
@@ -9296,7 +9296,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
   const sm = (sel !== null && sel !== undefined && mm[sel]) ? mm[sel] : null;
   const copyableDayMatches = sm ? sm
     .map((m, idx) => ({ match: m, idx, key: getMatchKey(m, sel, idx) }))
-    .filter(({ match }) => match.homeFlag !== '🏆' && isWeekUnlocked(sel || 0, simDay, simHour, simMin)) : [];
+    .filter(({ match: m, key }) => (m.homeFlag !== '🏆' || !!koTeams[key]) && isWeekUnlocked(sel || 0, simDay, simHour, simMin)) : [];
   const dayAllPredicted = copyableDayMatches.length > 0 && copyableDayMatches.every(({ key }) => !!scores?.[key]);
   const dayNotStarted = copyableDayMatches.length > 0 && copyableDayMatches.every(({ match, key }) => {
     const status = LIVE_SCORES[key]?.status;
@@ -9804,6 +9804,12 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                   {sm.map((m0,i)=>{
                     const m = {...m0, _i:i};
                     const key=getMatchKey(m0,sel,i);
+                    const kt = koTeams[key];
+                    const displayHome     = kt ? kt.home                    : m.home;
+                    const displayHomeFlag = kt ? (FLAGS[kt.home]  || '🏆') : m.homeFlag;
+                    const displayAway     = kt ? kt.away                    : m.away;
+                    const displayAwayFlag = kt ? (FLAGS[kt.away]  || '🏆') : m.awayFlag;
+                    const teamsKnown = m.homeFlag !== '🏆' || !!kt;
                     // key used below for data-match-key
                     const sc = scores&&scores[key];
                     const live = LIVE_SCORES[key];
@@ -9846,8 +9852,8 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                           onClick={()=>{if(!_isPast3&&!isPastDay2&&onMatchClick)onMatchClick(m,sel,m._i);else if(_isPreviewable3)onMatchPreview(m,sel,m._i);}}
                           onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();if(!_isPast3&&!isPastDay2&&onMatchClick)onMatchClick(m,sel,m._i);else if(_isPreviewable3)onMatchPreview(m,sel,m._i);}}}
                           style={{display:"flex",alignItems:"center",padding:"10px 14px",cursor:(_isPreviewable3||(!_isPast3&&!isPastDay2))?"pointer":isPastDay2?"default":"pointer",gap:6,opacity:isPastDay2?0.6:1}}>
-                          <span style={{fontSize:18,flexShrink:0}}>{m.homeFlag}</span>
-                          <span style={{flex:1,fontSize:11,fontWeight:600,color:DARK}}>{m.home.length>7?m.home.split(" ")[0]:m.home}</span>
+                          <span style={{fontSize:18,flexShrink:0}}>{displayHomeFlag}</span>
+                          <span style={{flex:1,fontSize:11,fontWeight:600,color:DARK}}>{displayHome.length>7?displayHome.split(" ")[0]:displayHome}</span>
                           <div style={{flexShrink:0,display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
                             {isLive?<span style={{fontSize:10,fontWeight:800,color:RED,animation:"blink 1s infinite"}}>● {liveScorePhaseLabel(dbStatus, liveMin2)}</span>
                               :isHT?<span style={{fontSize:10,fontWeight:800,color:"#F59E0B"}}>⏸ HT</span>
@@ -9859,7 +9865,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                             <span style={{fontSize:10,fontWeight:700,color:"#bbb",textTransform:"uppercase",letterSpacing:0.5}}>{T[lang].prediction}</span>
                             {(()=>{
                               const isPast = isMatchPast(sel, m.time, simDay, simHour, m.kickoffUtc);
-                              const canPredict = !isLive && !isHT && !isFT && !isPast && isWeekUnlocked(sel||0, simDay, simHour, simMin) && m.homeFlag!=='🏆';
+                              const canPredict = !isLive && !isHT && !isFT && !isPast && isWeekUnlocked(sel||0, simDay, simHour, simMin) && teamsKnown;
                               // Comparatie live: scorul prezis vs scorul curent
                               const liveHas = (isLive||isHT) && hasScore;
                               const predRes2 = sc ? (scH(sc)>scA(sc)?"H":scH(sc)<scA(sc)?"A":"D") : null;
@@ -9900,8 +9906,8 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                               );
                             })()}
                           </div>
-                          <span style={{flex:1,fontSize:11,fontWeight:600,color:DARK,textAlign:"right"}}>{m.away.length>7?m.away.split(" ")[0]:m.away}</span>
-                          <span style={{fontSize:18,flexShrink:0}}>{m.awayFlag}</span>
+                          <span style={{flex:1,fontSize:11,fontWeight:600,color:DARK,textAlign:"right"}}>{displayAway.length>7?displayAway.split(" ")[0]:displayAway}</span>
+                          <span style={{fontSize:18,flexShrink:0}}>{displayAwayFlag}</span>
                         </div>
                         ); })()}
                         {(isFT||isMatchPast(sel,m.time,simDay,simHour,m.kickoffUtc))&&(
@@ -11316,6 +11322,8 @@ function App() {
 
   const [allInstantPickStates, setAllInstantPickStates] = useState({});
   const [exactScoresByBoard, setExactScoresByBoard] = useState({});
+  const [koTeams, setKoTeams] = useState({});
+  useEffect(() => { loadKoTeams().then(setKoTeams); }, []);
   const exactScores = exactScoresByBoard[activeBoardId] || {};
   const setExactScores = (updater) => {
     setExactScoresByBoard(prev => {
@@ -11766,7 +11774,7 @@ function App() {
           {user&&<div style={{display:screen===SCREENS.RULES?'flex':'none',flex:1,flexDirection:'column',overflow:'hidden',minHeight:0}}>
             <RulesScreen onBack={()=>setScreen(SCREENS.HOME)}/>
           </div>}
-          {screen===SCREENS.GROUPS_SCHEDULE&&<GroupsScheduleScreen boardId={activeBoardId} boardName={myBoards.find(b=>b.id===activeBoardId)?.name||"Global"} scores={exactScores} setScores={async (newScores)=>{
+          {screen===SCREENS.GROUPS_SCHEDULE&&<GroupsScheduleScreen boardId={activeBoardId} boardName={myBoards.find(b=>b.id===activeBoardId)?.name||"Global"} koTeams={koTeams} scores={exactScores} setScores={async (newScores)=>{
               const oldScores = exactScores;
               setExactScores(newScores);
               if (user) {

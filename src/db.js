@@ -742,6 +742,21 @@ export async function loadLiveScores() {
   return result
 }
 
+export async function loadKoTeams() {
+  const { data } = await supabase
+    .from('matches')
+    .select('match_key, team1:teams!matches_team1_id_fkey(name), team2:teams!matches_team2_id_fkey(name)')
+    .in('stage', ['r32', 'r16', 'qf', 'sf', 'final'])
+    .not('team1_id', 'is', null)
+    .not('team2_id', 'is', null)
+  const result = {}
+  ;(data || []).forEach(row => {
+    if (row.team1?.name && row.team2?.name)
+      result[row.match_key] = { home: row.team1.name, away: row.team2.name }
+  })
+  return result
+}
+
 export function subscribeLiveScores(onChange) {
   return supabase
     .channel('live_scores_realtime')

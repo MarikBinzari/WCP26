@@ -362,7 +362,18 @@ Deno.serve(async () => {
             const homeNorm = normalizeTeam(f.teams?.home?.name ?? '')
             const awayNorm = normalizeTeam(f.teams?.away?.name ?? '')
             const statusShort: string = f.fixture?.status?.short ?? 'NS'
-            const matchKey = findMatchKey(homeNorm, awayNorm)
+            let matchKey = findMatchKey(homeNorm, awayNorm)
+
+            if (!matchKey) {
+              const fixtureUtc = f.fixture?.date ?? null
+              if (fixtureUtc) {
+                const koKey = findKoMatchKey(fixtureUtc)
+                if (koKey) {
+                  matchKey = koKey
+                  koTeamUpdates.push({ matchKey: koKey, home: homeNorm, away: awayNorm })
+                }
+              }
+            }
 
             if (!matchKey) {
               console.log(`[api-sports] NO MATCH KEY: ${homeNorm} vs ${awayNorm} | status: ${statusShort}`)
