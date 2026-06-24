@@ -893,6 +893,15 @@ export async function hasLiveMatches() {
     .in('status', ['LIVE', 'HT', 'ET', 'PEN'])
   return (count ?? 0) > 0
 }
+
+export async function loadMatchEvents(matchKey) {
+  const { data } = await supabase
+    .from('match_events')
+    .select('type, detail, player_name, team, minute')
+    .eq('match_key', matchKey)
+    .order('minute', { ascending: true })
+  return data || []
+}
 export async function loadLeaderboard(boardId, search = null, userId = null) {
   const [rpcRes, profileRes] = await Promise.all([
     supabase.rpc('get_leaderboard', {

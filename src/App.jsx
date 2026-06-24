@@ -10,7 +10,7 @@ import specialPickBadge from "./assets/special-pick-badge.webp";
 import bellIcon from "./assets/bell-icon.svg";
 import { ALL_GROUPS_DATA, FLAGS, TEAM_COLORS, CALENDAR_EVENTS, CL_FINAL } from "./data/worldcup2026.js";
 import { supabase, SUPABASE_URL } from "./supabase.js";
-import { savePredictions, saveExactScore, loadExactScores, createBoard, updateBoard, joinBoardByCode, joinBoardById, ensureBoardScores, loadLeaderboard, loadMyScoreBreakdown, fetchScoringRules, fetchMemberCounts, removeBoardMember, removeParticipation, deleteBoard, loadBoardMembers, checkDbHealth, checkEmailExists, checkNicknameExists, loadLiveScores, subscribeLiveScores, loadPlayers, loadPlayersByTeam, seedPlayersFromApi, saveSpecialPick, uploadAvatar, uploadBoardImage, loadAllBoards, loadAllUserPicks, loadNotifReads, markNotifRead, loadSystemNotifications, loadRealGroupStandings, loadUserBreakdown, savePushSubscription, loadChatMessages, sendChatMessage, editChatMessage, toggleChatLike, toggleChatDislike, subscribeChatMessages, loadMatchPredictions, loadCentralStats, loadBoardExactScores, hasLiveMatches, loadKoTeams } from "./db.js";
+import { savePredictions, saveExactScore, loadExactScores, createBoard, updateBoard, joinBoardByCode, joinBoardById, ensureBoardScores, loadLeaderboard, loadMyScoreBreakdown, fetchScoringRules, fetchMemberCounts, removeBoardMember, removeParticipation, deleteBoard, loadBoardMembers, checkDbHealth, checkEmailExists, checkNicknameExists, loadLiveScores, subscribeLiveScores, loadPlayers, loadPlayersByTeam, seedPlayersFromApi, saveSpecialPick, uploadAvatar, uploadBoardImage, loadAllBoards, loadAllUserPicks, loadNotifReads, markNotifRead, loadSystemNotifications, loadRealGroupStandings, loadUserBreakdown, savePushSubscription, loadChatMessages, sendChatMessage, editChatMessage, toggleChatLike, toggleChatDislike, subscribeChatMessages, loadMatchPredictions, loadCentralStats, loadBoardExactScores, hasLiveMatches, loadKoTeams, loadMatchEvents } from "./db.js";
 
 const TEAM_CODE = {"Mexico":"MEX","South Africa":"RSA","South Korea":"KOR","Czechia":"CZE","Canada":"CAN","Switzerland":"SUI","Qatar":"QAT","Bosnia-Herzegovina":"BIH","Brazil":"BRA","Morocco":"MAR","Scotland":"SCO","Haiti":"HAI","USA":"USA","Paraguay":"PAR","Australia":"AUS","Turkiye":"TUR","Germany":"GER","Ecuador":"ECU","Ivory Coast":"CIV","Curacao":"CUW","Netherlands":"NED","Japan":"JPN","Tunisia":"TUN","Sweden":"SWE","Belgium":"BEL","Iran":"IRI","Egypt":"EGY","New Zealand":"NZL","Spain":"ESP","Uruguay":"URU","Saudi Arabia":"KSA","Cape Verde":"CPV","France":"FRA","Senegal":"SEN","Norway":"NOR","Iraq":"IRQ","Argentina":"ARG","Austria":"AUT","Algeria":"ALG","Jordan":"JOR","Portugal":"POR","Colombia":"COL","Uzbekistan":"UZB","DR Congo":"COD","England":"ENG","Croatia":"CRO","Panama":"PAN","Ghana":"GHA"};
 
@@ -5497,6 +5497,49 @@ function BonusPredictionScreen({ onBack, onChampion, championPick, runnerUpPick,
   );
 }
 
+function LiveMatchCard({ match, score, events }) {
+  const getIcon = (e) => {
+    if (e.type === 'Goal') return e.detail === 'Own Goal' ? '⚽🔙' : '⚽';
+    if (e.type === 'Card') return (e.detail?.toLowerCase().includes('red') || e.detail?.includes('Second')) ? '🟥' : '🟨';
+    if (e.type === 'subst' || e.type === 'Substitution') return '🔄';
+    return '•';
+  };
+  const allEvents = [...events].sort((a, b) => (a.minute||0) - (b.minute||0));
+  const statusLabel = score.status === 'HT' ? 'HT' : score.status === 'ET' ? 'ET' : `${score.min ?? ''}′`;
+  return (
+    <div style={{width:'100%',background:`linear-gradient(135deg, rgba(15,15,32,0.62) 0%, rgba(8,14,40,0.70) 100%), url(${stadiumBg}) center 30%/cover no-repeat`,borderRadius:20,padding:'13px 16px',boxSizing:'border-box',minHeight:96}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
+        <span style={{fontSize:10,fontWeight:900,color:'rgba(255,255,255,0.45)',letterSpacing:1.2}}>LIVE</span>
+        <span style={{background:'#ef4444',borderRadius:999,padding:'2px 9px',fontSize:10,fontWeight:900,color:'#fff',letterSpacing:0.5}}>{statusLabel}</span>
+      </div>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8}}>
+        <div style={{flex:1,textAlign:'center'}}>
+          <div style={{fontSize:28,lineHeight:1}}>{match.homeFlag}</div>
+          <div style={{fontSize:10,fontWeight:700,color:'rgba(255,255,255,0.8)',marginTop:4,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{match.home}</div>
+        </div>
+        <div style={{background:'rgba(255,255,255,0.13)',borderRadius:12,padding:'7px 14px',minWidth:70,textAlign:'center',flexShrink:0}}>
+          <div style={{fontSize:22,fontWeight:900,color:'#fff',lineHeight:1}}>{score.home??0} - {score.away??0}</div>
+        </div>
+        <div style={{flex:1,textAlign:'center'}}>
+          <div style={{fontSize:28,lineHeight:1}}>{match.awayFlag}</div>
+          <div style={{fontSize:10,fontWeight:700,color:'rgba(255,255,255,0.8)',marginTop:4,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{match.away}</div>
+        </div>
+      </div>
+      {allEvents.length>0&&(
+        <div style={{marginTop:10,borderTop:'1px solid rgba(255,255,255,0.10)',paddingTop:8,display:'flex',flexDirection:'column',gap:2}}>
+          {allEvents.slice(-5).map((e,i)=>(
+            <div key={i} style={{display:'flex',alignItems:'center',gap:5}}>
+              <span style={{fontSize:9,color:'rgba(255,255,255,0.4)',minWidth:22,textAlign:'right',flexShrink:0}}>{e.minute}'</span>
+              <span style={{fontSize:11,flexShrink:0}}>{getIcon(e)}</span>
+              <span style={{fontSize:11,color:'rgba(255,255,255,0.82)',fontWeight:600,flex:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{e.player_name}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── HOME ────────────────────────────────────────────────────────────────────
 function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateBoard, onOpenGroups, onCentralStats, onCopyPredictions, onCopyExactScores, onCopySpecial, onAccount, onNotifications, onChampion, onBooster, onBonus, myBoards, predictionsComplete, instantPickState=null, instantPickDone, allGroupsDone=false, groupsDoneCount=null, koPickDone, koUnlocked, exactScores, activeBoardId, setActiveBoardId, tournamentStarted, simDay, simHour, simMin, createdBoards=[], showFirstAction, leaderboardData={}, boardsLoading=false, predictionsLoaded={}, championPick=null, runnerUpPick=null, topScorerPick=null, setChampionPick=()=>{}, setTopScorerPick=()=>{}, myScoreBreakdown=null, hasUnread=false }) {
   const lang = useLang();
@@ -5508,6 +5551,42 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
   const [copyWeekStart, setCopyWeekStart] = useState(null);
   const [copyDone, setCopyDone] = useState({});
   const [boardSwitching, setBoardSwitching] = useState(false);
+  // Live slider
+  const liveScoresHome = useLiveScores(simDay, simHour, simMin);
+  const [bonusSlide, setBonusSlide] = useState(0);
+  const [matchEventsMap, setMatchEventsMap] = useState({});
+  const bonusTouchRef = useRef(null);
+  const autoAdvRef = useRef(null);
+  const liveMatches = (() => {
+    const res = [];
+    CALENDAR_EVENTS.forEach(ev => {
+      ev.matches.forEach((m, idx) => {
+        const key = m.matchKey || `${ev.day}-${idx}`;
+        const s = liveScoresHome[key];
+        if (s && ['LIVE','HT','ET','PEN'].includes(s.status)) res.push({ key, match: m, score: s });
+      });
+    });
+    return res;
+  })();
+  const totalBonusSlides = 1 + liveMatches.length;
+  useEffect(() => {
+    liveMatches.forEach(({ key }) => {
+      loadMatchEvents(key).then(evs => setMatchEventsMap(prev => ({ ...prev, [key]: evs })));
+    });
+  }, [liveMatches.map(m => m.key).join(',')]);
+  useEffect(() => {
+    if (totalBonusSlides <= 1) { setBonusSlide(0); return; }
+    autoAdvRef.current = setInterval(() => setBonusSlide(p => (p + 1) % totalBonusSlides), 5000);
+    return () => clearInterval(autoAdvRef.current);
+  }, [totalBonusSlides]);
+  const handleBonusTouchStart = (e) => { bonusTouchRef.current = e.touches[0].clientX; clearInterval(autoAdvRef.current); };
+  const handleBonusTouchEnd = (e) => {
+    if (bonusTouchRef.current === null) return;
+    const dx = e.changedTouches[0].clientX - bonusTouchRef.current;
+    bonusTouchRef.current = null;
+    if (Math.abs(dx) < 30) return;
+    setBonusSlide(p => dx < 0 ? Math.min(p + 1, totalBonusSlides - 1) : Math.max(p - 1, 0));
+  };
   const activeId = activeBoardId;
   const setActiveId = setActiveBoardId;
   const bonusPickLocked = isBonusPickLocked(simDay, simHour, simMin);
@@ -5727,6 +5806,7 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
       </div>
       <div ref={scrollContainerRef} style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",padding:"10px 6px 110px",opacity:boardSwitching?0.72:1,transform:`translateY(${boardSwitching?6:0}px)`,transition:"opacity 0.22s ease, transform 0.22s ease"}}>
         <style>{`@keyframes bonusBadgePulse{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(234,179,8,0.45)}55%{transform:scale(1.1);box-shadow:0 0 0 8px rgba(234,179,8,0)}}`}</style>
+        {liveMatches.length === 0 ? (
         <button onClick={onBonus} style={{width:"100%",display:"flex",alignItems:"center",gap:14,background:`linear-gradient(135deg, rgba(15,15,32,0.58) 0%, rgba(8,14,40,0.65) 100%), url(${stadiumBg}) center 30%/cover no-repeat`,borderRadius:20,padding:"15px 16px",border:"none",boxShadow:"0 4px 16px rgba(0,0,0,0.06)",cursor:"pointer",marginBottom:14,WebkitTapHighlightColor:"transparent",textAlign:"left"}}>
           <div style={{width:50,height:50,borderRadius:"50%",background:"rgba(234,179,8,0.14)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,border:"2px solid rgba(234,179,8,0.3)"}}>
             <span style={{fontSize:26,lineHeight:1}}>⚡</span>
@@ -5749,6 +5829,51 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
           </div>
           <span style={{fontSize:18,color:"rgba(255,255,255,0.35)",fontWeight:700,lineHeight:1,marginLeft:4}}>›</span>
         </button>
+        ) : (
+        <div style={{marginBottom:14}}>
+          <div style={{overflow:'hidden',borderRadius:20,touchAction:'pan-y',boxShadow:"0 4px 16px rgba(0,0,0,0.06)"}}
+            onTouchStart={handleBonusTouchStart} onTouchEnd={handleBonusTouchEnd}>
+            <div style={{display:'flex',transition:'transform 0.35s ease',transform:`translateX(${-bonusSlide*100}%)`}}>
+              {/* Slide 0: Bonus */}
+              <div style={{minWidth:'100%',flexShrink:0}}>
+                <button onClick={onBonus} style={{width:"100%",display:"flex",alignItems:"center",gap:14,background:`linear-gradient(135deg, rgba(15,15,32,0.58) 0%, rgba(8,14,40,0.65) 100%), url(${stadiumBg}) center 30%/cover no-repeat`,borderRadius:20,padding:"15px 16px",border:"none",cursor:"pointer",WebkitTapHighlightColor:"transparent",textAlign:"left",boxSizing:'border-box'}}>
+                  <div style={{width:50,height:50,borderRadius:"50%",background:"rgba(234,179,8,0.14)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,border:"2px solid rgba(234,179,8,0.3)"}}>
+                    <span style={{fontSize:26,lineHeight:1}}>⚡</span>
+                  </div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{display:"flex",alignItems:"center",gap:7,flexWrap:"wrap"}}>
+                      <div style={{fontSize:15,fontWeight:900,color:"#FFD700",letterSpacing:0.3}}>{bonusPickLocked ? T[lang].bonusClosedTitle : T[lang].bonusPrediction}</div>
+                      <div style={{background:"rgba(255,255,255,0.14)",border:"1px solid rgba(255,215,0,0.36)",borderRadius:999,padding:"3px 7px",fontSize:9,fontWeight:900,color:"#FFD700",letterSpacing:0.4,textTransform:"uppercase",lineHeight:1}}>
+                        {bonusPickLocked ? T[lang].locked : T[lang].bonusDueJun14}
+                      </div>
+                    </div>
+                    <div style={{fontSize:12,color:"rgba(255,255,255,0.76)",marginTop:5,lineHeight:1.4,fontWeight:750}}>
+                      {bonusPickLocked ? (bonusPickCount ? T[lang].bonusClosedSub : T[lang].bonusClosedEmptySub) : `${bonusPickCount}/3 ${T[lang].selectedLabel}`}
+                    </div>
+                  </div>
+                  <div style={{background:"#FFD700",borderRadius:8,padding:"4px 8px",fontSize:10,fontWeight:900,color:"#1a1a2e",letterSpacing:0.5,flexShrink:0,animation:bonusPickLocked?"none":"bonusBadgePulse 1.8s ease-in-out infinite"}}>
+                    {bonusPickLocked ? T[lang].locked : "BONUS"}
+                  </div>
+                  <span style={{fontSize:18,color:"rgba(255,255,255,0.35)",fontWeight:700,lineHeight:1,marginLeft:4}}>›</span>
+                </button>
+              </div>
+              {/* Live match slides */}
+              {liveMatches.map(({ key, match, score }) => (
+                <div key={key} style={{minWidth:'100%',flexShrink:0}}>
+                  <LiveMatchCard match={match} score={score} events={matchEventsMap[key]||[]} />
+                </div>
+              ))}
+            </div>
+          </div>
+          {/* Dots */}
+          <div style={{display:'flex',justifyContent:'center',gap:6,marginTop:8}}>
+            {Array.from({length:totalBonusSlides}).map((_,i)=>(
+              <div key={i} onClick={()=>{clearInterval(autoAdvRef.current);setBonusSlide(i);}}
+                style={{width:i===bonusSlide?18:6,height:6,borderRadius:3,background:i===bonusSlide?NAVY:'rgba(10,46,138,0.18)',cursor:'pointer',transition:'all 0.25s',flexShrink:0}}/>
+            ))}
+          </div>
+        </div>
+        )}
         <NextActionCard card={naCard} pct={naPct} nextTask={nextTask} />
         <div style={{marginBottom:14}}>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
