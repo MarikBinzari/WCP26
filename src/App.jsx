@@ -1064,7 +1064,7 @@ function useLiveScores(simDay, simHour, simMin) {
   useEffect(() => {
     loadLiveScores().then(applyScores);
 
-    const channel = subscribeLiveScores((payload) => {
+    const unsubLive = subscribeLiveScores((payload) => {
       const row = payload.new;
       if (!row) return;
       setDbScores(prev => ({
@@ -1093,7 +1093,7 @@ function useLiveScores(simDay, simHour, simMin) {
     document.addEventListener('visibilitychange', onVisible);
 
     return () => {
-      channel.unsubscribe();
+      unsubLive();
       clearInterval(interval);
       document.removeEventListener('visibilitychange', onVisible);
     };

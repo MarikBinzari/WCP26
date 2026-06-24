@@ -758,10 +758,11 @@ export async function loadKoTeams() {
 }
 
 export function subscribeLiveScores(onChange) {
-  return supabase
-    .channel('live_scores_realtime')
+  const ch = supabase
+    .channel(`live_scores_${Math.random().toString(36).slice(2)}`)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'live_scores' }, onChange)
     .subscribe()
+  return () => supabase.removeChannel(ch)
 }
 
 // â”€â”€â”€ BOARD IMAGE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
