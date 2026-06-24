@@ -1036,15 +1036,14 @@ const computeLiveScores = (simDay=null, simHour=12, simMin=0) => {
 const LIVE_SCORES_DEFAULT = {};
 let LIVE_SCORES = LIVE_SCORES_DEFAULT;
 
-// Image with fade-in on load + lazy loading
-function FadeImg({ src, alt="", style={}, lazy=true, ...rest }) {
+// Image with fade-in on load
+function FadeImg({ src, alt="", style={}, ...rest }) {
   const [loaded, setLoaded] = useState(false);
   if (!src) return null;
   return (
     <img
       src={src}
       alt={alt}
-      loading={lazy ? "lazy" : "eager"}
       decoding="async"
       onLoad={() => setLoaded(true)}
       style={{ ...style, opacity: loaded ? 1 : 0, transition: loaded ? "opacity 0.25s ease" : "none" }}
@@ -5660,7 +5659,7 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
           <div style={{display:"flex",flexDirection:"column",alignItems:"center",flexShrink:0,paddingTop:20,position:"relative"}}>
             <button onClick={onAccount} style={{width:44,height:44,background:"none",border:"none",padding:0,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",WebkitTapHighlightColor:"transparent"}}>
               {avatarUrl
-                ? <FadeImg src={avatarUrl} lazy={false} style={{width:36,height:36,borderRadius:"50%",objectFit:"cover"}}/>
+                ? <FadeImg src={avatarUrl} style={{width:36,height:36,borderRadius:"50%",objectFit:"cover"}}/>
                 : <div style={{width:36,height:36,borderRadius:"50%",background:NAVY,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,color:"#fff",fontWeight:700}}>{initials}</div>
               }
             </button>
@@ -6342,7 +6341,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
                   <div key={b.id}>
                     <div style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",cursor:"pointer"}} onClick={()=>onJoin&&onJoin(b.id)}>
                       <div style={{width:44,height:44,borderRadius:"50%",background:b.isGlobal?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:`linear-gradient(135deg,#5856D6,#3634A3)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0,overflow:"hidden"}}>
-                        {latest.image_url ? <FadeImg src={latest.image_url} lazy={false} style={{width:"100%",height:"100%",objectFit:"cover"}}/> : latest.label}
+                        {latest.image_url ? <FadeImg src={latest.image_url} style={{width:"100%",height:"100%",objectFit:"cover"}}/> : latest.label}
                       </div>
                       <div style={{flex:1,minWidth:0}}>
                         <p style={{fontSize:13,fontWeight:700,color:DARK,margin:0}}>{latest.name}</p>
@@ -6397,7 +6396,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
                     <div key={b.id}>
                       <div style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px"}}>
                         <div style={{width:44,height:44,borderRadius:"50%",background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0,overflow:"hidden"}}>
-                          {b.image_url?<FadeImg src={b.image_url} lazy={false} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:b.label}
+                          {b.image_url?<FadeImg src={b.image_url} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:b.label}
                         </div>
                         <div style={{flex:1,minWidth:0}}>
                           <p style={{fontSize:13,fontWeight:700,color:DARK,margin:0}}>{b.name}</p>
@@ -10107,7 +10106,7 @@ function AccountScreen({ setLang, onBoards, onSignOut, onShowGuide, onPremium, o
                 {avatarUploading
                   ? <span style={{fontSize:13,color:"#888"}}>...</span>
                   : avatarUrl
-                    ? <FadeImg src={avatarUrl} lazy={false} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                    ? <FadeImg src={avatarUrl} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
                     : "👤"}
               </div>
               <div style={{position:"absolute",bottom:0,right:0,width:18,height:18,borderRadius:"50%",background:NAVY,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:"#fff",fontWeight:700,lineHeight:1}}>+</div>
@@ -11304,8 +11303,10 @@ function App() {
   useEffect(() => {
     if (!user || (screen !== SCREENS.LEADERBOARD && screen !== SCREENS.HOME)) return;
     loadLeaderboard(activeBoardId, null, user.id).then(rows => {
-      if (rows.length > 0)
+      if (rows.length > 0) {
         setLeaderboardData(prev => ({ ...prev, [activeBoardId]: rows }));
+        rows.forEach(r => { if (r.avatarUrl) { const i = new Image(); i.src = r.avatarUrl; } });
+      }
     });
   }, [user, screen, activeBoardId]);
 
@@ -11314,8 +11315,10 @@ function App() {
     myBoards.forEach(b => {
       if (leaderboardData[b.id]?.length > 0) return;
       loadLeaderboard(b.id, null, user.id).then(rows => {
-        if (rows.length > 0)
+        if (rows.length > 0) {
           setLeaderboardData(prev => ({ ...prev, [b.id]: rows }));
+          rows.forEach(r => { if (r.avatarUrl) { const i = new Image(); i.src = r.avatarUrl; } });
+        }
       });
     });
   }, [user, screen, myBoards]);
