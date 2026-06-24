@@ -5585,7 +5585,7 @@ function LiveMatchCard({ match, score, events, expanded, onToggleExpand }) {
 }
 
 // ── HOME ────────────────────────────────────────────────────────────────────
-function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateBoard, onOpenGroups, onCentralStats, onCopyPredictions, onCopyExactScores, onCopySpecial, onAccount, onNotifications, onChampion, onBooster, onBonus, myBoards, predictionsComplete, instantPickState=null, instantPickDone, allGroupsDone=false, groupsDoneCount=null, koPickDone, koUnlocked, exactScores, activeBoardId, setActiveBoardId, tournamentStarted, simDay, simHour, simMin, createdBoards=[], showFirstAction, leaderboardData={}, boardsLoading=false, predictionsLoaded={}, championPick=null, runnerUpPick=null, topScorerPick=null, setChampionPick=()=>{}, setTopScorerPick=()=>{}, myScoreBreakdown=null, hasUnread=false }) {
+function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateBoard, onOpenGroups, onCentralStats, onCopyPredictions, onCopyExactScores, onCopySpecial, onAccount, onNotifications, onChampion, onBooster, onBonus, myBoards, predictionsComplete, instantPickState=null, instantPickDone, allGroupsDone=false, groupsDoneCount=null, koPickDone, koUnlocked, exactScores, activeBoardId, setActiveBoardId, tournamentStarted, simDay, simHour, simMin, createdBoards=[], showFirstAction, leaderboardData={}, boardsLoading=false, predictionsLoaded={}, championPick=null, runnerUpPick=null, topScorerPick=null, setChampionPick=()=>{}, setTopScorerPick=()=>{}, myScoreBreakdown=null, hasUnread=false, isVisible=true }) {
   const lang = useLang();
   const user = useUser();
   const displayName = useDisplayName();
@@ -5622,10 +5622,11 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
     });
   }, [liveMatches.map(m => m.key).join(',')]);
   useEffect(() => {
-    if (totalBonusSlides <= 1) { setBonusSlide(0); return; }
+    clearInterval(autoAdvRef.current);
+    if (totalBonusSlides <= 1 || !isVisible) { setBonusSlide(0); return; }
     autoAdvRef.current = setInterval(() => setBonusSlide(p => (p + 1) % totalBonusSlides), 5000);
     return () => clearInterval(autoAdvRef.current);
-  }, [totalBonusSlides]);
+  }, [totalBonusSlides, isVisible]);
   useEffect(() => {
     setExpandedMatches({});
   }, [bonusSlide]);
@@ -11787,7 +11788,8 @@ function App() {
               setChampionPick={setChampionPick}
               setTopScorerPick={setTopScorerPick}
               myScoreBreakdown={myScoreBreakdowns[activeBoardId]}
-              hasUnread={hasUnread}/>
+              hasUnread={hasUnread}
+              isVisible={screen===SCREENS.HOME}/>
           </div>}
           {screen===SCREENS.CENTRAL_STATS&&<CentralStatsScreen
             onBack={()=>setScreen(SCREENS.HOME)}
