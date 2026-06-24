@@ -332,15 +332,18 @@ Deno.serve(async () => {
     if (apifbKey) {
       const todayUtc = now.toISOString().slice(0, 10)
       const yesterdayUtc = new Date(now.getTime() - 86_400_000).toISOString().slice(0, 10)
+      const tomorrowUtc = new Date(now.getTime() + 86_400_000).toISOString().slice(0, 10)
       const ctrl = new AbortController()
       const timer = setTimeout(() => ctrl.abort(), 8000)
       try {
-        const [liveRes, todayRes, yesterdayRes] = await Promise.all([
+        const [liveRes, todayRes, yesterdayRes, tomorrowRes] = await Promise.all([
           fetch('https://v3.football.api-sports.io/fixtures?league=1&season=2026&live=all',
             { headers: { 'x-apisports-key': apifbKey }, signal: ctrl.signal }),
           fetch(`https://v3.football.api-sports.io/fixtures?league=1&season=2026&date=${todayUtc}`,
             { headers: { 'x-apisports-key': apifbKey }, signal: ctrl.signal }),
           fetch(`https://v3.football.api-sports.io/fixtures?league=1&season=2026&date=${yesterdayUtc}`,
+            { headers: { 'x-apisports-key': apifbKey }, signal: ctrl.signal }),
+          fetch(`https://v3.football.api-sports.io/fixtures?league=1&season=2026&date=${tomorrowUtc}`,
             { headers: { 'x-apisports-key': apifbKey }, signal: ctrl.signal }),
         ])
         clearTimeout(timer)
@@ -349,14 +352,15 @@ Deno.serve(async () => {
           const liveData = await liveRes.json()
           const todayData = await todayRes.json()
           const yesterdayData = yesterdayRes.ok ? await yesterdayRes.json() : { response: [] }
+          const tomorrowData = tomorrowRes.ok ? await tomorrowRes.json() : { response: [] }
 
           const seenIds = new Set<number>()
           const allFixtures: any[] = []
-          for (const f of [...(liveData.response ?? []), ...(todayData.response ?? []), ...(yesterdayData.response ?? [])]) {
+          for (const f of [...(liveData.response ?? []), ...(todayData.response ?? []), ...(yesterdayData.response ?? []), ...(tomorrowData.response ?? [])]) {
             if (!seenIds.has(f.fixture.id)) { seenIds.add(f.fixture.id); allFixtures.push(f) }
           }
 
-          console.log(`[api-sports] live: ${liveData.response?.length ?? 0} | today: ${todayData.response?.length ?? 0} | yesterday: ${yesterdayData.response?.length ?? 0} | total unique: ${allFixtures.length}`)
+          console.log(`[api-sports] live: ${liveData.response?.length ?? 0} | today: ${todayData.response?.length ?? 0} | yesterday: ${yesterdayData.response?.length ?? 0} | tomorrow: ${tomorrowData.response?.length ?? 0} | total unique: ${allFixtures.length}`)
 
           for (const f of allFixtures) {
             const homeNorm = normalizeTeam(f.teams?.home?.name ?? '')
