@@ -7832,8 +7832,28 @@ function SetPasswordScreen({ onDone }) {
   );
 }
 
+function getCompletedGroups(liveScores) {
+  const groupMap = {};
+  CALENDAR_EVENTS.forEach(event => {
+    event.matches.forEach((m, idx) => {
+      if (!m.group || !/^[A-L]$/.test(m.group)) return;
+      const key = m.matchKey || `${event.day}-${idx}`;
+      if (!groupMap[m.group]) groupMap[m.group] = { keys: [] };
+      groupMap[m.group].keys.push(key);
+    });
+  });
+  const completed = [];
+  for (const [letter, info] of Object.entries(groupMap)) {
+    if (info.keys.length > 0 && info.keys.every(k => liveScores[k]?.status === 'FT'))
+      completed.push(letter);
+  }
+  return completed;
+}
+
 function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, myBoards=[], activeBoardId, setActiveBoardId, userId }) {
   const lang = useLang();
+  const liveScoresLS = useLiveScores(null, null, null);
+  const completedGroupLetters = new Set(getCompletedGroups(liveScoresLS));
   const leaders = leadersProp || BOARD_LEADERS.global;
   const [search, setSearch] = useState("");
   const [selectedUser, setSelectedUser] = useState(null); // {userId, name, pts, rank}
@@ -8216,17 +8236,26 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
                   );
                 })()}
                 {/* Predictions section */}
+                {(()=>{
+                  const confirmedPts = breakdown.groups.filter(g=>completedGroupLetters.has(g.group_id)).reduce((s,g)=>s+g.pts,0);
+                  const pendingPts   = predTotal - confirmedPts;
+                  const allDone      = hasGroups && breakdown.groups.every(g=>completedGroupLetters.has(g.group_id));
+                  const subtitle     = allDone
+                    ? (lang==="en"?"all groups scored":lang==="fr"?"toutes calculées":"toate grupele calculate")
+                    : confirmedPts > 0
+                      ? (lang==="en"?`${confirmedPts}p scored · ${pendingPts}p possible`:lang==="fr"?`${confirmedPts}p calculés · ${pendingPts}p possible`:`${confirmedPts}p calculate · ${pendingPts}p posibil`)
+                      : (lang==="en"?"possible · at end of group":lang==="fr"?"possible · fin du groupe":"posibil · la final de grupă");
+                  return (
                 <div style={{border:`1.5px solid ${NAVY}22`,borderRadius:12,padding:"10px 12px",marginBottom:10}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:hasGroups?8:0}}>
                     <span style={{fontSize:12,fontWeight:800,color:NAVY,textTransform:"uppercase",letterSpacing:1}}>🎯 Predictions</span>
                     <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:2}}>
                       <span style={{fontSize:13,fontWeight:800,color:NAVY}}>{predTotal}p</span>
-                      <span style={{fontSize:9,color:"#9CA3AF",fontStyle:"italic",whiteSpace:"nowrap"}}>
-                        {lang==="en"?"possible · at end of group":lang==="fr"?"possible · fin du groupe":"posibil · la final de grupă"}
-                      </span>
+                      <span style={{fontSize:9,color:allDone?"#16a34a":"#9CA3AF",fontStyle:"italic",whiteSpace:"nowrap"}}>{subtitle}</span>
                     </div>
                   </div>
                   {hasGroups&&breakdown.groups.map(g=>{
+                    const confirmed = completedGroupLetters.has(g.group_id);
                     const hits = [
                       g.hit_1st ? `1.${tCode(g.hit_1st)}` : null,
                       g.hit_2nd ? `2.${tCode(g.hit_2nd)}` : null,
@@ -8234,16 +8263,22 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
                     ].filter(Boolean).join("  ");
                     return (
                       <div key={g.group_id} style={{display:"flex",justifyContent:"space-between",
-                        alignItems:"center",padding:"5px 0",borderBottom:"1px solid #F9FAFB"}}>
-                        <div style={{display:"flex",gap:10,alignItems:"center"}}>
-                          <span style={{fontSize:11,fontWeight:700,color:"#6B7280",minWidth:46}}>Grp {g.group_id}</span>
+                        alignItems:"center",padding:"5px 4px",borderBottom:"1px solid #F9FAFB",
+                        borderRadius:confirmed?6:0,
+                        background:confirmed?"rgba(22,163,74,0.06)":"transparent",
+                        margin:confirmed?"1px -4px":"0"}}>
+                        <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                          <span style={{fontSize:11,fontWeight:900,color:confirmed?"#16a34a":"transparent",minWidth:12,flexShrink:0}}>✓</span>
+                          <span style={{fontSize:11,fontWeight:700,color:confirmed?"#166534":"#6B7280",minWidth:40}}>Grp {g.group_id}</span>
                           <span style={{fontSize:12,fontWeight:600,color:DARK}}>{hits}</span>
                         </div>
-                        <span style={{fontSize:12,fontWeight:700,color:GREEN}}>{g.pts}p</span>
+                        <span style={{fontSize:12,fontWeight:700,color:confirmed?"#16a34a":GREEN}}>{g.pts}p</span>
                       </div>
                     );
                   })}
                 </div>
+                  );
+                })()}
                 {/* Exact Scores section */}
                 <div style={{border:`1.5px solid ${NAVY}22`,borderRadius:12,padding:"10px 12px",marginBottom:10}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:hasExact?8:0}}>
