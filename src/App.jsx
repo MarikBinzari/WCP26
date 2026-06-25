@@ -5497,6 +5497,264 @@ function BonusPredictionScreen({ onBack, onChampion, championPick, runnerUpPick,
   );
 }
 
+// ── LIVE WIDGET ──────────────────────────────────────────────────────────────
+function LiveWidget({ simDay, simHour, simMin }) {
+  const [open, setOpen] = React.useState(false);
+  const [matchEvents, setMatchEvents] = useState({});
+  const [eventsLoaded, setEventsLoaded] = useState(false);
+  const containerRef = useRef(null);
+
+  const liveScores = useLiveScores(simDay, simHour, simMin);
+
+  const matchByKey = {};
+  CALENDAR_EVENTS.forEach(e => {
+    (e.matches || []).forEach((m, i) => {
+      const k = getMatchKey(m, e.day, i);
+      matchByKey[k] = { ...m, day: e.day };
+    });
+  });
+
+  const liveMatchKeys = (() => {
+    const keys = Object.entries(liveScores)
+      .filter(([, v]) => ['LIVE','HT','ET','PEN'].includes(v?.status))
+      .map(([k]) => k)
+      .sort((a, b) => {
+        const da = liveScores[a]?.utcDate, db = liveScores[b]?.utcDate;
+        if (da && db) return da < db ? -1 : da > db ? 1 : 0;
+        return a.localeCompare(b);
+      });
+    // Deduplicare: dacă două chei au aceleași echipe, păstrează prima
+    const seen = new Set();
+    return keys.filter(k => {
+      const info = matchByKey[k];
+      const pair = info ? `${info.home}|${info.away}` : k;
+      if (seen.has(pair)) return false;
+      seen.add(pair);
+      return true;
+    });
+  })();
+
+  const hasLive = liveMatchKeys.length > 0;
+
+  // Închide la click în afara panelului
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    document.addEventListener('touchstart', handler, { passive: true });
+    return () => {
+      document.removeEventListener('mousedown', handler);
+      document.removeEventListener('touchstart', handler);
+    };
+  }, [open]);
+
+  // Când nu mai sunt meciuri live, închide panelul
+  useEffect(() => {
+    if (!hasLive) setOpen(false);
+  }, [hasLive]);
+
+  const loadEventsForAll = useCallback(async () => {
+    if (liveMatchKeys.length === 0) { setEventsLoaded(true); return; }
+    const results = await Promise.all(liveMatchKeys.map(k => loadMatchEvents(k).then(evs => ({ k, evs }))));
+    const evMap = {};
+    results.forEach(({ k, evs }) => { evMap[k] = evs; });
+    setMatchEvents(prev => ({ ...prev, ...evMap }));
+    setEventsLoaded(true);
+  }, [liveMatchKeys.join(',')]);
+
+  useEffect(() => {
+    if (!open) return;
+    setEventsLoaded(false);
+    loadEventsForAll();
+    const iv = setInterval(loadEventsForAll, 30_000);
+    return () => clearInterval(iv);
+  }, [open, loadEventsForAll]);
+
+  const filterTeamEvents = (events, teamName) => {
+    const varSet = new Set(
+      events.filter(e => e.type === 'Var' && (e.detail||'').toLowerCase().includes('goal disallowed'))
+            .map(e => `${e.minute}-${e.player_name}`)
+    );
+    const seen = new Set();
+    return events.filter(e => {
+      if (e.team_name !== teamName) return false;
+      if (e.type === 'Goal' && varSet.has(`${e.minute}-${e.player_name}`)) return false;
+      // Deduplicare minut exact: același minut + tip + primele caractere din detail
+      const keyMinute = `${e.minute}-${e.type}-${(e.detail||'').slice(0,8)}`;
+      if (seen.has(keyMinute)) return false;
+      // Deduplicare jucător: același jucător nu poate primi același card de două ori
+      const keyPlayer = e.type === 'Card' ? `card-${e.player_name}-${(e.detail||'').slice(0,8)}` : null;
+      if (keyPlayer && seen.has(keyPlayer)) return false;
+      seen.add(keyMinute);
+      if (keyPlayer) seen.add(keyPlayer);
+      return true;
+    });
+  };
+
+  const evIcon = (type, detail) => {
+    if (type === 'Goal') return '⚽';
+    const d = (detail||'').toLowerCase();
+    if (type === 'Card') return d.includes('red') ? '🟥' : '🟨';
+    return null;
+  };
+
+  if (!hasLive) return null;
+
+  return (
+    <div ref={containerRef} style={{position:'fixed',bottom:'calc(76px + env(safe-area-inset-bottom, 0px))',left:16,zIndex:1100}}>
+      {/* Buton flotant */}
+      {!open && (
+        <button onClick={() => setOpen(true)} style={{
+          height:40, borderRadius:20, border:'none', cursor:'pointer',
+          background:'linear-gradient(135deg,#DC2626,#EF4444)',
+          boxShadow:'0 4px 18px rgba(239,68,68,0.5)',
+          display:'flex', alignItems:'center', gap:6, padding:'0 16px',
+          WebkitTapHighlightColor:'transparent',
+        }}>
+          <span style={{color:'#fff',fontSize:11,fontWeight:900,animation:'livePulse 1.4s ease-in-out infinite'}}>●</span>
+          <span style={{color:'#fff',fontSize:13,fontWeight:900,letterSpacing:1}}>LIVE</span>
+          {liveMatchKeys.length > 1 && (
+            <span style={{background:'rgba(255,255,255,0.25)',borderRadius:10,padding:'1px 6px',fontSize:11,fontWeight:800,color:'#fff'}}>{liveMatchKeys.length}</span>
+          )}
+        </button>
+      )}
+
+      {/* Panel popup */}
+      {open && (
+        <div style={{
+          width: Math.min(340, window.innerWidth - 32),
+          maxHeight: Math.min(500, window.innerHeight - 160),
+          borderRadius:20, overflow:'hidden',
+          boxShadow:'0 8px 40px rgba(0,0,0,0.25)',
+          display:'flex', flexDirection:'column',
+          background:'#fff',
+          border:'1px solid rgba(239,68,68,0.12)',
+        }}>
+          {/* Header */}
+          <div style={{
+            background:'linear-gradient(135deg,#B91C1C,#DC2626)',
+            padding:'12px 16px', display:'flex', alignItems:'center', justifyContent:'space-between', flexShrink:0,
+          }}>
+            <span style={{color:'#fff',fontWeight:900,fontSize:14,letterSpacing:0.5,display:'flex',alignItems:'center',gap:7}}>
+              <span style={{animation:'livePulse 1.4s ease-in-out infinite'}}>●</span>
+              LIVE · {liveMatchKeys.length} {liveMatchKeys.length === 1 ? 'meci' : 'meciuri'}
+            </span>
+            <button onClick={() => setOpen(false)} style={{
+              background:'rgba(255,255,255,0.2)', border:'none', borderRadius:8,
+              color:'#fff', fontSize:18, cursor:'pointer', lineHeight:1, padding:'2px 8px',
+              WebkitTapHighlightColor:'transparent',
+            }}>×</button>
+          </div>
+
+          {/* Conținut */}
+          <div style={{overflowY:'auto',flex:1,WebkitOverflowScrolling:'touch'}}>
+            {!eventsLoaded && (
+              <div style={{textAlign:'center',padding:'28px 0',color:'#9CA3AF',fontSize:13,display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+                <span style={{width:16,height:16,borderRadius:'50%',border:`2px solid ${NAVY}22`,borderTopColor:NAVY,animation:'spin 0.9s linear infinite',display:'inline-block'}}/>
+                Loading...
+              </div>
+            )}
+            {eventsLoaded && liveMatchKeys.map(k => {
+              const live = liveScores[k];
+              const info = matchByKey[k];
+              const homeTeam = info?.home || '';
+              const awayTeam = info?.away || '';
+              const homeFlag = info?.homeFlag || FLAGS[homeTeam] || '🏳';
+              const awayFlag = info?.awayFlag || FLAGS[awayTeam] || '🏳';
+              const evs = matchEvents[k] || [];
+              const homeEvs = filterTeamEvents(evs, homeTeam);
+              const awayEvs = filterTeamEvents(evs, awayTeam);
+              const isLive = live?.status === 'LIVE';
+              return (
+                <div key={k} style={{padding:'12px 14px 14px',borderBottom:'1px solid #F3F4F6'}}>
+                  {/* Scor */}
+                  <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:6,marginBottom:10}}>
+                    <div style={{display:'flex',flexDirection:'column',alignItems:'center',flex:1,minWidth:0,gap:1}}>
+                      <span style={{fontSize:24,lineHeight:1}}>{homeFlag}</span>
+                      <span style={{fontSize:10,fontWeight:800,color:DARK}}>{TEAM_CODE[homeTeam]||homeTeam.slice(0,3).toUpperCase()}</span>
+                    </div>
+                    <div style={{textAlign:'center',flexShrink:0}}>
+                      <div style={{fontSize:26,fontWeight:900,color:DARK,lineHeight:1,letterSpacing:-1}}>{live?.home ?? '?'}–{live?.away ?? '?'}</div>
+                      <div style={{fontSize:9,fontWeight:800,letterSpacing:0.5,marginTop:2,
+                        color:isLive?'#EF4444':'#F59E0B',
+                        animation:isLive?'livePulse 1.4s ease-in-out infinite':'none'}}>
+                        {isLive ? `● ${live.min ? live.min+"' " : ''}LIVE` : live?.status||''}
+                      </div>
+                    </div>
+                    <div style={{display:'flex',flexDirection:'column',alignItems:'center',flex:1,minWidth:0,gap:1}}>
+                      <span style={{fontSize:24,lineHeight:1}}>{awayFlag}</span>
+                      <span style={{fontSize:10,fontWeight:800,color:DARK}}>{TEAM_CODE[awayTeam]||awayTeam.slice(0,3).toUpperCase()}</span>
+                    </div>
+                  </div>
+                  {/* Evenimente două coloane */}
+                  {(homeEvs.length > 0 || awayEvs.length > 0) && (
+                    <div style={{display:'grid',gridTemplateColumns:'1fr 2px 1fr',borderTop:'1px solid #F3F4F6',paddingTop:8,marginTop:2}}>
+                      {/* Home — aliniat dreapta */}
+                      <div style={{display:'flex',flexDirection:'column',gap:4,alignItems:'flex-end',paddingRight:8}}>
+                        {homeEvs.map((ev, i) => {
+                          const icon = evIcon(ev.type, ev.detail);
+                          return (
+                            <div key={i} style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:0}}>
+                              <div style={{display:'flex',alignItems:'center',gap:3,fontSize:10,color:'#1F2937'}}>
+                                {ev.type === 'subst' ? (
+                                  <span style={{textAlign:'right',lineHeight:1.3}}>
+                                    <span style={{color:'#16A34A',fontSize:9}}>▲</span> {ev.player_name}
+                                    {ev.assist_name && <><br/><span style={{color:'#9CA3AF',fontSize:8,marginLeft:8}}><span style={{color:'#DC2626',fontSize:9}}>▼</span> {ev.assist_name}</span></>}
+                                  </span>
+                                ) : (
+                                  <span style={{textAlign:'right',lineHeight:1.3}}>
+                                    {ev.player_name}
+                                    {ev.assist_name && <><br/><span style={{color:'#9CA3AF',fontSize:8}}>assist: {ev.assist_name}</span></>}
+                                  </span>
+                                )}
+                                {icon && <span style={{flexShrink:0,fontSize:12}}>{icon}</span>}
+                                <span style={{color:'#9CA3AF',fontSize:9,flexShrink:0,fontWeight:600}}>{ev.minute}'</span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      {/* Separator vertical */}
+                      <div style={{background:'#E5E7EB',margin:'2px 0'}}/>
+                      {/* Away — aliniat stânga */}
+                      <div style={{display:'flex',flexDirection:'column',gap:4,alignItems:'flex-start',paddingLeft:8}}>
+                        {awayEvs.map((ev, i) => {
+                          const icon = evIcon(ev.type, ev.detail);
+                          return (
+                            <div key={i} style={{display:'flex',flexDirection:'column',alignItems:'flex-start',gap:0}}>
+                              <div style={{display:'flex',alignItems:'center',gap:3,fontSize:10,color:'#1F2937'}}>
+                                <span style={{color:'#9CA3AF',fontSize:9,flexShrink:0,fontWeight:600}}>{ev.minute}'</span>
+                                {icon && <span style={{flexShrink:0,fontSize:12}}>{icon}</span>}
+                                {ev.type === 'subst' ? (
+                                  <span style={{lineHeight:1.3}}>
+                                    <span style={{color:'#16A34A',fontSize:9}}>▲</span> {ev.player_name}
+                                    {ev.assist_name && <><br/><span style={{color:'#9CA3AF',fontSize:8,marginLeft:8}}><span style={{color:'#DC2626',fontSize:9}}>▼</span> {ev.assist_name}</span></>}
+                                  </span>
+                                ) : (
+                                  <span style={{lineHeight:1.3}}>
+                                    {ev.player_name}
+                                    {ev.assist_name && <><br/><span style={{color:'#9CA3AF',fontSize:8}}>assist: {ev.assist_name}</span></>}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── HOME ────────────────────────────────────────────────────────────────────
 function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateBoard, onOpenGroups, onCentralStats, onCopyPredictions, onCopyExactScores, onCopySpecial, onAccount, onNotifications, onChampion, onBooster, onBonus, myBoards, predictionsComplete, instantPickState=null, instantPickDone, allGroupsDone=false, groupsDoneCount=null, koPickDone, koUnlocked, exactScores, activeBoardId, setActiveBoardId, tournamentStarted, simDay, simHour, simMin, createdBoards=[], showFirstAction, leaderboardData={}, boardsLoading=false, predictionsLoaded={}, championPick=null, runnerUpPick=null, topScorerPick=null, setChampionPick=()=>{}, setTopScorerPick=()=>{}, myScoreBreakdown=null, hasUnread=false }) {
   const lang = useLang();
@@ -11915,6 +12173,7 @@ function App() {
         </div>
         <Toast message={toast.message} emoji={toast.emoji} visible={toast.visible}/>
         {screen===SCREENS.HOME && activeBoardId && <ChatWidget boardId={activeBoardId} user={user} boardName={myBoards.find(b=>b.id===activeBoardId)?.name || (activeBoardId==='global'?'Global League':'')}/>}
+        {screen===SCREENS.HOME && <LiveWidget simDay={simDay} simHour={simHour} simMin={simMin}/>}
         {showFooter&&(
           <div style={{
             position:"fixed",
