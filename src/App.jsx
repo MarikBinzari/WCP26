@@ -5497,95 +5497,8 @@ function BonusPredictionScreen({ onBack, onChampion, championPick, runnerUpPick,
   );
 }
 
-function LiveMatchCard({ match, score, events, expanded, onToggleExpand }) {
-  const getIcon = (e) => {
-    if (e.type === 'Goal') return e.detail === 'Own Goal' ? '⚽🔙' : '⚽';
-    if (e.type === 'Card') return (e.detail?.toLowerCase().includes('red') || e.detail?.includes('Second')) ? '🟥' : '🟨';
-    if (e.type === 'subst' || e.type === 'Substitution') return '🔄';
-    return '•';
-  };
-  // Goals anulate de VAR la aceeași minută + jucător = filtrate
-  const varDisallowed = new Set(
-    events.filter(e => e.type === 'Var' && e.detail?.includes('Goal Disallowed'))
-      .map(e => `${e.minute}-${e.player_name}`)
-  );
-  const allEvents = [...events]
-    .filter(e => {
-      if (e.type === 'Var') return false;
-      if (e.type === 'Goal' && varDisallowed.has(`${e.minute}-${e.player_name}`)) return false;
-      return true;
-    })
-    .sort((a, b) => (a.minute||0) - (b.minute||0));
-  const statusLabel = score.status === 'HT' ? 'HT' : score.status === 'ET' ? 'ET' : `${score.min ?? ''}′`;
-  const isSubst = (e) => e.type === 'subst' || e.type === 'Substitution';
-  return (
-    <div style={{width:'100%',background:`linear-gradient(135deg, rgba(15,15,32,0.62) 0%, rgba(8,14,40,0.70) 100%), url(${stadiumBg}) center 30%/cover no-repeat`,borderRadius:0,padding:'13px 16px',boxSizing:'border-box'}}>
-      {/* Header */}
-      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
-        <span style={{fontSize:10,fontWeight:900,color:'rgba(255,255,255,0.45)',letterSpacing:1.2}}>LIVE</span>
-        <span style={{background:'#ef4444',borderRadius:999,padding:'2px 9px',fontSize:10,fontWeight:900,color:'#fff',letterSpacing:0.5}}>{statusLabel}</span>
-      </div>
-      {/* Score row */}
-      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8,marginBottom:10}}>
-        <div style={{flex:1,textAlign:'center'}}>
-          <div style={{fontSize:26,lineHeight:1}}>{match.homeFlag}</div>
-          <div style={{fontSize:10,fontWeight:700,color:'rgba(255,255,255,0.8)',marginTop:3,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{match.home}</div>
-        </div>
-        <div style={{background:'rgba(255,255,255,0.13)',borderRadius:12,padding:'6px 14px',minWidth:68,textAlign:'center',flexShrink:0}}>
-          <div style={{fontSize:22,fontWeight:900,color:'#fff',lineHeight:1}}>{score.home??0} - {score.away??0}</div>
-        </div>
-        <div style={{flex:1,textAlign:'center'}}>
-          <div style={{fontSize:26,lineHeight:1}}>{match.awayFlag}</div>
-          <div style={{fontSize:10,fontWeight:700,color:'rgba(255,255,255,0.8)',marginTop:3,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{match.away}</div>
-        </div>
-      </div>
-      {/* Expand button */}
-      {allEvents.length > 0 && (
-        <button onClick={onToggleExpand} style={{width:'100%',background:'none',border:'none',borderTop:'1px solid rgba(255,255,255,0.10)',paddingTop:6,marginTop:8,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:4,WebkitTapHighlightColor:'transparent'}}>
-          <span style={{fontSize:10,fontWeight:700,color:'rgba(255,255,255,0.45)',letterSpacing:0.5}}>{expanded ? 'ASCUNDE' : `DETALII (${allEvents.length})`}</span>
-          <span style={{fontSize:10,color:'rgba(255,255,255,0.35)',transform:expanded?'rotate(180deg)':'none',transition:'transform 0.2s'}}> ▼</span>
-        </button>
-      )}
-      {/* Events two-column */}
-      {expanded && allEvents.length > 0 && (
-        <div style={{paddingTop:6,display:'flex',flexDirection:'column',gap:3}}>
-          {allEvents.map((e, i) => {
-            const isHome = e.team_name === match.home;
-            const icon = getIcon(e);
-            const sub = isSubst(e);
-            const minTxt = `${e.minute}'`;
-            const nameStyle = {fontSize:11,fontWeight:650,color:'rgba(255,255,255,0.88)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'};
-            const subStyle = {fontSize:10,color:'rgba(255,255,255,0.45)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'};
-            const minStyle = {fontSize:9,color:'rgba(255,255,255,0.4)',flexShrink:0};
-            return (
-              <div key={i} style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:4}}>
-                {/* Home side */}
-                <div style={{display:'flex',alignItems:'center',gap:3,minWidth:0,visibility:isHome?'visible':'hidden'}}>
-                  <span style={{fontSize:12,flexShrink:0}}>{icon}</span>
-                  <span style={minStyle}>{minTxt}</span>
-                  <span style={{...nameStyle,flexShrink:1}}>
-                    {e.player_name}{sub && e.assist_name ? <span style={{color:'rgba(255,255,255,0.4)'}}> / {e.assist_name}</span> : ''}
-                  </span>
-                </div>
-                {/* Away side */}
-                <div style={{display:'flex',alignItems:'center',gap:3,justifyContent:'flex-end',minWidth:0,visibility:isHome?'hidden':'visible'}}>
-                  <span style={{...nameStyle,flexShrink:1,textAlign:'right'}}>
-                    {e.player_name}{sub && e.assist_name ? <span style={{color:'rgba(255,255,255,0.4)'}}> / {e.assist_name}</span> : ''}
-                  </span>
-                  <span style={minStyle}>{minTxt}</span>
-                  <span style={{fontSize:12,flexShrink:0}}>{icon}</span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
 // ── HOME ────────────────────────────────────────────────────────────────────
-function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateBoard, onOpenGroups, onCentralStats, onCopyPredictions, onCopyExactScores, onCopySpecial, onAccount, onNotifications, onChampion, onBooster, onBonus, myBoards, predictionsComplete, instantPickState=null, instantPickDone, allGroupsDone=false, groupsDoneCount=null, koPickDone, koUnlocked, exactScores, activeBoardId, setActiveBoardId, tournamentStarted, simDay, simHour, simMin, createdBoards=[], showFirstAction, leaderboardData={}, boardsLoading=false, predictionsLoaded={}, championPick=null, runnerUpPick=null, topScorerPick=null, setChampionPick=()=>{}, setTopScorerPick=()=>{}, myScoreBreakdown=null, hasUnread=false, isVisible=true }) {
+function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateBoard, onOpenGroups, onCentralStats, onCopyPredictions, onCopyExactScores, onCopySpecial, onAccount, onNotifications, onChampion, onBooster, onBonus, myBoards, predictionsComplete, instantPickState=null, instantPickDone, allGroupsDone=false, groupsDoneCount=null, koPickDone, koUnlocked, exactScores, activeBoardId, setActiveBoardId, tournamentStarted, simDay, simHour, simMin, createdBoards=[], showFirstAction, leaderboardData={}, boardsLoading=false, predictionsLoaded={}, championPick=null, runnerUpPick=null, topScorerPick=null, setChampionPick=()=>{}, setTopScorerPick=()=>{}, myScoreBreakdown=null, hasUnread=false }) {
   const lang = useLang();
   const user = useUser();
   const displayName = useDisplayName();
@@ -5595,54 +5508,6 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
   const [copyWeekStart, setCopyWeekStart] = useState(null);
   const [copyDone, setCopyDone] = useState({});
   const [boardSwitching, setBoardSwitching] = useState(false);
-  // Live slider
-  const liveScoresHome = useLiveScores(simDay, simHour, simMin);
-  const [bonusSlide, setBonusSlide] = useState(0);
-  const [matchEventsMap, setMatchEventsMap] = useState({});
-  const bonusTouchRef = useRef(null);
-  const autoAdvRef = useRef(null);
-  const sliderInnerRef = useRef(null);
-  const [sliderHeight, setSliderHeight] = useState('auto');
-  const [expandedMatches, setExpandedMatches] = useState({});
-  const liveMatches = (() => {
-    const res = [];
-    CALENDAR_EVENTS.forEach(ev => {
-      ev.matches.forEach((m, idx) => {
-        const key = m.matchKey || `${ev.day}-${idx}`;
-        const s = liveScoresHome[key];
-        if (s && ['LIVE','HT','ET','PEN'].includes(s.status)) res.push({ key, match: m, score: s });
-      });
-    });
-    return res;
-  })();
-  const totalBonusSlides = 1 + liveMatches.length;
-  useEffect(() => {
-    liveMatches.forEach(({ key }) => {
-      loadMatchEvents(key).then(evs => setMatchEventsMap(prev => ({ ...prev, [key]: evs })));
-    });
-  }, [liveMatches.map(m => m.key).join(',')]);
-  useEffect(() => {
-    clearInterval(autoAdvRef.current);
-    if (totalBonusSlides <= 1 || !isVisible) { setBonusSlide(0); return; }
-    autoAdvRef.current = setInterval(() => setBonusSlide(p => (p + 1) % totalBonusSlides), 5000);
-    return () => clearInterval(autoAdvRef.current);
-  }, [totalBonusSlides, isVisible]);
-  useEffect(() => {
-    setExpandedMatches({});
-  }, [bonusSlide]);
-  useLayoutEffect(() => {
-    if (!sliderInnerRef.current) return;
-    const slide = sliderInnerRef.current.children[bonusSlide];
-    if (slide) setSliderHeight(slide.offsetHeight);
-  }, [bonusSlide, totalBonusSlides, matchEventsMap, expandedMatches]);
-  const handleBonusTouchStart = (e) => { bonusTouchRef.current = e.touches[0].clientX; clearInterval(autoAdvRef.current); };
-  const handleBonusTouchEnd = (e) => {
-    if (bonusTouchRef.current === null) return;
-    const dx = e.changedTouches[0].clientX - bonusTouchRef.current;
-    bonusTouchRef.current = null;
-    if (Math.abs(dx) < 30) return;
-    setBonusSlide(p => dx < 0 ? Math.min(p + 1, totalBonusSlides - 1) : Math.max(p - 1, 0));
-  };
   const activeId = activeBoardId;
   const setActiveId = setActiveBoardId;
   const bonusPickLocked = isBonusPickLocked(simDay, simHour, simMin);
@@ -5862,7 +5727,6 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
       </div>
       <div ref={scrollContainerRef} style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",padding:"10px 6px 110px",opacity:boardSwitching?0.72:1,transform:`translateY(${boardSwitching?6:0}px)`,transition:"opacity 0.22s ease, transform 0.22s ease"}}>
         <style>{`@keyframes bonusBadgePulse{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(234,179,8,0.45)}55%{transform:scale(1.1);box-shadow:0 0 0 8px rgba(234,179,8,0)}}`}</style>
-        {liveMatches.length === 0 ? (
         <button onClick={onBonus} style={{width:"100%",display:"flex",alignItems:"center",gap:14,background:`linear-gradient(135deg, rgba(15,15,32,0.58) 0%, rgba(8,14,40,0.65) 100%), url(${stadiumBg}) center 30%/cover no-repeat`,borderRadius:20,padding:"15px 16px",border:"none",boxShadow:"0 4px 16px rgba(0,0,0,0.06)",cursor:"pointer",marginBottom:14,WebkitTapHighlightColor:"transparent",textAlign:"left"}}>
           <div style={{width:50,height:50,borderRadius:"50%",background:"rgba(234,179,8,0.14)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,border:"2px solid rgba(234,179,8,0.3)"}}>
             <span style={{fontSize:26,lineHeight:1}}>⚡</span>
@@ -5885,51 +5749,6 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
           </div>
           <span style={{fontSize:18,color:"rgba(255,255,255,0.35)",fontWeight:700,lineHeight:1,marginLeft:4}}>›</span>
         </button>
-        ) : (
-        <div style={{marginBottom:14}}>
-          <div style={{overflow:'hidden',borderRadius:20,touchAction:'pan-y',boxShadow:"0 4px 16px rgba(0,0,0,0.06)",WebkitMaskImage:'-webkit-radial-gradient(white,black)',height:sliderHeight==='auto'?undefined:sliderHeight}}
-            onTouchStart={handleBonusTouchStart} onTouchEnd={handleBonusTouchEnd}>
-            <div ref={sliderInnerRef} style={{display:'flex',alignItems:'flex-start',transition:'transform 0.35s ease',transform:`translateX(${-bonusSlide*100}%)`}}>
-              {/* Slide 0: Bonus */}
-              <div style={{minWidth:'100%',flexShrink:0}}>
-                <button onClick={onBonus} style={{width:"100%",display:"flex",alignItems:"center",gap:14,background:`linear-gradient(135deg, rgba(15,15,32,0.58) 0%, rgba(8,14,40,0.65) 100%), url(${stadiumBg}) center 30%/cover no-repeat`,borderRadius:0,padding:"15px 16px",border:"none",cursor:"pointer",WebkitTapHighlightColor:"transparent",textAlign:"left",boxSizing:'border-box'}}>
-                  <div style={{width:50,height:50,borderRadius:"50%",background:"rgba(234,179,8,0.14)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,border:"2px solid rgba(234,179,8,0.3)"}}>
-                    <span style={{fontSize:26,lineHeight:1}}>⚡</span>
-                  </div>
-                  <div style={{flex:1,minWidth:0}}>
-                    <div style={{display:"flex",alignItems:"center",gap:7,flexWrap:"wrap"}}>
-                      <div style={{fontSize:15,fontWeight:900,color:"#FFD700",letterSpacing:0.3}}>{bonusPickLocked ? T[lang].bonusClosedTitle : T[lang].bonusPrediction}</div>
-                      <div style={{background:"rgba(255,255,255,0.14)",border:"1px solid rgba(255,215,0,0.36)",borderRadius:999,padding:"3px 7px",fontSize:9,fontWeight:900,color:"#FFD700",letterSpacing:0.4,textTransform:"uppercase",lineHeight:1}}>
-                        {bonusPickLocked ? T[lang].locked : T[lang].bonusDueJun14}
-                      </div>
-                    </div>
-                    <div style={{fontSize:12,color:"rgba(255,255,255,0.76)",marginTop:5,lineHeight:1.4,fontWeight:750}}>
-                      {bonusPickLocked ? (bonusPickCount ? T[lang].bonusClosedSub : T[lang].bonusClosedEmptySub) : `${bonusPickCount}/3 ${T[lang].selectedLabel}`}
-                    </div>
-                  </div>
-                  <div style={{background:"#FFD700",borderRadius:8,padding:"4px 8px",fontSize:10,fontWeight:900,color:"#1a1a2e",letterSpacing:0.5,flexShrink:0,animation:bonusPickLocked?"none":"bonusBadgePulse 1.8s ease-in-out infinite"}}>
-                    {bonusPickLocked ? T[lang].locked : "BONUS"}
-                  </div>
-                  <span style={{fontSize:18,color:"rgba(255,255,255,0.35)",fontWeight:700,lineHeight:1,marginLeft:4}}>›</span>
-                </button>
-              </div>
-              {/* Live match slides */}
-              {liveMatches.map(({ key, match, score }) => (
-                <div key={key} style={{minWidth:'100%',flexShrink:0}}>
-                  <LiveMatchCard match={match} score={score} events={matchEventsMap[key]||[]} expanded={!!expandedMatches[key]} onToggleExpand={()=>setExpandedMatches(p=>({...p,[key]:!p[key]}))} />
-                </div>
-              ))}
-            </div>
-          </div>
-          {/* Dots */}
-          <div style={{display:'flex',justifyContent:'center',gap:6,marginTop:8}}>
-            {Array.from({length:totalBonusSlides}).map((_,i)=>(
-              <div key={i} onClick={()=>{clearInterval(autoAdvRef.current);setBonusSlide(i);}}
-                style={{width:i===bonusSlide?18:6,height:6,borderRadius:3,background:i===bonusSlide?NAVY:'rgba(10,46,138,0.18)',cursor:'pointer',transition:'all 0.25s',flexShrink:0}}/>
-            ))}
-          </div>
-        </div>
-        )}
         <NextActionCard card={naCard} pct={naPct} nextTask={nextTask} />
         <div style={{marginBottom:14}}>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
@@ -11788,8 +11607,7 @@ function App() {
               setChampionPick={setChampionPick}
               setTopScorerPick={setTopScorerPick}
               myScoreBreakdown={myScoreBreakdowns[activeBoardId]}
-              hasUnread={hasUnread}
-              isVisible={screen===SCREENS.HOME}/>
+              hasUnread={hasUnread}/>
           </div>}
           {screen===SCREENS.CENTRAL_STATS&&<CentralStatsScreen
             onBack={()=>setScreen(SCREENS.HOME)}
