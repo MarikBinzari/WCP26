@@ -11393,7 +11393,8 @@ function App() {
       const reg = await navigator.serviceWorker.ready;
       const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY;
       const existing = await reg.pushManager.getSubscription();
-      const sub = existing ?? await reg.pushManager.subscribe({
+      if (existing) await existing.unsubscribe();
+      const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: Uint8Array.from(
           atob(VAPID_PUBLIC_KEY.replace(/-/g, '+').replace(/_/g, '/')),
