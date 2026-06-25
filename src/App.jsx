@@ -5519,7 +5519,7 @@ function LiveMatchCard({ match, score, events, expanded, onToggleExpand }) {
   const statusLabel = score.status === 'HT' ? 'HT' : score.status === 'ET' ? 'ET' : `${score.min ?? ''}′`;
   const isSubst = (e) => e.type === 'subst' || e.type === 'Substitution';
   return (
-    <div style={{width:'100%',background:`linear-gradient(135deg, rgba(15,15,32,0.62) 0%, rgba(8,14,40,0.70) 100%), url(${stadiumBg}) center 30%/cover no-repeat`,borderRadius:20,padding:'13px 16px',boxSizing:'border-box'}}>
+    <div style={{width:'100%',background:`linear-gradient(135deg, rgba(15,15,32,0.62) 0%, rgba(8,14,40,0.70) 100%), url(${stadiumBg}) center 30%/cover no-repeat`,borderRadius:0,padding:'13px 16px',boxSizing:'border-box'}}>
       {/* Header */}
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
         <span style={{fontSize:10,fontWeight:900,color:'rgba(255,255,255,0.45)',letterSpacing:1.2}}>LIVE</span>
@@ -5630,7 +5630,7 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
   useEffect(() => {
     setExpandedMatches({});
   }, [bonusSlide]);
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!sliderInnerRef.current) return;
     const slide = sliderInnerRef.current.children[bonusSlide];
     if (slide) setSliderHeight(slide.offsetHeight);
@@ -5887,12 +5887,12 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
         </button>
         ) : (
         <div style={{marginBottom:14}}>
-          <div style={{overflow:'hidden',borderRadius:20,touchAction:'pan-y',boxShadow:"0 4px 16px rgba(0,0,0,0.06)",height:sliderHeight==='auto'?undefined:sliderHeight,transition:'height 0.35s ease'}}
+          <div style={{overflow:'hidden',borderRadius:20,touchAction:'pan-y',boxShadow:"0 4px 16px rgba(0,0,0,0.06)",WebkitMaskImage:'-webkit-radial-gradient(white,black)',height:sliderHeight==='auto'?undefined:sliderHeight}}
             onTouchStart={handleBonusTouchStart} onTouchEnd={handleBonusTouchEnd}>
             <div ref={sliderInnerRef} style={{display:'flex',alignItems:'flex-start',transition:'transform 0.35s ease',transform:`translateX(${-bonusSlide*100}%)`}}>
               {/* Slide 0: Bonus */}
               <div style={{minWidth:'100%',flexShrink:0}}>
-                <button onClick={onBonus} style={{width:"100%",display:"flex",alignItems:"center",gap:14,background:`linear-gradient(135deg, rgba(15,15,32,0.58) 0%, rgba(8,14,40,0.65) 100%), url(${stadiumBg}) center 30%/cover no-repeat`,borderRadius:20,padding:"15px 16px",border:"none",cursor:"pointer",WebkitTapHighlightColor:"transparent",textAlign:"left",boxSizing:'border-box'}}>
+                <button onClick={onBonus} style={{width:"100%",display:"flex",alignItems:"center",gap:14,background:`linear-gradient(135deg, rgba(15,15,32,0.58) 0%, rgba(8,14,40,0.65) 100%), url(${stadiumBg}) center 30%/cover no-repeat`,borderRadius:0,padding:"15px 16px",border:"none",cursor:"pointer",WebkitTapHighlightColor:"transparent",textAlign:"left",boxSizing:'border-box'}}>
                   <div style={{width:50,height:50,borderRadius:"50%",background:"rgba(234,179,8,0.14)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,border:"2px solid rgba(234,179,8,0.3)"}}>
                     <span style={{fontSize:26,lineHeight:1}}>⚡</span>
                   </div>
