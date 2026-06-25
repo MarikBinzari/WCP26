@@ -10360,7 +10360,7 @@ function StatsScreen() {
   );
 }
 
-function AccountScreen({ setLang, onBoards, onSignOut, onShowGuide, onPremium, onNotifications, onEnablePush, user, isActive=true, onAvatarUpdate }) {
+function AccountScreen({ setLang, onBoards, onSignOut, onShowGuide, onPremium, onNotifications, onEnablePush, pushSubActive, user, isActive=true, onAvatarUpdate }) {
   const lang = useLang();
   const displayName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "—";
   const localeMap = { en:"en-US", ro:"ro-RO", fr:"fr-FR" };
@@ -10465,8 +10465,9 @@ function AccountScreen({ setLang, onBoards, onSignOut, onShowGuide, onPremium, o
         <div style={{padding:"12px 20px 100px"}}>
           {(()=>{
             const pushPerm = typeof Notification !== 'undefined' ? Notification.permission : 'default';
-            const pushSub = pushPerm === 'granted' ? T[lang].pushNotifActive : pushPerm === 'denied' ? T[lang].pushNotifDenied : T[lang].pushNotifInactive;
-            return [{icon:"🏆",label:T[lang].myBoards,sub:T[lang].activeBoards,action:onBoards},{icon:"📖",label:T[lang].appGuide,sub:T[lang].howItWorks,action:onShowGuide},{icon:"🔔",label:T[lang].notifications,sub:T[lang].matchAlertsOn,action:onNotifications},{icon:"🔕",label:T[lang].pushNotifLabel,sub:pushSub,action:onEnablePush},{icon:"🌍",label:T[lang].language,sub:LANGS.find(l=>l.code===lang)?.name||"English",isLang:true},{icon:"📲",label:T[lang].shareApp,sub:T[lang].shareAppSub,action:()=>{ const url=window.location.origin; window.open("https://wa.me/?text="+encodeURIComponent(T[lang].shareAppMsg+url),"_blank"); }},{icon:"⭐",label:T[lang].upgradePremium,sub:T[lang].removeAds,highlight:true,action:onPremium},{icon:"🚪",label:T[lang].signOut,sub:"",action:handleSignOut}];
+            const pushSub = pushPerm === 'denied' ? T[lang].pushNotifDenied : pushSubActive ? T[lang].pushNotifActive : T[lang].pushNotifInactive;
+            const pushIcon = pushSubActive ? '🔔' : '🔕';
+            return [{icon:"🏆",label:T[lang].myBoards,sub:T[lang].activeBoards,action:onBoards},{icon:"📖",label:T[lang].appGuide,sub:T[lang].howItWorks,action:onShowGuide},{icon:"🔔",label:T[lang].notifications,sub:T[lang].matchAlertsOn,action:onNotifications},{icon:pushIcon,label:T[lang].pushNotifLabel,sub:pushSub,action:onEnablePush},{icon:"🌍",label:T[lang].language,sub:LANGS.find(l=>l.code===lang)?.name||"English",isLang:true},{icon:"📲",label:T[lang].shareApp,sub:T[lang].shareAppSub,action:()=>{ const url=window.location.origin; window.open("https://wa.me/?text="+encodeURIComponent(T[lang].shareAppMsg+url),"_blank"); }},{icon:"⭐",label:T[lang].upgradePremium,sub:T[lang].removeAds,highlight:true,action:onPremium},{icon:"🚪",label:T[lang].signOut,sub:"",action:handleSignOut}];
           })().map(item=>(
             <div key={item.label} onClick={item.isLang||item.disabled?undefined:item.action||undefined} style={{display:"flex",alignItems:"center",gap:14,...UI.card,background:item.highlight?"#E8F0FF":"#fff",border:item.highlight?`1.5px solid ${NAVY}`:UI.card.border,padding:"13px 16px",marginBottom:10,cursor:item.isLang||item.disabled||!item.action?"default":"pointer",opacity:item.disabled?0.5:1}}>
               <span style={{fontSize:20}}>{item.icon}</span>
@@ -11594,6 +11595,7 @@ function App() {
   const notificationsBackRef = useRef(SCREENS.HOME);
   const [screen, setScreen] = useState(SCREENS.SPLASH);
   const [showPushPrompt, setShowPushPrompt] = useState(false);
+  const [pushSubActive, setPushSubActive] = useState(false);
   const [systemNotifs, setSystemNotifs] = useState([]);
   const [notifReadIds, setNotifReadIds] = useState([]);
   const hasUnread = systemNotifs.some(n => !notifReadIds.includes(n.id));
@@ -11744,6 +11746,14 @@ function App() {
     const t = setTimeout(() => setShowPushPrompt(true), 1500);
     return () => clearTimeout(t);
   }, [screen, user]);
+
+  useEffect(() => {
+    if (screen !== SCREENS.ACCOUNT) return;
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+    navigator.serviceWorker.ready
+      .then(reg => reg.pushManager.getSubscription().then(sub => setPushSubActive(!!sub)))
+      .catch(() => {});
+  }, [screen]);
 
   const handlePushPromptYes = async () => {
     setShowPushPrompt(false);
@@ -12219,17 +12229,19 @@ function App() {
               if(existing){
                 await existing.unsubscribe();
                 await supabase.from('push_subscriptions').delete().eq('user_id',user.id);
+                setPushSubActive(false);
                 alert('🔕 Notificările push au fost dezactivate.');
               } else {
                 const result = await setupPushNotifications(user.id);
                 if(result===true){
                   await supabase.auth.updateUser({data:{push_asked:true}});
+                  setPushSubActive(true);
                   alert('✅ Notificările push au fost activate!');
                 } else {
                   alert('❌ Eroare: '+(result||'Permisiune refuzată'));
                 }
               }
-            }:undefined} user={user} isActive={screen===SCREENS.ACCOUNT}/>
+            }:undefined} pushSubActive={pushSubActive} user={user} isActive={screen===SCREENS.ACCOUNT}/>
           </div>}
         </div>
         <Toast message={toast.message} emoji={toast.emoji} visible={toast.visible}/>
