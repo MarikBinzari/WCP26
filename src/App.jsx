@@ -264,8 +264,6 @@ const T = {
     language:"Language", upgradePremium:"Upgrade to Premium", removeAds:"Remove ads",
     shareApp:"Share with Friends", shareAppSub:"Invite friends via WhatsApp",
     shareAppMsg:"Hey! Join me on WCP26 - the best World Cup 2026 prediction game! 🏆⚽ Play here: ",
-    pushNotifLabel:"Push Notifications", pushNotifActive:"Active – notifications enabled", pushNotifInactive:"Inactive – tap to enable", pushNotifDenied:"Blocked in browser settings",
-    pushPromptTitle:"Enable push notifications?", pushPromptBody:"Receive live alerts and news directly on your phone, even when the screen is off.", pushPromptYes:"Yes, enable", pushPromptNo:"Not now",
     signOut:"Sign Out", memberSince:"Member since March 2026",
     todaysMatches:"Today's Matches", tapToPredict:"Tap to predict the winner",
     allDone:"All done!", backToHome:"Back to Home", draw:"Draw",
@@ -464,8 +462,6 @@ const T = {
     language:"Limbă", upgradePremium:"Upgrade la Premium", removeAds:"Elimină reclamele",
     shareApp:"Trimite Prietenilor", shareAppSub:"Invită prieteni pe WhatsApp",
     shareAppMsg:"Salut! Alătură-te mie pe WCP26 - cel mai bun joc de predicții pentru Cupa Mondială 2026! 🏆⚽ Joacă aici: ",
-    pushNotifLabel:"Notificări Push", pushNotifActive:"Activ – notificările sunt activate", pushNotifInactive:"Inactiv – apasă pentru a activa", pushNotifDenied:"Blocat în setările browserului",
-    pushPromptTitle:"Activezi notificările push?", pushPromptBody:"Primești alerte live și noutăți direct pe telefon, chiar și cu ecranul blocat.", pushPromptYes:"Da, activează", pushPromptNo:"Nu acum",
     signOut:"Deconectare", memberSince:"Membru din Martie 2026",
     todaysMatches:"Meciurile de Azi", tapToPredict:"Apasă pentru a prezice câștigătorul",
     allDone:"Gata!", backToHome:"Înapoi Acasă", draw:"Egal",
@@ -664,8 +660,6 @@ const T = {
     language:"Langue", upgradePremium:"Passer à Premium", removeAds:"Supprimer les pubs",
     shareApp:"Partager avec des Amis", shareAppSub:"Inviter des amis via WhatsApp",
     shareAppMsg:"Hey ! Rejoins-moi sur WCP26 - le meilleur jeu de pronostics pour la Coupe du Monde 2026 ! 🏆⚽ Joue ici : ",
-    pushNotifLabel:"Notifications Push", pushNotifActive:"Actif – notifications activées", pushNotifInactive:"Inactif – appuyez pour activer", pushNotifDenied:"Bloqué dans les paramètres du navigateur",
-    pushPromptTitle:"Activer les notifications push ?", pushPromptBody:"Recevez des alertes live et des actualités directement sur votre téléphone, même écran éteint.", pushPromptYes:"Oui, activer", pushPromptNo:"Pas maintenant",
     signOut:"Déconnexion", memberSince:"Membre depuis Mars 2026",
     todaysMatches:"Matchs du Jour", tapToPredict:"Appuyez pour prédire le vainqueur",
     allDone:"Terminé !", backToHome:"Retour à l'Accueil", draw:"Nul",
@@ -5503,264 +5497,6 @@ function BonusPredictionScreen({ onBack, onChampion, championPick, runnerUpPick,
   );
 }
 
-// ── LIVE WIDGET ──────────────────────────────────────────────────────────────
-function LiveWidget({ simDay, simHour, simMin }) {
-  const [open, setOpen] = React.useState(false);
-  const [matchEvents, setMatchEvents] = useState({});
-  const [eventsLoaded, setEventsLoaded] = useState(false);
-  const containerRef = useRef(null);
-
-  const liveScores = useLiveScores(simDay, simHour, simMin);
-
-  const matchByKey = {};
-  CALENDAR_EVENTS.forEach(e => {
-    (e.matches || []).forEach((m, i) => {
-      const k = getMatchKey(m, e.day, i);
-      matchByKey[k] = { ...m, day: e.day };
-    });
-  });
-
-  const liveMatchKeys = (() => {
-    const keys = Object.entries(liveScores)
-      .filter(([, v]) => ['LIVE','HT','ET','PEN'].includes(v?.status))
-      .map(([k]) => k)
-      .sort((a, b) => {
-        const da = liveScores[a]?.utcDate, db = liveScores[b]?.utcDate;
-        if (da && db) return da < db ? -1 : da > db ? 1 : 0;
-        return a.localeCompare(b);
-      });
-    // Deduplicare: dacă două chei au aceleași echipe, păstrează prima
-    const seen = new Set();
-    return keys.filter(k => {
-      const info = matchByKey[k];
-      const pair = info ? `${info.home}|${info.away}` : k;
-      if (seen.has(pair)) return false;
-      seen.add(pair);
-      return true;
-    });
-  })();
-
-  const hasLive = liveMatchKeys.length > 0;
-
-  // Închide la click în afara panelului
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e) => {
-      if (containerRef.current && !containerRef.current.contains(e.target)) setOpen(false);
-    };
-    document.addEventListener('mousedown', handler);
-    document.addEventListener('touchstart', handler, { passive: true });
-    return () => {
-      document.removeEventListener('mousedown', handler);
-      document.removeEventListener('touchstart', handler);
-    };
-  }, [open]);
-
-  // Când nu mai sunt meciuri live, închide panelul
-  useEffect(() => {
-    if (!hasLive) setOpen(false);
-  }, [hasLive]);
-
-  const loadEventsForAll = useCallback(async () => {
-    if (liveMatchKeys.length === 0) { setEventsLoaded(true); return; }
-    const results = await Promise.all(liveMatchKeys.map(k => loadMatchEvents(k).then(evs => ({ k, evs }))));
-    const evMap = {};
-    results.forEach(({ k, evs }) => { evMap[k] = evs; });
-    setMatchEvents(prev => ({ ...prev, ...evMap }));
-    setEventsLoaded(true);
-  }, [liveMatchKeys.join(',')]);
-
-  useEffect(() => {
-    if (!open) return;
-    setEventsLoaded(false);
-    loadEventsForAll();
-    const iv = setInterval(loadEventsForAll, 30_000);
-    return () => clearInterval(iv);
-  }, [open, loadEventsForAll]);
-
-  const filterTeamEvents = (events, teamName) => {
-    const varSet = new Set(
-      events.filter(e => e.type === 'Var' && (e.detail||'').toLowerCase().includes('goal disallowed'))
-            .map(e => `${e.minute}-${e.player_name}`)
-    );
-    const seen = new Set();
-    return events.filter(e => {
-      if (e.team_name !== teamName) return false;
-      if (e.type === 'Goal' && varSet.has(`${e.minute}-${e.player_name}`)) return false;
-      // Deduplicare minut exact: același minut + tip + primele caractere din detail
-      const keyMinute = `${e.minute}-${e.type}-${(e.detail||'').slice(0,8)}`;
-      if (seen.has(keyMinute)) return false;
-      // Deduplicare jucător: același jucător nu poate primi același card de două ori
-      const keyPlayer = e.type === 'Card' ? `card-${e.player_name}-${(e.detail||'').slice(0,8)}` : null;
-      if (keyPlayer && seen.has(keyPlayer)) return false;
-      seen.add(keyMinute);
-      if (keyPlayer) seen.add(keyPlayer);
-      return true;
-    });
-  };
-
-  const evIcon = (type, detail) => {
-    if (type === 'Goal') return '⚽';
-    const d = (detail||'').toLowerCase();
-    if (type === 'Card') return d.includes('red') ? '🟥' : '🟨';
-    return null;
-  };
-
-  if (!hasLive) return null;
-
-  return (
-    <div ref={containerRef} style={{position:'fixed',bottom:'calc(76px + env(safe-area-inset-bottom, 0px))',left:16,zIndex:1100}}>
-      {/* Buton flotant */}
-      {!open && (
-        <button onClick={() => setOpen(true)} style={{
-          height:40, borderRadius:20, border:'none', cursor:'pointer',
-          background:'linear-gradient(135deg,#DC2626,#EF4444)',
-          boxShadow:'0 4px 18px rgba(239,68,68,0.5)',
-          display:'flex', alignItems:'center', gap:6, padding:'0 16px',
-          WebkitTapHighlightColor:'transparent',
-        }}>
-          <span style={{color:'#fff',fontSize:11,fontWeight:900,animation:'livePulse 1.4s ease-in-out infinite'}}>●</span>
-          <span style={{color:'#fff',fontSize:13,fontWeight:900,letterSpacing:1}}>LIVE</span>
-          {liveMatchKeys.length > 1 && (
-            <span style={{background:'rgba(255,255,255,0.25)',borderRadius:10,padding:'1px 6px',fontSize:11,fontWeight:800,color:'#fff'}}>{liveMatchKeys.length}</span>
-          )}
-        </button>
-      )}
-
-      {/* Panel popup */}
-      {open && (
-        <div style={{
-          width: Math.min(340, window.innerWidth - 32),
-          maxHeight: Math.min(500, window.innerHeight - 160),
-          borderRadius:20, overflow:'hidden',
-          boxShadow:'0 8px 40px rgba(0,0,0,0.25)',
-          display:'flex', flexDirection:'column',
-          background:'#fff',
-          border:'1px solid rgba(239,68,68,0.12)',
-        }}>
-          {/* Header */}
-          <div style={{
-            background:'linear-gradient(135deg,#B91C1C,#DC2626)',
-            padding:'12px 16px', display:'flex', alignItems:'center', justifyContent:'space-between', flexShrink:0,
-          }}>
-            <span style={{color:'#fff',fontWeight:900,fontSize:14,letterSpacing:0.5,display:'flex',alignItems:'center',gap:7}}>
-              <span style={{animation:'livePulse 1.4s ease-in-out infinite'}}>●</span>
-              LIVE · {liveMatchKeys.length} {liveMatchKeys.length === 1 ? 'meci' : 'meciuri'}
-            </span>
-            <button onClick={() => setOpen(false)} style={{
-              background:'rgba(255,255,255,0.2)', border:'none', borderRadius:8,
-              color:'#fff', fontSize:18, cursor:'pointer', lineHeight:1, padding:'2px 8px',
-              WebkitTapHighlightColor:'transparent',
-            }}>×</button>
-          </div>
-
-          {/* Conținut */}
-          <div style={{overflowY:'auto',flex:1,WebkitOverflowScrolling:'touch'}}>
-            {!eventsLoaded && (
-              <div style={{textAlign:'center',padding:'28px 0',color:'#9CA3AF',fontSize:13,display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
-                <span style={{width:16,height:16,borderRadius:'50%',border:`2px solid ${NAVY}22`,borderTopColor:NAVY,animation:'spin 0.9s linear infinite',display:'inline-block'}}/>
-                Loading...
-              </div>
-            )}
-            {eventsLoaded && liveMatchKeys.map(k => {
-              const live = liveScores[k];
-              const info = matchByKey[k];
-              const homeTeam = info?.home || '';
-              const awayTeam = info?.away || '';
-              const homeFlag = info?.homeFlag || FLAGS[homeTeam] || '🏳';
-              const awayFlag = info?.awayFlag || FLAGS[awayTeam] || '🏳';
-              const evs = matchEvents[k] || [];
-              const homeEvs = filterTeamEvents(evs, homeTeam);
-              const awayEvs = filterTeamEvents(evs, awayTeam);
-              const isLive = live?.status === 'LIVE';
-              return (
-                <div key={k} style={{padding:'12px 14px 14px',borderBottom:'1px solid #F3F4F6'}}>
-                  {/* Scor */}
-                  <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:6,marginBottom:10}}>
-                    <div style={{display:'flex',flexDirection:'column',alignItems:'center',flex:1,minWidth:0,gap:1}}>
-                      <span style={{fontSize:24,lineHeight:1}}>{homeFlag}</span>
-                      <span style={{fontSize:10,fontWeight:800,color:DARK}}>{TEAM_CODE[homeTeam]||homeTeam.slice(0,3).toUpperCase()}</span>
-                    </div>
-                    <div style={{textAlign:'center',flexShrink:0}}>
-                      <div style={{fontSize:26,fontWeight:900,color:DARK,lineHeight:1,letterSpacing:-1}}>{live?.home ?? '?'}–{live?.away ?? '?'}</div>
-                      <div style={{fontSize:9,fontWeight:800,letterSpacing:0.5,marginTop:2,
-                        color:isLive?'#EF4444':'#F59E0B',
-                        animation:isLive?'livePulse 1.4s ease-in-out infinite':'none'}}>
-                        {isLive ? `● ${live.min ? live.min+"' " : ''}LIVE` : live?.status||''}
-                      </div>
-                    </div>
-                    <div style={{display:'flex',flexDirection:'column',alignItems:'center',flex:1,minWidth:0,gap:1}}>
-                      <span style={{fontSize:24,lineHeight:1}}>{awayFlag}</span>
-                      <span style={{fontSize:10,fontWeight:800,color:DARK}}>{TEAM_CODE[awayTeam]||awayTeam.slice(0,3).toUpperCase()}</span>
-                    </div>
-                  </div>
-                  {/* Evenimente două coloane */}
-                  {(homeEvs.length > 0 || awayEvs.length > 0) && (
-                    <div style={{display:'grid',gridTemplateColumns:'1fr 2px 1fr',borderTop:'1px solid #F3F4F6',paddingTop:8,marginTop:2}}>
-                      {/* Home — aliniat dreapta */}
-                      <div style={{display:'flex',flexDirection:'column',gap:4,alignItems:'flex-end',paddingRight:8}}>
-                        {homeEvs.map((ev, i) => {
-                          const icon = evIcon(ev.type, ev.detail);
-                          return (
-                            <div key={i} style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:0}}>
-                              <div style={{display:'flex',alignItems:'center',gap:3,fontSize:10,color:'#1F2937'}}>
-                                {ev.type === 'subst' ? (
-                                  <span style={{textAlign:'right',lineHeight:1.3}}>
-                                    <span style={{color:'#16A34A',fontSize:9}}>▲</span> {ev.player_name}
-                                    {ev.assist_name && <><br/><span style={{color:'#9CA3AF',fontSize:8,marginLeft:8}}><span style={{color:'#DC2626',fontSize:9}}>▼</span> {ev.assist_name}</span></>}
-                                  </span>
-                                ) : (
-                                  <span style={{textAlign:'right',lineHeight:1.3}}>
-                                    {ev.player_name}
-                                    {ev.assist_name && <><br/><span style={{color:'#9CA3AF',fontSize:8}}>assist: {ev.assist_name}</span></>}
-                                  </span>
-                                )}
-                                {icon && <span style={{flexShrink:0,fontSize:12}}>{icon}</span>}
-                                <span style={{color:'#9CA3AF',fontSize:9,flexShrink:0,fontWeight:600}}>{ev.minute}'</span>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                      {/* Separator vertical */}
-                      <div style={{background:'#E5E7EB',margin:'2px 0'}}/>
-                      {/* Away — aliniat stânga */}
-                      <div style={{display:'flex',flexDirection:'column',gap:4,alignItems:'flex-start',paddingLeft:8}}>
-                        {awayEvs.map((ev, i) => {
-                          const icon = evIcon(ev.type, ev.detail);
-                          return (
-                            <div key={i} style={{display:'flex',flexDirection:'column',alignItems:'flex-start',gap:0}}>
-                              <div style={{display:'flex',alignItems:'center',gap:3,fontSize:10,color:'#1F2937'}}>
-                                <span style={{color:'#9CA3AF',fontSize:9,flexShrink:0,fontWeight:600}}>{ev.minute}'</span>
-                                {icon && <span style={{flexShrink:0,fontSize:12}}>{icon}</span>}
-                                {ev.type === 'subst' ? (
-                                  <span style={{lineHeight:1.3}}>
-                                    <span style={{color:'#16A34A',fontSize:9}}>▲</span> {ev.player_name}
-                                    {ev.assist_name && <><br/><span style={{color:'#9CA3AF',fontSize:8,marginLeft:8}}><span style={{color:'#DC2626',fontSize:9}}>▼</span> {ev.assist_name}</span></>}
-                                  </span>
-                                ) : (
-                                  <span style={{lineHeight:1.3}}>
-                                    {ev.player_name}
-                                    {ev.assist_name && <><br/><span style={{color:'#9CA3AF',fontSize:8}}>assist: {ev.assist_name}</span></>}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
 // ── HOME ────────────────────────────────────────────────────────────────────
 function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateBoard, onOpenGroups, onCentralStats, onCopyPredictions, onCopyExactScores, onCopySpecial, onAccount, onNotifications, onChampion, onBooster, onBonus, myBoards, predictionsComplete, instantPickState=null, instantPickDone, allGroupsDone=false, groupsDoneCount=null, koPickDone, koUnlocked, exactScores, activeBoardId, setActiveBoardId, tournamentStarted, simDay, simHour, simMin, createdBoards=[], showFirstAction, leaderboardData={}, boardsLoading=false, predictionsLoaded={}, championPick=null, runnerUpPick=null, topScorerPick=null, setChampionPick=()=>{}, setTopScorerPick=()=>{}, myScoreBreakdown=null, hasUnread=false }) {
   const lang = useLang();
@@ -10360,7 +10096,7 @@ function StatsScreen() {
   );
 }
 
-function AccountScreen({ setLang, onBoards, onSignOut, onShowGuide, onPremium, onNotifications, onEnablePush, user, isActive=true, onAvatarUpdate }) {
+function AccountScreen({ setLang, onBoards, onSignOut, onShowGuide, onPremium, onNotifications, user, isActive=true, onAvatarUpdate }) {
   const lang = useLang();
   const displayName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "—";
   const localeMap = { en:"en-US", ro:"ro-RO", fr:"fr-FR" };
@@ -10463,13 +10199,8 @@ function AccountScreen({ setLang, onBoards, onSignOut, onShowGuide, onPremium, o
       </div>
       <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",position:"relative",zIndex:1}}>
         <div style={{padding:"12px 20px 100px"}}>
-          {(()=>{
-            const pushPerm = typeof Notification !== 'undefined' ? Notification.permission : 'default';
-            const pushSub = pushPerm === 'granted' ? T[lang].pushNotifActive : pushPerm === 'denied' ? T[lang].pushNotifDenied : T[lang].pushNotifInactive;
-            const pushDisabled = pushPerm === 'denied';
-            return [{icon:"🏆",label:T[lang].myBoards,sub:T[lang].activeBoards,action:onBoards},{icon:"📖",label:T[lang].appGuide,sub:T[lang].howItWorks,action:onShowGuide},{icon:"🔔",label:T[lang].notifications,sub:T[lang].matchAlertsOn,action:onNotifications},{icon:"🔕",label:T[lang].pushNotifLabel,sub:pushSub,action:pushDisabled?undefined:onEnablePush,disabled:pushDisabled},{icon:"🌍",label:T[lang].language,sub:LANGS.find(l=>l.code===lang)?.name||"English",isLang:true},{icon:"📲",label:T[lang].shareApp,sub:T[lang].shareAppSub,action:()=>{ const url=window.location.origin; window.open("https://wa.me/?text="+encodeURIComponent(T[lang].shareAppMsg+url),"_blank"); }},{icon:"⭐",label:T[lang].upgradePremium,sub:T[lang].removeAds,highlight:true,action:onPremium},{icon:"🚪",label:T[lang].signOut,sub:"",action:handleSignOut}];
-          })().map(item=>(
-            <div key={item.label} onClick={item.isLang||item.disabled?undefined:item.action||undefined} style={{display:"flex",alignItems:"center",gap:14,...UI.card,background:item.highlight?"#E8F0FF":"#fff",border:item.highlight?`1.5px solid ${NAVY}`:UI.card.border,padding:"13px 16px",marginBottom:10,cursor:item.isLang||item.disabled||!item.action?"default":"pointer",opacity:item.disabled?0.5:1}}>
+          {[{icon:"🏆",label:T[lang].myBoards,sub:T[lang].activeBoards,action:onBoards},{icon:"📖",label:T[lang].appGuide,sub:T[lang].howItWorks,action:onShowGuide},{icon:"🔔",label:T[lang].notifications,sub:T[lang].matchAlertsOn,action:onNotifications},{icon:"🌍",label:T[lang].language,sub:LANGS.find(l=>l.code===lang)?.name||"English",isLang:true},{icon:"📲",label:T[lang].shareApp,sub:T[lang].shareAppSub,action:()=>{ const url=window.location.origin; window.open("https://wa.me/?text="+encodeURIComponent(T[lang].shareAppMsg+url),"_blank"); }},{icon:"⭐",label:T[lang].upgradePremium,sub:T[lang].removeAds,highlight:true,action:onPremium},{icon:"🚪",label:T[lang].signOut,sub:"",action:handleSignOut}].map(item=>(
+            <div key={item.label} onClick={item.isLang?undefined:item.action||undefined} style={{display:"flex",alignItems:"center",gap:14,...UI.card,background:item.highlight?"#E8F0FF":"#fff",border:item.highlight?`1.5px solid ${NAVY}`:UI.card.border,padding:"13px 16px",marginBottom:10,cursor:item.isLang?"default":"pointer"}}>
               <span style={{fontSize:20}}>{item.icon}</span>
               <div style={{flex:1}}>
                 <p style={{fontSize:14,fontWeight:700,color:item.highlight?NAVY:DARK,margin:0}}>{item.label}</p>
@@ -11393,8 +11124,7 @@ function App() {
       const reg = await navigator.serviceWorker.ready;
       const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY;
       const existing = await reg.pushManager.getSubscription();
-      if (existing) await existing.unsubscribe();
-      const sub = await reg.pushManager.subscribe({
+      const sub = existing ?? await reg.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: Uint8Array.from(
           atob(VAPID_PUBLIC_KEY.replace(/-/g, '+').replace(/_/g, '/')),
@@ -11591,7 +11321,6 @@ function App() {
   const inRecoveryRef = useRef(false);
   const notificationsBackRef = useRef(SCREENS.HOME);
   const [screen, setScreen] = useState(SCREENS.SPLASH);
-  const [showPushPrompt, setShowPushPrompt] = useState(false);
   const [systemNotifs, setSystemNotifs] = useState([]);
   const [notifReadIds, setNotifReadIds] = useState([]);
   const hasUnread = systemNotifs.some(n => !notifReadIds.includes(n.id));
@@ -11731,28 +11460,6 @@ function App() {
     window.addEventListener("unhandledrejection",onUnhandled);
     return ()=>{ window.removeEventListener("error",onErr); window.removeEventListener("unhandledrejection",onUnhandled); };
   },[]);
-
-  useEffect(() => {
-    if (screen !== SCREENS.HOME || !user) return;
-    if (user.user_metadata?.push_asked) return;
-    if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-      setupPushNotifications(user.id);
-      return;
-    }
-    const t = setTimeout(() => setShowPushPrompt(true), 1500);
-    return () => clearTimeout(t);
-  }, [screen, user]);
-
-  const handlePushPromptYes = async () => {
-    setShowPushPrompt(false);
-    await setupPushNotifications(user.id);
-    await supabase.auth.updateUser({ data: { push_asked: true } });
-  };
-  const handlePushPromptNo = async () => {
-    setShowPushPrompt(false);
-    await supabase.auth.updateUser({ data: { push_asked: 'declined' } });
-  };
-
   const instantPickState = allInstantPickStates[activeBoardId]||null;
   const instantPickDone = allInstantPickDone[activeBoardId]||false;
   const koPickDone = allKoPickDone[activeBoardId]||false;
@@ -12203,23 +11910,11 @@ function App() {
               }}
               onBack={()=>{ setGroupsInitialWeek(null); setGroupsInitialDay(null); setScreen(SCREENS.HOME); }}/>}
           {user&&<div style={{display:screen===SCREENS.ACCOUNT?'flex':'none',flex:1,flexDirection:'column',overflow:'hidden',minHeight:0}}>
-            <AccountScreen setLang={setLang} onBoards={()=>{ setBoardsInitialTab("my"); setScreen(SCREENS.BOARDS); }} onSignOut={()=>setScreen(SCREENS.SPLASH)} onShowGuide={()=>{ setShowOnboarding(true); }} onPremium={()=>setScreen(SCREENS.PREMIUM)} onNotifications={()=>{ notificationsBackRef.current=SCREENS.ACCOUNT; setScreen(SCREENS.NOTIFICATIONS); }} onEnablePush={user?async()=>{ await setupPushNotifications(user.id); await supabase.auth.updateUser({ data: { push_asked: true } }); }:undefined} user={user} isActive={screen===SCREENS.ACCOUNT}/>
+            <AccountScreen setLang={setLang} onBoards={()=>{ setBoardsInitialTab("my"); setScreen(SCREENS.BOARDS); }} onSignOut={()=>setScreen(SCREENS.SPLASH)} onShowGuide={()=>{ setShowOnboarding(true); }} onPremium={()=>setScreen(SCREENS.PREMIUM)} onNotifications={()=>{ notificationsBackRef.current=SCREENS.ACCOUNT; setScreen(SCREENS.NOTIFICATIONS); }} user={user} isActive={screen===SCREENS.ACCOUNT}/>
           </div>}
         </div>
         <Toast message={toast.message} emoji={toast.emoji} visible={toast.visible}/>
         {screen===SCREENS.HOME && activeBoardId && <ChatWidget boardId={activeBoardId} user={user} boardName={myBoards.find(b=>b.id===activeBoardId)?.name || (activeBoardId==='global'?'Global League':'')}/>}
-        {screen===SCREENS.HOME && <LiveWidget simDay={simDay} simHour={simHour} simMin={simMin}/>}
-        {showPushPrompt && (
-          <div style={{position:'fixed',inset:0,zIndex:3000,display:'flex',alignItems:'flex-end',justifyContent:'center',padding:'0 16px 32px',background:'rgba(0,0,0,0.45)'}}>
-            <div style={{background:'#fff',borderRadius:20,padding:'24px 20px 20px',width:'100%',maxWidth:400,boxShadow:'0 8px 40px rgba(0,0,0,0.18)'}}>
-              <div style={{fontSize:32,textAlign:'center',marginBottom:8}}>🔔</div>
-              <p style={{fontSize:16,fontWeight:700,color:'#1F2937',textAlign:'center',margin:'0 0 8px'}}>{T[lang].pushPromptTitle}</p>
-              <p style={{fontSize:13,color:'#6B7280',textAlign:'center',margin:'0 0 20px',lineHeight:1.5}}>{T[lang].pushPromptBody}</p>
-              <button onClick={handlePushPromptYes} style={{width:'100%',padding:'13px',background:NAVY,color:'#fff',border:'none',borderRadius:12,fontSize:15,fontWeight:700,cursor:'pointer',marginBottom:10}}>{T[lang].pushPromptYes}</button>
-              <button onClick={handlePushPromptNo} style={{width:'100%',padding:'11px',background:'transparent',color:'#9CA3AF',border:'1px solid #E5E7EB',borderRadius:12,fontSize:14,cursor:'pointer'}}>{T[lang].pushPromptNo}</button>
-            </div>
-          </div>
-        )}
         {showFooter&&(
           <div style={{
             position:"fixed",
