@@ -10466,8 +10466,7 @@ function AccountScreen({ setLang, onBoards, onSignOut, onShowGuide, onPremium, o
           {(()=>{
             const pushPerm = typeof Notification !== 'undefined' ? Notification.permission : 'default';
             const pushSub = pushPerm === 'granted' ? T[lang].pushNotifActive : pushPerm === 'denied' ? T[lang].pushNotifDenied : T[lang].pushNotifInactive;
-            const pushDisabled = pushPerm === 'denied';
-            return [{icon:"🏆",label:T[lang].myBoards,sub:T[lang].activeBoards,action:onBoards},{icon:"📖",label:T[lang].appGuide,sub:T[lang].howItWorks,action:onShowGuide},{icon:"🔔",label:T[lang].notifications,sub:T[lang].matchAlertsOn,action:onNotifications},{icon:"🔕",label:T[lang].pushNotifLabel,sub:pushSub,action:pushDisabled?undefined:onEnablePush,disabled:pushDisabled},{icon:"🌍",label:T[lang].language,sub:LANGS.find(l=>l.code===lang)?.name||"English",isLang:true},{icon:"📲",label:T[lang].shareApp,sub:T[lang].shareAppSub,action:()=>{ const url=window.location.origin; window.open("https://wa.me/?text="+encodeURIComponent(T[lang].shareAppMsg+url),"_blank"); }},{icon:"⭐",label:T[lang].upgradePremium,sub:T[lang].removeAds,highlight:true,action:onPremium},{icon:"🚪",label:T[lang].signOut,sub:"",action:handleSignOut}];
+            return [{icon:"🏆",label:T[lang].myBoards,sub:T[lang].activeBoards,action:onBoards},{icon:"📖",label:T[lang].appGuide,sub:T[lang].howItWorks,action:onShowGuide},{icon:"🔔",label:T[lang].notifications,sub:T[lang].matchAlertsOn,action:onNotifications},{icon:"🔕",label:T[lang].pushNotifLabel,sub:pushSub,action:onEnablePush},{icon:"🌍",label:T[lang].language,sub:LANGS.find(l=>l.code===lang)?.name||"English",isLang:true},{icon:"📲",label:T[lang].shareApp,sub:T[lang].shareAppSub,action:()=>{ const url=window.location.origin; window.open("https://wa.me/?text="+encodeURIComponent(T[lang].shareAppMsg+url),"_blank"); }},{icon:"⭐",label:T[lang].upgradePremium,sub:T[lang].removeAds,highlight:true,action:onPremium},{icon:"🚪",label:T[lang].signOut,sub:"",action:handleSignOut}];
           })().map(item=>(
             <div key={item.label} onClick={item.isLang||item.disabled?undefined:item.action||undefined} style={{display:"flex",alignItems:"center",gap:14,...UI.card,background:item.highlight?"#E8F0FF":"#fff",border:item.highlight?`1.5px solid ${NAVY}`:UI.card.border,padding:"13px 16px",marginBottom:10,cursor:item.isLang||item.disabled||!item.action?"default":"pointer",opacity:item.disabled?0.5:1}}>
               <span style={{fontSize:20}}>{item.icon}</span>
@@ -12203,7 +12202,14 @@ function App() {
               }}
               onBack={()=>{ setGroupsInitialWeek(null); setGroupsInitialDay(null); setScreen(SCREENS.HOME); }}/>}
           {user&&<div style={{display:screen===SCREENS.ACCOUNT?'flex':'none',flex:1,flexDirection:'column',overflow:'hidden',minHeight:0}}>
-            <AccountScreen setLang={setLang} onBoards={()=>{ setBoardsInitialTab("my"); setScreen(SCREENS.BOARDS); }} onSignOut={()=>setScreen(SCREENS.SPLASH)} onShowGuide={()=>{ setShowOnboarding(true); }} onPremium={()=>setScreen(SCREENS.PREMIUM)} onNotifications={()=>{ notificationsBackRef.current=SCREENS.ACCOUNT; setScreen(SCREENS.NOTIFICATIONS); }} onEnablePush={user?async()=>{ await setupPushNotifications(user.id); await supabase.auth.updateUser({ data: { push_asked: true } }); }:undefined} user={user} isActive={screen===SCREENS.ACCOUNT}/>
+            <AccountScreen setLang={setLang} onBoards={()=>{ setBoardsInitialTab("my"); setScreen(SCREENS.BOARDS); }} onSignOut={()=>setScreen(SCREENS.SPLASH)} onShowGuide={()=>{ setShowOnboarding(true); }} onPremium={()=>setScreen(SCREENS.PREMIUM)} onNotifications={()=>{ notificationsBackRef.current=SCREENS.ACCOUNT; setScreen(SCREENS.NOTIFICATIONS); }} onEnablePush={user?async()=>{
+              if(typeof Notification!=='undefined'&&Notification.permission==='denied'){
+                alert('Notificările push sunt blocate în setările telefonului.\n\niOS: Setări → [Aplicații] → Notificări → activează\nAndroid: Setări → Aplicații → [browser] → Notificări → activează\n\nDupă ce activezi, revino în aplicație și apasă din nou.');
+                return;
+              }
+              await setupPushNotifications(user.id);
+              await supabase.auth.updateUser({ data: { push_asked: true } });
+            }:undefined} user={user} isActive={screen===SCREENS.ACCOUNT}/>
           </div>}
         </div>
         <Toast message={toast.message} emoji={toast.emoji} visible={toast.visible}/>
