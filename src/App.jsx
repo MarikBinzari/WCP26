@@ -11385,12 +11385,13 @@ function App() {
   }, []);
 
   const setupPushNotifications = React.useCallback(async (userId) => {
-    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return false;
     try {
       const permission = await Notification.requestPermission();
-      if (permission !== 'granted') return;
+      if (permission !== 'granted') return false;
       const reg = await navigator.serviceWorker.ready;
       const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+      if (!VAPID_PUBLIC_KEY) throw new Error('VAPID key missing');
       const existing = await reg.pushManager.getSubscription();
       if (existing) await existing.unsubscribe();
       const sub = await reg.pushManager.subscribe({
@@ -11401,8 +11402,10 @@ function App() {
         ),
       });
       await savePushSubscription(userId, sub);
+      return true;
     } catch (e) {
       console.warn('[push] setup failed:', e);
+      return String(e);
     }
   }, []);
   const [realStandings, setRealStandings] = useState({});
@@ -12207,8 +12210,13 @@ function App() {
                 alert('Notificările push sunt blocate în setările telefonului.\n\niOS: Setări → [Aplicații] → Notificări → activează\nAndroid: Setări → Aplicații → [browser] → Notificări → activează\n\nDupă ce activezi, revino în aplicație și apasă din nou.');
                 return;
               }
-              await setupPushNotifications(user.id);
-              await supabase.auth.updateUser({ data: { push_asked: true } });
+              const result = await setupPushNotifications(user.id);
+              if(result===true){
+                await supabase.auth.updateUser({ data: { push_asked: true } });
+                alert('✅ Notificările push au fost activate!');
+              } else {
+                alert('❌ Eroare la activare:\n' + (result||'Permisiune refuzată sau browser incompatibil'));
+              }
             }:undefined} user={user} isActive={screen===SCREENS.ACCOUNT}/>
           </div>}
         </div>
