@@ -264,8 +264,6 @@ const T = {
     language:"Language", upgradePremium:"Upgrade to Premium", removeAds:"Remove ads",
     shareApp:"Share with Friends", shareAppSub:"Invite friends via WhatsApp",
     shareAppMsg:"Hey! Join me on WCP26 - the best World Cup 2026 prediction game! 🏆⚽ Play here: ",
-    pushNotifLabel:"Push Notifications", pushNotifActive:"Active – notifications enabled", pushNotifInactive:"Inactive – tap to enable", pushNotifDenied:"Blocked in browser settings",
-    pushPromptTitle:"Enable push notifications?", pushPromptBody:"Receive live alerts and news directly on your phone, even when the screen is off.", pushPromptYes:"Yes, enable", pushPromptNo:"Not now",
     signOut:"Sign Out", memberSince:"Member since March 2026",
     todaysMatches:"Today's Matches", tapToPredict:"Tap to predict the winner",
     allDone:"All done!", backToHome:"Back to Home", draw:"Draw",
@@ -464,8 +462,6 @@ const T = {
     language:"Limbă", upgradePremium:"Upgrade la Premium", removeAds:"Elimină reclamele",
     shareApp:"Trimite Prietenilor", shareAppSub:"Invită prieteni pe WhatsApp",
     shareAppMsg:"Salut! Alătură-te mie pe WCP26 - cel mai bun joc de predicții pentru Cupa Mondială 2026! 🏆⚽ Joacă aici: ",
-    pushNotifLabel:"Notificări Push", pushNotifActive:"Activ – notificările sunt activate", pushNotifInactive:"Inactiv – apasă pentru a activa", pushNotifDenied:"Blocat în setările browserului",
-    pushPromptTitle:"Activezi notificările push?", pushPromptBody:"Primești alerte live și noutăți direct pe telefon, chiar și cu ecranul blocat.", pushPromptYes:"Da, activează", pushPromptNo:"Nu acum",
     signOut:"Deconectare", memberSince:"Membru din Martie 2026",
     todaysMatches:"Meciurile de Azi", tapToPredict:"Apasă pentru a prezice câștigătorul",
     allDone:"Gata!", backToHome:"Înapoi Acasă", draw:"Egal",
@@ -664,8 +660,6 @@ const T = {
     language:"Langue", upgradePremium:"Passer à Premium", removeAds:"Supprimer les pubs",
     shareApp:"Partager avec des Amis", shareAppSub:"Inviter des amis via WhatsApp",
     shareAppMsg:"Hey ! Rejoins-moi sur WCP26 - le meilleur jeu de pronostics pour la Coupe du Monde 2026 ! 🏆⚽ Joue ici : ",
-    pushNotifLabel:"Notifications Push", pushNotifActive:"Actif – notifications activées", pushNotifInactive:"Inactif – appuyez pour activer", pushNotifDenied:"Bloqué dans les paramètres du navigateur",
-    pushPromptTitle:"Activer les notifications push ?", pushPromptBody:"Recevez des alertes live et des actualités directement sur votre téléphone, même écran éteint.", pushPromptYes:"Oui, activer", pushPromptNo:"Pas maintenant",
     signOut:"Déconnexion", memberSince:"Membre depuis Mars 2026",
     todaysMatches:"Matchs du Jour", tapToPredict:"Appuyez pour prédire le vainqueur",
     allDone:"Terminé !", backToHome:"Retour à l'Accueil", draw:"Nul",
@@ -10360,7 +10354,7 @@ function StatsScreen() {
   );
 }
 
-function AccountScreen({ setLang, onBoards, onSignOut, onShowGuide, onPremium, onNotifications, onEnablePush, user, isActive=true, onAvatarUpdate }) {
+function AccountScreen({ setLang, onBoards, onSignOut, onShowGuide, onPremium, onNotifications, user, isActive=true, onAvatarUpdate }) {
   const lang = useLang();
   const displayName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "—";
   const localeMap = { en:"en-US", ro:"ro-RO", fr:"fr-FR" };
@@ -10463,8 +10457,8 @@ function AccountScreen({ setLang, onBoards, onSignOut, onShowGuide, onPremium, o
       </div>
       <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",position:"relative",zIndex:1}}>
         <div style={{padding:"12px 20px 100px"}}>
-          {[{icon:"🏆",label:T[lang].myBoards,sub:T[lang].activeBoards,action:onBoards},{icon:"📖",label:T[lang].appGuide,sub:T[lang].howItWorks,action:onShowGuide},{icon:"🔔",label:T[lang].notifications,sub:T[lang].matchAlertsOn,action:onNotifications},{icon:"🔕",label:T[lang].pushNotifLabel,sub:typeof Notification!=='undefined'&&Notification.permission==='granted'?T[lang].pushNotifActive:typeof Notification!=='undefined'&&Notification.permission==='denied'?T[lang].pushNotifDenied:T[lang].pushNotifInactive,action:typeof Notification!=='undefined'&&Notification.permission!=='denied'?onEnablePush:undefined,disabled:typeof Notification!=='undefined'&&Notification.permission==='denied'},{icon:"🌍",label:T[lang].language,sub:LANGS.find(l=>l.code===lang)?.name||"English",isLang:true},{icon:"📲",label:T[lang].shareApp,sub:T[lang].shareAppSub,action:()=>{ const url=window.location.origin; window.open("https://wa.me/?text="+encodeURIComponent(T[lang].shareAppMsg+url),"_blank"); }},{icon:"⭐",label:T[lang].upgradePremium,sub:T[lang].removeAds,highlight:true,action:onPremium},{icon:"🚪",label:T[lang].signOut,sub:"",action:handleSignOut}].map(item=>(
-            <div key={item.label} onClick={item.isLang||item.disabled?undefined:item.action||undefined} style={{display:"flex",alignItems:"center",gap:14,...UI.card,background:item.highlight?"#E8F0FF":"#fff",border:item.highlight?`1.5px solid ${NAVY}`:UI.card.border,padding:"13px 16px",marginBottom:10,cursor:item.isLang||item.disabled||!item.action?"default":"pointer",opacity:item.disabled?0.5:1}}>
+          {[{icon:"🏆",label:T[lang].myBoards,sub:T[lang].activeBoards,action:onBoards},{icon:"📖",label:T[lang].appGuide,sub:T[lang].howItWorks,action:onShowGuide},{icon:"🔔",label:T[lang].notifications,sub:T[lang].matchAlertsOn,action:onNotifications},{icon:"🌍",label:T[lang].language,sub:LANGS.find(l=>l.code===lang)?.name||"English",isLang:true},{icon:"📲",label:T[lang].shareApp,sub:T[lang].shareAppSub,action:()=>{ const url=window.location.origin; window.open("https://wa.me/?text="+encodeURIComponent(T[lang].shareAppMsg+url),"_blank"); }},{icon:"⭐",label:T[lang].upgradePremium,sub:T[lang].removeAds,highlight:true,action:onPremium},{icon:"🚪",label:T[lang].signOut,sub:"",action:handleSignOut}].map(item=>(
+            <div key={item.label} onClick={item.isLang?undefined:item.action||undefined} style={{display:"flex",alignItems:"center",gap:14,...UI.card,background:item.highlight?"#E8F0FF":"#fff",border:item.highlight?`1.5px solid ${NAVY}`:UI.card.border,padding:"13px 16px",marginBottom:10,cursor:item.isLang?"default":"pointer"}}>
               <span style={{fontSize:20}}>{item.icon}</span>
               <div style={{flex:1}}>
                 <p style={{fontSize:14,fontWeight:700,color:item.highlight?NAVY:DARK,margin:0}}>{item.label}</p>
@@ -11400,26 +11394,6 @@ function App() {
       console.warn('[push] setup failed:', e);
     }
   }, []);
-
-  useEffect(() => {
-    if (screen !== SCREENS.HOME || !user) return;
-    if (!('PushManager' in window)) return;
-    if (Notification.permission === 'granted') return;
-    if (user.user_metadata?.push_asked) return;
-    const t = setTimeout(() => setShowPushPrompt(true), 1500);
-    return () => clearTimeout(t);
-  }, [screen, user]);
-
-  const handlePushPromptYes = async () => {
-    setShowPushPrompt(false);
-    await setupPushNotifications(user.id);
-    await supabase.auth.updateUser({ data: { push_asked: true } });
-  };
-
-  const handlePushPromptNo = async () => {
-    setShowPushPrompt(false);
-    await supabase.auth.updateUser({ data: { push_asked: 'declined' } });
-  };
   const [realStandings, setRealStandings] = useState({});
   useEffect(() => {
     const refreshStandings = () =>
@@ -11605,7 +11579,6 @@ function App() {
   const inRecoveryRef = useRef(false);
   const notificationsBackRef = useRef(SCREENS.HOME);
   const [screen, setScreen] = useState(SCREENS.SPLASH);
-  const [showPushPrompt, setShowPushPrompt] = useState(false);
   const [systemNotifs, setSystemNotifs] = useState([]);
   const [notifReadIds, setNotifReadIds] = useState([]);
   const hasUnread = systemNotifs.some(n => !notifReadIds.includes(n.id));
@@ -12195,27 +12168,12 @@ function App() {
               }}
               onBack={()=>{ setGroupsInitialWeek(null); setGroupsInitialDay(null); setScreen(SCREENS.HOME); }}/>}
           {user&&<div style={{display:screen===SCREENS.ACCOUNT?'flex':'none',flex:1,flexDirection:'column',overflow:'hidden',minHeight:0}}>
-            <AccountScreen setLang={setLang} onBoards={()=>{ setBoardsInitialTab("my"); setScreen(SCREENS.BOARDS); }} onSignOut={()=>setScreen(SCREENS.SPLASH)} onShowGuide={()=>{ setShowOnboarding(true); }} onPremium={()=>setScreen(SCREENS.PREMIUM)} onNotifications={()=>{ notificationsBackRef.current=SCREENS.ACCOUNT; setScreen(SCREENS.NOTIFICATIONS); }} onEnablePush={async()=>{ await setupPushNotifications(user.id); await supabase.auth.updateUser({ data: { push_asked: true } }); }} user={user} isActive={screen===SCREENS.ACCOUNT}/>
+            <AccountScreen setLang={setLang} onBoards={()=>{ setBoardsInitialTab("my"); setScreen(SCREENS.BOARDS); }} onSignOut={()=>setScreen(SCREENS.SPLASH)} onShowGuide={()=>{ setShowOnboarding(true); }} onPremium={()=>setScreen(SCREENS.PREMIUM)} onNotifications={()=>{ notificationsBackRef.current=SCREENS.ACCOUNT; setScreen(SCREENS.NOTIFICATIONS); }} user={user} isActive={screen===SCREENS.ACCOUNT}/>
           </div>}
         </div>
         <Toast message={toast.message} emoji={toast.emoji} visible={toast.visible}/>
         {screen===SCREENS.HOME && activeBoardId && <ChatWidget boardId={activeBoardId} user={user} boardName={myBoards.find(b=>b.id===activeBoardId)?.name || (activeBoardId==='global'?'Global League':'')}/>}
         {screen===SCREENS.HOME && <LiveWidget simDay={simDay} simHour={simHour} simMin={simMin}/>}
-        {showPushPrompt && (
-          <div style={{position:'fixed',inset:0,zIndex:3000,display:'flex',alignItems:'flex-end',justifyContent:'center',padding:'0 16px 32px',background:'rgba(0,0,0,0.45)'}}>
-            <div style={{background:'#fff',borderRadius:20,padding:'24px 20px 20px',width:'100%',maxWidth:400,boxShadow:'0 8px 40px rgba(0,0,0,0.18)'}}>
-              <div style={{fontSize:32,textAlign:'center',marginBottom:8}}>🔔</div>
-              <p style={{fontSize:16,fontWeight:700,color:'#1F2937',textAlign:'center',margin:'0 0 8px'}}>{T[lang].pushPromptTitle}</p>
-              <p style={{fontSize:13,color:'#6B7280',textAlign:'center',margin:'0 0 20px',lineHeight:1.5}}>{T[lang].pushPromptBody}</p>
-              <button onClick={handlePushPromptYes} style={{width:'100%',padding:'13px',background:NAVY,color:'#fff',border:'none',borderRadius:12,fontSize:15,fontWeight:700,cursor:'pointer',marginBottom:10}}>
-                {T[lang].pushPromptYes}
-              </button>
-              <button onClick={handlePushPromptNo} style={{width:'100%',padding:'11px',background:'transparent',color:'#9CA3AF',border:'1px solid #E5E7EB',borderRadius:12,fontSize:14,cursor:'pointer'}}>
-                {T[lang].pushPromptNo}
-              </button>
-            </div>
-          </div>
-        )}
         {showFooter&&(
           <div style={{
             position:"fixed",
