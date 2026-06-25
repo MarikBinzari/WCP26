@@ -117,15 +117,23 @@ language sql security definer as $$
     join completed_groups cg on cg.group_id = gs.group_id
     group by p.user_id, p.board_id
   ),
-  -- Scoring best 3rd (doar dacă avem suficiente grupe complete pentru a calcula best3)
+  -- Scoring best 3rd — DOAR când toate grupele sunt complete
+  all_groups_done as (
+    select (
+      select count(*) from completed_groups
+    ) = (
+      select count(distinct group_id) from public.matches where stage = 'group'
+    ) as done
+  ),
   best3_pts as (
     select p.user_id, p.board_id,
-      (count(*) * sc.best3)::int as pts
+      case when agd.done then (count(*) * sc.best3)::int else 0 end as pts
     from public.predictions p
     cross join sc
+    cross join all_groups_done agd
     cross join jsonb_array_elements_text(p.best3_picks) as pick
     join best3_actual b on b.team = pick and b.rk <= 8
-    group by p.user_id, p.board_id, sc.best3
+    group by p.user_id, p.board_id, sc.best3, agd.done
   ),
   -- Bracket maps (idx → slots)
   r32_map(idx, t1, t2) as (values

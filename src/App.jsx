@@ -7852,6 +7852,7 @@ function getCompletedGroups(liveScores) {
 
 function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, myBoards=[], activeBoardId, setActiveBoardId, userId }) {
   const lang = useLang();
+  const { pred: scoringPred } = useScoringRules();
   const liveScoresLS = useLiveScores(null, null, null);
   const completedGroupLetters = new Set(getCompletedGroups(liveScoresLS));
   const leaders = leadersProp || BOARD_LEADERS.global;
@@ -8202,10 +8203,12 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
                 Se încarcă...
               </div>
             ):breakdown&&(()=>{
-              const predTotal = breakdown.groups.reduce((s,g)=>s+g.pts,0);
+              const predTotal  = breakdown.groups.reduce((s,g)=>s+g.pts,0);
               const exactTotal = breakdown.exact.reduce((s,m)=>s+m.pts,0);
-              const hasGroups = breakdown.groups.length>0;
-              const hasExact  = breakdown.exact.length>0;
+              const best3Total = (breakdown.best3||[]).reduce((s,p)=>s+p.pts,0);
+              const hasGroups  = breakdown.groups.length>0;
+              const hasExact   = breakdown.exact.length>0;
+              const hasBest3   = (breakdown.best3||[]).length>0;
               return (<>
                 {/* Bonus section */}
                 {breakdown.bonus&&(()=>{
@@ -8279,6 +8282,47 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
                 </div>
                   );
                 })()}
+                {/* Best 3rd section */}
+                {hasBest3&&(()=>{
+                  const hits      = breakdown.best3.filter(p=>p.is_hit);
+                  const possibles = breakdown.best3.filter(p=>!p.is_hit&&(p.is_possible??true));
+                  const perPick   = hits.length>0 ? hits[0].pts : (scoringPred.best3||5);
+                  const posTotal  = possibles.length * perPick;
+                  const subtitle  = hits.length>0
+                    ? (lang==="en"?`${hits.length}/8 correct`:lang==="fr"?`${hits.length}/8 corrects`:`${hits.length}/8 corecte`)
+                    : (lang==="en"?`${posTotal}p possible · end of groups`:lang==="fr"?`${posTotal}p possible · fin groupes`:`${posTotal}p posibil · final grupe`);
+                  return (
+                    <div style={{border:`1.5px solid ${NAVY}22`,borderRadius:12,padding:"10px 12px",marginBottom:10}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:(hits.length||possibles.length)?8:0}}>
+                        <span style={{fontSize:12,fontWeight:800,color:NAVY,textTransform:"uppercase",letterSpacing:1}}>🥉 Best 3rd</span>
+                        <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:2}}>
+                          <span style={{fontSize:13,fontWeight:800,color:NAVY}}>{hits.length>0?best3Total:posTotal}p</span>
+                          <span style={{fontSize:9,color:hits.length>0?"#16a34a":"#9CA3AF",fontStyle:"italic",whiteSpace:"nowrap"}}>{subtitle}</span>
+                        </div>
+                      </div>
+                      {hits.length>0&&(
+                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",
+                          padding:"5px 4px",borderBottom:possibles.length?"1px solid #F9FAFB":"none",
+                          borderRadius:6,background:"rgba(22,163,74,0.06)",margin:"1px -4px"}}>
+                          <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                            <span style={{fontSize:11,fontWeight:900,color:"#16a34a",minWidth:12,flexShrink:0}}>✓</span>
+                            <span style={{fontSize:12,fontWeight:600,color:"#166534"}}>{hits.map(p=>tCode(p.team)).join("  ")}</span>
+                          </div>
+                          <span style={{fontSize:12,fontWeight:700,color:"#16a34a"}}>{best3Total}p</span>
+                        </div>
+                      )}
+                      {possibles.length>0&&(
+                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"5px 4px"}}>
+                          <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                            <span style={{fontSize:11,minWidth:12,flexShrink:0,color:"transparent"}}>✓</span>
+                            <span style={{fontSize:12,fontWeight:600,color:"#6B7280"}}>{possibles.map(p=>tCode(p.team)).join("  ")}</span>
+                          </div>
+                          <span style={{fontSize:12,fontWeight:700,color:GREEN}}>posibil</span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
                 {/* Exact Scores section */}
                 <div style={{border:`1.5px solid ${NAVY}22`,borderRadius:12,padding:"10px 12px",marginBottom:10}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:hasExact?8:0}}>
@@ -8310,19 +8354,19 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
                     );
                   })}
                 </div>
-                {!hasGroups&&!hasExact&&!breakdown.bonus&&(
+                {!hasGroups&&!hasExact&&!hasBest3&&!breakdown.bonus&&(
                   <div style={{textAlign:"center",padding:"24px 0",color:"#9CA3AF",fontSize:13}}>
                     Niciun punct câștigat încă
                   </div>
                 )}
                 {/* Total */}
-                {(hasGroups||hasExact||breakdown.bonus)&&(()=>{
+                {(hasGroups||hasExact||hasBest3||breakdown.bonus)&&(()=>{
                   const bonusTotal = breakdown.bonus ? (breakdown.bonus.champion_pts||0)+(breakdown.bonus.runner_up_pts||0)+(breakdown.bonus.top_scorer_pts||0) : 0;
                   return (
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",
                       borderTop:`2px solid ${NAVY}22`,paddingTop:10,marginTop:4}}>
                       <span style={{fontSize:13,fontWeight:800,color:DARK}}>Total</span>
-                      <span style={{fontSize:15,fontWeight:900,color:NAVY}}>{predTotal+exactTotal+bonusTotal}p</span>
+                      <span style={{fontSize:15,fontWeight:900,color:NAVY}}>{predTotal+best3Total+exactTotal+bonusTotal}p</span>
                     </div>
                   );
                 })()}
@@ -10503,11 +10547,9 @@ function ChatWidget({ boardId, user, boardName }) {
     };
     window.addEventListener('offline', goOffline);
     window.addEventListener('online',  goOnline);
-    const interval = setInterval(() => setIsOffline(v => !navigator.onLine ? true : v), 2000);
     return () => {
       window.removeEventListener('offline', goOffline);
       window.removeEventListener('online', goOnline);
-      clearInterval(interval);
     };
   }, [boardId]);
   React.useEffect(() => {
@@ -11068,10 +11110,10 @@ function App() {
       xhr.send();
     };
     ping();
-    const iv = setInterval(ping, 5000);
+    const onOnline = () => { ping(); };
     window.addEventListener('offline', showOffline);
-    window.addEventListener('online', hideOffline);
-    return () => { clearTimeout(fallbackTimer); clearInterval(iv); window.removeEventListener('offline', showOffline); window.removeEventListener('online', hideOffline); };
+    window.addEventListener('online', onOnline);
+    return () => { clearTimeout(fallbackTimer); window.removeEventListener('offline', showOffline); window.removeEventListener('online', onOnline); };
   }, []);
 
   const setupPushNotifications = React.useCallback(async (userId) => {
