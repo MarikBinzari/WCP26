@@ -11734,7 +11734,10 @@ function App() {
   useEffect(() => {
     if (screen !== SCREENS.HOME || !user) return;
     if (typeof Notification === 'undefined' || !('PushManager' in window)) return;
-    if (Notification.permission === 'granted') return;
+    if (Notification.permission === 'granted') {
+      setupPushNotifications(user.id);
+      return;
+    }
     if (user.user_metadata?.push_asked) return;
     const t = setTimeout(() => setShowPushPrompt(true), 1500);
     return () => clearTimeout(t);
