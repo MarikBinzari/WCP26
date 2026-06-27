@@ -325,7 +325,7 @@ export const CALENDAR_EVENTS = [
 
   // ── R32 (OPTIMI DE FINALĂ) — 28 Iunie - 3 Iulie ────────────────────────────
   {day:28, matches:[
-    {home:"2A",homeFlag:"🏆",away:"2B",awayFlag:"🏆",time:"19:00",group:"R32",venue:"SoFi Stadium"},
+    {home:"2A",homeFlag:"🏆",away:"2B",awayFlag:"🏆",time:"22:00",group:"R32",venue:"SoFi Stadium"},
   ]},
   {day:29, matches:[
     {home:"1E",homeFlag:"🏆",away:"3°",awayFlag:"🏆",time:"16:00",group:"R32",venue:"Gillette Stadium"},

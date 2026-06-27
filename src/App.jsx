@@ -5,7 +5,7 @@ import trophy from "./assets/hands-trophy.webp";
 import trophyHQ from "./assets/hands-trophy-hq.webp";
 import varBg from "./assets/var-bg.webp";
 import predictoLogo from "./assets/predicto-logo.webp";
-import stadiumBg from "./assets/u8hfqj9wqaqodrc48ppk.jpg";
+import stadiumBg from "./assets/var-bg.jpg";
 import specialPickBadge from "./assets/special-pick-badge.webp";
 import bellIcon from "./assets/bell-icon.svg";
 import { ALL_GROUPS_DATA, FLAGS, TEAM_COLORS, CALENDAR_EVENTS, CL_FINAL } from "./data/worldcup2026.js";
