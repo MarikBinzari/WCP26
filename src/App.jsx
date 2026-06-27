@@ -5,11 +5,12 @@ import trophy from "./assets/hands-trophy.webp";
 import trophyHQ from "./assets/hands-trophy-hq.webp";
 import varBg from "./assets/var-bg.webp";
 import predictoLogo from "./assets/predicto-logo.webp";
+import stadiumBg from "./assets/u8hfqj9wqaqodrc48ppk.jpg";
 import specialPickBadge from "./assets/special-pick-badge.webp";
 import bellIcon from "./assets/bell-icon.svg";
 import { ALL_GROUPS_DATA, FLAGS, TEAM_COLORS, CALENDAR_EVENTS, CL_FINAL } from "./data/worldcup2026.js";
-import { supabase } from "./supabase.js";
-import { savePredictions, saveExactScore, createBoard, joinBoardByCode, joinBoardById, ensureBoardScores, loadLeaderboard, loadMyScoreBreakdown, fetchScoringRules, fetchMemberCounts, removeBoardMember, removeParticipation, deleteBoard, loadBoardMembers, checkDbHealth, checkEmailExists, checkNicknameExists, loadLiveScores, subscribeLiveScores, loadPlayers, loadPlayersByTeam, seedPlayersFromApi, saveSpecialPick, uploadAvatar, uploadBoardImage, loadAllBoards, loadAllUserPicks, loadNotifReads, markNotifRead, loadSystemNotifications, loadRealGroupStandings, loadUserBreakdown, savePushSubscription } from "./db.js";
+import { supabase, SUPABASE_URL } from "./supabase.js";
+import { savePredictions, saveExactScore, loadExactScores, createBoard, updateBoard, joinBoardByCode, joinBoardById, ensureBoardScores, loadLeaderboard, loadMyScoreBreakdown, fetchScoringRules, fetchMemberCounts, removeBoardMember, removeParticipation, deleteBoard, loadBoardMembers, checkDbHealth, checkEmailExists, checkNicknameExists, loadLiveScores, subscribeLiveScores, loadPlayers, loadPlayersByTeam, seedPlayersFromApi, saveSpecialPick, uploadAvatar, uploadBoardImage, loadAllBoards, loadAllUserPicks, loadNotifReads, markNotifRead, loadSystemNotifications, loadRealGroupStandings, loadUserBreakdown, savePushSubscription, loadChatMessages, sendChatMessage, editChatMessage, toggleChatLike, toggleChatDislike, subscribeChatMessages, loadMatchPredictions, loadCentralStats, loadBoardExactScores, hasLiveMatches, loadKoTeams, loadMatchEvents } from "./db.js";
 
 const TEAM_CODE = {"Mexico":"MEX","South Africa":"RSA","South Korea":"KOR","Czechia":"CZE","Canada":"CAN","Switzerland":"SUI","Qatar":"QAT","Bosnia-Herzegovina":"BIH","Brazil":"BRA","Morocco":"MAR","Scotland":"SCO","Haiti":"HAI","USA":"USA","Paraguay":"PAR","Australia":"AUS","Turkiye":"TUR","Germany":"GER","Ecuador":"ECU","Ivory Coast":"CIV","Curacao":"CUW","Netherlands":"NED","Japan":"JPN","Tunisia":"TUN","Sweden":"SWE","Belgium":"BEL","Iran":"IRI","Egypt":"EGY","New Zealand":"NZL","Spain":"ESP","Uruguay":"URU","Saudi Arabia":"KSA","Cape Verde":"CPV","France":"FRA","Senegal":"SEN","Norway":"NOR","Iraq":"IRQ","Argentina":"ARG","Austria":"AUT","Algeria":"ALG","Jordan":"JOR","Portugal":"POR","Colombia":"COL","Uzbekistan":"UZB","DR Congo":"COD","England":"ENG","Croatia":"CRO","Panama":"PAN","Ghana":"GHA"};
 
@@ -49,6 +50,8 @@ const SCREENS = {
   PREMIUM:"premium",
   CHAMPION:"champion",
   BOOSTER:"booster",
+  BONUS:"bonus",
+  CENTRAL_STATS:"central_stats",
 };
 
 const INITIAL_BOARDS = [{ id:"global", label:"🌍", name:"Global League", members:48291, isGlobal:true }];
@@ -245,7 +248,7 @@ const T = {
     predictions:"Predictions", completed:"✓ Completed", deadlinePassed:"Deadline passed", dueJun11:"Due Jun 11",
     koUnlockedLabel:"⚡ Knockout available", koDueJun27:"Due Jun 27",
     exactScores:"Exact Scores", weekComplete:"✓ Week complete", thisWeek:"this week",
-    pathToTrophy:"Path to the Trophy", unlocksEvery:"Unlocks every Sunday 8AM",
+    pathToTrophy:"Path to the Trophy", unlocksEvery:"Available by Sunday 8AM at the latest",
     groupStage:"Group Stage", week:"Week", roundOf16QF:"R32 · R16 · QF · SF",
     final:"Final", locked:"Locked", past:"Past", viewAll:"View all ›",
     tournamentStarts:"Tournament starts Jun 11", ptsTotal:"pts total",
@@ -261,6 +264,8 @@ const T = {
     language:"Language", upgradePremium:"Upgrade to Premium", removeAds:"Remove ads",
     shareApp:"Share with Friends", shareAppSub:"Invite friends via WhatsApp",
     shareAppMsg:"Hey! Join me on Predicto - the best World Cup 2026 prediction game! 🏆⚽ Play here: ",
+    pushNotifLabel:"Push Notifications", pushNotifActive:"Active – notifications enabled", pushNotifInactive:"Inactive – tap to enable", pushNotifDenied:"Blocked in browser settings",
+    pushPromptTitle:"Enable push notifications?", pushPromptBody:"Receive live alerts and news directly on your phone, even when the screen is off.", pushPromptYes:"Yes, enable", pushPromptNo:"Not now",
     signOut:"Sign Out", memberSince:"Member since March 2026",
     todaysMatches:"Today's Matches", tapToPredict:"Tap to predict the winner",
     allDone:"All done!", backToHome:"Back to Home", draw:"Draw",
@@ -285,7 +290,7 @@ const T = {
     predictionsDesc:"Two phases: rank all 12 groups + pick 8 best-third teams before Jun 11. The knockout bracket unlocks Jun 27 after the last group match.",
     rulesTask1Header:"Task 1 · Groups & Best Third", rulesTask1Due:"Deadline Jun 11",
     rulesTask2Header:"Task 2 · Knockout Phase", rulesTask2Due:"Unlocks Jun 27",
-    exactDesc:"Predict the exact score of each match every week. Unlocks on Sundays after 8:00 PM.",
+    exactDesc:"Predict the exact score of each match every week. New matches available at the latest by Sunday 8:00 AM.",
     exactScore:"EXACT SCORE", confirmScore:"Confirm Score",
     save:"Save", cancel:"Cancel", del:"Delete", done:"Done",
     semiFinalsDone:"Semi-Finals complete", theFinalsAwait:"The Finals Await",
@@ -307,8 +312,8 @@ const T = {
     onb0Title:"Two Prediction Phases", onb0Sub:"Groups + Best Third · Knockout",
     onb0Desc:"Phase 1 (before Jun 11): Rank all 12 groups and pick your 8 best-third teams. Phase 2: The knockout bracket unlocks Jun 27 after the last group match — build your path to the trophy.",
     onb0Next:"Show me scores →",
-    onb1Title:"Weekly Exact Score", onb1Sub:"Unlocks every Sunday at 8:00 AM",
-    onb1Desc:"Predict the exact score of each week's matches for bonus points. New matches every Sunday.",
+    onb1Title:"Weekly Exact Score", onb1Sub:"New matches available at the latest by Sunday",
+    onb1Desc:"Predict the exact score of each week's matches for bonus points. New matches available every week, at the latest by Sunday.",
     onb1Next:"Invite friends →",
     onb2Title:"Compete With Friends", onb2Sub:"Private leagues · Custom prizes",
     onb2Desc:"Create a private group, invite your friends and set your own prizes. May the best predictor win.",
@@ -416,8 +421,12 @@ const T = {
     best3Short:"Best Third",
     cdDayAbbr:"d", cdHourAbbr:"h", cdMinAbbr:"m",
     pickChampionHeader:"Pick Champion", pickTopScorerHeader:"Pick Top Scorer",
-    picksLockedTitle:"Picks locked until Knockout Phase",
-    picksLockedBody:"Opens Jun 27 after the last group match. Your current picks are saved.",
+    picksLockedTitle:"Bonus picks locked",
+    picksLockedBody:"The Bonus Prediction deadline was Jun 14. Your current picks are saved.",
+    bonusDueJun14:"Due Jun 14",
+    bonusClosedTitle:"Bonus locked",
+    bonusClosedSub:"Deadline passed - picks saved",
+    bonusClosedEmptySub:"Deadline passed - no bonus picks saved",
     championPickLabel:"Champion Pick", chooseWinner:"Choose your winner",
     selectedLabel:"selected", tapTeamBelow:"Tap a team below",
     clearLabel:"Clear", allTeams:"All teams",
@@ -426,6 +435,10 @@ const T = {
     topScorerSaved:"Top Scorer saved", winnerTeamSaved:"Winner Team saved",
     winnerTeamCleared:"Winner Team cleared", changeLabel:"Change",
     pickChampionPopup:"🏆 Pick Champion", pickTeamPopup:"👕 Pick Team",
+    bonusPrediction:"Bonus Prediction", bonusDesc:"Earn extra points — your picks define the final podium",
+    runnerUpPickLabel:"Runner-up (Second place)", chooseRunnerUp:"Choose your runner-up",
+    runnerUpSaved:"Runner-up saved", runnerUpCleared:"Runner-up cleared",
+    openBonusLabel:"Pick", pickRunnerUpHeader:"Pick Runner-up",
   },
   ro:{
     location:"SUA, Canada & Mexic", cta:"Fa-ti Predictia",
@@ -435,7 +448,7 @@ const T = {
     predictions:"Predicții", completed:"✓ Completat", deadlinePassed:"Termen expirat", dueJun11:"Termen 11 Iun",
     koUnlockedLabel:"⚡ Knockout disponibil", koDueJun27:"Termen 27 Iun",
     exactScores:"Scoruri Exacte", weekComplete:"✓ Săptămâna completă", thisWeek:"această săptămână",
-    pathToTrophy:"Drumul spre Trofeu", unlocksEvery:"Se deschide duminică la 8:00",
+    pathToTrophy:"Drumul spre Trofeu", unlocksEvery:"Disponibil cel târziu duminică la 8:00",
     groupStage:"Faza Grupelor", week:"Săptămâna", roundOf16QF:"R32 · Optimi · Sferturi · Semi",
     final:"Finală", locked:"Blocat", past:"Trecut", viewAll:"Vezi tot ›",
     tournamentStarts:"Turneul începe pe 11 Iun", ptsTotal:"pts total",
@@ -451,6 +464,8 @@ const T = {
     language:"Limbă", upgradePremium:"Upgrade la Premium", removeAds:"Elimină reclamele",
     shareApp:"Trimite Prietenilor", shareAppSub:"Invită prieteni pe WhatsApp",
     shareAppMsg:"Salut! Alătură-te mie pe Predicto - cel mai bun joc de predicții pentru Cupa Mondială 2026! 🏆⚽ Joacă aici: ",
+    pushNotifLabel:"Notificări Push", pushNotifActive:"Activ – notificările sunt activate", pushNotifInactive:"Inactiv – apasă pentru a activa", pushNotifDenied:"Blocat în setările browserului",
+    pushPromptTitle:"Activezi notificările push?", pushPromptBody:"Primești alerte live și noutăți direct pe telefon, chiar și cu ecranul blocat.", pushPromptYes:"Da, activează", pushPromptNo:"Nu acum",
     signOut:"Deconectare", memberSince:"Membru din Martie 2026",
     todaysMatches:"Meciurile de Azi", tapToPredict:"Apasă pentru a prezice câștigătorul",
     allDone:"Gata!", backToHome:"Înapoi Acasă", draw:"Egal",
@@ -475,7 +490,7 @@ const T = {
     predictionsDesc:"Două etape: clasează cele 12 grupe + alege 8 echipe de pe locul 3 înainte de 11 Iun. Faza eliminatorie se deblochează pe 27 Iun după ultimul meci din grupe.",
     rulesTask1Header:"Task 1 · Grupe & Cel mai bun loc 3", rulesTask1Due:"Termen 11 Iun",
     rulesTask2Header:"Task 2 · Faza Eliminatorie", rulesTask2Due:"Disponibil din 27 Iun",
-    exactDesc:"Prezice scorul exact al fiecărui meci în fiecare săptămână. Se deschide duminicile după 20:00.",
+    exactDesc:"Prezice scorul exact al fiecărui meci în fiecare săptămână. Meciuri noi disponibile cel târziu duminică la 8:00.",
     exactScore:"SCOR EXACT", confirmScore:"Confirmă Scorul",
     save:"Salvează", cancel:"Anulează", del:"Șterge", done:"Gata",
     semiFinalsDone:"Semi-Finale Complete", theFinalsAwait:"Finala Te Așteaptă",
@@ -497,8 +512,8 @@ const T = {
     onb0Title:"Predicții în Două Etape", onb0Sub:"Grupe + Locul 3 · Eliminatorii",
     onb0Desc:"Etapa 1 (înainte de 11 Iun): Clasează cele 12 grupe și alege 8 echipe de pe locul 3. Etapa 2: Faza eliminatorie se deblochează pe 27 Iun după ultimul meci din grupe.",
     onb0Next:"Arată-mi scorurile →",
-    onb1Title:"Scor Exact Săptămânal", onb1Sub:"Se deschide duminică la 8:00",
-    onb1Desc:"Prezice scorul exact al meciurilor săptămânii pentru puncte bonus. Meciuri noi în fiecare duminică.",
+    onb1Title:"Scor Exact Săptămânal", onb1Sub:"Meciuri noi disponibile cel târziu duminică",
+    onb1Desc:"Prezice scorul exact al meciurilor săptămânii pentru puncte bonus. Meciuri noi disponibile în fiecare săptămână, cel târziu duminică.",
     onb1Next:"Invită prieteni →",
     onb2Title:"Concurează cu Prietenii", onb2Sub:"Ligi private · Premii personalizate",
     onb2Desc:"Creează un grup privat, invită prietenii și setează propriile premii. Câștige cel mai bun prezicător.",
@@ -605,8 +620,12 @@ const T = {
     alreadyPremiumBody:"Mulțumim că faci parte din Predicto. Ai acces complet la toate funcțiile.",
     best3Short:"Locul 3",
     pickChampionHeader:"Alege Campionul", pickTopScorerHeader:"Alege Golgheterul",
-    picksLockedTitle:"Selecții blocate până la Faza Eliminatorie",
-    picksLockedBody:"Se deschide pe 27 Iun după ultimul meci din grupe. Selecțiile actuale sunt salvate.",
+    picksLockedTitle:"Selectii bonus blocate",
+    picksLockedBody:"Termenul pentru Predictia Bonus a fost 14 Iun. Selectiile actuale sunt salvate.",
+    bonusDueJun14:"Termen 14 Iun",
+    bonusClosedTitle:"Bonus blocat",
+    bonusClosedSub:"Termen trecut - selectii salvate",
+    bonusClosedEmptySub:"Termen trecut - nicio selectie salvata",
     championPickLabel:"Selecție Campion", chooseWinner:"Alege câștigătorul",
     selectedLabel:"selectat", tapTeamBelow:"Apasă o echipă mai jos",
     clearLabel:"Șterge", allTeams:"Toate echipele",
@@ -616,6 +635,10 @@ const T = {
     winnerTeamCleared:"Echipa câștigătoare ștearsă", changeLabel:"Schimbă",
     pickChampionPopup:"🏆 Alege Campionul", pickTeamPopup:"👕 Alege Echipa",
     cdDayAbbr:"z", cdHourAbbr:"h", cdMinAbbr:"m",
+    bonusPrediction:"Predicție Bonus", bonusDesc:"Câștigă puncte extra — selecțiile tale definesc podiumul final",
+    runnerUpPickLabel:"Finalist (Locul 2)", chooseRunnerUp:"Alege finalistul",
+    runnerUpSaved:"Finalist salvat", runnerUpCleared:"Finalist șters",
+    openBonusLabel:"Alege", pickRunnerUpHeader:"Alege Finalistul",
   },
   fr:{
     location:"USA, Canada & Mexique", cta:"Faites vos Pronostics",
@@ -625,7 +648,7 @@ const T = {
     predictions:"Pronostics", completed:"✓ Complété", deadlinePassed:"Délai expiré", dueJun11:"Délai 11 Juin",
     koUnlockedLabel:"⚡ Knockout disponible", koDueJun27:"Délai 27 Juin",
     exactScores:"Scores Exacts", weekComplete:"✓ Semaine complète", thisWeek:"cette semaine",
-    pathToTrophy:"Chemin vers le Trophée", unlocksEvery:"Ouvre chaque dimanche à 8h",
+    pathToTrophy:"Chemin vers le Trophée", unlocksEvery:"Disponible au plus tard dimanche à 8h",
     groupStage:"Phase de Groupes", week:"Semaine", roundOf16QF:"R32 · H.d.F. · Quarts · Demi",
     final:"Finale", locked:"Bloqué", past:"Passé", viewAll:"Voir tout ›",
     tournamentStarts:"Tournoi débute le 11 Juin", ptsTotal:"pts total",
@@ -641,6 +664,8 @@ const T = {
     language:"Langue", upgradePremium:"Passer à Premium", removeAds:"Supprimer les pubs",
     shareApp:"Partager avec des Amis", shareAppSub:"Inviter des amis via WhatsApp",
     shareAppMsg:"Hey ! Rejoins-moi sur Predicto - le meilleur jeu de pronostics pour la Coupe du Monde 2026 ! 🏆⚽ Joue ici : ",
+    pushNotifLabel:"Notifications Push", pushNotifActive:"Actif – notifications activées", pushNotifInactive:"Inactif – appuyez pour activer", pushNotifDenied:"Bloqué dans les paramètres du navigateur",
+    pushPromptTitle:"Activer les notifications push ?", pushPromptBody:"Recevez des alertes live et des actualités directement sur votre téléphone, même écran éteint.", pushPromptYes:"Oui, activer", pushPromptNo:"Pas maintenant",
     signOut:"Déconnexion", memberSince:"Membre depuis Mars 2026",
     todaysMatches:"Matchs du Jour", tapToPredict:"Appuyez pour prédire le vainqueur",
     allDone:"Terminé !", backToHome:"Retour à l'Accueil", draw:"Nul",
@@ -665,7 +690,7 @@ const T = {
     predictionsDesc:"Deux phases : classez les 12 groupes + choisissez 8 équipes meilleur 3e avant le 11 Juin. Les éliminatoires se déverrouillent le 27 Juin après le dernier match de groupes.",
     rulesTask1Header:"Tâche 1 · Groupes & Meilleur 3e", rulesTask1Due:"Date limite 11 Juin",
     rulesTask2Header:"Tâche 2 · Phase Éliminatoire", rulesTask2Due:"Disponible dès le 27 Juin",
-    exactDesc:"Prédisez le score exact de chaque match chaque semaine. Déverrouillé le dimanche après 20h.",
+    exactDesc:"Prédisez le score exact de chaque match chaque semaine. Nouveaux matchs disponibles au plus tard le dimanche à 8h.",
     exactScore:"SCORE EXACT", confirmScore:"Confirmer le Score",
     save:"Enregistrer", cancel:"Annuler", del:"Supprimer", done:"Terminé",
     semiFinalsDone:"Demi-Finales terminées", theFinalsAwait:"La Finale Vous Attend",
@@ -687,8 +712,8 @@ const T = {
     onb0Title:"Deux Phases de Pronostics", onb0Sub:"Groupes + Meilleur 3e · Éliminatoires",
     onb0Desc:"Phase 1 (avant le 11 Juin) : Classez les 12 groupes et choisissez 8 équipes meilleur 3e. Phase 2 : Les éliminatoires se déverrouillent le 27 Juin après le dernier match de groupes.",
     onb0Next:"Montrez-moi les scores →",
-    onb1Title:"Score Exact Hebdomadaire", onb1Sub:"Déverrouillé chaque dimanche à 8h",
-    onb1Desc:"Prédisez le score exact des matchs de la semaine pour des points bonus. Nouveaux matchs chaque dimanche.",
+    onb1Title:"Score Exact Hebdomadaire", onb1Sub:"Nouveaux matchs disponibles au plus tard dimanche",
+    onb1Desc:"Prédisez le score exact des matchs de la semaine pour des points bonus. Nouveaux matchs disponibles chaque semaine, au plus tard le dimanche.",
     onb1Next:"Inviter des amis →",
     onb2Title:"Affrontez Vos Amis", onb2Sub:"Ligues privées · Prix personnalisés",
     onb2Desc:"Créez un groupe privé, invitez vos amis et fixez vos propres prix. Que le meilleur pronostiqueur gagne.",
@@ -795,8 +820,12 @@ const T = {
     alreadyPremiumBody:"Merci de faire partie de Predicto. Vous bénéficiez de l'expérience complète.",
     best3Short:"Meilleur 3e",
     pickChampionHeader:"Choisir le Champion", pickTopScorerHeader:"Choisir le Meilleur Buteur",
-    picksLockedTitle:"Sélections bloquées jusqu'aux Éliminatoires",
-    picksLockedBody:"Ouvre le 27 Juin après le dernier match de groupes. Vos sélections actuelles sont sauvegardées.",
+    picksLockedTitle:"Selections bonus bloquees",
+    picksLockedBody:"La date limite de la Prediction Bonus etait le 14 Juin. Vos selections actuelles sont sauvegardees.",
+    bonusDueJun14:"Delai 14 Juin",
+    bonusClosedTitle:"Bonus bloque",
+    bonusClosedSub:"Delai passe - selections sauvegardees",
+    bonusClosedEmptySub:"Delai passe - aucune selection sauvegardee",
     championPickLabel:"Sélection Champion", chooseWinner:"Choisissez votre vainqueur",
     selectedLabel:"sélectionné", tapTeamBelow:"Appuyez sur une équipe ci-dessous",
     clearLabel:"Effacer", allTeams:"Toutes les équipes",
@@ -806,6 +835,10 @@ const T = {
     winnerTeamCleared:"Équipe gagnante effacée", changeLabel:"Changer",
     pickChampionPopup:"🏆 Choisir le Champion", pickTeamPopup:"👕 Choisir l'Équipe",
     cdDayAbbr:"j", cdHourAbbr:"h", cdMinAbbr:"m",
+    bonusPrediction:"Prédiction Bonus", bonusDesc:"Gagnez des points supplémentaires — vos choix définissent le podium final",
+    runnerUpPickLabel:"Finaliste (2e place)", chooseRunnerUp:"Choisissez votre finaliste",
+    runnerUpSaved:"Finaliste sauvegardé", runnerUpCleared:"Finaliste effacé",
+    openBonusLabel:"Choisir", pickRunnerUpHeader:"Choisir le Finaliste",
   },
 };
 const LangCtx = React.createContext("en");
@@ -829,48 +862,124 @@ const REAL_GROUP_STATS = {};
 const REAL_BEST3 = [];
 const GROUP_STAGE_FINISHED = false;
 
-// Week unlock logic — Sunday after 20:00
-const now = new Date();
-const june = (d) => new Date(2026, 5, d, 8, 0, 0);
-const WEEK_UNLOCKED = {
-  8:  true,                    // week 1 always open (unlocked before tournament)
-  15: now >= june(14),         // Sun June 14 after 08:00
-  22: now >= june(21),         // Sun June 21
-  29: now >= june(28),         // Sun June 28
-};
+// Week unlock logic — 08:00 Romania (EEST = UTC+3 → 05:00 UTC)
+const june = (d) => new Date(Date.UTC(2026, 5, d, 5, 0, 0));
+const july = (d) => new Date(Date.UTC(2026, 6, d, 5, 0, 0));
 // Returns the current day in tournament encoding.
 // May N = N-31 (day -6..0 for May 25-31), June N = N, July N = N+30.
-const getRealTournamentDay = () => {
-  const now = new Date();
-  const y = now.getFullYear(), mo = now.getMonth(), d = now.getDate();
-  if (y < 2026 || (y === 2026 && mo < 4)) return -99; // before May 2026
-  if (y === 2026 && mo === 4) return d - 31;           // May 2026: 25→-6, 30→-1, 31→0
-  if (y === 2026 && mo === 5) return d;                // June 2026
-  if (y === 2026 && mo === 6) return d + 30;           // July 2026
-  return 999;                                          // after tournament
+// Match times in worldcup2026.js are in ET (UTC-4 in summer / EDT)
+const ET_OFFSET_MS = 4 * 3600_000;
+
+// Convert ET match time to user's local time for display
+const getLocalKickoffDay = (kickoffUtc, fallback) => {
+  if (!kickoffUtc) return fallback;
+  return new Date(kickoffUtc).getDate();
 };
 
-const isMatchPast = (matchDay, matchTime, simDay=null, simHour=12) => {
+const encodeCalendarDay = (date) => {
+  const y = date.getFullYear();
+  const mo = date.getMonth();
+  const d = date.getDate();
+  if (y === 2026 && mo === 4) return d - 31;
+  if (y === 2026 && mo === 5) return d;
+  if (y === 2026 && mo === 6) return d + 30;
+  return d;
+};
+
+const getMatchDisplayDay = (match, fallbackDay) =>
+  match?.kickoffUtc ? encodeCalendarDay(new Date(match.kickoffUtc)) : fallbackDay;
+
+const CANONICAL_MATCH_KEYS = {
+  '27-2': '26-2',
+  '27-3': '26-3',
+  '27-4': '26-4',
+  '27-5': '26-5',
+};
+
+const getMatchKey = (match, day, idx) => {
+  const key = match?.matchKey || `${day}-${idx}`;
+  return CANONICAL_MATCH_KEYS[key] || key;
+};
+
+const getDisplayCalendarEvents = () => {
+  const byDay = new Map();
+  CALENDAR_EVENTS.forEach(event => {
+    event.matches.forEach((match, idx) => {
+      const displayDay = getMatchDisplayDay(match, event.day);
+      if (!byDay.has(displayDay)) byDay.set(displayDay, []);
+      byDay.get(displayDay).push({
+        ...match,
+        matchKey: getMatchKey(match, event.day, idx),
+        sourceDay: event.day,
+        sourceIdx: idx,
+      });
+    });
+  });
+  return [...byDay.entries()]
+    .sort(([a], [b]) => a - b)
+    .map(([day, matches]) => ({
+      day,
+      matches: matches.sort((a, b) => {
+        const ta = a.kickoffUtc ? Date.parse(a.kickoffUtc) : 0;
+        const tb = b.kickoffUtc ? Date.parse(b.kickoffUtc) : 0;
+        return ta - tb;
+      }),
+    }));
+};
+
+const fmtMatchTime = (day, timeET, kickoffUtc=null) => {
+  if (kickoffUtc) {
+    return new Date(kickoffUtc).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+  }
+  if (!day || !timeET) return timeET || '';
+  const month = day <= 30 ? 5 : 6;
+  const dom   = day <= 30 ? day : day - 30;
+  const [h, min] = (timeET || '23:00').split(':').map(Number);
+  const d = new Date(Date.UTC(2026, month, dom, h + 4, min));
+  if (isNaN(d.getTime())) return timeET;
+  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+};
+
+const getRealTournamentDay = () => {
+  // Use ET date so day boundary aligns with the match schedule timezone
+  const et = new Date(Date.now() - ET_OFFSET_MS);
+  const y = et.getUTCFullYear(), mo = et.getUTCMonth(), d = et.getUTCDate();
+  if (y < 2026 || (y === 2026 && mo < 4)) return -99;
+  if (y === 2026 && mo === 4) return d - 31;
+  if (y === 2026 && mo === 5) return d;
+  if (y === 2026 && mo === 6) return d + 30;
+  return 999;
+};
+
+const getLocalTournamentDay = () => encodeCalendarDay(new Date());
+
+const getBonusPickNow = (simDay=null, simHour=12, simMin=0) =>
+  simDay ? new Date(Date.UTC(2026, 5, simDay, (simHour || 0) + 4, simMin || 0, 0)) : new Date();
+
+let _bonusDeadlineMs = Date.UTC(2026, 5, 15, 3, 59, 59);
+const getBonusPickDeadline = () => new Date(_bonusDeadlineMs);
+
+const isBonusPickLocked = (simDay=null, simHour=12, simMin=0) =>
+  getBonusPickNow(simDay, simHour, simMin) > getBonusPickDeadline();
+
+const isMatchPast = (matchDay, matchTime, simDay=null, simHour=12, kickoffUtc=null) => {
   const mHour = parseInt((matchTime||"23:00").split(":")[0]);
   if (simDay) {
     const nowHour = simHour || 0;
     return matchDay < simDay || (matchDay === simDay && mHour <= nowHour);
   }
-  // matchDay encoding: June N = N (1-30), July N = N+30 (31-61)
-  const matchMonth = matchDay <= 30 ? 5 : 6; // 5=June, 6=July (0-indexed)
+  if (kickoffUtc) return Date.now() >= new Date(kickoffUtc).getTime();
+  const matchMonth = matchDay <= 30 ? 5 : 6;
   const matchDom = matchDay <= 30 ? matchDay : matchDay - 30;
-  return new Date() >= new Date(2026, matchMonth, matchDom, mHour, 0, 0);
+  return Date.now() >= Date.UTC(2026, matchMonth, matchDom, mHour + 4, 0, 0);
 };
 
 const isWeekUnlocked = (day, simDay=null, simHour=12, simMin=0) => {
-  // Convert July days: day 36+ = July week
-  const june = (d) => new Date(2026, 5, d, 8, 0, 0);
-  const july = (d) => new Date(2026, 6, d, 8, 0, 0);
   if(simDay) {
-    const simDate = new Date(2026,5,simDay,simHour,simMin,0);
-    if(day >= 43) return simDate >= july(12);   // Final week
-    if(day >= 36) return simDate >= july(5);    // QF/SF week
-    if(day >= 28) return simDate >= june(28);   // R32 week (starts Jun 28)
+    const simDate = new Date(Date.UTC(2026,5,simDay,(simHour||0)+4,simMin||0,0));
+    if(day >= 43) return simDate >= july(12);
+    if(day >= 36) return simDate >= july(5);
+    if(day >= 29) return simDate >= june(28);
     if(day >= 22) return simDate >= june(21);
     if(day >= 15) return simDate >= june(14);
     return true;
@@ -878,10 +987,10 @@ const isWeekUnlocked = (day, simDay=null, simHour=12, simMin=0) => {
   const now2 = new Date();
   if(day >= 43) return now2 >= july(12);
   if(day >= 36) return now2 >= july(5);
-  if(day >= 28) return WEEK_UNLOCKED[29];
-  if(day >= 22) return WEEK_UNLOCKED[22];
-  if(day >= 15) return WEEK_UNLOCKED[15];
-  return WEEK_UNLOCKED[8];
+  if(day >= 29) return now2 >= june(28);
+  if(day >= 22) return now2 >= june(20);
+  if(day >= 15) return now2 >= june(14);
+  return true;
 };
 
 
@@ -893,24 +1002,21 @@ const computeLiveScores = (simDay=null, simHour=12, simMin=0) => {
   const MATCH_DURATION_H = 2; // hours after kickoff = finished
   CALENDAR_EVENTS.forEach(e => {
     e.matches.forEach((m, idx) => {
-      const key = `${e.day}-${idx}`;
+      const key = m.matchKey || `${e.day}-${idx}`;
       const kickH = parseInt((m.time||"23:00").split(":")[0]);
       const kickM = parseInt((m.time||"00:00").split(":")[1]||0);
       let nowDay, nowH, nowM;
       if (simDay) {
         nowDay = simDay; nowH = simHour; nowM = simMin;
       } else {
-        // matchDay encoding: June N=N (1-30), July N=N+30 (31-61)
-        const matchMonth = e.day <= 30 ? 5 : 6;
-        const matchDom   = e.day <= 30 ? e.day : e.day - 30;
-        const matchDate  = new Date(2026, matchMonth, matchDom, kickH, kickM, 0);
-        const now = new Date();
-        if (now < matchDate) { scores[key] = {status:"NS"}; return; }
-        const startMins = kickH*60 + kickM;
-        const nowMins   = now.getHours()*60 + now.getMinutes() +
-                          (now.getMonth() !== matchMonth || now.getDate() !== matchDom ? 99999 : 0);
-        if (nowMins > startMins + 115) { scores[key] = {status:"FT",home:null,away:null}; return; }
-        scores[key] = {status:"LIVE", home:0, away:0, min: Math.min(90, nowMins - startMins)};
+        const matchStartUTC = m.kickoffUtc
+          ? new Date(m.kickoffUtc).getTime()
+          : (() => { const mm=e.day<=30?5:6,dd=e.day<=30?e.day:e.day-30; return Date.UTC(2026,mm,dd,kickH+4,kickM,0); })();
+        const now = Date.now();
+        if (now < matchStartUTC) { scores[key] = {status:"NS"}; return; }
+        const elapsedMins = Math.floor((now - matchStartUTC) / 60000);
+        if (elapsedMins > 115) { scores[key] = {status:"FT",home:null,away:null}; return; }
+        scores[key] = {status:"LIVE", home:0, away:0, min: Math.min(90, elapsedMins)};
         return;
       }
       if(e.day > nowDay) { scores[key] = {status:"NS"}; return; }
@@ -933,39 +1039,73 @@ const computeLiveScores = (simDay=null, simHour=12, simMin=0) => {
   });
   return scores;
 };
-const LIVE_SCORES_DEFAULT = computeLiveScores();
+const LIVE_SCORES_DEFAULT = {};
 let LIVE_SCORES = LIVE_SCORES_DEFAULT;
+
+// Image with fade-in on load
+function FadeImg({ src, alt="", style={}, ...rest }) {
+  const [loaded, setLoaded] = useState(false);
+  if (!src) return null;
+  return (
+    <img
+      src={src}
+      alt={alt}
+      decoding="async"
+      onLoad={() => setLoaded(true)}
+      style={{ ...style, opacity: loaded ? 1 : 0, transition: loaded ? "opacity 0.25s ease" : "none" }}
+      {...rest}
+    />
+  );
+}
 
 // Hook: merge scoruri reale din Supabase peste scoruri simulate.
 // DB suprascrie simularea; dacă DB e gol (înainte de turneu), simularea rămâne.
 function useLiveScores(simDay, simHour, simMin) {
   const [dbScores, setDbScores] = useState({});
 
-  useEffect(() => {
-    loadLiveScores().then(scores => {
-      if (Object.keys(scores).length > 0) setDbScores(scores);
-    });
+  const applyScores = (scores) => {
+    if (Object.keys(scores).length > 0) setDbScores(scores);
+  };
 
-    const channel = subscribeLiveScores((payload) => {
+  useEffect(() => {
+    loadLiveScores().then(applyScores);
+
+    const unsubLive = subscribeLiveScores((payload) => {
       const row = payload.new;
       if (!row) return;
       setDbScores(prev => ({
         ...prev,
         [row.match_key]: {
-          status: row.status,
-          home:   row.regular_time_home_score,
-          away:   row.regular_time_away_score,
+          status:  row.status,
+          home:    row.regular_time_home_score,
+          away:    row.regular_time_away_score,
           homePen: row.penalty_home_score,
           awayPen: row.penalty_away_score,
-          min:    row.api_minute,
+          min:     row.api_minute,
+          utcDate: row.utc_date ?? null,
         },
       }));
     });
 
-    return () => { channel.unsubscribe(); };
+    // Fallback poll every 60s — catches missed realtime events (dropped WS)
+    const interval = setInterval(() => {
+      loadLiveScores().then(applyScores);
+    }, 60_000);
+
+    // Reload when app comes back to foreground (after phone sleep / tab switch)
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') loadLiveScores().then(applyScores);
+    };
+    document.addEventListener('visibilitychange', onVisible);
+
+    return () => {
+      unsubLive();
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
   }, []);
 
-  const computed = computeLiveScores(simDay, simHour, simMin);
+  const computed = simDay != null ? computeLiveScores(simDay, simHour, simMin) : {};
   return { ...computed, ...dbScores };
 }
 
@@ -973,7 +1113,7 @@ function useLiveScores(simDay, simHour, simMin) {
 const toLabel = (d) => d <= 0 ? `${d+31} May` : d > 30 ? `${d-30} Jul` : `${d} Jun`;
 
 function useCountdown() {
-  const target = new Date("2026-06-11T18:00:00");
+  const target = new Date("2026-06-11T22:00:00Z"); // 18:00 ET = 22:00 UTC
   const [diff, setDiff] = useState(target - new Date());
   useEffect(() => { const t = setInterval(() => setDiff(target - new Date()), 1000); return () => clearInterval(t); }, []);
   return { d:Math.max(0,Math.floor(diff/86400000)), h:Math.max(0,Math.floor((diff%86400000)/3600000)), m:Math.max(0,Math.floor((diff%3600000)/60000)), s:Math.max(0,Math.floor((diff%60000)/1000)) };
@@ -1112,7 +1252,7 @@ function CalendarSlider() {
               {sm.map((m,i)=>(
                 <div key={i} style={{display:"flex",alignItems:"center",padding:"10px 16px",
                   borderBottom:i<sm.length-1?"1px solid rgba(0,0,0,0.06)":"none",gap:8,background:"#fff"}}>
-                  <span style={{fontSize:11,color:"#aaa",fontWeight:600,width:36}}>{m.time}</span>
+                  <span style={{fontSize:11,color:"#aaa",fontWeight:600,width:36}}>{fmtMatchTime(selDay, m.time, m.kickoffUtc)}</span>
                   <span style={{fontSize:12,background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,
                     color:"#fff",borderRadius:5,padding:"2px 5px",fontWeight:700,flexShrink:0}}>{m.group}</span>
                   <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:4}}>
@@ -1588,6 +1728,14 @@ function GrupeTab({ groupRank, setRank, onComplete }) {
   const [dragOver, setDragOver] = useState(null);
   const [done, setDone] = useState(false);
   const touchStartX = useRef(null);
+  const rankingListRef = useRef(null);
+  useEffect(() => {
+    const el = rankingListRef.current;
+    if (!el) return;
+    const prevent = (e) => { if (dragging !== null) e.preventDefault(); };
+    el.addEventListener('touchmove', prevent, { passive: false });
+    return () => el.removeEventListener('touchmove', prevent);
+  }, [dragging]);
 
   const allComplete = GRUPE_LIST.every(g=>[1,2,3,4].every(p=>!!(groupRank[g]||{})[p]));
   const activeGroup = GRUPE_LIST[gIdx];
@@ -1700,7 +1848,7 @@ function GrupeTab({ groupRank, setRank, onComplete }) {
             );
           })}
         </div>
-        <div style={{background:BG}}>
+        <div ref={rankingListRef} style={{background:BG}}>
           <div style={{padding:"6px 14px 3px"}}>
             <span style={{fontSize:12,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1}}>{T[lang].predictedRank}</span>
           </div>
@@ -1712,8 +1860,6 @@ function GrupeTab({ groupRank, setRank, onComplete }) {
             const onTSR = e => { if(!team) return; e.stopPropagation(); setDragging(pos); };
             const onTMR = e => {
               if(dragging===null) return;
-              // only block scroll when actively dragging a row
-              try { e.preventDefault(); } catch(err) {}
               const touch=e.touches[0];
               const el=document.elementFromPoint(touch.clientX,touch.clientY);
               const rowEl=el?.closest('[data-rank-pos]');
@@ -1801,12 +1947,12 @@ const DEFAULT_PRED_SCORING = {
   r32: 10, r16: 20, qf: 40, sf: 60, final: 100,
 };
 const DEFAULT_EXACT_SCORING = {
-  group_result: 30, group_exact: 90,
-  r32_result: 35, r32_exact_bonus: 15,
-  r16_result: 40, r16_exact_bonus: 20,
-  qf_result: 60, qf_exact_bonus: 30,
-  sf_result: 90, sf_exact_bonus: 40,
-  final_result: 120, final_exact_bonus: 50,
+  group_result: 30, group_diff_bonus: 10, group_exact: 90,
+  r32_result: 35, r32_diff_bonus: 10, r32_exact_bonus: 15,
+  r16_result: 40, r16_diff_bonus: 10, r16_exact_bonus: 20,
+  qf_result: 60, qf_diff_bonus: 10, qf_exact_bonus: 30,
+  sf_result: 90, sf_diff_bonus: 10, sf_exact_bonus: 40,
+  final_result: 120, final_diff_bonus: 10, final_exact_bonus: 50,
 };
 const computePredMax = (s) => {
   const groups = INTERACTIVE_GROUPS.length * (s.group1st + s.group2nd + s.group3rd);
@@ -3276,7 +3422,7 @@ function GroupIntroScreen({ group, teams: teamsProp, isKo, onStart, hideHeader=f
 }
 
 
-function InstantPickScreen({ onBack, onComplete, onKoComplete, onModify, savedState, onStateChange, tournamentStarted, viewMode=false, koUnlocked=false, startAtKo=false, realStandings={} }) {
+function InstantPickScreen({ onBack, onComplete, onKoComplete, onModify, savedState, onStateChange, tournamentStarted, viewMode=false, koUnlocked=false, startAtKo=false, realStandings={}, koTeams={} }) {
   const lang = useLang();
   const { pred: PRED_SCORING, predMax: PRED_MAX } = useScoringRules();
   const GROUPS = INTERACTIVE_GROUPS;
@@ -3367,28 +3513,11 @@ function InstantPickScreen({ onBack, onComplete, onKoComplete, onModify, savedSt
   const W = (i) => groupWinners[i] || "TBD";
   const R = (i) => groupRunners[i]  || "TBD";
   const B = (i) => best3Teams[i]    || "TBD";
-  const r32Matchups = [
-    // Grupa A-D cross
-    {home:W(0), away:R(2)}, // 1A vs 2C
-    {home:W(2), away:R(0)}, // 1C vs 2A
-    {home:W(1), away:R(3)}, // 1B vs 2D
-    {home:W(3), away:R(1)}, // 1D vs 2B
-    // Grupa E-H cross
-    {home:W(4), away:R(6)}, // 1E vs 2G
-    {home:W(6), away:R(4)}, // 1G vs 2E
-    {home:W(5), away:R(7)}, // 1F vs 2H
-    {home:W(7), away:R(5)}, // 1H vs 2F
-    // Grupa I-L cross
-    {home:W(8),  away:R(10)}, // 1I vs 2K
-    {home:W(10), away:R(8)},  // 1K vs 2I
-    {home:W(9),  away:R(11)}, // 1J vs 2L
-    {home:W(11), away:R(9)},  // 1L vs 2J
-    // Best 3rd joacă între ele (4 meciuri)
-    {home:B(0), away:B(1)},
-    {home:B(2), away:B(3)},
-    {home:B(4), away:B(5)},
-    {home:B(6), away:B(7)},
-  ]; // = 16 meciuri
+  const R32_KEYS = ['28-0','29-0','29-1','29-2','30-0','30-1','30-2','31-0','31-1','31-2','32-0','32-1','32-2','33-0','33-1','33-2'];
+  const r32Matchups = R32_KEYS.map(key => ({
+    home: koTeams[key]?.home || 'TBD',
+    away: koTeams[key]?.away || 'TBD',
+  })); // = 16 meciuri, ordine FIFA reală
 
   const getWinners = (roundKey) =>
     Object.entries(koPicks)
@@ -3563,6 +3692,11 @@ function InstantPickScreen({ onBack, onComplete, onKoComplete, onModify, savedSt
           <button onClick={()=>navigateGroup(1)} disabled={groupIdx>=GROUPS.length-1} style={{flexShrink:0,width:16,height:34,display:"flex",alignItems:"center",justifyContent:"center",cursor:groupIdx<GROUPS.length-1?"pointer":"default",opacity:groupIdx<GROUPS.length-1?0.6:0.2,transition:"opacity 0.15s",background:"none",border:"none",WebkitTapHighlightColor:"transparent"}}>
             <svg width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1L6 6L1 11" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
           </button>
+        </div>
+      )}
+      {effectiveViewMode&&(
+        <div style={{textAlign:"center",padding:"5px 0",background:"rgba(0,0,0,0.25)",fontSize:11,fontWeight:600,color:"rgba(255,255,255,0.45)",letterSpacing:0.5}}>
+          🔒 {lang==="en"?"View only · task ended":lang==="fr"?"Lecture seule · tâche terminée":"Doar vizualizare · task încheiat"}
         </div>
       )}
     </div>
@@ -4073,14 +4207,12 @@ function GroupRankingScreen({ group, teams, existingRanking, onConfirm, onAutoSa
 
   // Touch drag-to-reorder
   const handleTouchStart = (e, idx) => {
-    e.preventDefault();
     e.stopPropagation();
     setDragIdx(idx);
     setDragOverIdx(null);
   };
   const handleTouchMove = (e) => {
     if (dragIdx === null) return;
-    e.preventDefault();
     const y = e.touches[0].clientY;
     let found = null;
     rowRefs.current.forEach((ref, i) => {
@@ -4461,7 +4593,7 @@ function CircleTab({ label, imageUrl, name, isActive, onClick, lightBg=false, di
         transition:"all 0.4s ease",
       }}>
         {imageUrl
-          ? <img src={imageUrl} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+          ? <img src={imageUrl} alt="" loading="eager" decoding="async" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
           : label}
       </div>
       {!!name&&<span style={{
@@ -4697,18 +4829,14 @@ function BoosterScreen({ onBack }) {
   );
 }
 
-function ChampionScreen({ onBack, initialMode="champion", championPick, topScorerPick, setChampionPick, setTopScorerPick, showToast, simDay=null, simHour=12, simMin=0 }) {
+function ChampionScreen({ onBack, initialMode="champion", championPick, topScorerPick, runnerUpPick, setChampionPick, setTopScorerPick, setRunnerUpPick, showToast, simDay=null, simHour=12, simMin=0 }) {
   const lang = useLang();
   const allTeams = Object.values(ALL_GROUPS_DATA).flat();
   const tCode = (t) => TEAM_CODE[t]||t.slice(0,3).toUpperCase();
-  const showChampion = initialMode !== "scorer";
-  const showScorer = initialMode !== "champion";
-  const simNow = simDay ? new Date(2026,5,simDay,simHour,simMin,0) : new Date();
-  const phase1Deadline = new Date(2026,5,11,19,0,0);
-  const phase2Open     = new Date(2026,5,27,21,0,0);
-  const isPhase1 = simNow < phase1Deadline;
-  const isPhase2 = simNow >= phase2Open;
-  const isLocked = !isPhase1 && !isPhase2;
+  const showChampion = initialMode === "champion";
+  const showScorer = initialMode === "scorer";
+  const showRunnerUp = initialMode === "runnerup";
+  const isLocked = isBonusPickLocked(simDay, simHour, simMin);
   const featuredChampionTeams = ["Argentina","Brazil","France","England","Spain","Portugal"].filter(t=>allTeams.includes(t));
   const otherChampionTeams = allTeams.filter(t=>!featuredChampionTeams.includes(t));
   const pickCardStyle = UI.card;
@@ -4723,6 +4851,13 @@ function ChampionScreen({ onBack, initialMode="champion", championPick, topScore
     setChampionPick(next);
     if(next) finishPick(T[lang].winnerTeamSaved, FLAGS[team]||"🏆");
     else showToast&&showToast(T[lang].winnerTeamCleared, "↺");
+  };
+  const selectRunnerUp = (team) => {
+    if (isLocked) return;
+    const next = runnerUpPick===team ? null : team;
+    setRunnerUpPick(next);
+    if(next) finishPick(T[lang].runnerUpSaved, FLAGS[team]||"🥈");
+    else showToast&&showToast(T[lang].runnerUpCleared, "↺");
   };
   const [tsTeam, setTsTeam] = useState(topScorerPick?.team||null);
   const [champPopup, setChampPopup] = useState(false);
@@ -4748,7 +4883,7 @@ function ChampionScreen({ onBack, initialMode="champion", championPick, topScore
           <div style={{display:"flex",alignItems:"center",gap:10,padding:"28px 14px 28px"}}>
             <button onClick={onBack} style={{background:"rgba(255,255,255,0.12)",border:"none",borderRadius:10,width:34,height:34,color:"#fff",fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>‹</button>
             <div style={{flex:1,textAlign:"center"}}>
-              <div style={{fontSize:18,fontWeight:800,color:"#fff"}}>{showChampion?T[lang].pickChampionHeader:T[lang].pickTopScorerHeader}</div>
+              <div style={{fontSize:18,fontWeight:800,color:"#fff"}}>{showChampion?T[lang].pickChampionHeader:showRunnerUp?T[lang].pickRunnerUpHeader:T[lang].pickTopScorerHeader}</div>
             </div>
             <div style={{width:34,flexShrink:0}}/>
           </div>
@@ -4785,7 +4920,7 @@ function ChampionScreen({ onBack, initialMode="champion", championPick, topScore
                   {championPick ? `${tCode(championPick)} ${T[lang].selectedLabel}` : T[lang].tapTeamBelow}
                 </div>
               </div>
-              {championPick&&(
+              {championPick&&!isLocked&&(
                 <button onClick={()=>selectChampion(championPick)} style={{border:"none",background:"#F3F4F6",borderRadius:10,padding:"8px 10px",fontSize:11,fontWeight:800,color:"#6B7280",cursor:"pointer",flexShrink:0}}>
                   {T[lang].clearLabel}
                 </button>
@@ -4813,6 +4948,63 @@ function ChampionScreen({ onBack, initialMode="champion", championPick, topScore
               const isSel = championPick===team;
               return (
                 <button key={team} onClick={()=>selectChampion(team)}
+                  style={{background:"#fff",borderRadius:14,border:`1.5px solid ${isSel?NAVY:"transparent"}`,boxShadow:isSel?"0 2px 12px rgba(10,46,138,0.12)":"0 2px 10px rgba(0,0,0,0.05)",padding:"10px 10px",minHeight:58,cursor:isLocked?"default":"pointer",display:"flex",alignItems:"center",gap:9,position:"relative",overflow:"hidden",textAlign:"left"}}>
+                  {isSel&&<div style={{position:"absolute",top:7,right:7,width:18,height:18,borderRadius:"50%",background:GREEN,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:900,color:"#fff"}}>✓</div>}
+                  <span style={{fontSize:24,lineHeight:1,flexShrink:0}}>{FLAGS[team]||"🏳"}</span>
+                  <span style={{flex:1,minWidth:0}}>
+                    <span style={{display:"block",fontSize:11,fontWeight:850,color:isSel?NAVY:DARK,lineHeight:1.15,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{team}</span>
+                    <span style={{display:"block",fontSize:11,fontWeight:800,color:"#C0C8D8",letterSpacing:0.5,marginTop:3}}>{tCode(team)}</span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </>}
+
+        {/* Runner-up card */}
+        {showRunnerUp&&<>
+          <div style={{...pickCardStyle,padding:"18px",marginBottom:12,position:"relative"}}>
+            <div style={{display:"flex",alignItems:"center",gap:14}}>
+              <div style={{width:76,height:76,borderRadius:"50%",background:"linear-gradient(135deg,#EEF2FF,#E8EAED)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,border:"1px solid rgba(100,120,180,0.22)"}}>
+                <span style={{fontSize:46,lineHeight:1}}>{runnerUpPick ? (FLAGS[runnerUpPick]||"🏳") : "🥈"}</span>
+              </div>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{...pickLabelStyle,color:"#5060A0"}}>{T[lang].runnerUpPickLabel}</div>
+                <div style={{fontSize:22,fontWeight:900,color:DARK,marginTop:4,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+                  {runnerUpPick || T[lang].chooseRunnerUp}
+                </div>
+                <div style={{fontSize:12,color:"#9CA3AF",fontWeight:600,marginTop:3}}>
+                  {runnerUpPick ? `${tCode(runnerUpPick)} ${T[lang].selectedLabel}` : T[lang].tapTeamBelow}
+                </div>
+              </div>
+              {runnerUpPick&&!isLocked&&(
+                <button onClick={()=>selectRunnerUp(runnerUpPick)} style={{border:"none",background:"#F3F4F6",borderRadius:10,padding:"8px 10px",fontSize:11,fontWeight:800,color:"#6B7280",cursor:"pointer",flexShrink:0}}>
+                  {T[lang].clearLabel}
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:12,opacity:isLocked?0.5:1,pointerEvents:isLocked?"none":"auto"}}>
+            {featuredChampionTeams.map(team=>{
+              const isSel = runnerUpPick===team;
+              return (
+                <button key={`ru-featured-${team}`} onClick={()=>selectRunnerUp(team)}
+                  style={{background:isSel?NAVY:"#fff",borderRadius:16,border:`1.5px solid ${isSel?NAVY:"rgba(100,120,180,0.20)"}`,boxShadow:isSel?"0 4px 14px rgba(10,46,138,0.16)":"0 2px 10px rgba(0,0,0,0.05)",padding:"12px 6px",minHeight:94,cursor:isLocked?"default":"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:7,position:"relative",overflow:"hidden"}}>
+                  <span style={{fontSize:34,lineHeight:1}}>{FLAGS[team]||"🏳"}</span>
+                  <span style={{fontSize:11,fontWeight:900,color:isSel?"#fff":DARK,lineHeight:1.15,textAlign:"center",maxWidth:"100%",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{team}</span>
+                  <span style={{fontSize:11,fontWeight:900,color:isSel?"rgba(255,255,255,0.55)":"#5060A0",letterSpacing:0.5}}>{tCode(team)}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div style={{...pickLabelStyle,margin:"2px 2px 8px"}}>{T[lang].allTeams}</div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:8,opacity:isLocked?0.5:1,pointerEvents:isLocked?"none":"auto"}}>
+            {otherChampionTeams.map(team=>{
+              const isSel = runnerUpPick===team;
+              return (
+                <button key={`ru-${team}`} onClick={()=>selectRunnerUp(team)}
                   style={{background:"#fff",borderRadius:14,border:`1.5px solid ${isSel?NAVY:"transparent"}`,boxShadow:isSel?"0 2px 12px rgba(10,46,138,0.12)":"0 2px 10px rgba(0,0,0,0.05)",padding:"10px 10px",minHeight:58,cursor:isLocked?"default":"pointer",display:"flex",alignItems:"center",gap:9,position:"relative",overflow:"hidden",textAlign:"left"}}>
                   {isSel&&<div style={{position:"absolute",top:7,right:7,width:18,height:18,borderRadius:"50%",background:GREEN,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:900,color:"#fff"}}>✓</div>}
                   <span style={{fontSize:24,lineHeight:1,flexShrink:0}}>{FLAGS[team]||"🏳"}</span>
@@ -4915,10 +5107,10 @@ function ChampionScreen({ onBack, initialMode="champion", championPick, topScore
           borderTop:"2px solid #FFD700",
           padding:"12px 20px 28px",
           display:"flex",alignItems:"center",gap:12}}>
-          <button onClick={()=>setTopScorerPick(null)}
+          {!isLocked&&<button onClick={()=>setTopScorerPick(null)}
             style={{background:"rgba(255,255,255,0.12)",border:"1px solid rgba(255,255,255,0.2)",borderRadius:10,padding:"7px 14px",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",flexShrink:0}}>
             {T[lang].changeLabel}
-          </button>
+          </button>}
           <span style={{fontSize:24,lineHeight:1,flexShrink:0}}>{FLAGS[topScorerPick.team]||"🏳"}</span>
           <div style={{flex:1,minWidth:0}}>
             <div style={{fontSize:10,fontWeight:700,color:"#FFD700",letterSpacing:1,textTransform:"uppercase"}}>{T[lang].topScorer}</div>
@@ -5223,8 +5415,354 @@ function LeagueRankingCard({ title, viewLabel, top3, avatarUrl, displayName, onL
   );
 }
 
+// ── BONUS PREDICTION ────────────────────────────────────────────────────────
+function BonusPredictionScreen({ onBack, onChampion, championPick, runnerUpPick, topScorerPick, simDay=null, simHour=12, simMin=0 }) {
+  const lang = useLang();
+  const tCode = (t) => TEAM_CODE[t]||t.slice(0,3).toUpperCase();
+  const isLocked = isBonusPickLocked(simDay, simHour, simMin);
+
+  const picks = [
+    { key:"champion", icon:"🏆", color:"#D4820A", bg:"linear-gradient(135deg,#FFF7E1,#FFF3CC)", label:T[lang].championPickLabel, pickVal:championPick, flagTeam:championPick, subtext:championPick?`${tCode(championPick)} · ${T[lang].selectedLabel}`:null, empty:T[lang].chooseWinner, mode:"champion" },
+    { key:"runnerup", icon:"🥈", color:"#5060A0", bg:"linear-gradient(135deg,#EEF2FF,#E8EEFF)", label:T[lang].runnerUpPickLabel, pickVal:runnerUpPick, flagTeam:runnerUpPick, subtext:runnerUpPick?`${tCode(runnerUpPick)} · ${T[lang].selectedLabel}`:null, empty:T[lang].chooseRunnerUp, mode:"runnerup" },
+    { key:"scorer",  icon:"⚽", color:"#059669", bg:"linear-gradient(135deg,#F0FDF4,#DCFCE7)", label:T[lang].topScorerPickLabel, pickVal:topScorerPick?.player||null, flagTeam:topScorerPick?.team||null, subtext:topScorerPick?.team?`${FLAGS[topScorerPick.team]||""} ${topScorerPick.team}`:null, empty:T[lang].pickPlayer, mode:"scorer" },
+  ];
+
+  const scoringRules = [
+    { icon:"🏆", pts:"100", label:T[lang].championPickLabel, sub:null },
+    { icon:"🥈", pts:"30",  label:T[lang].runnerUpPickLabel, sub:null },
+    { icon:"⚽", pts:"5×",  label:T[lang].topScorerPickLabel, sub:"+50 bonus" },
+  ];
+
+  return (
+    <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",position:"relative"}}>
+
+      {/* Header */}
+      <div style={{background:"linear-gradient(160deg,#0A2E8A 0%,#001840 100%)",flexShrink:0,position:"relative",zIndex:1,paddingBottom:20}}>
+        {/* Nav row */}
+        <div style={{display:"flex",alignItems:"center",gap:10,padding:"28px 14px 14px"}}>
+          <button onClick={onBack} style={{background:"rgba(255,255,255,0.12)",border:"none",borderRadius:10,width:34,height:34,color:"#fff",fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>‹</button>
+          <div style={{flex:1,textAlign:"center"}}>
+            <div style={{fontSize:18,fontWeight:800,color:"#FFD700",letterSpacing:0.3}}>⚡ {T[lang].bonusPrediction}</div>
+          </div>
+          <div style={{width:34,flexShrink:0}}/>
+        </div>
+
+        {/* Description */}
+        <p style={{fontSize:13,color:"rgba(255,255,255,0.62)",margin:"0 20px 18px",textAlign:"center",lineHeight:1.55}}>{T[lang].bonusDesc}</p>
+
+        {/* Scoring rules — 3 chips */}
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,padding:"0 14px"}}>
+          {scoringRules.map(({icon,pts,label,sub})=>(
+            <div key={label} style={{background:"rgba(255,255,255,0.07)",border:"1px solid rgba(255,215,0,0.18)",borderRadius:14,padding:"12px 6px",textAlign:"center"}}>
+              <div style={{fontSize:22,lineHeight:1,marginBottom:4}}>{icon}</div>
+              <div style={{fontSize:18,fontWeight:900,color:"#FFD700",lineHeight:1}}>{pts}</div>
+              {sub&&<div style={{fontSize:9,fontWeight:700,color:"#FFD700",opacity:0.75,letterSpacing:0.3,marginTop:1}}>{sub}</div>}
+              <div style={{fontSize:9,fontWeight:700,color:"rgba(255,255,255,0.5)",letterSpacing:0.3,marginTop:3,textTransform:"uppercase",lineHeight:1.2}}>{label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Content */}
+      <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",padding:"16px 14px 48px"}}>
+        {isLocked&&(
+          <div style={{background:"rgba(10,46,138,0.07)",border:"1.5px solid rgba(10,46,138,0.14)",borderRadius:14,padding:"12px 16px",marginBottom:14,display:"flex",alignItems:"center",gap:10}}>
+            <span style={{fontSize:20}}>🔒</span>
+            <div>
+              <div style={{fontSize:13,fontWeight:700,color:NAVY}}>{T[lang].picksLockedTitle}</div>
+              <div style={{fontSize:11,color:"#6B7280",marginTop:2}}>
+                {[championPick,runnerUpPick,topScorerPick?.player].filter(Boolean).length ? T[lang].picksLockedBody : T[lang].bonusClosedEmptySub}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {picks.map(({key, icon, color, bg, label, pickVal, flagTeam, subtext, empty, mode})=>(
+          <div key={key} style={{background:"#fff",borderRadius:20,padding:"16px",marginBottom:12,boxShadow:"0 4px 16px rgba(0,0,0,0.06)"}}>
+            <div style={{display:"flex",alignItems:"center",gap:12}}>
+              <div style={{width:54,height:54,borderRadius:16,background:bg,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,border:`1.5px solid ${color}28`}}>
+                <span style={{fontSize:30,lineHeight:1}}>{flagTeam ? (FLAGS[flagTeam]||"🏳") : icon}</span>
+              </div>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:10,fontWeight:800,color,letterSpacing:0.8,textTransform:"uppercase",marginBottom:2}}>{label}</div>
+                <div style={{fontSize:15,fontWeight:850,color:pickVal?DARK:"#9CA3AF",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{pickVal||empty}</div>
+                {subtext&&<div style={{fontSize:11,color:"#9CA3AF",fontWeight:600,marginTop:1}}>{subtext}</div>}
+              </div>
+              {pickVal&&<div style={{width:22,height:22,borderRadius:"50%",background:GREEN,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:900,color:"#fff",flexShrink:0}}>✓</div>}
+            </div>
+            {!isLocked&&(
+              <button onClick={()=>onChampion(mode)}
+                style={{marginTop:12,width:"100%",border:`1.5px solid ${pickVal?color+"44":"rgba(10,46,138,0.12)"}`,background:pickVal?"#fff":NAVY,borderRadius:12,padding:"10px 0",fontSize:13,fontWeight:800,color:pickVal?color:"#fff",cursor:"pointer",letterSpacing:0.2}}>
+                {pickVal ? `✎ ${T[lang].changeLabel}` : `${T[lang].openBonusLabel} →`}
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── LIVE WIDGET ──────────────────────────────────────────────────────────────
+function LiveWidget({ simDay, simHour, simMin }) {
+  const [open, setOpen] = React.useState(false);
+  const [matchEvents, setMatchEvents] = useState({});
+  const [eventsLoaded, setEventsLoaded] = useState(false);
+  const containerRef = useRef(null);
+
+  const liveScores = useLiveScores(simDay, simHour, simMin);
+
+  const matchByKey = {};
+  CALENDAR_EVENTS.forEach(e => {
+    (e.matches || []).forEach((m, i) => {
+      const k = getMatchKey(m, e.day, i);
+      matchByKey[k] = { ...m, day: e.day };
+    });
+  });
+
+  const liveMatchKeys = (() => {
+    const keys = Object.entries(liveScores)
+      .filter(([, v]) => ['LIVE','HT','ET','PEN'].includes(v?.status))
+      .map(([k]) => k)
+      .sort((a, b) => {
+        const da = liveScores[a]?.utcDate, db = liveScores[b]?.utcDate;
+        if (da && db) return da < db ? -1 : da > db ? 1 : 0;
+        return a.localeCompare(b);
+      });
+    // Deduplicare: dacă două chei au aceleași echipe, păstrează prima
+    const seen = new Set();
+    return keys.filter(k => {
+      const info = matchByKey[k];
+      const pair = info ? `${info.home}|${info.away}` : k;
+      if (seen.has(pair)) return false;
+      seen.add(pair);
+      return true;
+    });
+  })();
+
+  const hasLive = liveMatchKeys.length > 0;
+
+  // Închide la click în afara panelului
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    document.addEventListener('touchstart', handler, { passive: true });
+    return () => {
+      document.removeEventListener('mousedown', handler);
+      document.removeEventListener('touchstart', handler);
+    };
+  }, [open]);
+
+  // Când nu mai sunt meciuri live, închide panelul
+  useEffect(() => {
+    if (!hasLive) setOpen(false);
+  }, [hasLive]);
+
+  const loadEventsForAll = useCallback(async () => {
+    if (liveMatchKeys.length === 0) { setEventsLoaded(true); return; }
+    const results = await Promise.all(liveMatchKeys.map(k => loadMatchEvents(k).then(evs => ({ k, evs }))));
+    const evMap = {};
+    results.forEach(({ k, evs }) => { evMap[k] = evs; });
+    setMatchEvents(prev => ({ ...prev, ...evMap }));
+    setEventsLoaded(true);
+  }, [liveMatchKeys.join(',')]);
+
+  useEffect(() => {
+    if (!open) return;
+    setEventsLoaded(false);
+    loadEventsForAll();
+    const iv = setInterval(loadEventsForAll, 30_000);
+    return () => clearInterval(iv);
+  }, [open, loadEventsForAll]);
+
+  const filterTeamEvents = (events, teamName) => {
+    const varSet = new Set(
+      events.filter(e => e.type === 'Var' && (e.detail||'').toLowerCase().includes('goal disallowed'))
+            .map(e => `${e.minute}-${e.player_name}`)
+    );
+    const seen = new Set();
+    return events.filter(e => {
+      if (e.team_name !== teamName) return false;
+      if (e.type === 'Goal' && varSet.has(`${e.minute}-${e.player_name}`)) return false;
+      // Deduplicare minut exact: același minut + tip + primele caractere din detail
+      const keyMinute = `${e.minute}-${e.type}-${(e.detail||'').slice(0,8)}`;
+      if (seen.has(keyMinute)) return false;
+      // Deduplicare jucător: același jucător nu poate primi același card de două ori
+      const keyPlayer = e.type === 'Card' ? `card-${e.player_name}-${(e.detail||'').slice(0,8)}` : null;
+      if (keyPlayer && seen.has(keyPlayer)) return false;
+      seen.add(keyMinute);
+      if (keyPlayer) seen.add(keyPlayer);
+      return true;
+    });
+  };
+
+  const evIcon = (type, detail) => {
+    if (type === 'Goal') return '⚽';
+    const d = (detail||'').toLowerCase();
+    if (type === 'Card') return d.includes('red') ? '🟥' : '🟨';
+    return null;
+  };
+
+  if (!hasLive) return null;
+
+  return (
+    <div ref={containerRef} style={{position:'fixed',bottom:'calc(76px + env(safe-area-inset-bottom, 0px))',left:16,zIndex:1100}}>
+      {/* Buton flotant */}
+      {!open && (
+        <button onClick={() => setOpen(true)} style={{
+          height:40, borderRadius:20, border:'none', cursor:'pointer',
+          background:'linear-gradient(135deg,#DC2626,#EF4444)',
+          boxShadow:'0 4px 18px rgba(239,68,68,0.5)',
+          display:'flex', alignItems:'center', gap:6, padding:'0 16px',
+          WebkitTapHighlightColor:'transparent',
+        }}>
+          <span style={{color:'#fff',fontSize:11,fontWeight:900,animation:'livePulse 1.4s ease-in-out infinite'}}>●</span>
+          <span style={{color:'#fff',fontSize:13,fontWeight:900,letterSpacing:1}}>LIVE</span>
+          {liveMatchKeys.length > 1 && (
+            <span style={{background:'rgba(255,255,255,0.25)',borderRadius:10,padding:'1px 6px',fontSize:11,fontWeight:800,color:'#fff'}}>{liveMatchKeys.length}</span>
+          )}
+        </button>
+      )}
+
+      {/* Panel popup */}
+      {open && (
+        <div style={{
+          width: Math.min(340, window.innerWidth - 32),
+          maxHeight: Math.min(500, window.innerHeight - 160),
+          borderRadius:20, overflow:'hidden',
+          boxShadow:'0 8px 40px rgba(0,0,0,0.25)',
+          display:'flex', flexDirection:'column',
+          background:'#fff',
+          border:'1px solid rgba(239,68,68,0.12)',
+        }}>
+          {/* Header */}
+          <div style={{
+            background:'linear-gradient(135deg,#B91C1C,#DC2626)',
+            padding:'12px 16px', display:'flex', alignItems:'center', justifyContent:'space-between', flexShrink:0,
+          }}>
+            <span style={{color:'#fff',fontWeight:900,fontSize:14,letterSpacing:0.5,display:'flex',alignItems:'center',gap:7}}>
+              <span style={{animation:'livePulse 1.4s ease-in-out infinite'}}>●</span>
+              LIVE · {liveMatchKeys.length} {liveMatchKeys.length === 1 ? 'meci' : 'meciuri'}
+            </span>
+            <button onClick={() => setOpen(false)} style={{
+              background:'rgba(255,255,255,0.2)', border:'none', borderRadius:8,
+              color:'#fff', fontSize:18, cursor:'pointer', lineHeight:1, padding:'2px 8px',
+              WebkitTapHighlightColor:'transparent',
+            }}>×</button>
+          </div>
+
+          {/* Conținut */}
+          <div style={{overflowY:'auto',flex:1,WebkitOverflowScrolling:'touch'}}>
+            {!eventsLoaded && (
+              <div style={{textAlign:'center',padding:'28px 0',color:'#9CA3AF',fontSize:13,display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+                <span style={{width:16,height:16,borderRadius:'50%',border:`2px solid ${NAVY}22`,borderTopColor:NAVY,animation:'spin 0.9s linear infinite',display:'inline-block'}}/>
+                Loading...
+              </div>
+            )}
+            {eventsLoaded && liveMatchKeys.map(k => {
+              const live = liveScores[k];
+              const info = matchByKey[k];
+              const homeTeam = info?.home || '';
+              const awayTeam = info?.away || '';
+              const homeFlag = info?.homeFlag || FLAGS[homeTeam] || '🏳';
+              const awayFlag = info?.awayFlag || FLAGS[awayTeam] || '🏳';
+              const evs = matchEvents[k] || [];
+              const homeEvs = filterTeamEvents(evs, homeTeam);
+              const awayEvs = filterTeamEvents(evs, awayTeam);
+              const isLive = live?.status === 'LIVE';
+              return (
+                <div key={k} style={{padding:'12px 14px 14px',borderBottom:'1px solid #F3F4F6'}}>
+                  {/* Scor */}
+                  <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:6,marginBottom:10}}>
+                    <div style={{display:'flex',flexDirection:'column',alignItems:'center',flex:1,minWidth:0,gap:1}}>
+                      <span style={{fontSize:24,lineHeight:1}}>{homeFlag}</span>
+                      <span style={{fontSize:10,fontWeight:800,color:DARK}}>{TEAM_CODE[homeTeam]||homeTeam.slice(0,3).toUpperCase()}</span>
+                    </div>
+                    <div style={{textAlign:'center',flexShrink:0}}>
+                      <div style={{fontSize:26,fontWeight:900,color:DARK,lineHeight:1,letterSpacing:-1}}>{live?.home ?? '?'}–{live?.away ?? '?'}</div>
+                      <div style={{fontSize:9,fontWeight:800,letterSpacing:0.5,marginTop:2,
+                        color:isLive?'#EF4444':'#F59E0B',
+                        animation:isLive?'livePulse 1.4s ease-in-out infinite':'none'}}>
+                        {isLive ? `● ${live.min ? live.min+"' " : ''}LIVE` : live?.status||''}
+                      </div>
+                    </div>
+                    <div style={{display:'flex',flexDirection:'column',alignItems:'center',flex:1,minWidth:0,gap:1}}>
+                      <span style={{fontSize:24,lineHeight:1}}>{awayFlag}</span>
+                      <span style={{fontSize:10,fontWeight:800,color:DARK}}>{TEAM_CODE[awayTeam]||awayTeam.slice(0,3).toUpperCase()}</span>
+                    </div>
+                  </div>
+                  {/* Evenimente două coloane */}
+                  {(homeEvs.length > 0 || awayEvs.length > 0) && (
+                    <div style={{display:'grid',gridTemplateColumns:'1fr 2px 1fr',borderTop:'1px solid #F3F4F6',paddingTop:8,marginTop:2}}>
+                      {/* Home — aliniat dreapta */}
+                      <div style={{display:'flex',flexDirection:'column',gap:4,alignItems:'flex-end',paddingRight:8}}>
+                        {homeEvs.map((ev, i) => {
+                          const icon = evIcon(ev.type, ev.detail);
+                          return (
+                            <div key={i} style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:0}}>
+                              <div style={{display:'flex',alignItems:'center',gap:3,fontSize:10,color:'#1F2937'}}>
+                                {ev.type === 'subst' ? (
+                                  <span style={{textAlign:'right',lineHeight:1.3}}>
+                                    <span style={{color:'#16A34A',fontSize:9}}>▲</span> {ev.player_name}
+                                    {ev.assist_name && <><br/><span style={{color:'#9CA3AF',fontSize:8,marginLeft:8}}><span style={{color:'#DC2626',fontSize:9}}>▼</span> {ev.assist_name}</span></>}
+                                  </span>
+                                ) : (
+                                  <span style={{textAlign:'right',lineHeight:1.3}}>
+                                    {ev.player_name}
+                                    {ev.assist_name && <><br/><span style={{color:'#9CA3AF',fontSize:8}}>assist: {ev.assist_name}</span></>}
+                                  </span>
+                                )}
+                                {icon && <span style={{flexShrink:0,fontSize:12}}>{icon}</span>}
+                                <span style={{color:'#9CA3AF',fontSize:9,flexShrink:0,fontWeight:600}}>{ev.minute}'</span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      {/* Separator vertical */}
+                      <div style={{background:'#E5E7EB',margin:'2px 0'}}/>
+                      {/* Away — aliniat stânga */}
+                      <div style={{display:'flex',flexDirection:'column',gap:4,alignItems:'flex-start',paddingLeft:8}}>
+                        {awayEvs.map((ev, i) => {
+                          const icon = evIcon(ev.type, ev.detail);
+                          return (
+                            <div key={i} style={{display:'flex',flexDirection:'column',alignItems:'flex-start',gap:0}}>
+                              <div style={{display:'flex',alignItems:'center',gap:3,fontSize:10,color:'#1F2937'}}>
+                                <span style={{color:'#9CA3AF',fontSize:9,flexShrink:0,fontWeight:600}}>{ev.minute}'</span>
+                                {icon && <span style={{flexShrink:0,fontSize:12}}>{icon}</span>}
+                                {ev.type === 'subst' ? (
+                                  <span style={{lineHeight:1.3}}>
+                                    <span style={{color:'#16A34A',fontSize:9}}>▲</span> {ev.player_name}
+                                    {ev.assist_name && <><br/><span style={{color:'#9CA3AF',fontSize:8,marginLeft:8}}><span style={{color:'#DC2626',fontSize:9}}>▼</span> {ev.assist_name}</span></>}
+                                  </span>
+                                ) : (
+                                  <span style={{lineHeight:1.3}}>
+                                    {ev.player_name}
+                                    {ev.assist_name && <><br/><span style={{color:'#9CA3AF',fontSize:8}}>assist: {ev.assist_name}</span></>}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── HOME ────────────────────────────────────────────────────────────────────
-function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateBoard, onOpenGroups, onCopyPredictions, onCopyExactScores, onCopySpecial, onAccount, onNotifications, onChampion, onBooster, myBoards, predictionsComplete, instantPickState=null, instantPickDone, allGroupsDone=false, groupsDoneCount=null, koPickDone, koUnlocked, exactScores, activeBoardId, setActiveBoardId, tournamentStarted, simDay, simHour, simMin, createdBoards=[], showFirstAction, leaderboardData={}, boardsLoading=false, predictionsLoaded={}, championPick=null, topScorerPick=null, setChampionPick=()=>{}, setTopScorerPick=()=>{}, myScoreBreakdown=null, hasUnread=false }) {
+function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateBoard, onOpenGroups, onCentralStats, onCopyPredictions, onCopyExactScores, onCopySpecial, onAccount, onNotifications, onChampion, onBooster, onBonus, myBoards, predictionsComplete, instantPickState=null, instantPickDone, allGroupsDone=false, groupsDoneCount=null, koPickDone, koUnlocked, exactScores, activeBoardId, setActiveBoardId, tournamentStarted, simDay, simHour, simMin, createdBoards=[], showFirstAction, leaderboardData={}, boardsLoading=false, predictionsLoaded={}, championPick=null, runnerUpPick=null, topScorerPick=null, setChampionPick=()=>{}, setTopScorerPick=()=>{}, myScoreBreakdown=null, hasUnread=false }) {
   const lang = useLang();
   const user = useUser();
   const displayName = useDisplayName();
@@ -5236,6 +5774,8 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
   const [boardSwitching, setBoardSwitching] = useState(false);
   const activeId = activeBoardId;
   const setActiveId = setActiveBoardId;
+  const bonusPickLocked = isBonusPickLocked(simDay, simHour, simMin);
+  const bonusPickCount = [championPick, runnerUpPick, topScorerPick?.player].filter(Boolean).length;
   const allSliderItems = myBoards;
   const [sliderPos, setSliderPos] = useState(()=>Math.max(0,myBoards.findIndex(b=>b.id===activeBoardId)));
   const sliderTouchRef = useRef(null);
@@ -5291,7 +5831,7 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
   const prizeSlots = leaders.filter(u=>u.emoji||u.isMe||u.empty).length;
   const topCount = Math.max(3, prizeSlots || 3);
   const top3 = leaders.slice(0, topCount);
-  const _deadlinePassed = simDay ? (simDay > 11 || (simDay === 11 && (simHour||0) >= 19)) : new Date() >= new Date(2026,5,11,19,0,0);
+  const _deadlinePassed = isMatchPast(11, '16:00', simDay, simHour);
   const predictionProgress = getPredictionProgress(instantPickState || {});
   const task1Done = predictionProgress.complete || instantPickDone || !!predictionsComplete[activeId];
   const _boardDone = task1Done;
@@ -5309,25 +5849,42 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
     _pickScrolled.add(activeId);
     setTimeout(()=>scrollTo(exactScoreRef), 700);
   },[instantPickDone,activeId]);
-  const _exWkMM = (()=>{ const mm={}; CALENDAR_EVENTS.forEach(e=>{mm[e.day]=e.matches;}); return mm; })();
+  const _exCalendarEvents = getDisplayCalendarEvents();
+  const _exWkMM = (()=>{ const mm={}; _exCalendarEvents.forEach(e=>{mm[e.day]=e.matches;}); return mm; })();
   const _exWkDays = (s)=>Array.from({length:7},(_,i)=>s+i).filter(d=>d>=1&&d<=50);
-  const _exWkTotal = (s)=>_exWkDays(s).reduce((a,d)=>a+(_exWkMM[d]||[]).length,0);
-  const _exWkScored = (s)=>_exWkDays(s).reduce((a,d)=>a+(_exWkMM[d]||[]).filter((_,i)=>(exactScores||{})[`${d}-${i}`]).length,0);
-  const todaySimEx = simDay ?? getRealTournamentDay();
-  const exactWeekStart = todaySimEx<=14?8:todaySimEx<=21?15:todaySimEx<=28?22:29;
+  // Count exact-score progress by the local display day, matching what is currently possible to predict.
+  const _exDisplayMM = (() => {
+    const mm = {};
+    _exCalendarEvents.forEach(e => {
+      if (!isWeekUnlocked(e.day, simDay, simHour, simMin)) return;
+      mm[e.day] = (e.matches || []).filter(m =>
+        m.homeFlag !== '🏆' &&
+        !isMatchPast(e.day, m.time, simDay, simHour, m.kickoffUtc)
+      );
+    });
+    return mm;
+  })();
+  const _exWkTotal = (s) => _exWkDays(s)
+    .reduce((a, d) => a + (_exDisplayMM[d] || []).length, 0);
+  const _exWkScored = (s) => _exWkDays(s)
+    .reduce((a, d) => a + (_exDisplayMM[d] || []).filter(m => !!(exactScores || {})[m.matchKey]).length, 0);
+  const todaySimEx = simDay ?? getLocalTournamentDay();
   const _calWeeks = [-6,1,8,15,22,29,36,43];
   const todayCalendarWeek = _calWeeks.find(w=>todaySimEx>=w&&todaySimEx<=w+6) ?? _calWeeks[0];
+  const _exSimNow = simDay ? new Date(Date.UTC(2026,5,simDay,(simHour||12)+4,simMin||0,0)) : new Date();
+  const _exJune = (d) => new Date(Date.UTC(2026,5,d,5,0,0)); // 08:00 Romania (EEST = UTC+3) = 05:00 UTC
+  // Advance week as soon as unlock fires, even if still same calendar day
+  const exactWeekStart = _exSimNow>=_exJune(28)?29:_exSimNow>=_exJune(20)?22:_exSimNow>=_exJune(14)?15:8;
   const exactWeekTotal = _exWkTotal(exactWeekStart);
   const exactWeekScored = _exWkScored(exactWeekStart);
-  const exactWeekDone = exactWeekTotal>0 && exactWeekScored===exactWeekTotal;
-  const _exSimNow = simDay ? new Date(2026,5,simDay,simHour||12,simMin||0,0) : new Date();
-  const _exJune = (d) => new Date(2026,5,d,8,0,0);
-  const exactWeekUnlocked = exactWeekStart===8 ? true
-    : exactWeekStart===15 ? _exSimNow >= _exJune(14)
-    : exactWeekStart===22 ? _exSimNow >= _exJune(21)
-    : _exSimNow >= _exJune(28);
+  const exactWeekDone = exactWeekTotal===0 || exactWeekScored===exactWeekTotal;
+  const exactWeekHasStarted = _exCalendarEvents
+    .filter(e => e.day >= exactWeekStart && e.day <= exactWeekStart + 6)
+    .some(e => (e.matches||[]).some(m => isMatchPast(e.day, m.time, simDay, simHour, m.kickoffUtc)));
+  const exactWeekUnlocked = true;
+  const exactWeekStartLabel = lang==="ro"?`Incepe ${exactWeekStart} Iun`:lang==="fr"?`Commence ${exactWeekStart} juin`:`Starts Jun ${exactWeekStart}`;
   const nextTask =
-    !_boardDone ? 0 :
+    (!_boardDone && !_deadlinePassed) ? 0 :
     (!exactWeekDone && exactWeekUnlocked) ? 1 :
     null;
   const predDoneCount = Math.max(predictionProgress.done, groupsDoneCount !== null ? groupsDoneCount : 0);
@@ -5335,7 +5892,7 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
   const _predStepsDone = _boardDone ? _predStepsTotal : predDoneCount;
   const naCard = (()=>{
     if(nextTask===0) return { title:T[lang].predCardTitle, sub:T[lang].predCardSub, due:!_deadlinePassed?T[lang].dueJun11:null, progress:_predStepsDone, total:_predStepsTotal, label:predDoneCount>0?T[lang].continuePredictions:T[lang].startPredictions, onClick:()=>onPredict(activeId), badge:T[lang].nextActionLabel };
-    if(nextTask===1) return { title:T[lang].exactCardTitle, sub:T[lang].exactCardSub, due:!_deadlinePassed?T[lang].dueJun11:null, progress:exactWeekScored, total:Math.max(2, exactWeekTotal), label:T[lang].openScores, onClick:()=>onOpenGroups&&onOpenGroups(exactWeekStart), badge:T[lang].nextActionLabel };
+    if(nextTask===1) return { title:T[lang].exactCardTitle, sub:T[lang].exactCardSub, due:!exactWeekHasStarted&&exactWeekStart>8?exactWeekStartLabel:null, progress:exactWeekScored, total:Math.max(2, exactWeekTotal), label:T[lang].openScores, onClick:()=>onOpenGroups&&onOpenGroups(exactWeekStart), badge:T[lang].nextActionLabel };
     return { title:T[lang].allDoneTitle, sub:T[lang].allDoneSub, due:null, progress:1, total:1, label:"", onClick:()=>{}, badge:T[lang].upToDateLabel };
   })();
   const naPct = naCard.total>0 ? Math.round((naCard.progress/naCard.total)*100) : 100;
@@ -5366,7 +5923,7 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
           <div style={{display:"flex",flexDirection:"column",alignItems:"center",flexShrink:0,paddingTop:20,position:"relative"}}>
             <button onClick={onAccount} style={{width:44,height:44,background:"none",border:"none",padding:0,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",WebkitTapHighlightColor:"transparent"}}>
               {avatarUrl
-                ? <img src={avatarUrl} style={{width:36,height:36,borderRadius:"50%",objectFit:"cover"}} alt=""/>
+                ? <FadeImg src={avatarUrl} style={{width:36,height:36,borderRadius:"50%",objectFit:"cover"}}/>
                 : <div style={{width:36,height:36,borderRadius:"50%",background:NAVY,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,color:"#fff",fontWeight:700}}>{initials}</div>
               }
             </button>
@@ -5433,9 +5990,38 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
         </div>
       </div>
       <div ref={scrollContainerRef} style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",padding:"10px 6px 110px",opacity:boardSwitching?0.72:1,transform:`translateY(${boardSwitching?6:0}px)`,transition:"opacity 0.22s ease, transform 0.22s ease"}}>
+        <style>{`@keyframes bonusBadgePulse{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(234,179,8,0.45)}55%{transform:scale(1.1);box-shadow:0 0 0 8px rgba(234,179,8,0)}}`}</style>
+        <button onClick={onBonus} style={{width:"100%",display:"flex",alignItems:"center",gap:14,background:`linear-gradient(135deg, rgba(15,15,32,0.58) 0%, rgba(8,14,40,0.65) 100%), url(${stadiumBg}) center 30%/cover no-repeat`,borderRadius:20,padding:"15px 16px",border:"none",boxShadow:"0 4px 16px rgba(0,0,0,0.06)",cursor:"pointer",marginBottom:14,WebkitTapHighlightColor:"transparent",textAlign:"left"}}>
+          <div style={{width:50,height:50,borderRadius:"50%",background:"rgba(234,179,8,0.14)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,border:"2px solid rgba(234,179,8,0.3)"}}>
+            <span style={{fontSize:26,lineHeight:1}}>⚡</span>
+          </div>
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{display:"flex",alignItems:"center",gap:7,flexWrap:"wrap"}}>
+              <div style={{fontSize:15,fontWeight:900,color:"#FFD700",letterSpacing:0.3}}>{bonusPickLocked ? T[lang].bonusClosedTitle : T[lang].bonusPrediction}</div>
+              <div style={{background:"rgba(255,255,255,0.14)",border:"1px solid rgba(255,215,0,0.36)",borderRadius:999,padding:"3px 7px",fontSize:9,fontWeight:900,color:"#FFD700",letterSpacing:0.4,textTransform:"uppercase",lineHeight:1}}>
+                {bonusPickLocked ? T[lang].locked : T[lang].bonusDueJun14}
+              </div>
+            </div>
+            <div style={{fontSize:12,color:"rgba(255,255,255,0.76)",marginTop:5,lineHeight:1.4,fontWeight:750}}>
+              {bonusPickLocked
+                ? (bonusPickCount ? T[lang].bonusClosedSub : T[lang].bonusClosedEmptySub)
+                : `${bonusPickCount}/3 ${T[lang].selectedLabel}`}
+            </div>
+          </div>
+          <div style={{background:"#FFD700",borderRadius:8,padding:"4px 8px",fontSize:10,fontWeight:900,color:"#1a1a2e",letterSpacing:0.5,flexShrink:0,animation:bonusPickLocked?"none":"bonusBadgePulse 1.8s ease-in-out infinite"}}>
+            {bonusPickLocked ? T[lang].locked : "BONUS"}
+          </div>
+          <span style={{fontSize:18,color:"rgba(255,255,255,0.35)",fontWeight:700,lineHeight:1,marginLeft:4}}>›</span>
+        </button>
         <NextActionCard card={naCard} pct={naPct} nextTask={nextTask} />
         <div style={{marginBottom:14}}>
-          <HomeSectionLabel>{T[lang].yourProgress}</HomeSectionLabel>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+            <HomeSectionLabel style={{marginBottom:0}}>{T[lang].yourProgress}</HomeSectionLabel>
+            <button onClick={()=>onCentralStats&&onCentralStats()} style={{background:"none",border:"none",padding:"4px 2px",cursor:"pointer",display:"flex",alignItems:"center",gap:4,WebkitTapHighlightColor:"transparent",fontFamily:"inherit"}}>
+              <span style={{fontSize:11,fontWeight:700,color:NAVY}}>Central Stats</span>
+              <span style={{fontSize:13,color:NAVY}}>→</span>
+            </button>
+          </div>
           <HomeCard>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr"}}>
               <ProgressTile
@@ -5453,8 +6039,6 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
                 value={exactWeekUnlocked?`${exactWeekScored}/${exactWeekTotal}`:T[lang].locked}
                 active={exactWeekUnlocked}
                 onClick={()=>onOpenGroups&&onOpenGroups(exactWeekStart)}
-                copyEnabled={exactWeekUnlocked&&exactWeekDone}
-                onCopy={()=>{setCopyDone({});setCopyWeekStart(exactWeekStart);setShowCopySheet("scores");}}
               />
             </div>
           </HomeCard>
@@ -5462,10 +6046,10 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:14}}>
           <ThisWeekCard
             title={T[lang].thisWeekLabel}
-            body={exactWeekUnlocked?exactWeekDone?T[lang].weekComplete+" ✓":(exactWeekTotal-exactWeekScored)+" "+T[lang].scoresLeftThisWeek:T[lang].exactScoresUnlock+" Sun 8:00"}
+            body={exactWeekDone?T[lang].weekComplete+" ✓":!exactWeekHasStarted?exactWeekStartLabel:(exactWeekTotal-exactWeekScored)+" "+T[lang].scoresLeftThisWeek}
             buttonLabel={exactWeekUnlocked?T[lang].openScores:T[lang].locked}
             locked={!exactWeekUnlocked}
-            onOpen={()=>onOpenGroups&&onOpenGroups(todayCalendarWeek)}
+            onOpen={()=>onOpenGroups&&onOpenGroups(todayCalendarWeek, todaySimEx)}
             date={simDay?new Date(2026,5,simDay,simHour||12):new Date()}
           />
           <LeagueRankingCard
@@ -5562,7 +6146,7 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
 
 
 // ── BOARDS ────────────────────────────────────────────────────────────────────
-function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: createdBoardsProp, setCreatedBoards: setCreatedBoardsProp, availableBoards: availableBoardsProp, setAvailableBoards: setAvailableBoardsProp, showToast, user, onCreateBoard, onJoinByCode, onJoinBoard, onDeleteBoard, onRemoveMember, leaderboardData={}, initialTab="my", onViewChange }) {
+function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: createdBoardsProp, setCreatedBoards: setCreatedBoardsProp, availableBoards: availableBoardsProp, setAvailableBoards: setAvailableBoardsProp, showToast, user, onCreateBoard, onUpdateBoard, onJoinByCode, onJoinBoard, onDeleteBoard, onRemoveMember, leaderboardData={}, initialTab="my", onViewChange }) {
   const displayName = useDisplayName();
   const lang = useLang();
   const [view, setView] = useState("main"); // main | join | create
@@ -5578,6 +6162,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
   const [cEmoji, setCEmoji] = useState("");
   const [cImageFile, setCImageFile] = useState(null);
   const [cImagePreview, setCImagePreview] = useState(null);
+  const [cRemoveImage, setCRemoveImage] = useState(false);
   const boardImageInputRef = useRef(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [cPassword, setCPassword] = useState("");
@@ -5689,7 +6274,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
       if(data) {
         if(showToast) showToast(`"${cName}" league created`, "🏆");
         setCName(""); setCEmoji(""); setCPassword(""); setShowEmojiPicker(false);
-        setCImageFile(null); setCImagePreview(null);
+        setCImageFile(null); setCImagePreview(null); setCRemoveImage(false);
         setEditBoard(null); changeView("main");
       }
       return;
@@ -5711,26 +6296,34 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
       isAdmin: true,
     };
     if(editBoard) {
-      if(cImageFile && user) {
-        if(showToast) showToast("Se încarcă poza...", "⏳");
-        uploadBoardImage(user.id, editBoard.id, cImageFile).then(url => {
-          if(url) {
-            setCreatedBoards(p=>p.map(b=>b.id===editBoard.id?{...b,...newBoard,image_url:url}:b));
-            setMyBoards(p=>p.map(b=>b.id===editBoard.id?{...b,...newBoard,image_url:url}:b));
-            if(showToast) showToast("Poză salvată!", "✅");
-          }
+      if(onUpdateBoard) {
+        const imageFile = cImageFile || null;
+        const result = await onUpdateBoard(editBoard.id, {
+          name: cName,
+          emoji: cEmoji || cName[0].toUpperCase(),
+          type: 'private',
+          password: cPassword,
+          max_players: cMaxPlayers,
+          prizes: cPrizes.slice(0, cSlots).filter(p=>p.trim()),
+          imageFile,
+          removeImage: cRemoveImage,
         });
+        if(!result) return;
+        // Use DB-returned data so has_password and other computed fields are correct
+        setMyBoards(p=>p.map(b=>b.id===editBoard.id?{...b,...result}:b));
+        setAvailBoards(p=>p.map(b=>b.id===editBoard.id?{...b,...result}:b));
       } else {
         setCreatedBoards(p=>p.map(b=>b.id===editBoard.id?newBoard:b));
-        if(showToast) showToast("League updated", "✏️");
+        setMyBoards(p=>p.map(b=>b.id===editBoard.id?{...b,...newBoard}:b));
       }
+      if(showToast) showToast("League updated", "✏️");
     } else {
       setCreatedBoards(p=>[...p, newBoard]);
       if(showToast) showToast(`"${cName}" league created`, "🏆");
       if(onJoin) onJoin(newBoard.id);
     }
     setEditBoard(null); setCEmoji(""); setShowEmojiPicker(false);
-    setCImageFile(null); setCImagePreview(null); changeView("main");
+    setCImageFile(null); setCImagePreview(null); setCRemoveImage(false); changeView("main");
   };
 
   const isJoined = id => myBoards.some(b=>b.id===id);
@@ -5764,7 +6357,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
             <input ref={boardImageInputRef} type="file" accept="image/*" style={{display:"none"}}
               onChange={e=>{
                 const f=e.target.files?.[0]; if(!f) return;
-                setCImageFile(f); setCImagePreview(URL.createObjectURL(f));
+                setCImageFile(f); setCImagePreview(URL.createObjectURL(f)); setCRemoveImage(false);
                 setCEmoji(""); setShowEmojiPicker(false);
                 e.target.value="";
               }}/>
@@ -5780,7 +6373,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
                     : <span style={{fontSize:22,color:"rgba(255,255,255,0.8)"}}>?</span>}
               </div>
               <div style={{display:"flex",gap:4}}>
-                <div onClick={()=>{setShowEmojiPicker(p=>!p); setCImageFile(null); setCImagePreview(null);}}
+                <div onClick={()=>{setShowEmojiPicker(p=>!p); setCImageFile(null); setCImagePreview(null); setCRemoveImage(Boolean(editBoard?.image_url));}}
                   style={{fontSize:10,fontWeight:700,color:showEmojiPicker?NAVY:"#888",cursor:"pointer",
                     padding:"3px 7px",borderRadius:6,background:showEmojiPicker?`${NAVY}15`:"rgba(0,0,0,0.05)"}}>
                   😊 Emoji
@@ -5790,7 +6383,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
                     padding:"3px 7px",borderRadius:6,background:cImagePreview?`${NAVY}15`:"rgba(0,0,0,0.05)"}}>
                   📷 Foto
                 </div>
-                {(cEmoji||cImagePreview)&&<div onClick={()=>{setCEmoji("");setCImageFile(null);setCImagePreview(null);setShowEmojiPicker(false);}}
+                {(cEmoji||cImagePreview)&&<div onClick={()=>{setCEmoji("");setCImageFile(null);setCImagePreview(null);setCRemoveImage(Boolean(editBoard?.image_url));setShowEmojiPicker(false);}}
                   style={{fontSize:10,fontWeight:700,color:"#FF3B30",cursor:"pointer",
                     padding:"3px 7px",borderRadius:6,background:"rgba(255,59,48,0.08)"}}>
                   <XIcon size={15}/>
@@ -5810,7 +6403,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
             <div style={{display:"grid",gridTemplateColumns:"repeat(8,1fr)",gap:6}}>
               {["⚽","🏆","🥇","🎯","🔥","⭐","💪","🦁","🐯","🦅","🌍","🎖️","🏅","🥊","🎮","🎪",
                 "🍕","🍺","🎉","🚀","💎","🌟","👑","🤝","🏋️","🎸","🏄","🎭"].map(e=>(
-                <div key={e} onClick={()=>{ setCEmoji(e); setShowEmojiPicker(false); }}
+                <div key={e} onClick={()=>{ setCEmoji(e); setCImageFile(null); setCImagePreview(null); setCRemoveImage(Boolean(editBoard?.image_url)); setShowEmojiPicker(false); }}
                   style={{width:"100%",aspectRatio:"1",borderRadius:8,display:"flex",alignItems:"center",
                     justifyContent:"center",fontSize:20,cursor:"pointer",
                     background:cEmoji===e?`${NAVY}18`:"#F8FAFC",
@@ -5820,7 +6413,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
               ))}
             </div>
             {cEmoji&&(
-              <Button variant="ghost" onClick={()=>{ setCEmoji(""); setShowEmojiPicker(false); }}
+              <Button variant="ghost" onClick={()=>{ setCEmoji(""); setCRemoveImage(Boolean(editBoard?.image_url)); setShowEmojiPicker(false); }}
                 style={{marginTop:10,width:"100%"}}>
                 {T[lang].del}
               </Button>
@@ -6012,7 +6605,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
                   <div key={b.id}>
                     <div style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",cursor:"pointer"}} onClick={()=>onJoin&&onJoin(b.id)}>
                       <div style={{width:44,height:44,borderRadius:"50%",background:b.isGlobal?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:`linear-gradient(135deg,#5856D6,#3634A3)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0,overflow:"hidden"}}>
-                        {latest.image_url ? <img src={latest.image_url} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/> : latest.label}
+                        {latest.image_url ? <FadeImg src={latest.image_url} style={{width:"100%",height:"100%",objectFit:"cover"}}/> : latest.label}
                       </div>
                       <div style={{flex:1,minWidth:0}}>
                         <p style={{fontSize:13,fontWeight:700,color:DARK,margin:0}}>{latest.name}</p>
@@ -6042,7 +6635,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
             <Card style={{marginBottom:12}}>
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 14px 8px"}}>
                 <span style={{fontSize:11,color:"#bbb"}}>{allAvail.length} {T[lang].boardsCount}</span>
-                <Button onClick={()=>{ setEditBoard(null); setCName(""); setCPassword(""); setCEmoji(""); setCMaxPlayers(10); setCSlots(3); setCPrizes(["","",""]); changeView("create"); }}
+                <Button onClick={()=>{ setEditBoard(null); setCName(""); setCPassword(""); setCEmoji(""); setCImageFile(null); setCImagePreview(null); setCRemoveImage(false); setCMaxPlayers(10); setCSlots(3); setCPrizes(["","",""]); changeView("create"); }}
                   style={{padding:"6px 11px",fontSize:11}}>
                   + {T[lang].createBoard}
                 </Button>
@@ -6067,7 +6660,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
                     <div key={b.id}>
                       <div style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px"}}>
                         <div style={{width:44,height:44,borderRadius:"50%",background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0,overflow:"hidden"}}>
-                          {b.image_url?<img src={b.image_url} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>:b.label}
+                          {b.image_url?<FadeImg src={b.image_url} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:b.label}
                         </div>
                         <div style={{flex:1,minWidth:0}}>
                           <p style={{fontSize:13,fontWeight:700,color:DARK,margin:0}}>{b.name}</p>
@@ -6104,7 +6697,7 @@ function BoardsScreen({ onBack, myBoards, setMyBoards, onJoin, createdBoards: cr
                     </div>
                     <div style={{display:"flex",gap:6}}>
                       <Button variant="ghost" onClick={()=>openMembers(b.id)}>👥</Button>
-                      <Button variant="ghost" onClick={()=>{ setEditBoard(b); setCName(b.name); setCPassword(""); setCMaxPlayers(b.max||10); setCSlots(b.prizes?.length||3); setCPrizes(b.prizes?.length?[...b.prizes,...Array(5).fill("")]:["",...Array(4).fill("")]); changeView("create"); }}>✏️</Button>
+                      <Button variant="ghost" onClick={()=>{ setEditBoard(b); setCName(b.name); setCPassword(""); setCEmoji(b.image_url ? "" : (b.label || "")); setCImageFile(null); setCImagePreview(b.image_url || null); setCRemoveImage(false); setShowEmojiPicker(false); setCMaxPlayers(b.max||10); setCSlots(b.prizes?.length||3); setCPrizes(b.prizes?.length?[...b.prizes,...Array(5).fill("")]:["",...Array(4).fill("")]); changeView("create"); }}>✏️</Button>
                       <Button variant="danger" onClick={()=>setDeleteConfirmBoard(b)} style={{display:"flex",alignItems:"center",justifyContent:"center",width:36,height:36,padding:0}}><TrashIcon size={15}/></Button>
                     </div>
                   </div>
@@ -6784,8 +7377,8 @@ function PredictoLogo({ scale = 1 }) {
 function SplashScreen({ onNext, lang, setLang, simDay, simHour=12, simMin=0, tournamentStarted }) {
   const {d,h,m,s}=useCountdown();
   // Calculate days left based on simDay or real date
-  const target = new Date("2026-06-11T19:00:00");
-  const simNow = simDay ? new Date(2026, 5, simDay, simHour, simMin, 0) : new Date();
+  const target = new Date("2026-06-11T23:00:00Z"); // 19:00 ET = 23:00 UTC
+  const simNow = simDay ? new Date(Date.UTC(2026, 5, simDay, (simHour||0)+4, simMin||0, 0)) : new Date();
   const diffMs = target - simNow;
   const daysLeft = Math.max(0, Math.floor(diffMs / (1000*60*60*24)));
   const hoursLeft = Math.max(0, Math.floor((diffMs % (1000*60*60*24)) / (1000*60*60)));
@@ -7503,13 +8096,40 @@ function SetPasswordScreen({ onDone }) {
   );
 }
 
+function getCompletedGroups(liveScores) {
+  const groupMap = {};
+  CALENDAR_EVENTS.forEach(event => {
+    event.matches.forEach((m, idx) => {
+      if (!m.group || !/^[A-L]$/.test(m.group)) return;
+      const key = m.matchKey || `${event.day}-${idx}`;
+      if (!groupMap[m.group]) groupMap[m.group] = { keys: [] };
+      groupMap[m.group].keys.push(key);
+    });
+  });
+  const completed = [];
+  for (const [letter, info] of Object.entries(groupMap)) {
+    if (info.keys.length > 0 && info.keys.every(k => liveScores[k]?.status === 'FT'))
+      completed.push(letter);
+  }
+  return completed;
+}
+
 function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, myBoards=[], activeBoardId, setActiveBoardId, userId }) {
   const lang = useLang();
+  const { pred: scoringPred } = useScoringRules();
+  const liveScoresLS = useLiveScores(null, null, null);
+  const completedGroupLetters = new Set(getCompletedGroups(liveScoresLS));
   const leaders = leadersProp || BOARD_LEADERS.global;
   const [search, setSearch] = useState("");
   const [selectedUser, setSelectedUser] = useState(null); // {userId, name, pts, rank}
   const [breakdown, setBreakdown] = useState(null);
   const [breakdownLoading, setBreakdownLoading] = useState(false);
+  const [zoomedAvatar, setZoomedAvatar] = useState(null);
+  const [liveActive, setLiveActive] = useState(false);
+
+  useEffect(() => {
+    hasLiveMatches().then(setLiveActive);
+  }, [leaders]);
 
   const openBreakdown = (u) => {
     if (!u.userId) return;
@@ -7561,6 +8181,22 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
   const me = leaders.find(u=>u.isMe);
 
   return (<>
+    {zoomedAvatar && (
+      <div onClick={() => setZoomedAvatar(null)} style={{
+        position:'fixed', inset:0, zIndex:9999,
+        background:'rgba(0,0,0,0.85)',
+        display:'flex', alignItems:'center', justifyContent:'center',
+        cursor:'zoom-out',
+      }}>
+        <img src={zoomedAvatar} alt="" style={{
+          width: Math.min(window.innerWidth - 48, 320),
+          height: Math.min(window.innerWidth - 48, 320),
+          borderRadius:'50%', objectFit:'cover',
+          boxShadow:'0 8px 48px rgba(0,0,0,0.6)',
+          border:'4px solid rgba(255,255,255,0.9)',
+        }}/>
+      </div>
+    )}
     <div style={{flex:1,display:"flex",flexDirection:"column",background:"transparent",position:"relative",overflow:"hidden"}}>
       <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.055,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
       <div style={{flex:1,display:"flex",flexDirection:"column",background:"linear-gradient(to bottom, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0.10) 28%, rgba(255,255,255,0.02) 48%, transparent 65%)",borderRadius:26,margin:"10px 14px 0",boxShadow:"0 8px 32px rgba(10,46,138,0.10), inset 0 1px 0 rgba(255,255,255,0.80)",border:"1px solid rgba(255,255,255,0.22)",overflow:"hidden",position:"relative",willChange:"transform",transform:"translateZ(0)"}}>
@@ -7663,13 +8299,22 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
                     overflow:"hidden",background:u.isMe?`${NAVY}22`:"rgba(0,0,0,0.07)",
                     display:"flex",alignItems:"center",justifyContent:"center",marginBottom:5,flexShrink:0}}>
                     {u.avatarUrl
-                      ?<img src={u.avatarUrl} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                      ?<FadeImg src={u.avatarUrl} onClick={e=>{e.stopPropagation();setZoomedAvatar(u.avatarUrl);}} style={{width:"100%",height:"100%",objectFit:"cover",cursor:"zoom-in"}}/>
                       :<span style={{fontSize:rank===1?17:14,fontWeight:800,color:u.isMe?NAVY:"#555"}}>{initials}</span>}
                   </div>
                   <div style={{fontSize:11,fontWeight:800,color:u.isMe?NAVY:DARK,textAlign:"center",
                     width:"100%",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",
                     padding:"0 4px",marginBottom:3}}>{u.name}</div>
-                  <div style={{fontSize:rank===1?15:13,fontWeight:900,color:color,marginBottom:8}}>{u.pts}p</div>
+                  <div style={{display:"flex",alignItems:"center",gap:4,marginBottom:8}}>
+                    <span style={{fontSize:rank===1?15:13,fontWeight:900,color:color}}>{u.pts}p</span>
+                    <span style={{fontSize:9,fontWeight:800,
+                      color:u.movement>0?"#16A34A":"#DC2626",
+                      background:(!liveActive&&u.movement!=null&&u.movement!==0)?(u.movement>0?"#F0FDF4":"#FEF2F2"):"transparent",
+                      borderRadius:5,padding:"1px 4px",
+                      visibility:(!liveActive&&u.movement!=null&&u.movement!==0)?"visible":"hidden"}}>
+                      {u.movement>0?`▲${u.movement}`:`▼${Math.abs(u.movement)}`}
+                    </span>
+                  </div>
                   <div style={{width:"100%",height:PLATFORM_H[rank],
                     background:`linear-gradient(180deg,${color}cc 0%,${color}77 100%)`,
                     borderRadius:"8px 8px 0 0",display:"flex",alignItems:"center",justifyContent:"center"}}>
@@ -7695,9 +8340,16 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
                     background:u.isMe?`${NAVY}22`:"rgba(0,0,0,0.07)",
                     display:"flex",alignItems:"center",justifyContent:"center"}}>
                     {u.avatarUrl
-                      ?<img src={u.avatarUrl} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                      ?<FadeImg src={u.avatarUrl} onClick={e=>{e.stopPropagation();setZoomedAvatar(u.avatarUrl);}} style={{width:"100%",height:"100%",objectFit:"cover",cursor:"zoom-in"}}/>
                       :<span style={{fontSize:11,fontWeight:700,color:u.isMe?NAVY:"#888"}}>{initials}</span>}
                   </div>
+                  <span style={{fontSize:10,fontWeight:800,flexShrink:0,width:28,textAlign:"center",
+                    color:u.movement>0?"#16A34A":"#DC2626",
+                    background:(!liveActive&&u.movement!=null&&u.movement!==0)?(u.movement>0?"#F0FDF4":"#FEF2F2"):"transparent",
+                    borderRadius:6,padding:"2px 4px",
+                    visibility:(!liveActive&&u.movement!=null&&u.movement!==0)?"visible":"hidden"}}>
+                    {u.movement>0?`▲${u.movement}`:`▼${Math.abs(u.movement)}`}
+                  </span>
                   <div style={{flex:1,minWidth:0}}>
                     <span style={{fontSize:13,fontWeight:700,color:u.isMe?NAVY:DARK}}>{u.name}</span>
                   </div>
@@ -7747,9 +8399,16 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
                   background:u.isMe?`${NAVY}22`:"rgba(0,0,0,0.07)",
                   display:"flex",alignItems:"center",justifyContent:"center"}}>
                   {u.avatarUrl
-                    ?<img src={u.avatarUrl} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                    ?<FadeImg src={u.avatarUrl} onClick={e=>{e.stopPropagation();setZoomedAvatar(u.avatarUrl);}} style={{width:"100%",height:"100%",objectFit:"cover",cursor:"zoom-in"}}/>
                     :<span style={{fontSize:11,fontWeight:700,color:u.isMe?NAVY:"#888"}}>{initials}</span>}
                 </div>
+                <span style={{fontSize:10,fontWeight:800,flexShrink:0,width:28,textAlign:"center",
+                  color:u.movement>0?"#16A34A":"#DC2626",
+                  background:(!liveActive&&u.movement!=null&&u.movement!==0)?(u.movement>0?"#F0FDF4":"#FEF2F2"):"transparent",
+                  borderRadius:6,padding:"2px 4px",
+                  visibility:(!liveActive&&u.movement!=null&&u.movement!==0)?"visible":"hidden"}}>
+                  {u.movement>0?`▲${u.movement}`:`▼${Math.abs(u.movement)}`}
+                </span>
                 <div style={{flex:1,minWidth:0}}>
                   <span style={{fontSize:13,fontWeight:700,color:u.isMe?NAVY:DARK}}>{u.name}</span>
                 </div>
@@ -7788,7 +8447,7 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
             <div style={{width:40,height:40,borderRadius:"50%",background:`${NAVY}15`,
               display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,overflow:"hidden"}}>
               {selectedUser.avatarUrl
-                ?<img src={selectedUser.avatarUrl} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                ?<FadeImg src={selectedUser.avatarUrl} onClick={e=>{e.stopPropagation();setZoomedAvatar(selectedUser.avatarUrl);}} style={{width:"100%",height:"100%",objectFit:"cover",cursor:"zoom-in"}}/>
                 :<span style={{fontSize:14,fontWeight:800,color:NAVY}}>
                   {selectedUser.name?.split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2)||"?"}
                 </span>}
@@ -7808,75 +8467,173 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
                 Se încarcă...
               </div>
             ):breakdown&&(()=>{
-              const predTotal = breakdown.groups.reduce((s,g)=>s+g.pts,0);
+              const predTotal  = breakdown.groups.reduce((s,g)=>s+g.pts,0);
               const exactTotal = breakdown.exact.reduce((s,m)=>s+m.pts,0);
-              const hasGroups = breakdown.groups.length>0;
-              const hasExact  = breakdown.exact.length>0;
+              const best3Total = (breakdown.best3||[]).reduce((s,p)=>s+p.pts,0);
+              const hasGroups  = breakdown.groups.length>0;
+              const hasExact   = breakdown.exact.length>0;
+              const hasBest3   = (breakdown.best3||[]).length>0;
               return (<>
-                {/* Predictions section */}
-                {hasGroups&&(
-                  <div style={{marginBottom:16}}>
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-                      <span style={{fontSize:12,fontWeight:800,color:NAVY,textTransform:"uppercase",letterSpacing:1}}>🎯 Predictions</span>
-                      <span style={{fontSize:13,fontWeight:800,color:NAVY}}>{predTotal}p</span>
-                    </div>
-                    {breakdown.groups.map(g=>{
-                      const hits = [
-                        g.hit_1st ? `1.${tCode(g.hit_1st)}` : null,
-                        g.hit_2nd ? `2.${tCode(g.hit_2nd)}` : null,
-                        g.hit_3rd ? `3.${tCode(g.hit_3rd)}` : null,
-                      ].filter(Boolean).join("  ");
-                      return (
-                        <div key={g.group_id} style={{display:"flex",justifyContent:"space-between",
-                          alignItems:"center",padding:"5px 0",borderBottom:"1px solid #F9FAFB"}}>
-                          <div style={{display:"flex",gap:10,alignItems:"center"}}>
-                            <span style={{fontSize:11,fontWeight:700,color:"#6B7280",minWidth:46}}>Grp {g.group_id}</span>
-                            <span style={{fontSize:12,fontWeight:600,color:DARK}}>{hits}</span>
+                {/* Bonus section */}
+                {breakdown.bonus&&(()=>{
+                  const b = breakdown.bonus;
+                  const bonusTotal = (b.champion_pts||0)+(b.runner_up_pts||0)+(b.top_scorer_pts||0);
+                  const rows = [
+                    { icon:"🏆", label: b.champion ? `${FLAGS[b.champion]||""} ${b.champion}` : "—", pts: b.champion_pts||0 },
+                    { icon:"🥈", label: b.runner_up ? `${FLAGS[b.runner_up]||""} ${b.runner_up}` : "—", pts: b.runner_up_pts||0 },
+                    { icon:"⚽", label: b.top_scorer_player || "—", pts: b.top_scorer_pts||0 },
+                  ];
+                  return (
+                    <div style={{border:`1.5px solid ${NAVY}22`,borderRadius:12,padding:"10px 12px",marginBottom:10}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                        <span style={{fontSize:12,fontWeight:800,color:NAVY,textTransform:"uppercase",letterSpacing:1}}>⚡ Bonus</span>
+                        <span style={{fontSize:13,fontWeight:800,color:NAVY}}>{bonusTotal}p</span>
+                      </div>
+                      {rows.map(({icon,label,pts})=>(
+                        <div key={icon} style={{display:"flex",justifyContent:"space-between",alignItems:"center",
+                          padding:"5px 0",borderBottom:"1px solid #F9FAFB"}}>
+                          <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                            <span style={{fontSize:14}}>{icon}</span>
+                            <span style={{fontSize:12,fontWeight:600,color:DARK}}>{label}</span>
                           </div>
-                          <span style={{fontSize:12,fontWeight:700,color:GREEN}}>{g.pts}p</span>
+                          <span style={{fontSize:12,fontWeight:700,color:NAVY}}>{pts}p</span>
                         </div>
-                      );
-                    })}
-                  </div>
-                )}
-                {/* Exact Scores section */}
-                {hasExact&&(
-                  <div style={{marginBottom:16}}>
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-                      <span style={{fontSize:12,fontWeight:800,color:NAVY,textTransform:"uppercase",letterSpacing:1}}>⚽ Exact Scores</span>
-                      <span style={{fontSize:13,fontWeight:800,color:NAVY}}>{exactTotal}p</span>
+                      ))}
                     </div>
-                    {breakdown.exact.map(m=>{
-                      const isExact = m.pred_home===m.actual_home && m.pred_away===m.actual_away;
-                      return (
-                        <div key={m.match_key} style={{display:"flex",justifyContent:"space-between",
-                          alignItems:"center",padding:"5px 0",borderBottom:"1px solid #F9FAFB"}}>
+                  );
+                })()}
+                {/* Predictions section */}
+                {(()=>{
+                  const confirmedPts = breakdown.groups.filter(g=>completedGroupLetters.has(g.group_id)).reduce((s,g)=>s+g.pts,0);
+                  const pendingPts   = predTotal - confirmedPts;
+                  const allDone      = hasGroups && breakdown.groups.every(g=>completedGroupLetters.has(g.group_id));
+                  const subtitle     = allDone
+                    ? (lang==="en"?"all groups scored":lang==="fr"?"toutes calculées":"toate grupele calculate")
+                    : confirmedPts > 0
+                      ? (lang==="en"?`${confirmedPts}p scored · ${pendingPts}p possible`:lang==="fr"?`${confirmedPts}p calculés · ${pendingPts}p possible`:`${confirmedPts}p calculate · ${pendingPts}p posibil`)
+                      : (lang==="en"?"possible · at end of group":lang==="fr"?"possible · fin du groupe":"posibil · la final de grupă");
+                  return (
+                <div style={{border:`1.5px solid ${NAVY}22`,borderRadius:12,padding:"10px 12px",marginBottom:10}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:hasGroups?8:0}}>
+                    <span style={{fontSize:12,fontWeight:800,color:NAVY,textTransform:"uppercase",letterSpacing:1}}>🎯 Predictions</span>
+                    <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:2}}>
+                      <span style={{fontSize:13,fontWeight:800,color:NAVY}}>{predTotal}p</span>
+                      <span style={{fontSize:9,color:allDone?"#16a34a":"#9CA3AF",fontStyle:"italic",whiteSpace:"nowrap"}}>{subtitle}</span>
+                    </div>
+                  </div>
+                  {hasGroups&&breakdown.groups.map(g=>{
+                    const confirmed = completedGroupLetters.has(g.group_id);
+                    const hits = [
+                      g.hit_1st ? `1.${tCode(g.hit_1st)}` : null,
+                      g.hit_2nd ? `2.${tCode(g.hit_2nd)}` : null,
+                      g.hit_3rd ? `3.${tCode(g.hit_3rd)}` : null,
+                    ].filter(Boolean).join("  ");
+                    return (
+                      <div key={g.group_id} style={{display:"flex",justifyContent:"space-between",
+                        alignItems:"center",padding:"5px 4px",borderBottom:"1px solid #F9FAFB",
+                        borderRadius:confirmed?6:0,
+                        background:confirmed?"rgba(22,163,74,0.06)":"transparent",
+                        margin:confirmed?"1px -4px":"0"}}>
+                        <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                          <span style={{fontSize:11,fontWeight:900,color:confirmed?"#16a34a":"transparent",minWidth:12,flexShrink:0}}>✓</span>
+                          <span style={{fontSize:11,fontWeight:700,color:confirmed?"#166534":"#6B7280",minWidth:40}}>Grp {g.group_id}</span>
+                          <span style={{fontSize:12,fontWeight:600,color:DARK}}>{hits}</span>
+                        </div>
+                        <span style={{fontSize:12,fontWeight:700,color:confirmed?"#16a34a":GREEN}}>{g.pts}p</span>
+                      </div>
+                    );
+                  })}
+                </div>
+                  );
+                })()}
+                {/* Best 3rd section */}
+                {hasBest3&&(()=>{
+                  const hits      = breakdown.best3.filter(p=>p.is_hit);
+                  const possibles = breakdown.best3.filter(p=>!p.is_hit&&(p.is_possible??true));
+                  const perPick   = hits.length>0 ? hits[0].pts : (scoringPred.best3||5);
+                  const posTotal  = possibles.length * perPick;
+                  const subtitle  = hits.length>0
+                    ? (lang==="en"?`${hits.length}/8 correct`:lang==="fr"?`${hits.length}/8 corrects`:`${hits.length}/8 corecte`)
+                    : (lang==="en"?`${posTotal}p possible · end of groups`:lang==="fr"?`${posTotal}p possible · fin groupes`:`${posTotal}p posibil · final grupe`);
+                  return (
+                    <div style={{border:`1.5px solid ${NAVY}22`,borderRadius:12,padding:"10px 12px",marginBottom:10}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:(hits.length||possibles.length)?8:0}}>
+                        <span style={{fontSize:12,fontWeight:800,color:NAVY,textTransform:"uppercase",letterSpacing:1}}>🥉 Best 3rd</span>
+                        <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:2}}>
+                          <span style={{fontSize:13,fontWeight:800,color:NAVY}}>{hits.length>0?best3Total:posTotal}p</span>
+                          <span style={{fontSize:9,color:hits.length>0?"#16a34a":"#9CA3AF",fontStyle:"italic",whiteSpace:"nowrap"}}>{subtitle}</span>
+                        </div>
+                      </div>
+                      {hits.length>0&&(
+                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",
+                          padding:"5px 4px",borderBottom:possibles.length?"1px solid #F9FAFB":"none",
+                          borderRadius:6,background:"rgba(22,163,74,0.06)",margin:"1px -4px"}}>
+                          <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                            <span style={{fontSize:11,fontWeight:900,color:"#16a34a",minWidth:12,flexShrink:0}}>✓</span>
+                            <span style={{fontSize:12,fontWeight:600,color:"#166534"}}>{hits.map(p=>tCode(p.team)).join("  ")}</span>
+                          </div>
+                          <span style={{fontSize:12,fontWeight:700,color:"#16a34a"}}>{best3Total}p</span>
+                        </div>
+                      )}
+                      {possibles.length>0&&(
+                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"5px 4px"}}>
+                          <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                            <span style={{fontSize:11,minWidth:12,flexShrink:0,color:"transparent"}}>✓</span>
+                            <span style={{fontSize:12,fontWeight:600,color:"#6B7280"}}>{possibles.map(p=>tCode(p.team)).join("  ")}</span>
+                          </div>
+                          <span style={{fontSize:12,fontWeight:700,color:GREEN}}>posibil</span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+                {/* Exact Scores section */}
+                <div style={{border:`1.5px solid ${NAVY}22`,borderRadius:12,padding:"10px 12px",marginBottom:10}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:hasExact?8:0}}>
+                    <span style={{fontSize:12,fontWeight:800,color:NAVY,textTransform:"uppercase",letterSpacing:1}}>⚽ Exact Scores</span>
+                    <span style={{fontSize:13,fontWeight:800,color:NAVY}}>{exactTotal}p</span>
+                  </div>
+                  {hasExact&&breakdown.exact.map(m=>{
+                    const isExact = m.label==='exact' || (m.pred_home===m.actual_home && m.pred_away===m.actual_away);
+                    const isDiff  = m.label==='diff';
+                    return (
+                      <div key={m.match_key} style={{display:"flex",justifyContent:"space-between",
+                        alignItems:"flex-start",padding:"5px 0",borderBottom:"1px solid #F9FAFB"}}>
+                        <div style={{display:"flex",flexDirection:"column",gap:2}}>
                           <div style={{display:"flex",gap:6,alignItems:"center"}}>
                             <span style={{fontSize:12,fontWeight:700,color:DARK}}>
                               {tCode(m.home_team)} {m.actual_home}-{m.actual_away} {tCode(m.away_team)}
                             </span>
                             {isExact&&<span style={{fontSize:9,fontWeight:800,color:"#fff",background:GREEN,
                               borderRadius:4,padding:"1px 5px",letterSpacing:0.5}}>EXACT</span>}
+                            {isDiff&&<span style={{fontSize:9,fontWeight:800,color:"#fff",background:"#F59E0B",
+                              borderRadius:4,padding:"1px 5px",letterSpacing:0.5}}>+DIFF</span>}
                           </div>
-                          <span style={{fontSize:12,fontWeight:700,color:GREEN}}>{m.pts}p</span>
+                          <span style={{fontSize:10,color:"#9CA3AF",fontWeight:600}}>
+                            prezis: ({m.pred_home}-{m.pred_away})
+                          </span>
                         </div>
-                      );
-                    })}
-                  </div>
-                )}
-                {!hasGroups&&!hasExact&&(
+                        <span style={{fontSize:12,fontWeight:700,color:isDiff?"#F59E0B":GREEN,paddingTop:1}}>{m.pts}p</span>
+                      </div>
+                    );
+                  })}
+                </div>
+                {!hasGroups&&!hasExact&&!hasBest3&&!breakdown.bonus&&(
                   <div style={{textAlign:"center",padding:"24px 0",color:"#9CA3AF",fontSize:13}}>
                     Niciun punct câștigat încă
                   </div>
                 )}
                 {/* Total */}
-                {(hasGroups||hasExact)&&(
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",
-                    borderTop:`2px solid ${NAVY}22`,paddingTop:10,marginTop:4}}>
-                    <span style={{fontSize:13,fontWeight:800,color:DARK}}>Total</span>
-                    <span style={{fontSize:15,fontWeight:900,color:NAVY}}>{predTotal+exactTotal}p</span>
-                  </div>
-                )}
+                {(hasGroups||hasExact||hasBest3||breakdown.bonus)&&(()=>{
+                  const bonusTotal = breakdown.bonus ? (breakdown.bonus.champion_pts||0)+(breakdown.bonus.runner_up_pts||0)+(breakdown.bonus.top_scorer_pts||0) : 0;
+                  return (
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",
+                      borderTop:`2px solid ${NAVY}22`,paddingTop:10,marginTop:4}}>
+                      <span style={{fontSize:13,fontWeight:800,color:DARK}}>Total</span>
+                      <span style={{fontSize:15,fontWeight:900,color:NAVY}}>{predTotal+best3Total+exactTotal+bonusTotal}p</span>
+                    </div>
+                  );
+                })()}
               </>);
             })()}
           </div>
@@ -7987,13 +8744,229 @@ function ScorePicker({ match, day, savedScore, onSave, onBack }) {
 const scH = (sc) => Array.isArray(sc) ? sc[0] : (sc?.home ?? 0);
 const scA = (sc) => Array.isArray(sc) ? sc[1] : (sc?.away ?? 0);
 
-function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScoresProp, simDay, simHour=12, simMin=0, initialWeek }) {
+function CentralStatsScreen({ onBack, boardId, boardName, simDay, simHour=12, simMin=0 }) {
   const lang = useLang();
   const LIVE_SCORES = useLiveScores(simDay, simHour, simMin);
+  const calendarEvents = getDisplayCalendarEvents();
+  const [members, setMembers] = useState([]);
+  const [predsByMatch, setPredsByMatch] = useState({}); // { matchKey: [{userId, predHome, predAway}] }
+  const [loadingMembers, setLoadingMembers] = useState(true);
+  const [loadingPreds, setLoadingPreds] = useState(false);
+  const [offset, setOffset] = useState(null);
+  const liveActive = Object.values(LIVE_SCORES).some(v => ['LIVE','HT','ET','PEN'].includes(v?.status));
+
+  // load members once
+  useEffect(() => {
+    if (!boardId) return;
+    setLoadingMembers(true);
+    loadLeaderboard(boardId).then(rows => {
+      setMembers(rows.map(r => ({ userId: r.userId, name: r.name, avatarUrl: r.avatarUrl || null, pts: r.pts || 0, rank: r.rank, movement: r.movement ?? null })));
+      setLoadingMembers(false);
+    });
+  }, [boardId]);
+
+  // build matchByKey from calendar
+  const matchByKey = {};
+  calendarEvents.forEach(e => {
+    (e.matches || []).forEach((m, i) => {
+      const k = getMatchKey(m, e.day, i);
+      matchByKey[k] = { ...m, day: e.day };
+    });
+  });
+
+  // all played WC matches from LIVE_SCORES, sorted by utcDate then match_key
+  const allMatches = Object.entries(LIVE_SCORES)
+    .filter(([k, v]) => /^\d/.test(k) && (v.status === 'FT' || v.status === 'LIVE' || v.status === 'HT' || v.status === 'ET' || v.status === 'PEN'))
+    .map(([k]) => k)
+    .sort((a, b) => {
+      const da = LIVE_SCORES[a]?.utcDate, db = LIVE_SCORES[b]?.utcDate;
+      if (da && db) return da < db ? -1 : da > db ? 1 : 0;
+      const [ad, ai] = a.split('-').map(Number);
+      const [bd, bi] = b.split('-').map(Number);
+      return ad !== bd ? ad - bd : ai - bi;
+    });
+
+  const visibleCount = 2;
+  const maxOffset = Math.max(0, allMatches.length - visibleCount);
+
+  // initialize to last 2; also follow if new matches appear at the end while user is at maxOffset
+  useEffect(() => {
+    if (allMatches.length === 0) return;
+    if (offset === null) { setOffset(maxOffset); return; }
+    if (offset >= maxOffset) setOffset(maxOffset);
+  }, [allMatches.length, maxOffset]);
+
+  const currentOffset = offset ?? maxOffset;
+  const visibleMatches = allMatches.slice(currentOffset, currentOffset + visibleCount);
+
+  // fetch predictions for visible matches via loadMatchPredictions (bypasses RLS)
+  useEffect(() => {
+    if (!boardId || visibleMatches.length === 0) return;
+    setLoadingPreds(true);
+    Promise.all(visibleMatches.map(k => loadMatchPredictions(k, boardId).then(rows => ({ key: k, rows }))))
+      .then(results => {
+        const newPreds = {};
+        results.forEach(({ key, rows }) => { newPreds[key] = rows; });
+        setPredsByMatch(prev => ({ ...prev, ...newPreds }));
+        setLoadingPreds(false);
+      });
+  }, [boardId, visibleMatches.join(',')]);
+
+  const getPred = (userId, matchKey) => {
+    const rows = predsByMatch[matchKey] || [];
+    const r = rows.find(r => r.userId === userId);
+    return r ? { home: r.predHome, away: r.predAway } : null;
+  };
+
+  const scoreOf = (pred, live) => {
+    if (!pred || live?.home == null) return null;
+    if (pred.home === live.home && pred.away === live.away) return 3;
+    const pd = pred.home - pred.away, rd = live.home - live.away;
+    if (pd === rd && pd !== 0 && Math.sign(pd) === Math.sign(rd)) return 2;
+    if (Math.sign(pred.home - pred.away) === Math.sign(live.home - live.away)) return 1;
+    return 0;
+  };
+  const scoreColor = (sc) => sc === 3 ? GREEN : sc === 2 ? '#F59E0B' : sc === 1 ? NAVY : '#EF4444';
+
+  const thStyle = { padding: '6px 8px', textAlign: 'center', fontWeight: 700, borderBottom: '2px solid #E5E7EB', minWidth: 70 };
+  const statThStyle = { padding: '6px 8px', textAlign: 'center', fontWeight: 700, color: '#6B7280', fontSize: 10, borderBottom: '2px solid #E5E7EB', minWidth: 28 };
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 900, background: '#F5F7FA', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      {/* Header */}
+      <div style={{ background: NAVY, color: '#fff', padding: '0 16px', paddingTop: 'max(env(safe-area-inset-top,0px),14px)', paddingBottom: 12, flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <button onClick={onBack} style={{ background: 'none', border: 'none', color: '#fff', fontSize: 22, cursor: 'pointer', padding: '4px 8px 4px 0', lineHeight: 1, WebkitTapHighlightColor: 'transparent' }}>{'←'}</button>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 15, fontWeight: 800, letterSpacing: 0.3 }}>Central Stats</div>
+            <div style={{ fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.65)', marginTop: 1 }}>{boardName || '—'}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
+        {loadingMembers ? (
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 120, color: '#9CA3AF', fontSize: 13 }}>
+            <span style={{ width: 18, height: 18, borderRadius: '50%', border: `2px solid ${NAVY}22`, borderTopColor: NAVY, animation: 'spin 0.9s linear infinite', display: 'inline-block', marginRight: 8 }} />
+            {lang === 'ro' ? 'Se încarcă...' : 'Loading...'}
+          </div>
+        ) : (
+          <table style={{ borderCollapse: 'collapse', width: '100%', tableLayout: 'fixed', fontSize: 11 }}>
+            <thead>
+              <tr style={{ background: '#fff', position: 'sticky', top: 0, zIndex: 2 }}>
+                <th style={{ padding: '8px 6px', textAlign: 'left', fontWeight: 700, color: '#6B7280', fontSize: 11, whiteSpace: 'nowrap', borderBottom: '2px solid #E5E7EB', borderRight: '2px solid #E5E7EB', width: '28%', overflow: 'hidden' }}>
+                  {lang === 'ro' ? 'Jucător' : 'Player'}
+                </th>
+                <th style={{ padding: '0 4px', borderBottom: '2px solid #E5E7EB', width: 28, textAlign: 'center' }}>
+                  <button onClick={() => setOffset(o => Math.max(0, (o ?? maxOffset) - 1))}
+                    disabled={currentOffset === 0}
+                    style={{ width: 24, height: 24, borderRadius: 6, border: 'none', background: currentOffset === 0 ? '#F3F4F6' : NAVY+'22', color: currentOffset === 0 ? '#D1D5DB' : NAVY, fontSize: 13, cursor: currentOffset === 0 ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit', margin: '0 auto' }}>‹</button>
+                </th>
+                {visibleMatches.map(k => {
+                  const live = LIVE_SCORES[k];
+                  const mInfo = matchByKey[k];
+                  const hasScore = live?.home != null;
+                  const abbr = name => (name || '').slice(0, 3).toUpperCase();
+                  const d = mInfo?.day ?? Number(String(k).split('-')[0]);
+                  const dateLabel = `${d}.${d >= 11 ? 'Jun' : 'Jul'}`;
+                  const timeLabel = live?.utcDate ? new Date(live.utcDate).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Bucharest' }) : null;
+                  return (
+                    <th key={k} style={thStyle}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: DARK, letterSpacing: 0.3 }}>{abbr(mInfo?.home)}–{abbr(mInfo?.away)}</div>
+                      <div style={{ fontSize: 10, color: '#9CA3AF', fontWeight: 600, marginTop: 2 }}>{dateLabel}{timeLabel ? ` ${timeLabel}` : ''}</div>
+                      <div style={{ fontSize: 12, fontWeight: 800, color: hasScore ? (['LIVE','HT','ET','PEN'].includes(live?.status) ? '#EF4444' : NAVY) : '#C7C7CC', marginTop: 2 }}>
+                        {hasScore ? `${live.home}–${live.away}` : '· · ·'}
+                      </div>
+                      <div style={{ fontSize: 9, fontWeight: 800, marginTop: 2, letterSpacing: 0.3, height: 13,
+                        color: live?.status === 'LIVE' ? '#EF4444' : live?.status === 'HT' ? '#F59E0B' : 'transparent',
+                        animation: live?.status === 'LIVE' ? 'livePulse 1.4s ease-in-out infinite' : 'none' }}>
+                        {live?.status === 'LIVE' ? `● LIVE${live.min ? ` ${live.min}'` : ''}` : live?.status === 'HT' ? 'HT' : '·'}
+                      </div>
+                    </th>
+                  );
+                })}
+                <th style={{ padding: '0 4px', borderBottom: '2px solid #E5E7EB', width: 28, textAlign: 'center' }}>
+                  <button onClick={() => setOffset(o => Math.min(maxOffset, (o ?? maxOffset) + 1))}
+                    disabled={currentOffset >= maxOffset}
+                    style={{ width: 24, height: 24, borderRadius: 6, border: 'none', background: currentOffset >= maxOffset ? '#F3F4F6' : NAVY+'22', color: currentOffset >= maxOffset ? '#D1D5DB' : NAVY, fontSize: 13, cursor: currentOffset >= maxOffset ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit', margin: '0 auto' }}>›</button>
+                </th>
+                <th style={{ padding: '6px 4px', textAlign: 'center', fontWeight: 700, color: '#6B7280', fontSize: 10, borderBottom: '2px solid #E5E7EB', borderLeft: '2px solid #E5E7EB', width: 44 }}>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {members.length === 0 ? (
+                <tr><td colSpan={visibleMatches.length + 4} style={{ textAlign: 'center', padding: '32px 0', color: '#9CA3AF', fontSize: 13 }}>
+                  {lang === 'ro' ? 'Nicio predicție înregistrată' : 'No predictions recorded'}
+                </td></tr>
+              ) : members.map((member, ri) => {
+                const rowBg = ri % 2 === 0 ? '#fff' : '#FAFAFA';
+                return (
+                  <tr key={member.userId} style={{ background: rowBg, borderBottom: '1px solid #F3F4F6' }}>
+                    <td style={{ padding: '6px 6px', overflow: 'hidden', borderRight: '2px solid #E5E7EB' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <div style={{ width: 18, textAlign: 'center', flexShrink: 0 }}>
+                          {member.rank <= 3
+                            ? <span style={{ fontSize: 16 }}>{member.rank===1?'🥇':member.rank===2?'🥈':'🥉'}</span>
+                            : <div style={{ width: 22, height: 22, borderRadius: 6, background: 'rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <span style={{ fontSize: 9, fontWeight: 700, color: '#6B7280' }}>#{member.rank}</span>
+                              </div>
+                          }
+                        </div>
+                        <span style={{fontSize:8,fontWeight:800,flexShrink:0,width:18,textAlign:"center",
+                          color:member.movement>0?"#16A34A":"#DC2626",
+                          background:(!liveActive&&member.movement!=null&&member.movement!==0)?(member.movement>0?"#F0FDF4":"#FEF2F2"):"transparent",
+                          borderRadius:4,padding:"1px 2px",
+                          visibility:(!liveActive&&member.movement!=null&&member.movement!==0)?"visible":"hidden"}}>
+                          {member.movement>0?`▲${member.movement}`:`▼${Math.abs(member.movement)}`}
+                        </span>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: DARK, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block', minWidth: 0 }}>{member.name}</span>
+                      </div>
+                    </td>
+                    <td style={{ width: 30 }} />
+                    {visibleMatches.map(k => {
+                      const pred = getPred(member.userId, k);
+                      const live = LIVE_SCORES[k];
+                      const sc = scoreOf(pred, live);
+                      const col = sc !== null ? scoreColor(sc) : '#9CA3AF';
+                      const isFinal = live?.status === 'FT';
+                      const ptsLabel = isFinal ? (sc === 3 ? '90' : sc === 2 ? '40' : sc === 1 ? '30' : sc === 0 ? '0' : null) : null;
+                      return (
+                        <td key={k} style={{ padding: '6px 4px', textAlign: 'center', position: 'relative' }}>
+                          {pred != null ? (
+                            <span style={{ fontSize: 13, fontWeight: 800, color: col }}>
+                              {pred.home}–{pred.away}
+                              {ptsLabel !== null && (
+                                <sub style={{ fontSize: 8, fontWeight: 700, color: col, marginLeft: 1, verticalAlign: 'sub' }}>{ptsLabel}</sub>
+                              )}
+                            </span>
+                          ) : (
+                            <span style={{ fontSize: 11, color: '#D1D5DB' }}>—</span>
+                          )}
+                        </td>
+                      );
+                    })}
+                    <td style={{ width: 30 }} />
+                    <td style={{ padding: '8px 4px', textAlign: 'center', fontWeight: 800, color: DARK, fontSize: 12, borderLeft: '2px solid #E5E7EB' }}>{member.pts ?? '—'}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScoresProp, simDay, simHour=12, simMin=0, initialWeek, initialDay, boardId, boardName, myBoards=[], onCopyDayScores, koTeams={} }) {
+  const lang = useLang();
+  const LIVE_SCORES = useLiveScores(simDay, simHour, simMin);
+  const calendarEvents = getDisplayCalendarEvents();
   // Build GROUPS_DATA dynamically from CALENDAR_EVENTS
   const GROUPS_DATA = (() => {
     const gMap = {};
-    CALENDAR_EVENTS.forEach(e => {
+    calendarEvents.forEach(e => {
       e.matches.forEach(m => {
         if(!m.group || m.group.length > 1) return;
         if(!gMap[m.group]) gMap[m.group] = {};
@@ -8010,27 +8983,29 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
   // weeks: May 25-31 (−6), Jun 1-7 (1), then WC weeks
   const weeks = [-6,1,8,15,22,29,36,43];
   const mm0 = {};
-  CALENDAR_EVENTS.forEach(e => { mm0[e.day] = e.matches; });
+  calendarEvents.forEach(e => { mm0[e.day] = e.matches; });
   // Find first WC match day (Jun 8+)
   const firstMatchDay = Array.from({length:7},(_,i)=>8+i).find(d=>!!mm0[d]) || null;
-  const todayDay = simDay ?? getRealTournamentDay();
+  const todayDay = simDay ?? getLocalTournamentDay();
   const todayHasMatches = !!mm0[todayDay];
-  const defaultDay = todayDay;
+  const requestedDay = initialDay ?? todayDay;
+  const defaultDay = requestedDay;
   // Auto-select the week that contains today (pre-WC weeks included)
-  const defaultWeek = initialWeek || [-6,1,8,15,22,29].find(w=>todayDay>=w&&todayDay<=w+6) || -6;
+  const defaultWeek = initialWeek || [-6,1,8,15,22,29].find(w=>requestedDay>=w&&requestedDay<=w+6) || -6;
   const [weekStart, setWeekStart] = useState(defaultWeek);
   useEffect(()=>{
-    if(initialWeek) {
-      setWeekStart(initialWeek);
+    if(initialWeek || initialDay != null) {
+      const nextWeek = initialWeek || [-6,1,8,15,22,29].find(w=>requestedDay>=w&&requestedDay<=w+6) || -6;
+      setWeekStart(nextWeek);
       const mm_ = {};
-      CALENDAR_EVENTS.forEach(e => { mm_[e.day] = e.matches; });
-      const wDays = Array.from({length:7},(_,i)=>initialWeek+i);
+      calendarEvents.forEach(e => { mm_[e.day] = e.matches; });
+      const wDays = Array.from({length:7},(_,i)=>nextWeek+i);
       // Selectăm ziua de azi dacă e în săptămână (cu sau fără meciuri), altfel prima zi cu meciuri
-      const todayInWeek = wDays.find(d => d === todayDay);
+      const todayInWeek = wDays.find(d => d === requestedDay);
       const firstDay = todayInWeek ?? wDays.find(d=>!!mm_[d]) ?? wDays[0];
       setSelDay(firstDay);
     }
-  },[initialWeek]);
+  },[initialWeek, initialDay]);
   const [selGroup, setSelGroup] = useState(null);
   const [selDay, setSelDay] = useState(defaultDay);
   const [scores, _setScores] = useState(scoresProp||{});
@@ -8044,6 +9019,10 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
     _setV(v=>v+1);
   };
   const [scorePick, setScorePick] = useState(null);
+  const [matchPreview, setMatchPreview] = useState(null);
+  const [matchPreviewData, setMatchPreviewData] = useState({ loading: false, items: [] });
+  const [copyDayPayload, setCopyDayPayload] = useState(null);
+  const [copyDayDone, setCopyDayDone] = useState({});
   const [showReal, setShowReal] = useState(true);
   const [showStanding, setShowStanding] = useState(false);
   const [pickerHome, setPickerHome] = useState(0);
@@ -8067,11 +9046,20 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
       }, 50);
     }
   },[scorePick]);
+
+  useEffect(()=>{
+    if(!matchPreview||!boardId) return;
+    setMatchPreviewData({loading:true,items:[]});
+    loadMatchPredictions(matchPreview.key, boardId).then(items=>{
+      setMatchPreviewData({loading:false,items});
+    });
+  },[matchPreview?.key, boardId]);
+
   const weekIdx = weeks.indexOf(weekStart);
 
   const getGroupsForDays = (days) => {
     const groups = new Set();
-    CALENDAR_EVENTS.forEach(e => {
+    calendarEvents.forEach(e => {
       if(days.includes(e.day)) e.matches.forEach(m => { if(m.group) groups.add(m.group); });
     });
     return [...groups].sort();
@@ -8118,12 +9106,12 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
 
   // Compute standing from saved scores for current group
   const mm = {};
-  CALENDAR_EVENTS.forEach(e => { mm[e.day] = e.matches; });
+  calendarEvents.forEach(e => { mm[e.day] = e.matches; });
   const groupMatches = [];
-  CALENDAR_EVENTS.forEach(e => {
+  calendarEvents.forEach(e => {
     e.matches.forEach((m,idx) => {
       if(m.group===selGroup)
-        groupMatches.push({...m, day:e.day, idx, key:`${e.day}-${idx}`});
+        groupMatches.push({...m, day:e.day, idx, key:getMatchKey(m,e.day,idx)});
     });
   });
 
@@ -8145,18 +9133,30 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
   standing.sort((a,b)=>b.pts-a.pts||b.gd-a.gd||b.gf-a.gf);
 
   const wDaysHeader = Array.from({length:7},(_,i)=>weekStart+i);
-  const weekTotal = wDaysHeader.reduce((s,d)=>s+(mm0[d]||[]).length,0);
-  const weekScored = wDaysHeader.reduce((s,d)=>s+(mm0[d]||[]).filter((_,i)=>scores[`${d}-${i}`]).length,0);
+  const weekPredictableMatches = wDaysHeader.flatMap(d =>
+    (mm0[d] || [])
+      .map((m, i) => ({ match: m, day: d, idx: i, key: getMatchKey(m, d, i) }))
+      .filter(({ match: m, key }) =>
+        (m.homeFlag !== '🏆' || !!koTeams[key]) &&
+        isWeekUnlocked(d, simDay, simHour, simMin) &&
+        !isMatchPast(d, m.time, simDay, simHour, m.kickoffUtc)
+      )
+  );
+  const weekTotal = weekPredictableMatches.length;
+  const weekScored = weekPredictableMatches.filter(({ match, day, idx }) =>
+    scores[getMatchKey(match, day, idx)]
+  ).length;
   const weekRemaining = weekTotal - weekScored;
 
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,overflow:"hidden",position:"relative"}}>
-      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.055,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
+      <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.055,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)",transform:"translateZ(0)",willChange:"transform"}}/>
       <div style={{background:"rgba(0,32,91,0.88)",flexShrink:0,position:"relative",zIndex:1,overflow:"hidden"}}>
         <div style={{display:"flex",alignItems:"center",gap:10,padding:"28px 14px 28px"}}>
           <button onClick={onBack} style={{background:"rgba(255,255,255,0.12)",border:"none",borderRadius:10,width:34,height:34,color:"#fff",fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>‹</button>
           <div style={{flex:1,textAlign:"center"}}>
             <div style={{fontSize:18,fontWeight:800,color:"#fff"}}>{T[lang].exactScores}</div>
+            {boardName&&<div style={{fontSize:11,fontWeight:600,color:"rgba(255,255,255,0.5)",marginTop:2}}>{boardName}</div>}
           </div>
           <div style={{textAlign:"right",flexShrink:0,minWidth:34}}>
             <div style={{fontSize:13,fontWeight:700,color:"#fff"}}>{weekScored}/{weekTotal}</div>
@@ -8173,17 +9173,70 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
           selGroup={selGroup} setSelGroup={setSelGroup}
           GROUPS_DATA={GROUPS_DATA} showReal={showReal} setShowReal={setShowReal}
           standing={standing} isGroupLocked={isGroupLocked} simDay={simDay} simHour={simHour} simMin={simMin}
-          liveScores={LIVE_SCORES}
+          liveScores={LIVE_SCORES} koTeams={koTeams}
+          onCopyDay={myBoards.filter(b=>b.id!==boardId).length>0 ? (day, matchKeys)=>{ setCopyDayDone({}); setCopyDayPayload({ day, matchKeys }); } : null}
+          onMatchPreview={(match,day,idx)=>{
+            setMatchPreview({match,day,idx,key:getMatchKey(match,day,idx)});
+          }}
           onMatchClick={(match,day,idx)=>{
             if(!isWeekUnlocked(day, simDay, simHour, simMin)) return;
+            if(match.homeFlag==='🏆') return; // teams not determined yet
             // UCL Final (day -1): allow prediction before kickoff only
             const isUCL = match.group==="UCL";
-            if(!isUCL && isMatchPast(day, match.time, simDay, simHour)) return;
-            if(isUCL && isMatchPast(day, match.time, null, null)) return;
-            setScorePick({match,day,idx,key:`${day}-${idx}`});
+            if(!isUCL && isMatchPast(day, match.time, simDay, simHour, match.kickoffUtc)) return;
+            if(isUCL && isMatchPast(day, match.time, null, null, match.kickoffUtc)) return;
+            setScorePick({match,day,idx,key:getMatchKey(match,day,idx)});
           }}/>
 
 
+
+        {copyDayPayload&&(
+          <div style={{position:"fixed",inset:0,zIndex:1300,display:"flex",flexDirection:"column",justifyContent:"flex-end"}}
+            onClick={()=>setCopyDayPayload(null)}>
+            <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.5)"}}/>
+            <div onClick={e=>e.stopPropagation()}
+              style={{position:"relative",background:"#1C1C1E",borderRadius:"20px 20px 0 0",padding:"0 0 calc(env(safe-area-inset-bottom, 10px) + 24px)",maxHeight:"60vh",display:"flex",flexDirection:"column"}}>
+              <div style={{display:"flex",justifyContent:"center",padding:"10px 0 4px"}}>
+                <div style={{width:36,height:4,borderRadius:2,background:"rgba(255,255,255,0.2)"}}/>
+              </div>
+              <div style={{padding:"8px 20px 14px",borderBottom:"1px solid rgba(255,255,255,0.08)"}}>
+                <div style={{display:"flex",alignItems:"center",gap:8}}>
+                  <CopyGlyph color={GREEN}/>
+                  <span style={{fontSize:15,fontWeight:800,color:"#fff"}}>{T[lang].copyExactScoresTitle}</span>
+                </div>
+                <p style={{fontSize:12,color:"rgba(255,255,255,0.45)",margin:"4px 0 0"}}>
+                  {copyDayPayload.matchKeys.length} {T[lang].matchesToPredict} · {toLabel(copyDayPayload.day)}
+                </p>
+              </div>
+              <div style={{overflowY:"auto",flex:1,padding:"10px 16px 0"}}>
+                {myBoards.filter(b=>b.id!==boardId).length===0?(
+                  <div style={{textAlign:"center",padding:"24px 0",color:"rgba(255,255,255,0.35)",fontSize:13}}>
+                    {T[lang].noOtherBoards}
+                  </div>
+                ):myBoards.filter(b=>b.id!==boardId).map(b=>(
+                  <div key={b.id}
+                    onClick={async()=>{
+                      if(copyDayDone[b.id]) return;
+                      await onCopyDayScores?.(b.id, copyDayPayload.matchKeys);
+                      setCopyDayDone(p=>({...p,[b.id]:true}));
+                    }}
+                    style={{display:"flex",alignItems:"center",gap:12,padding:"12px 4px",borderBottom:"1px solid rgba(255,255,255,0.07)",cursor:"pointer"}}>
+                    <span style={{fontSize:22,display:"inline-block",width:30,flexShrink:0}}>{b.emoji||"âš½"}</span>
+                    <span style={{flex:1,fontSize:13,fontWeight:700,color:"#fff"}}>{b.name}</span>
+                    {copyDayDone[b.id]?(
+                      <span style={{fontSize:12,fontWeight:700,color:GREEN}}>{T[lang].copiedLabel}</span>
+                    ):(
+                      <div style={{background:`linear-gradient(135deg,${GREEN},#007A36)`,borderRadius:8,padding:"5px 12px",display:"flex",alignItems:"center",gap:5}}>
+                        <CopyGlyph color="#fff"/>
+                        <span style={{fontSize:12,fontWeight:700,color:"#fff"}}>{T[lang].pasteLabel}</span>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
         {false && !isGroupLocked(selGroup) && (
           <>
@@ -8256,28 +9309,33 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
                 const matchH = parseInt((m.time||"23:00").split(":")[0]);
                 const matchMin2 = parseInt((m.time||"00:00").split(":")[1]||0);
                 const nowDay2 = simDay ?? getRealTournamentDay();
-                const nowH2   = simDay!=null ? (simHour||0) : new Date().getHours();
-                const nowM2   = simDay!=null ? (simMin||0)  : new Date().getMinutes();
+                // In non-sim mode: convert current time to ET (UTC-4) so it matches match schedule timezone
+                const _etNow  = simDay!=null ? null : new Date(Date.now() - ET_OFFSET_MS);
+                const nowH2   = simDay!=null ? (simHour||0) : _etNow.getUTCHours();
+                const nowM2   = simDay!=null ? (simMin||0)  : _etNow.getUTCMinutes();
                 const nowMins2 = nowH2*60 + nowM2;
                 const kickMins2 = matchH*60 + matchMin2;
-                const isFinished = live?.status==="FT" || (m.day < nowDay2) || (m.day===nowDay2 && nowMins2 > kickMins2+115);
-                const isLive = !isFinished && (isLiveScoreStatus(live?.status) || (!live?.status && m.day===nowDay2 && nowMins2>=kickMins2 && nowMins2<=kickMins2+115));
+                const isSimMode = simDay != null;
+                const isFinished = live?.status==="FT" || (isSimMode && (m.day < nowDay2 || (m.day===nowDay2 && nowMins2 > kickMins2+115)));
+                const isLive = !isFinished && (isLiveScoreStatus(live?.status) || (isSimMode && !live?.status && m.day===nowDay2 && nowMins2>=kickMins2 && nowMins2<=kickMins2+115));
                 const isNS = !isFinished && !isLive;
-                // Minute: prefer DB value (UTC-based from utcDate); fallback to local time diff
+                // Minute: 1) api_minute from API  2) elapsed from utcDate  3) local ET estimate
                 const liveMin = isLive ? (
                   live?.min != null ? live.min :
-                  live?.status ? null :
+                  live?.utcDate ? Math.min(90, Math.floor((Date.now() - Date.parse(live.utcDate)) / 60000)) :
+                  live?.status || !isSimMode ? null :
                   Math.min(90, nowMins2-kickMins2)
                 ) : 0;
                 const hasLive = live && live.home !== undefined && live.home !== null;
 
                 // Check prediction accuracy
-                let exactMatch = false, resultMatch = false;
+                let exactMatch = false, resultMatch = false, diffMatch = false;
                 if(sc && hasLive && isFinished) {
                   exactMatch = scH(sc)===live.home && scA(sc)===live.away;
                   const predResult = scH(sc)>scA(sc)?"H":scH(sc)<scA(sc)?"A":"D";
                   const realResult = live.home>live.away?"H":live.home<live.away?"A":"D";
                   resultMatch = predResult===realResult;
+                  diffMatch = !exactMatch && resultMatch && predResult!=="D" && (scH(sc)-scA(sc))===(live.home-live.away);
                 }
 
                 return (
@@ -8286,7 +9344,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
                     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",
                       padding:"5px 12px",
                       background:isLive?"rgba(0,32,91,0.06)":isFinished?"rgba(0,154,68,0.06)":"rgba(0,0,0,0.03)"}}>
-                      <span style={{fontSize:11,color:"#aaa",fontWeight:600}}>{m.day} June · {m.time}</span>
+                      <span style={{fontSize:11,color:"#aaa",fontWeight:600}}>{getLocalKickoffDay(m.kickoffUtc,m.day)} June · {fmtMatchTime(m.day, m.time, m.kickoffUtc)}</span>
                       {isLive&&<span style={{fontSize:11,fontWeight:800,color:RED,display:"flex",alignItems:"center",gap:3}}>
                         <span style={{width:6,height:6,borderRadius:"50%",background:RED,display:"inline-block"}}/>
                         {liveScorePhaseLabel(live?.status, liveMin)}
@@ -8306,9 +9364,9 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
 
                         {/* Scores — compact single center block */}
                         {(()=>{
-                          const isPast = isMatchPast(m.day, m.time, simDay, simHour);
-                          const canPredict = !isLive && !isFinished && !isPast && isWeekUnlocked(m.day, simDay, simHour, simMin);
-                          const scoreDisplay = hasLive ? `${live.home}-${live.away}` : isLive ? "0-0" : "-";
+                          const isPast = isMatchPast(m.day, m.time, simDay, simHour, m.kickoffUtc);
+                          const canPredict = !isLive && !isFinished && !isPast && isWeekUnlocked(m.day, simDay, simHour, simMin) && m.homeFlag!=='🏆';
+                          const scoreDisplay = hasLive ? `${live.home}-${live.away}` : isSimMode && isLive ? "0-0" : "-";
                           const penDisplay = penaltyScoreLabel(live);
                           const predBox = (isPast||isLive||isFinished) ? (sc ? (
                             isLive ? (
@@ -8325,7 +9383,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
                             <div style={{background:"rgba(0,0,0,0.06)",borderRadius:6,padding:"3px 8px"}}>
                               <span style={{fontSize:11,fontWeight:700,color:"#ccc"}}>?-?</span>
                             </div>
-                          )) : canPredict && !isMatchPast(m.day, m.time, simDay, simHour) ? (
+                          )) : canPredict && !isMatchPast(m.day, m.time, simDay, simHour, m.kickoffUtc) ? (
                             <div onClick={()=>setScorePick({match:m,day:m.day,idx:m.idx,key:m.key})}
                               style={{background:`linear-gradient(135deg,${RED},${GREEN})`,borderRadius:6,padding:"3px 8px",cursor:"pointer"}}>
                               <span style={{fontSize:12,color:"#fff",fontWeight:700}}>+ scor</span>
@@ -8361,13 +9419,13 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
                       </div>
 
                       {/* Points earned */}
-                      {(isFinished || isMatchPast(m.day, m.time, simDay, simHour)) && (
+                      {(isFinished || isMatchPast(m.day, m.time, simDay, simHour, m.kickoffUtc)) && (
                         <div style={{marginTop:6,display:"flex",justifyContent:"center"}}>
-                          <div style={{background:exactMatch?"rgba(0,154,68,0.1)":resultMatch?"rgba(0,32,91,0.07)":"rgba(200,16,46,0.08)",
+                          <div style={{background:exactMatch?"rgba(0,154,68,0.1)":diffMatch?"rgba(245,158,11,0.1)":resultMatch?"rgba(0,32,91,0.07)":"rgba(200,16,46,0.08)",
                             borderRadius:20,padding:"3px 12px",display:"flex",alignItems:"center",gap:6}}>
                             <span style={{fontSize:12,fontWeight:700,
-                              color:exactMatch?GREEN:resultMatch?NAVY:RED}}>
-                              {exactMatch?"🎯 +90 pts · Scor exact":resultMatch?"✓ +30 pts · Rezultat corect":"✗ +0 pts"}
+                              color:exactMatch?GREEN:diffMatch?"#D97706":resultMatch?NAVY:RED}}>
+                              {exactMatch?"🎯 +90 pts · Scor exact":diffMatch?"⚡ +40 pts · Diferență goluri":resultMatch?"✓ +30 pts · Rezultat corect":"✗ +0 pts"}
                             </span>
                           </div>
                         </div>
@@ -8375,7 +9433,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
                     </div>
 
                     {/* Edit prediction */}
-                    {!isMatchPast(m.day, m.time, simDay, simHour) && !isLive && !isFinished && sc && isWeekUnlocked(m.day, simDay, simHour, simMin) && todaySim <= m.day && (
+                    {!isMatchPast(m.day, m.time, simDay, simHour, m.kickoffUtc) && !isLive && !isFinished && sc && isWeekUnlocked(m.day, simDay, simHour, simMin) && m.homeFlag!=='🏆' && todaySim <= m.day && (
                       <button onClick={()=>setScorePick({match:m,day:m.day,idx:m.idx,key:m.key})}
                         style={{width:"100%",padding:"6px 12px",borderTop:"1px solid rgba(0,0,0,0.05)",
                           background:"none",border:"none",borderTop:"1px solid rgba(0,0,0,0.05)",
@@ -8442,7 +9500,8 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
                   if(_dayMatches.length<=2) return;
                   let nextKey=null;
                   for(let i=_idx+1;i<_dayMatches.length;i++){
-                    if(!scores[`${_day}-${i}`]){ nextKey=`${_day}-${i}`; break; }
+                    const candidateKey = getMatchKey(_dayMatches[i], _day, i);
+                    if(!scores[candidateKey]){ nextKey=candidateKey; break; }
                   }
                   if(!nextKey) return;
                   const container=exactScrollRef.current;
@@ -8486,20 +9545,123 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
           </div>
         </div>
       )}
+
+      {/* Match Predictions Modal — same design as ranking breakdown */}
+      {matchPreview&&(
+        <div style={{position:"fixed",inset:0,zIndex:2000,display:"flex",flexDirection:"column",justifyContent:"flex-end"}}
+          onClick={()=>setMatchPreview(null)}>
+          <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.45)",animation:"fadeIn 0.2s ease forwards"}}/>
+          <div onClick={e=>e.stopPropagation()}
+            style={{position:"relative",background:"#fff",borderRadius:"20px 20px 0 0",
+              maxHeight:"78vh",display:"flex",flexDirection:"column",
+              boxShadow:"0 -4px 32px rgba(0,0,0,0.18)",
+              animation:"slideUp 0.28s cubic-bezier(0.32,0.72,0,1) forwards"}}>
+            {/* Handle */}
+            <div style={{display:"flex",justifyContent:"center",padding:"10px 0 0"}}>
+              <div style={{width:36,height:4,borderRadius:2,background:"#E5E7EB"}}/>
+            </div>
+            {/* Header — match info */}
+            <div style={{padding:"12px 20px 14px",borderBottom:"1px solid #F3F4F6"}}>
+              <div style={{display:"flex",alignItems:"center",gap:10}}>
+                <span style={{fontSize:28,flexShrink:0}}>{matchPreview.match.homeFlag}</span>
+                <div style={{flex:1,textAlign:"center"}}>
+                  {(()=>{
+                    const live=LIVE_SCORES[matchPreview.key];
+                    return live&&live.home!=null?(
+                      <div style={{fontSize:20,fontWeight:900,color:NAVY,letterSpacing:2}}>{live.home} – {live.away}</div>
+                    ):(
+                      <div style={{fontSize:16,fontWeight:700,color:"#bbb"}}>vs</div>
+                    );
+                  })()}
+                  <div style={{fontSize:11,color:"#9CA3AF",fontWeight:600,marginTop:2}}>{matchPreview.match.home} · {matchPreview.match.away}</div>
+                </div>
+                <span style={{fontSize:28,flexShrink:0}}>{matchPreview.match.awayFlag}</span>
+              </div>
+            </div>
+            {/* List */}
+            <div style={{overflowY:"auto",flex:1,padding:"6px 20px 40px"}}>
+              {matchPreviewData.loading?(
+                <div style={{display:"flex",justifyContent:"center",padding:"32px 0",color:"#9CA3AF",fontSize:13}}>
+                  <span style={{width:18,height:18,borderRadius:"50%",border:`2px solid ${NAVY}22`,
+                    borderTopColor:NAVY,animation:"spin 0.9s linear infinite",display:"inline-block",marginRight:8}}/>
+                  Se încarcă...
+                </div>
+              ):matchPreviewData.items.length===0?(
+                <div style={{textAlign:"center",padding:"32px 0",color:"#9CA3AF",fontSize:13}}>
+                  Niciun jucător din acest grup nu a prezis acest meci.
+                </div>
+              ):(()=>{
+                const live=LIVE_SCORES[matchPreview.key];
+                const hasFinal=live&&live.home!=null;
+                const scoreOf=p=>{
+                  if(!hasFinal) return -1;
+                  if(p.predHome===live.home&&p.predAway===live.away) return 3;
+                  const pd=p.predHome-p.predAway, rd=live.home-live.away;
+                  if(pd===rd&&pd!==0&&Math.sign(pd)===Math.sign(rd)) return 2;
+                  if(Math.sign(p.predHome-p.predAway)===Math.sign(live.home-live.away)) return 1;
+                  return 0;
+                };
+                return (
+                  <div style={{border:`1.5px solid ${NAVY}22`,borderRadius:12,overflow:"hidden",marginTop:10}}>
+                    {[...matchPreviewData.items].sort((a,b)=>scoreOf(b)-scoreOf(a)).map((item,i,arr)=>{
+                      const sc=scoreOf(item);
+                      const isExact=sc===3, isDiff=sc===2, isResult=sc===1, isMiss=hasFinal&&sc===0;
+                      const badgeTxt=isExact?"🎯 EXACT":isDiff?"+DIFF":isResult?"✓ WIN":isMiss?"✗":"";
+                      const badgeBg=isExact?GREEN:isDiff?"#F59E0B":isResult?NAVY:isMiss?"#EF4444":"#ccc";
+                      const scoreColor=isExact?GREEN:isDiff?"#F59E0B":isResult?NAVY:isMiss?"#EF4444":"#888";
+                      return (
+                        <div key={item.userId} style={{display:"flex",alignItems:"center",gap:10,
+                          padding:"9px 12px",borderBottom:i<arr.length-1?"1px solid #F9FAFB":"none"}}>
+                          <div style={{width:34,height:34,borderRadius:"50%",background:`${NAVY}15`,
+                            display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,overflow:"hidden"}}>
+                            {item.avatarUrl?(
+                              <FadeImg src={item.avatarUrl} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                            ):(
+                              <span style={{fontSize:13,fontWeight:800,color:NAVY}}>
+                                {(item.name?.split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2))||"?"}
+                              </span>
+                            )}
+                          </div>
+                          <span style={{flex:1,fontSize:13,fontWeight:700,color:DARK}}>{item.name}</span>
+                          <div style={{display:"flex",alignItems:"center",gap:6}}>
+                            {badgeTxt&&<span style={{fontSize:9,fontWeight:800,color:"#fff",background:badgeBg,
+                              borderRadius:4,padding:"1px 5px",letterSpacing:0.5,whiteSpace:"nowrap"}}>{badgeTxt}</span>}
+                            <span style={{fontSize:13,fontWeight:800,color:scoreColor}}>{item.predHome}-{item.predAway}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDaySelect, scores, onMatchClick, showStanding, setShowStanding, selGroup, setSelGroup, GROUPS_DATA, showReal, setShowReal, standing, isGroupLocked, simDay, simHour=12, simMin=0, liveScores, scoresVersion }) {
+function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDaySelect, scores, onMatchClick, onMatchPreview, onCopyDay, showStanding, setShowStanding, selGroup, setSelGroup, GROUPS_DATA, showReal, setShowReal, standing, isGroupLocked, simDay, simHour=12, simMin=0, liveScores, scoresVersion, koTeams={} }) {
   const lang = useLang();
   const LIVE_SCORES = liveScores || LIVE_SCORES_DEFAULT;
   const [collapsedGroups, setCollapsedGroups] = useState({});
+  const calendarEvents = getDisplayCalendarEvents();
   const mm = {};
-  CALENDAR_EVENTS.forEach(e => { mm[e.day] = e.matches; });
+  calendarEvents.forEach(e => { mm[e.day] = e.matches; });
   const dl = ["L","M","M","J","V","S","D"];
   const days = Array.from({length:7},(_,i)=>weekStart+i);
   const sel = selDay !== undefined ? selDay : null;
   const sm = (sel !== null && sel !== undefined && mm[sel]) ? mm[sel] : null;
+  const copyableDayMatches = sm ? sm
+    .map((m, idx) => ({ match: m, idx, key: getMatchKey(m, sel, idx) }))
+    .filter(({ match: m, key }) => (m.homeFlag !== '🏆' || !!koTeams[key]) && isWeekUnlocked(sel || 0, simDay, simHour, simMin)) : [];
+  const dayAllPredicted = copyableDayMatches.length > 0 && copyableDayMatches.every(({ key }) => !!scores?.[key]);
+  const dayNotStarted = copyableDayMatches.length > 0 && copyableDayMatches.every(({ match, key }) => {
+    const status = LIVE_SCORES[key]?.status;
+    return (!status || status === 'NS') && !isMatchPast(sel, match.time, simDay, simHour, match.kickoffUtc);
+  });
+  const canCopySelectedDay = !!onCopyDay && dayAllPredicted && dayNotStarted;
   const weekEnd = weekStart+6;
   const weekLabel = `${toLabel(weekStart)} – ${toLabel(weekEnd)}`;
   const weekMonthLabel = weekStart<=0?"May 2026":weekEnd>30?"July 2026":"June 2026";
@@ -8533,12 +9695,12 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
       <div key={week} style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:4,marginBottom:4}}>
         {days.slice(week*7,(week+1)*7).map((day,i)=>{
           const isS=day===11,has=!!mm[day],isSel=sel===day,isSun=i%7===6;
-          const today = simDay ?? getRealTournamentDay();
+          const today = simDay ?? getLocalTournamentDay();
           const isPast = has && day < today;
           const isToday2 = day === today;
           const locked = has && !isWeekUnlocked(day, simDay, simHour, simMin);
           const dayMatches = mm[day]||[];
-          const allPredicted = has && !locked && !isPast && dayMatches.length>0 && dayMatches.every((_,idx)=>scores&&scores[`${day}-${idx}`]);
+          const allPredicted = has && !locked && !isPast && dayMatches.length>0 && dayMatches.every((m,idx)=>scores&&scores[getMatchKey(m,day,idx)]);
           let bg="transparent",border="1.5px solid transparent",shadow="none";
           let tc=isSun?RED:"#777",fw=400;
           if(isSel&&allPredicted&&!isPast){bg="#EEF3FF";border=`1.5px solid ${NAVY}`;tc=GREEN;fw=800;}
@@ -8553,7 +9715,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
             <div key={day} onClick={()=>onDaySelect&&onDaySelect(day)}
               style={{position:"relative",display:"flex",flexDirection:"column",alignItems:"center",
                 justifyContent:"center",borderRadius:10,padding:"8px 2px",
-                cursor:"pointer",background:bg,border,boxShadow:shadow,transition:"all 0.15s",
+                cursor:"pointer",background:bg,border,boxShadow:shadow,transition:"background-color 0.15s, border-color 0.15s",
                 opacity:locked?0.6:1}}>
               <span style={{fontSize:13,fontWeight:fw,color:tc,lineHeight:1}}>{day<=0?day+31:day>30?day-30:day}</span>
               {has&&(
@@ -8762,9 +9924,9 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
 
                           // KO matches from calendar
                           const koMatches = [];
-                          CALENDAR_EVENTS.forEach(e=>{
+                          calendarEvents.forEach(e=>{
                             e.matches.forEach((m,idx)=>{
-                              if(m.group===activeGrp) koMatches.push({...m,day:e.day,_i:idx,key:`${e.day}-${idx}`});
+                              if(m.group===activeGrp) koMatches.push({...m,day:e.day,_i:idx,key:getMatchKey(m,e.day,idx)});
                             });
                           });
 
@@ -8815,21 +9977,23 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                                   const _nd=simDay ?? getRealTournamentDay();
                                   const _nh=simDay!=null?(simHour||0):new Date().getHours();
                                   const _kick=_mH*60, _now=_nh*60;
+                                  const isSimMode2 = simDay != null;
                                   const db2ko=live2?.status;
-                                  const isFT2 = db2ko==="FT" || (!db2ko && (m.day<_nd || (m.day===_nd && _now>_kick+115)));
+                                  const isFT2 = db2ko==="FT" || (isSimMode2 && !db2ko && (m.day<_nd || (m.day===_nd && _now>_kick+115)));
                                   const isHT2 = !isFT2 && db2ko==="HT";
-                                  const isLive2 = !isFT2 && !isHT2 && (isLiveScoreStatus(db2ko) || (!db2ko && m.day===_nd && _now>=_kick && _now<=_kick+115));
-                                  const liveScore2 = live2&&live2.home!=null ? live2 : ((isLive2||isHT2)?{home:0,away:0}:null);
+                                  const isLive2 = !isFT2 && !isHT2 && (isLiveScoreStatus(db2ko) || (isSimMode2 && !db2ko && m.day===_nd && _now>=_kick && _now<=_kick+115));
+                                  const liveScore2 = live2&&live2.home!=null ? live2 : (isSimMode2 && (isLive2||isHT2)?{home:0,away:0}:null);
                                   const penDisplay2 = penaltyScoreLabel(live2);
                                   const isPastM = m.day<_nd || (m.day===_nd && _mH<=_nh);
                                   const canEdit=!isLive2&&!isHT2&&!isFT2&&!isPastM&&isWeekUnlocked(m.day,simDay,simHour,simMin);
+                                  const isPreviewable=(isFT2||isPastM)&&!!onMatchPreview;
                                   return (
                                     <div key={idx2} style={{background:"#fff",borderBottom:idx2<koMatches.length-1?"1px solid rgba(0,0,0,0.05)":"none",
-                                      padding:"10px 14px",display:"flex",alignItems:"center",gap:8,cursor:canEdit?"pointer":"default"}}
-                                      onClick={()=>canEdit&&onMatchClick&&onMatchClick(m,m.day,m._i)}>
+                                      padding:"10px 14px",display:"flex",alignItems:"center",gap:8,cursor:(canEdit||isPreviewable)?"pointer":"default"}}
+                                      onClick={()=>{if(canEdit&&onMatchClick)onMatchClick(m,m.day,m._i);else if(isPreviewable)onMatchPreview(m,m.day,m._i);}}>
                                       <div style={{flexShrink:0,textAlign:"center",width:32}}>
                                         <p style={{fontSize:12,color:"#aaa",margin:0,fontWeight:600}}>{m.day>30?m.day-30:m.day} {m.day>30?"Jul":"Jun"}</p>
-                                        <p style={{fontSize:11,color:"#bbb",margin:0}}>{m.time}</p>
+                                        <p style={{fontSize:11,color:"#bbb",margin:0}}>{fmtMatchTime(m.day, m.time, m.kickoffUtc)}</p>
                                       </div>
                                       <span style={{fontSize:18}}>{m.homeFlag}</span>
                                       <span style={{flex:1,fontSize:12,fontWeight:600,color:isPastM?"#bbb":DARK}}>{m.home.length>7?m.home.split(" ")[0]:m.home}</span>
@@ -8862,7 +10026,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                       // Helper to compute standing from a score source
                       const computeStanding = (getScore) => {
                         const st = cur2.teams.map(t=>({...t,pts:0,gf:0,ga:0,gd:0,p:0}));
-                        CALENDAR_EVENTS.forEach(e=>{
+                        calendarEvents.forEach(e=>{
                           e.matches.forEach((m,idx)=>{
                             if(m.group!==activeGrp) return;
                             const sc = getScore(e.day, idx);
@@ -8882,14 +10046,16 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
 
                       // Real standing — from liveScores (FT matches with real scores)
                       const realRows = computeStanding((day,idx)=>{
-                        const live = LIVE_SCORES[`${day}-${idx}`];
+                        const match = (mm[day]||[])[idx];
+                        const live = LIVE_SCORES[getMatchKey(match,day,idx)];
                         if(!live || live.status!=="FT" || live.home===null || live.home===undefined) return null;
                         return [live.home, live.away];
                       });
 
                       // Predicted standing — from user scores
                       const predRows = computeStanding((day,idx)=>{
-                        return scores&&scores[`${day}-${idx}`]||null;
+                        const match = (mm[day]||[])[idx];
+                        return scores&&scores[getMatchKey(match,day,idx)]||null;
                       });
 
                       const rows2 = showReal ? realRows : predRows;
@@ -8924,9 +10090,9 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                         <div style={{borderRadius:10,overflow:"hidden",boxShadow:SHADOW_OUT}}>
                           {(()=>{
                             const allGM = [];
-                            CALENDAR_EVENTS.forEach(e=>{
+                            calendarEvents.forEach(e=>{
                               e.matches.forEach((m,idx)=>{
-                                if(m.group===activeGrp) allGM.push({...m,day:e.day,_i:idx,key:`${e.day}-${idx}`});
+                                if(m.group===activeGrp) allGM.push({...m,day:e.day,_i:idx,key:getMatchKey(m,e.day,idx)});
                               });
                             });
                             return allGM.map((m,idx2)=>{
@@ -8939,28 +10105,30 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                               const _nh=simDay!=null?(simHour||0):new Date().getHours();
                               const _nm=simDay!=null?(simMin||0):new Date().getMinutes();
                               const _kick=_mH*60+_mM, _now=_nh*60+_nm;
+                              const isSimMode2 = simDay != null;
                               const db2=live2?.status;
-                              const isFT2 = db2==="FT" || (!db2 && (m.day<_nd || (m.day===_nd && _now>_kick+115)));
+                              const isFT2 = db2==="FT" || (isSimMode2 && !db2 && (m.day<_nd || (m.day===_nd && _now>_kick+115)));
                               const isHT2 = !isFT2 && db2==="HT";
-                              const isLive2 = !isFT2 && !isHT2 && (isLiveScoreStatus(db2) || (!db2 && m.day===_nd && _now>=_kick && _now<=_kick+115));
-                              const liveScore2 = live2&&live2.home!==null&&live2.home!==undefined ? live2 : ((isLive2||isHT2)?{home:0,away:0}:null);
+                              const isLive2 = !isFT2 && !isHT2 && (isLiveScoreStatus(db2) || (isSimMode2 && !db2 && m.day===_nd && _now>=_kick && _now<=_kick+115));
+                              const liveScore2 = live2&&live2.home!==null&&live2.home!==undefined ? live2 : (isSimMode2 && (isLive2||isHT2)?{home:0,away:0}:null);
                               const hasScore2 = !!liveScore2;
                               const penDisplay2 = penaltyScoreLabel(live2);
                               const matchHourM=parseInt((m.time||"23:00").split(":")[0]);
-                              const nowDM = simDay ?? getRealTournamentDay();
+                              const nowDM = simDay ?? getLocalTournamentDay();
                               const nowHM = simDay ? (simHour||0) : new Date().getHours();
                               const isPastM = m.day < nowDM || (m.day === nowDM && matchHourM <= nowHM);
                               const canEdit=!isLive2&&!isHT2&&!isFT2&&!isPastM&&isWeekUnlocked(m.day,simDay,simHour,simMin);
+                              const isPreviewable2=(isFT2||isPastM)&&!!onMatchPreview;
                               return (
-                                <div key={idx2} role={canEdit?"button":undefined} tabIndex={canEdit?0:undefined}
+                                <div key={idx2} role={(canEdit||isPreviewable2)?"button":undefined} tabIndex={(canEdit||isPreviewable2)?0:undefined}
                                   style={{background:"#fff",borderBottom:idx2<allGM.length-1?"1px solid rgba(0,0,0,0.05)":"none",
                                   padding:"10px 14px",display:"flex",alignItems:"center",gap:8}}
-                                  onClick={()=>canEdit&&onMatchClick&&onMatchClick(m,m.day,m._i)}
-                                  onKeyDown={canEdit?e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();onMatchClick&&onMatchClick(m,m.day,m._i);}}:undefined}>
+                                  onClick={()=>{if(canEdit&&onMatchClick)onMatchClick(m,m.day,m._i);else if(isPreviewable2)onMatchPreview(m,m.day,m._i);}}
+                                  onKeyDown={(canEdit||isPreviewable2)?e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();if(canEdit&&onMatchClick)onMatchClick(m,m.day,m._i);else if(isPreviewable2)onMatchPreview(m,m.day,m._i);}}:undefined}>
                                   <span style={{fontSize:18}}>{m.homeFlag}</span>
                                   <span style={{flex:1,fontSize:12,fontWeight:600,color:isPastM?"#bbb":DARK}}>{m.home.length>7?m.home.split(" ")[0]:m.home}</span>
                                   <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
-                                    <span style={{fontSize:11,fontWeight:600,color:"#bbb"}}>{m.day} Iun · {m.time}</span>
+                                    <span style={{fontSize:11,fontWeight:600,color:"#bbb"}}>{getLocalKickoffDay(m.kickoffUtc,m.day)} Iun · {fmtMatchTime(m.day, m.time, m.kickoffUtc)}</span>
                                     {isPastM?<span style={{fontSize:10,color:"#ccc",fontWeight:700}}>{T[lang].finished}</span>
                                       :isLive2?<span style={{fontSize:10,fontWeight:800,color:RED,animation:"blink 1s infinite"}}>● {liveScorePhaseLabel(db2, live2?.min)}</span>
                                       :isHT2?<span style={{fontSize:10,fontWeight:800,color:"#F59E0B"}}>⏸ HT</span>
@@ -8990,37 +10158,46 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                     })()}
                   </div>
                 ) : (
-                  /* All matches list */
-                  sm.map((m0,i)=>{
+                  <>
+                  {/* All matches list */}
+                  {sm.map((m0,i)=>{
                     const m = {...m0, _i:i};
-                    const key=`${sel}-${i}`;
+                    const key=getMatchKey(m0,sel,i);
+                    const kt = koTeams[key];
+                    const displayHome     = kt ? kt.home                    : m.home;
+                    const displayHomeFlag = kt ? (FLAGS[kt.home]  || '🏆') : m.homeFlag;
+                    const displayAway     = kt ? kt.away                    : m.away;
+                    const displayAwayFlag = kt ? (FLAGS[kt.away]  || '🏆') : m.awayFlag;
+                    const teamsKnown = m.homeFlag !== '🏆' || !!kt;
                     // key used below for data-match-key
                     const sc = scores&&scores[key];
                     const live = LIVE_SCORES[key];
                     const mH2 = parseInt((m.time||"23:00").split(":")[0]);
                     const mM2 = parseInt((m.time||"00:00").split(":")[1]||0);
-                    const _nowDay = simDay ?? getRealTournamentDay();
+                    const _nowDay = simDay ?? getLocalTournamentDay();
                     const _nowH   = simDay!=null?(simHour||0):new Date().getHours();
                     const _nowM   = simDay!=null?(simMin||0):new Date().getMinutes();
                     const _kick = mH2*60+mM2, _now2 = _nowH*60+_nowM;
+                    const isSimMode = simDay != null;
                     const dbStatus = live?.status;
-                    const isFT = dbStatus==="FT" || (!dbStatus && ((sel||0)<_nowDay || (sel===_nowDay && _now2>_kick+115)));
+                    const isFT = dbStatus==="FT" || (isSimMode && !dbStatus && ((sel||0)<_nowDay || (sel===_nowDay && _now2>_kick+115)));
                     const isHT = !isFT && dbStatus==="HT";
-                    const isLive = !isFT && !isHT && (isLiveScoreStatus(dbStatus) || (!dbStatus && sel===_nowDay && _now2>=_kick && _now2<=_kick+115));
+                    const isLive = !isFT && !isHT && (isLiveScoreStatus(dbStatus) || (isSimMode && !dbStatus && sel===_nowDay && _now2>=_kick && _now2<=_kick+115));
                     const isNS2 = !isFT && !isHT && !isLive;
-                    const liveMin2 = isLive ? (live?.min != null ? live.min : dbStatus ? null : Math.min(90,_now2-_kick)) : isHT ? 45 : 0;
+                    const liveMin2 = isLive ? (live?.min != null ? live.min : dbStatus || !isSimMode ? null : Math.min(90,_now2-_kick)) : isHT ? 45 : 0;
                     const hasScore = live && live.home !== undefined && live.home !== null;
                     const penDisplay = penaltyScoreLabel(live);
                     const exactMatch = sc&&hasScore&&isFT&&scH(sc)===live.home&&scA(sc)===live.away;
                     const predRes = sc?scH(sc)>scA(sc)?"H":scH(sc)<scA(sc)?"A":"D":null;
                     const realRes = hasScore?live.home>live.away?"H":live.home<live.away?"A":"D":null;
                     const resultMatch = predRes&&realRes&&predRes===realRes&&isFT;
+                    const diffMatch = !exactMatch&&resultMatch&&predRes!=="D"&&hasScore&&(scH(sc)-scA(sc))===(live.home-live.away);
                     const isPastDay2 = !!(simDay && sel < simDay);
                     return (
                       <div key={i} data-match-key={key} style={{borderBottom:i<sm.length-1?"1px solid rgba(0,0,0,0.06)":"none",background:"#fff"}}>
                         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",
                           padding:"4px 14px",background:isLive?"rgba(0,32,91,0.06)":isFT?"rgba(0,154,68,0.05)":"rgba(0,0,0,0.02)"}}>
-                          <span style={{fontSize:11,fontWeight:600,color:"#aaa"}}>{m.time} · Gr.{m.group}</span>
+                          <span style={{fontSize:11,fontWeight:600,color:"#aaa"}}>{fmtMatchTime(m.day, m.time, m.kickoffUtc)} · Gr.{m.group}</span>
                           {isLive&&<span style={{fontSize:11,fontWeight:800,color:RED,display:"flex",alignItems:"center",gap:3}}>
                             <span style={{width:5,height:5,borderRadius:"50%",background:RED,display:"inline-block"}}/>
                             {liveScorePhaseLabel(dbStatus, liveMin2)}
@@ -9029,25 +10206,25 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                           {isFT&&<span style={{fontSize:11,fontWeight:700,color:GREEN}}>FT</span>}
                           {isNS2&&<span style={{fontSize:11,color:"#ccc"}}>{T[lang].notStarted}</span>}
                         </div>
-                        {(()=>{ return (
-                        <div role="button" tabIndex={isPastDay2?undefined:0}
-                          onClick={()=>!isMatchPast(m.day||sel,m.time,simDay,simHour)&&!isPastDay2&&onMatchClick&&onMatchClick(m,sel,m._i)}
-                          onKeyDown={isPastDay2?undefined:e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();if(!isMatchPast(m.day||sel,m.time,simDay,simHour))onMatchClick&&onMatchClick(m,sel,m._i);}}}
-                          style={{display:"flex",alignItems:"center",padding:"10px 14px",cursor:isPastDay2?"default":"pointer",gap:6,opacity:isPastDay2?0.6:1}}>
-                          <span style={{fontSize:18,flexShrink:0}}>{m.homeFlag}</span>
-                          <span style={{flex:1,fontSize:11,fontWeight:600,color:DARK}}>{m.home.length>7?m.home.split(" ")[0]:m.home}</span>
+                        {(()=>{ const _isPast3=isMatchPast(m.day||sel,m.time,simDay,simHour,m.kickoffUtc); const _isPreviewable3=(isFT||_isPast3)&&!!onMatchPreview; return (
+                        <div role="button" tabIndex={0}
+                          onClick={()=>{if(!_isPast3&&!isPastDay2&&onMatchClick)onMatchClick(m,sel,m._i);else if(_isPreviewable3)onMatchPreview(m,sel,m._i);}}
+                          onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();if(!_isPast3&&!isPastDay2&&onMatchClick)onMatchClick(m,sel,m._i);else if(_isPreviewable3)onMatchPreview(m,sel,m._i);}}}
+                          style={{display:"flex",alignItems:"center",padding:"10px 14px",cursor:(_isPreviewable3||(!_isPast3&&!isPastDay2))?"pointer":isPastDay2?"default":"pointer",gap:6,opacity:isPastDay2?0.6:1}}>
+                          <span style={{fontSize:18,flexShrink:0}}>{displayHomeFlag}</span>
+                          <span style={{flex:1,fontSize:11,fontWeight:600,color:DARK}}>{displayHome.length>7?displayHome.split(" ")[0]:displayHome}</span>
                           <div style={{flexShrink:0,display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
                             {isLive?<span style={{fontSize:10,fontWeight:800,color:RED,animation:"blink 1s infinite"}}>● {liveScorePhaseLabel(dbStatus, liveMin2)}</span>
                               :isHT?<span style={{fontSize:10,fontWeight:800,color:"#F59E0B"}}>⏸ HT</span>
                               :<span style={{fontSize:10,fontWeight:700,color:"#bbb",textTransform:"uppercase",letterSpacing:0.5}}>{isFT?"Final":"-"}</span>}
                             <div style={{background:(isLive||isHT)?"rgba(0,0,0,0.06)":hasScore?`linear-gradient(135deg,${NAVY}cc,#001840cc)`:"rgba(0,0,0,0.08)",borderRadius:6,padding:"4px 10px",minWidth:54,textAlign:"center"}}>
-                              <span style={{fontSize:13,fontWeight:900,color:(isLive||isHT)?RED:hasScore?"#fff":"#bbb"}}>{hasScore?`${live.home}-${live.away}`:(isLive||isHT)?"0-0":"-"}</span>
+                              <span style={{fontSize:13,fontWeight:900,color:(isLive||isHT)?RED:hasScore?"#fff":"#bbb"}}>{hasScore?`${live.home}-${live.away}`:isSimMode&&(isLive||isHT)?"0-0":"-"}</span>
                             </div>
                             {penDisplay&&<span style={{fontSize:10,fontWeight:900,color:RED,lineHeight:1}}>{penDisplay}</span>}
                             <span style={{fontSize:10,fontWeight:700,color:"#bbb",textTransform:"uppercase",letterSpacing:0.5}}>{T[lang].prediction}</span>
                             {(()=>{
-                              const isPast = isMatchPast(sel, m.time, simDay, simHour);
-                              const canPredict = !isLive && !isHT && !isFT && !isPast && isWeekUnlocked(sel||0, simDay, simHour, simMin);
+                              const isPast = isMatchPast(sel, m.time, simDay, simHour, m.kickoffUtc);
+                              const canPredict = !isLive && !isHT && !isFT && !isPast && isWeekUnlocked(sel||0, simDay, simHour, simMin) && teamsKnown;
                               // Comparatie live: scorul prezis vs scorul curent
                               const liveHas = (isLive||isHT) && hasScore;
                               const predRes2 = sc ? (scH(sc)>scA(sc)?"H":scH(sc)<scA(sc)?"A":"D") : null;
@@ -9088,22 +10265,32 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                               );
                             })()}
                           </div>
-                          <span style={{flex:1,fontSize:11,fontWeight:600,color:DARK,textAlign:"right"}}>{m.away.length>7?m.away.split(" ")[0]:m.away}</span>
-                          <span style={{fontSize:18,flexShrink:0}}>{m.awayFlag}</span>
+                          <span style={{flex:1,fontSize:11,fontWeight:600,color:DARK,textAlign:"right"}}>{displayAway.length>7?displayAway.split(" ")[0]:displayAway}</span>
+                          <span style={{fontSize:18,flexShrink:0}}>{displayAwayFlag}</span>
                         </div>
                         ); })()}
-                        {(isFT||isMatchPast(sel,m.time,simDay,simHour))&&(
+                        {(isFT||isMatchPast(sel,m.time,simDay,simHour,m.kickoffUtc))&&(
                           <div style={{padding:"4px 14px 8px",display:"flex",justifyContent:"center"}}>
-                            <div style={{background:exactMatch?"rgba(0,154,68,0.1)":resultMatch?"rgba(0,32,91,0.07)":"rgba(0,0,0,0.04)",borderRadius:20,padding:"3px 14px"}}>
-                              <span style={{fontSize:12,fontWeight:700,color:exactMatch?GREEN:resultMatch?NAVY:RED}}>
-                                {exactMatch?"🎯 +90 pts":resultMatch?"✓ +30 pts":"✗ +0 pts"}
+                            <div style={{background:exactMatch?"rgba(0,154,68,0.1)":diffMatch?"rgba(245,158,11,0.1)":resultMatch?"rgba(0,32,91,0.07)":"rgba(0,0,0,0.04)",borderRadius:20,padding:"3px 14px"}}>
+                              <span style={{fontSize:12,fontWeight:700,color:exactMatch?GREEN:diffMatch?"#D97706":resultMatch?NAVY:RED}}>
+                                {exactMatch?"🎯 +90 pts":diffMatch?"⚡ +40 pts":resultMatch?"✓ +30 pts":"✗ +0 pts"}
                               </span>
                             </div>
                           </div>
                         )}
                       </div>
                     );
-                  })
+                  })}
+                  {canCopySelectedDay&&(
+                    <div style={{background:"#fff",padding:"12px 14px 14px",borderTop:"1px solid rgba(0,0,0,0.06)"}}>
+                      <button onClick={()=>onCopyDay(sel, copyableDayMatches.map(m=>m.key))}
+                        style={{width:"100%",border:"none",borderRadius:10,padding:"10px 12px",background:`linear-gradient(135deg,${GREEN},#007A36)`,color:"#fff",fontSize:12,fontWeight:800,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:7}}>
+                        <CopyGlyph color="#fff"/>
+                        <span>Copy day</span>
+                      </button>
+                    </div>
+                  )}
+                  </>
                 )}
               </div>
             );
@@ -9173,7 +10360,7 @@ function StatsScreen() {
   );
 }
 
-function AccountScreen({ setLang, onBoards, onSignOut, onShowGuide, onPremium, onNotifications, user, isActive=true, onAvatarUpdate }) {
+function AccountScreen({ setLang, onBoards, onSignOut, onShowGuide, onPremium, onNotifications, onEnablePush, pushSubActive, user, isActive=true, onAvatarUpdate }) {
   const lang = useLang();
   const displayName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "—";
   const localeMap = { en:"en-US", ro:"ro-RO", fr:"fr-FR" };
@@ -9262,7 +10449,7 @@ function AccountScreen({ setLang, onBoards, onSignOut, onShowGuide, onPremium, o
                 {avatarUploading
                   ? <span style={{fontSize:13,color:"#888"}}>...</span>
                   : avatarUrl
-                    ? <img src={avatarUrl} alt="avatar" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                    ? <FadeImg src={avatarUrl} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
                     : "👤"}
               </div>
               <div style={{position:"absolute",bottom:0,right:0,width:18,height:18,borderRadius:"50%",background:NAVY,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:"#fff",fontWeight:700,lineHeight:1}}>+</div>
@@ -9276,8 +10463,13 @@ function AccountScreen({ setLang, onBoards, onSignOut, onShowGuide, onPremium, o
       </div>
       <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",position:"relative",zIndex:1}}>
         <div style={{padding:"12px 20px 100px"}}>
-          {[{icon:"🏆",label:T[lang].myBoards,sub:T[lang].activeBoards,action:onBoards},{icon:"📖",label:T[lang].appGuide,sub:T[lang].howItWorks,action:onShowGuide},{icon:"🔔",label:T[lang].notifications,sub:T[lang].matchAlertsOn,action:onNotifications},{icon:"🌍",label:T[lang].language,sub:LANGS.find(l=>l.code===lang)?.name||"English",isLang:true},{icon:"📲",label:T[lang].shareApp,sub:T[lang].shareAppSub,action:()=>{ const url=window.location.origin; window.open("https://wa.me/?text="+encodeURIComponent(T[lang].shareAppMsg+url),"_blank"); }},{icon:"⭐",label:T[lang].upgradePremium,sub:T[lang].removeAds,highlight:true,action:onPremium},{icon:"🚪",label:T[lang].signOut,sub:"",action:handleSignOut}].map(item=>(
-            <div key={item.label} onClick={item.isLang?undefined:item.action||undefined} style={{display:"flex",alignItems:"center",gap:14,...UI.card,background:item.highlight?"#E8F0FF":"#fff",border:item.highlight?`1.5px solid ${NAVY}`:UI.card.border,padding:"13px 16px",marginBottom:10,cursor:item.isLang?"default":"pointer"}}>
+          {(()=>{
+            const pushPerm = typeof Notification !== 'undefined' ? Notification.permission : 'default';
+            const pushSub = pushPerm === 'denied' ? T[lang].pushNotifDenied : pushSubActive ? T[lang].pushNotifActive : T[lang].pushNotifInactive;
+            const pushIcon = pushSubActive ? '🔔' : '🔕';
+            return [{icon:"🏆",label:T[lang].myBoards,sub:T[lang].activeBoards,action:onBoards},{icon:"📖",label:T[lang].appGuide,sub:T[lang].howItWorks,action:onShowGuide},{icon:"🔔",label:T[lang].notifications,sub:T[lang].matchAlertsOn,action:onNotifications},{icon:pushIcon,label:T[lang].pushNotifLabel,sub:pushSub,action:onEnablePush},{icon:"🌍",label:T[lang].language,sub:LANGS.find(l=>l.code===lang)?.name||"English",isLang:true},{icon:"📲",label:T[lang].shareApp,sub:T[lang].shareAppSub,action:()=>{ const url=window.location.origin; window.open("https://wa.me/?text="+encodeURIComponent(T[lang].shareAppMsg+url),"_blank"); }},{icon:"⭐",label:T[lang].upgradePremium,sub:T[lang].removeAds,highlight:true,action:onPremium},{icon:"🚪",label:T[lang].signOut,sub:"",action:handleSignOut}];
+          })().map(item=>(
+            <div key={item.label} onClick={item.isLang||item.disabled?undefined:item.action||undefined} style={{display:"flex",alignItems:"center",gap:14,...UI.card,background:item.highlight?"#E8F0FF":"#fff",border:item.highlight?`1.5px solid ${NAVY}`:UI.card.border,padding:"13px 16px",marginBottom:10,cursor:item.isLang||item.disabled||!item.action?"default":"pointer",opacity:item.disabled?0.5:1}}>
               <span style={{fontSize:20}}>{item.icon}</span>
               <div style={{flex:1}}>
                 <p style={{fontSize:14,fontWeight:700,color:item.highlight?NAVY:DARK,margin:0}}>{item.label}</p>
@@ -9345,13 +10537,19 @@ function RulesScreen({ onBack }) {
     { phase:"🏆 Final",            pts:pred.final,    desc:T[lang].rulesDescFinal },
   ];
   const exactRules = [
-    { phase:"⚽ Groups · Result",      pts:exact.group_result,  desc:"Correct winner or draw" },
-    { phase:"⚽ Groups · Exact Score", pts:exact.group_exact,   desc:"Exact match score" },
-    { phase:"🏆 R32 · Winner",         pts:exact.r32_result,    desc:"Correct match winner" },
-    { phase:"🏆 R16 · Winner",         pts:exact.r16_result,    desc:"Correct match winner" },
-    { phase:"🏆 QF · Winner",          pts:exact.qf_result,     desc:"Correct match winner" },
-    { phase:"🏆 SF · Winner",          pts:exact.sf_result,     desc:"Correct match winner" },
-    { phase:"🏆 Final · Winner",       pts:exact.final_result,  desc:"Tournament winner" },
+    { phase:"⚽ Groups · Result",        pts:exact.group_result,      desc:"Correct winner or draw" },
+    { phase:"⚽ Groups · Goal Diff",     pts:exact.group_diff_bonus,  desc:"Correct winner + goal difference (non-draw)", diff:true },
+    { phase:"⚽ Groups · Exact Score",   pts:exact.group_exact,       desc:"Exact match score" },
+    { phase:"🏆 R32 · Winner",           pts:exact.r32_result,        desc:"Correct match winner" },
+    { phase:"🏆 R32 · Goal Diff",        pts:exact.r32_diff_bonus,    desc:"Correct winner + goal difference (non-draw)", diff:true },
+    { phase:"🏆 R16 · Winner",           pts:exact.r16_result,        desc:"Correct match winner" },
+    { phase:"🏆 R16 · Goal Diff",        pts:exact.r16_diff_bonus,    desc:"Correct winner + goal difference (non-draw)", diff:true },
+    { phase:"🏆 QF · Winner",            pts:exact.qf_result,         desc:"Correct match winner" },
+    { phase:"🏆 QF · Goal Diff",         pts:exact.qf_diff_bonus,     desc:"Correct winner + goal difference (non-draw)", diff:true },
+    { phase:"🏆 SF · Winner",            pts:exact.sf_result,         desc:"Correct match winner" },
+    { phase:"🏆 SF · Goal Diff",         pts:exact.sf_diff_bonus,     desc:"Correct winner + goal difference (non-draw)", diff:true },
+    { phase:"🏆 Final · Winner",         pts:exact.final_result,      desc:"Tournament winner" },
+    { phase:"🏆 Final · Goal Diff",      pts:exact.final_diff_bonus,  desc:"Correct winner + goal difference (non-draw)", diff:true },
   ];
 
   return (
@@ -9436,14 +10634,14 @@ function RulesScreen({ onBack }) {
         })() : (
           <div style={{...UI.card,marginBottom:12}}>
             {exactRules.map((r,i)=>(
-              <div key={i} style={{display:"flex",alignItems:"center",padding:"12px 16px",background:"#fff",borderBottom:i<exactRules.length-1?"1px solid rgba(10,46,138,0.05)":"none",gap:12}}>
+              <div key={i} style={{display:"flex",alignItems:"center",padding:"12px 16px",background:r.diff?"#FFFBF0":"#fff",borderBottom:i<exactRules.length-1?"1px solid rgba(10,46,138,0.05)":"none",gap:12}}>
                 <div style={{flex:1}}>
                   <p style={{fontSize:13,fontWeight:700,color:DARK,margin:"0 0 2px"}}>
                     {r.phase.split("⚽").flatMap((p,j)=>j===0?[p]:[<span key={j} style={{colorScheme:"light",filter:"saturate(0) contrast(3) brightness(1.1)"}}>⚽</span>,p])}
                   </p>
                   <p style={{fontSize:11,color:"#aaa",margin:0}}>{r.desc}</p>
                 </div>
-                <div style={{background:`linear-gradient(135deg,${NAVY}cc,#001840cc)`,borderRadius:10,padding:"5px 0",flexShrink:0,width:56,textAlign:"center"}}>
+                <div style={{background:r.diff?"linear-gradient(135deg,#F59E0B,#D97706)":"linear-gradient(135deg,"+NAVY+"cc,#001840cc)",borderRadius:10,padding:"5px 0",flexShrink:0,width:56,textAlign:"center"}}>
                   <span style={{fontSize:13,fontWeight:900,color:"#fff"}}>+{r.pts}</span>
                 </div>
               </div>
@@ -9582,9 +10780,548 @@ function DesktopBlocker() {
   );
 }
 
+// ─── CHAT WIDGET ──────────────────────────────────────────────────────────────
+function ChatWidget({ boardId, user, boardName }) {
+  const lang = useLang();
+  const [open, setOpen] = React.useState(false);
+  const [messages, setMessages] = React.useState([]);
+  const [text, setText] = React.useState('');
+  const [sending, setSending] = React.useState(false);
+  const [hasUnread, setHasUnread] = React.useState(false);
+  const [editingId, setEditingId] = React.useState(null);
+  const [editText, setEditText] = React.useState('');
+  const [selectedMsgId, setSelectedMsgId] = React.useState(null);
+  const [replyingTo, setReplyingTo] = React.useState(null);
+  const [onlineCount, setOnlineCount] = React.useState(0);
+  const [highlightedMsgId, setHighlightedMsgId] = React.useState(null);
+  const [isOffline, setIsOffline] = React.useState(!navigator.onLine);
+  const bottomRef = React.useRef(null);
+  const initialScrollDoneRef = React.useRef(false);
+  const inputRef = React.useRef(null);
+  const editInputRef = React.useRef(null);
+  const containerRef = React.useRef(null);
+  const openRef = React.useRef(open);
+  const channelRef = React.useRef(null);
+  const userIdRef = React.useRef(user?.id);
+  React.useEffect(() => { openRef.current = open; }, [open]);
+  React.useEffect(() => { userIdRef.current = user?.id; }, [user?.id]);
+  React.useEffect(() => {
+    const goOffline = () => setIsOffline(true);
+    const goOnline  = () => {
+      setIsOffline(false);
+      if (boardId) loadChatMessages(boardId).then(res => {
+        const msgs = res?.messages ?? res ?? [];
+        if (msgs.length) setMessages(msgs);
+      });
+    };
+    window.addEventListener('offline', goOffline);
+    window.addEventListener('online',  goOnline);
+    return () => {
+      window.removeEventListener('offline', goOffline);
+      window.removeEventListener('online', goOnline);
+    };
+  }, [boardId]);
+  React.useEffect(() => {
+    if (!open) return;
+    const handler = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setOpen(false);
+        setSelectedMsgId(null);
+        setReplyingTo(null);
+        setText('');
+        if (inputRef.current) inputRef.current.style.height = '';
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    document.addEventListener('touchstart', handler, { passive: true });
+    return () => {
+      document.removeEventListener('mousedown', handler);
+      document.removeEventListener('touchstart', handler);
+    };
+  }, [open]);
+
+  const lsKey = `chat_read_${boardId}`;
+  const getLastRead = () => { try { return localStorage.getItem(lsKey) || '1970-01-01'; } catch { return '1970-01-01'; } };
+  const markRead = () => { try { localStorage.setItem(lsKey, new Date().toISOString()); } catch {} setHasUnread(false); };
+
+  // Load messages when boardId changes
+  React.useEffect(() => {
+    if (!boardId) return;
+    setMessages([]);
+    setSelectedMsgId(null);
+    setReplyingTo(null);
+    initialScrollDoneRef.current = false;
+    loadChatMessages(boardId).then(res => {
+      const msgs = res?.messages ?? res ?? [];
+      if (res?.__offline || (!navigator.onLine && msgs.length === 0)) {
+        setIsOffline(true);
+        return;
+      }
+      setIsOffline(false);
+      setMessages(msgs);
+      const lastRead = getLastRead();
+      const hasNew = msgs.some(m => !m.is_system && m.user_id !== user?.id && m.created_at > lastRead);
+      setHasUnread(hasNew);
+    }).catch(() => {
+      setIsOffline(true);
+    });
+  }, [boardId]);
+
+  // Broadcast subscription — stabil, fără probleme RLS
+  React.useEffect(() => {
+    if (!boardId) return;
+    const nickname = user?.user_metadata?.full_name || user?.email?.split('@')[0] || '?';
+    const sub = subscribeChatMessages(boardId,
+      msg => {
+        setMessages(prev => {
+          const filtered = prev.filter(m => !(m.id?.startsWith('tmp_') && m.user_id === msg.user_id && m.content === msg.content));
+          return [...filtered, msg];
+        });
+        if (!openRef.current && msg.user_id !== userIdRef.current && !msg.is_system) setHasUnread(true);
+      },
+      edit => {
+        setMessages(prev => prev.map(m => m.id === edit.id ? { ...m, content: edit.content, edited_at: edit.edited_at } : m));
+      },
+      reaction => {
+        setMessages(prev => prev.map(m => m.id === reaction.id ? { ...m, likes: reaction.likes, dislikes: reaction.dislikes } : m));
+      },
+      count => setOnlineCount(count),
+      { id: user?.id, nickname }
+    );
+    channelRef.current = sub;
+    return () => sub.unsubscribe();
+  }, [boardId]);
+
+  // Scroll to bottom when messages change — instant la prima încărcare, smooth pentru mesaje noi
+  React.useEffect(() => {
+    if (!open) return;
+    if (!initialScrollDoneRef.current && messages.length > 0) {
+      initialScrollDoneRef.current = true;
+      bottomRef.current?.scrollIntoView({ behavior: 'instant' });
+    } else if (initialScrollDoneRef.current) {
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages, open]);
+
+  const handleOpen = () => { initialScrollDoneRef.current = false; setOpen(true); markRead(); setTimeout(() => inputRef.current?.focus(), 100); };
+  const handleClose = () => { setOpen(false); setText(''); setReplyingTo(null); if (inputRef.current) inputRef.current.style.height = ''; };
+
+  const handleSend = async () => {
+    const content = text.trim();
+    if (!content || !user || sending) return;
+    setSending(true);
+    setText('');
+    if (inputRef.current) inputRef.current.style.height = '';
+    const reply = replyingTo;
+    setReplyingTo(null);
+    const nickname = user.user_metadata?.full_name || user.email?.split('@')[0] || '?';
+    const optimistic = {
+      id: `tmp_${Date.now()}`,
+      board_id: boardId,
+      user_id: user.id,
+      nickname,
+      content,
+      is_system: false,
+      created_at: new Date().toISOString(),
+      reply_to_id: reply?.id || null,
+      reply_to_nickname: reply?.nickname || null,
+      reply_to_content: reply?.content || null,
+    };
+    setMessages(prev => [...prev, optimistic]);
+    const result = await sendChatMessage(boardId, user.id, nickname, content, reply);
+    if (result.error) {
+      setMessages(prev => prev.filter(m => m.id !== optimistic.id));
+      console.error('Chat send failed:', result.error);
+    } else if (result.data) {
+      channelRef.current?.broadcast(result.data);
+    }
+    setSending(false);
+  };
+
+  const handleKey = e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } };
+
+  const startEdit = (msg) => {
+    setEditingId(msg.id);
+    setEditText(msg.content);
+    setTimeout(() => editInputRef.current?.focus(), 50);
+  };
+  const cancelEdit = () => setEditingId(null);
+  const handleReaction = async (msg, type, toggleFn) => {
+    if (!user || msg.is_system || msg.id?.startsWith('tmp_')) return;
+    const uid = user.id;
+    const prevLikes    = msg.likes    || [];
+    const prevDislikes = msg.dislikes || [];
+    // Optimistic: mutual exclusivity
+    const newLikes    = type === 'likes'
+      ? (prevLikes.includes(uid) ? prevLikes.filter(id => id !== uid) : [...prevLikes, uid])
+      : prevLikes.filter(id => id !== uid);
+    const newDislikes = type === 'dislikes'
+      ? (prevDislikes.includes(uid) ? prevDislikes.filter(id => id !== uid) : [...prevDislikes, uid])
+      : prevDislikes.filter(id => id !== uid);
+    setMessages(ms => ms.map(m => m.id === msg.id ? { ...m, likes: newLikes, dislikes: newDislikes } : m));
+    setSelectedMsgId(null);
+    const result = await toggleFn(msg.id);
+    if (result.error) {
+      setMessages(ms => ms.map(m => m.id === msg.id ? { ...m, likes: prevLikes, dislikes: prevDislikes } : m));
+    } else {
+      channelRef.current?.broadcastReaction({ id: msg.id, likes: result.likes, dislikes: result.dislikes });
+    }
+  };
+  const handleLike    = (msg) => handleReaction(msg, 'likes',    toggleChatLike);
+  const handleDislike = (msg) => handleReaction(msg, 'dislikes', toggleChatDislike);
+  const handleSaveEdit = async () => {
+    const content = editText.trim();
+    if (!content || !editingId) { setEditingId(null); return; }
+    setMessages(prev => prev.map(m => m.id === editingId ? { ...m, content, edited_at: new Date().toISOString() } : m));
+    const id = editingId;
+    setEditingId(null);
+    const result = await editChatMessage(id, content);
+    if (result.error) {
+      console.error('Edit failed:', result.error);
+    } else if (result.data) {
+      channelRef.current?.broadcastEdit(result.data);
+    }
+  };
+
+  const formatTime = ts => { try { return new Date(ts).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' }); } catch { return ''; } };
+
+  const scrollToMessage = (msgId) => {
+    const el = document.getElementById(`chat-msg-${msgId}`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setHighlightedMsgId(msgId);
+    setTimeout(() => setHighlightedMsgId(null), 1500);
+  };
+
+  const swipeState = React.useRef({});
+  const onMsgTouchStart = (e, msgId) => {
+    const t = e.touches[0];
+    swipeState.current = { id: msgId, startX: t.clientX, startY: t.clientY, moved: false, didSwipe: false };
+  };
+  const onMsgTouchMove = (e, msgId) => {
+    const s = swipeState.current;
+    if (s.id !== msgId) return;
+    const t = e.touches[0];
+    const dx = t.clientX - s.startX;
+    const dy = Math.abs(t.clientY - s.startY);
+    if (!s.moved && Math.abs(dx) < 8) return;
+    if (!s.moved && dy > Math.abs(dx)) { s.id = null; return; }
+    s.moved = true;
+    if (dx > 0) {
+      const el = e.currentTarget;
+      el.style.transition = 'none';
+      el.style.transform = `translateX(${Math.min(dx * 0.5, 65)}px)`;
+    }
+  };
+  const onMsgTouchEnd = (e, msgId, msg) => {
+    const s = swipeState.current;
+    if (s.id !== msgId || !s.moved) return;
+    const el = e.currentTarget;
+    el.style.transition = 'transform 0.25s ease';
+    el.style.transform = '';
+    const dx = e.changedTouches[0].clientX - s.startX;
+    if (dx > 50) {
+      s.didSwipe = true;
+      setReplyingTo({ id: msg.id, nickname: msg.nickname, content: msg.content });
+      setSelectedMsgId(null);
+      setTimeout(() => inputRef.current?.focus(), 80);
+    }
+    swipeState.current = {};
+  };
+  const onMsgClick = (e, msgId) => {
+    if (swipeState.current.didSwipe) return;
+    e.stopPropagation();
+    setSelectedMsgId(s => s === msgId ? null : msgId);
+  };
+
+  if (!boardId || !user) return null;
+
+  return (
+    <div ref={containerRef} style={{ position:'fixed', bottom:'calc(76px + env(safe-area-inset-bottom, 0px))', right:16, zIndex:1100 }}>
+      {/* Floating button */}
+      {!open && (
+        <button onClick={handleOpen} style={{
+          width:52, height:52, borderRadius:'50%', border:'none', cursor:'pointer',
+          background:`linear-gradient(135deg,#00205B,#003580)`,
+          boxShadow:'0 4px 16px rgba(0,32,91,0.4)',
+          display:'flex', alignItems:'center', justifyContent:'center', position:'relative',
+          WebkitTapHighlightColor:'transparent',
+        }}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" fill="rgba(255,255,255,0.15)"/>
+            <line x1="9" y1="8" x2="15" y2="8"/>
+            <line x1="9" y1="12" x2="13" y2="12"/>
+          </svg>
+          {hasUnread && (
+            <div style={{
+              position:'absolute', top:4, right:4,
+              width:12, height:12, borderRadius:'50%',
+              background:'#E8112D', border:'2px solid #fff',
+            }}/>
+          )}
+        </button>
+      )}
+
+      {/* Chat popup */}
+      {open && (
+        <div style={{
+          position:'fixed',
+          bottom:'calc(76px + env(safe-area-inset-bottom, 0px))',
+          right:16,
+          width: Math.min(340, window.innerWidth - 32),
+          height: Math.min(440, window.innerHeight - 160),
+          borderRadius:20, overflow:'hidden',
+          boxShadow:'0 8px 40px rgba(0,0,0,0.25)',
+          display:'flex', flexDirection:'column',
+          background:'#fff',
+          border:'1px solid rgba(0,32,91,0.1)',
+          zIndex:1100,
+        }}>
+          {/* Header */}
+          <div style={{
+            background:`linear-gradient(135deg,#00205B,#003580)`,
+            padding:'12px 16px', display:'flex', alignItems:'center', justifyContent:'space-between', flexShrink:0,
+          }}>
+            <span style={{ color:'#fff', fontWeight:900, fontSize:14, letterSpacing:0.5, display:'flex', alignItems:'center', gap:6 }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" fill="rgba(255,255,255,0.2)"/>
+                <line x1="9" y1="8" x2="15" y2="8"/>
+                <line x1="9" y1="12" x2="13" y2="12"/>
+              </svg>
+              CHAT{boardName ? ` · ${boardName}` : ''}
+              {onlineCount > 0 && (
+                <span style={{ display:'flex', alignItems:'center', gap:4, background:'rgba(255,255,255,0.15)', borderRadius:20, padding:'2px 8px', fontSize:11, fontWeight:700, letterSpacing:0 }}>
+                  <span style={{ width:6, height:6, borderRadius:'50%', background:'#4ade80', display:'inline-block', flexShrink:0 }}/>
+                  {onlineCount} {lang === 'ro' ? 'în chat' : 'online'}
+                </span>
+              )}
+            </span>
+            <button onClick={handleClose} style={{
+              background:'rgba(255,255,255,0.15)', border:'none', borderRadius:8,
+              color:'#fff', fontSize:18, cursor:'pointer', lineHeight:1, padding:'2px 8px',
+              WebkitTapHighlightColor:'transparent',
+            }}>×</button>
+          </div>
+
+          {/* Messages */}
+          <div onClick={() => setSelectedMsgId(null)} style={{ flex:1, overflowY:'auto', padding:'10px 12px', display:'flex', flexDirection:'column', gap:6 }}>
+            <div style={{ textAlign:'center', margin:'4px 0 8px' }}>
+              <span style={{
+                display:'inline-block', background:'#f0f4ff', borderRadius:20,
+                padding:'5px 14px', fontSize:11, color:'#666', fontStyle:'italic', lineHeight:1.5,
+              }}>
+                💬 {lang === 'ro'
+                  ? 'Ultimele 50 mesaje păstrate · cel mai vechi șters automat'
+                  : 'Last 50 messages kept · oldest auto-deleted when full'}
+              </span>
+            </div>
+            {messages.length === 0 && (
+              <div style={{ textAlign:'center', color:'#aaa', fontSize:12, marginTop:20 }}>
+                {isOffline
+                  ? '📡 Fără conexiune la internet'
+                  : lang === 'ro' ? 'Niciun mesaj încă. Fii primul!' : 'No messages yet. Be the first!'}
+              </div>
+            )}
+            {messages.map(msg => {
+              const isMe = msg.user_id === user?.id;
+              if (msg.is_system) return (
+                <div key={msg.id} style={{ textAlign:'center', margin:'4px 0' }}>
+                  <span style={{
+                    display:'inline-block', background:'#f0f4ff', borderRadius:20,
+                    padding:'4px 14px', fontSize:11, color:'#555', fontStyle:'italic',
+                  }}>{msg.content}</span>
+                </div>
+              );
+              return (
+                <div key={msg.id} id={`chat-msg-${msg.id}`} style={{ display:'flex', flexDirection:'column', alignItems: isMe ? 'flex-end' : 'flex-start', transition:'background 0.3s', borderRadius:8, background: highlightedMsgId === msg.id ? 'rgba(0,53,128,0.10)' : 'transparent' }}>
+                  {!isMe && <span style={{ fontSize:10, color:'#888', marginBottom:2, marginLeft:4 }}>{msg.nickname}</span>}
+                  {editingId === msg.id ? (
+                    <div style={{ width:'80%', display:'flex', flexDirection:'column', gap:4 }}>
+                      <textarea
+                        ref={editInputRef}
+                        value={editText}
+                        onChange={e => setEditText(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSaveEdit(); }
+                          if (e.key === 'Escape') cancelEdit();
+                        }}
+                        maxLength={300}
+                        rows={2}
+                        style={{
+                          width:'100%', border:'1.5px solid #003580', borderRadius:10, padding:'6px 10px',
+                          fontSize:13, outline:'none', fontFamily:'inherit',
+                          background:'#fff', color:'#111', resize:'none', lineHeight:1.4, boxSizing:'border-box',
+                        }}
+                      />
+                      <div style={{ display:'flex', gap:6, justifyContent:'flex-end' }}>
+                        <button onClick={cancelEdit} style={{ fontSize:11, padding:'3px 10px', border:'1px solid #ddd', borderRadius:8, cursor:'pointer', background:'#f5f5f5', color:'#555' }}>✕</button>
+                        <button onClick={handleSaveEdit} style={{ fontSize:11, padding:'3px 10px', border:'none', borderRadius:8, cursor:'pointer', background:'#00205B', color:'#fff' }}>���</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div style={{ display:'flex', alignItems:'flex-end', gap:4, flexDirection: isMe ? 'row' : 'row-reverse' }}>
+                        {isMe && (
+                          <button onClick={() => startEdit(msg)} title="Editează" style={{
+                            background:'none', border:'none', cursor:'pointer', padding:'0 2px', color:'#bbb',
+                            fontSize:13, lineHeight:1, flexShrink:0, marginBottom:2,
+                            WebkitTapHighlightColor:'transparent',
+                          }}>✎</button>
+                        )}
+                        <div
+                          onTouchStart={msg.is_system ? undefined : e => onMsgTouchStart(e, msg.id)}
+                          onTouchMove={msg.is_system ? undefined : e => onMsgTouchMove(e, msg.id)}
+                          onTouchEnd={msg.is_system ? undefined : e => onMsgTouchEnd(e, msg.id, msg)}
+                          onClick={msg.is_system ? undefined : e => onMsgClick(e, msg.id)}
+                          style={{
+                            maxWidth:'100%', padding:'7px 11px', borderRadius: isMe ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
+                            background: isMe ? '#00205B' : '#f1f3f8',
+                            color: isMe ? '#fff' : '#111',
+                            fontSize:13, lineHeight:1.4, wordBreak:'break-word', cursor: msg.is_system ? 'default' : 'pointer',
+                            WebkitTapHighlightColor:'transparent', willChange:'transform',
+                          }}
+                        >
+                          {msg.reply_to_content && (
+                            <div
+                              onClick={e => { e.stopPropagation(); scrollToMessage(msg.reply_to_id); }}
+                              style={{
+                                borderLeft: `3px solid ${isMe ? 'rgba(255,255,255,0.5)' : '#003580'}`,
+                                paddingLeft:8, marginBottom:6,
+                                opacity:0.8, fontSize:11, cursor:'pointer',
+                                borderRadius:'0 4px 4px 0',
+                                background: isMe ? 'rgba(255,255,255,0.08)' : 'rgba(0,53,128,0.06)',
+                              }}>
+                              <div style={{ fontWeight:700, marginBottom:2 }}>{msg.reply_to_nickname}</div>
+                              <div style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', maxWidth:180 }}>{msg.reply_to_content}</div>
+                            </div>
+                          )}
+                          {msg.content}
+                          {msg.edited_at && <span style={{ fontSize:9, opacity:0.55, marginLeft:5 }}>{lang === 'ro' ? '(editat)' : '(edited)'}</span>}
+                        </div>
+                      </div>
+                      {/* Reaction picker — apare la click pe bulă */}
+                      {selectedMsgId === msg.id && (
+                        <div style={{
+                          display:'flex', gap:4, marginTop:4, flexWrap:'wrap',
+                          justifyContent: isMe ? 'flex-end' : 'flex-start',
+                        }}>
+                          {[['likes', false, handleLike], ['dislikes', true, handleDislike]].map(([type, rotate, fn]) => {
+                            const arr = msg[type] || [];
+                            const active = arr.includes(user?.id);
+                            return (
+                              <button key={type} onClick={() => fn(msg)} style={{
+                                background: active ? 'rgba(0,32,91,0.12)' : '#f1f3f8',
+                                border: active ? '1.5px solid #003580' : '1.5px solid #e0e4ef',
+                                borderRadius:20, cursor:'pointer', padding:'4px 10px',
+                                display:'flex', alignItems:'center', gap:4,
+                                WebkitTapHighlightColor:'transparent', transition:'all 0.12s',
+                              }}>
+                                <span style={{ fontSize:15, display:'inline-block', transform: rotate ? 'rotate(180deg)' : 'none' }}>🚀</span>
+                                {arr.length > 0 && <span style={{ fontSize:11, color: active ? '#00205B' : '#888', fontWeight: active ? 700 : 400 }}>{arr.length}</span>}
+                              </button>
+                            );
+                          })}
+                          {!msg.is_system && (
+                            <button onClick={() => {
+                              setReplyingTo({ id: msg.id, nickname: msg.nickname, content: msg.content });
+                              setSelectedMsgId(null);
+                              setTimeout(() => inputRef.current?.focus(), 80);
+                            }} style={{
+                              background:'#f1f3f8', border:'1.5px solid #e0e4ef',
+                              borderRadius:20, cursor:'pointer', padding:'4px 12px',
+                              display:'flex', alignItems:'center', gap:4, fontSize:12, color:'#555',
+                              WebkitTapHighlightColor:'transparent',
+                            }}>↩ {lang === 'ro' ? 'Reply' : 'Reply'}</button>
+                          )}
+                        </div>
+                      )}
+                    </>
+                  )}
+                  {/* Timestamp + count-uri permanente */}
+                  <div style={{ display:'flex', alignItems:'center', gap:6, marginTop:2, justifyContent: isMe ? 'flex-end' : 'flex-start' }}>
+                    <span style={{ fontSize:10, color:'#bbb', marginLeft:4, marginRight:2 }}>{formatTime(msg.created_at)}</span>
+                    {!msg.is_system && (() => {
+                      const likes    = msg.likes    || [];
+                      const dislikes = msg.dislikes || [];
+                      const uid = user?.id;
+                      return (
+                        <>
+                          {likes.length > 0 && <span style={{ fontSize:11, color: likes.includes(uid) ? '#00205B' : '#aaa', fontWeight: likes.includes(uid) ? 700 : 400 }}>🚀 {likes.length}</span>}
+                          {dislikes.length > 0 && <span style={{ fontSize:11, color: dislikes.includes(uid) ? '#00205B' : '#aaa', fontWeight: dislikes.includes(uid) ? 700 : 400, display:'inline-block', transform:'rotate(180deg)' }}>🚀</span>}
+                          {dislikes.length > 0 && <span style={{ fontSize:11, color: dislikes.includes(uid) ? '#00205B' : '#aaa', fontWeight: dislikes.includes(uid) ? 700 : 400 }}>{dislikes.length}</span>}
+                        </>
+                      );
+                    })()}
+                  </div>
+                </div>
+              );
+            })}
+            <div ref={bottomRef}/>
+          </div>
+
+          {/* Reply preview */}
+          {replyingTo && (
+            <div style={{
+              padding:'6px 12px', borderTop:'1px solid #eee', background:'#f8f9fc',
+              display:'flex', alignItems:'center', gap:8, flexShrink:0,
+            }}>
+              <div style={{ flex:1, borderLeft:'3px solid #003580', paddingLeft:8, fontSize:11, color:'#555', overflow:'hidden' }}>
+                <div style={{ fontWeight:700, color:'#003580', marginBottom:1 }}>{replyingTo.nickname}</div>
+                <div style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{replyingTo.content}</div>
+              </div>
+              <button onClick={() => setReplyingTo(null)} style={{
+                background:'none', border:'none', cursor:'pointer', color:'#aaa', fontSize:16, padding:2, flexShrink:0,
+                WebkitTapHighlightColor:'transparent',
+              }}>×</button>
+            </div>
+          )}
+
+          {/* Input */}
+          <div style={{
+            padding:'8px 10px', borderTop:'1px solid #eee', display:'flex', gap:8, flexShrink:0, background:'#fff',
+          }}>
+            <textarea
+              ref={inputRef}
+              value={text}
+              onChange={e => {
+                setText(e.target.value);
+                e.target.style.height = 'auto';
+                const h = Math.min(e.target.scrollHeight, 120);
+                e.target.style.height = h + 'px';
+                e.target.style.overflowY = e.target.scrollHeight > 120 ? 'auto' : 'hidden';
+              }}
+              onKeyDown={handleKey}
+              placeholder={lang === 'ro' ? 'Scrie un mesaj...' : 'Write a message...'}
+              maxLength={600}
+              rows={1}
+              style={{
+                flex:1, border:'1px solid #dde', borderRadius:16, padding:'8px 14px',
+                fontSize:13, outline:'none', fontFamily:'inherit',
+                background:'#f8f9fc', color:'#111', resize:'none', overflowY:'hidden',
+                lineHeight:1.4, minHeight:36, maxHeight:120,
+              }}
+            />
+            <button onClick={handleSend} disabled={!text.trim() || sending} style={{
+              width:38, height:38, borderRadius:'50%', border:'none', cursor:'pointer', flexShrink:0,
+              background: text.trim() ? `linear-gradient(135deg,#00205B,#003580)` : '#eee',
+              color: text.trim() ? '#fff' : '#aaa', fontSize:16, display:'flex', alignItems:'center', justifyContent:'center',
+              WebkitTapHighlightColor:'transparent', transition:'all 0.15s',
+            }}>➤</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function App() {
   const isTouchDevice = () => navigator.maxTouchPoints > 0 || 'ontouchstart' in window;
   const [isDesktop, setIsDesktop] = useState(() => window.innerWidth > 768 && !isTouchDevice());
+  const [, _unlockTick] = useState(0);
+  useEffect(() => {
+    const iv = setInterval(() => _unlockTick(n => n + 1), 60_000);
+    return () => clearInterval(iv);
+  }, []);
   useEffect(() => {
     const check = () => setIsDesktop(window.innerWidth > 768 && !isTouchDevice());
     window.addEventListener("resize", check);
@@ -9596,6 +11333,7 @@ function App() {
     style.textContent = `
       @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
       @keyframes pulse { 0%,100%{transform:scale(1);box-shadow:0 4px 20px rgba(200,16,46,0.25)} 50%{transform:scale(1.025);box-shadow:0 12px 40px rgba(200,16,46,0.7)} }
+      @keyframes livePulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
       @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
       @keyframes tabPop { 0%{transform:scale(1)} 40%{transform:scale(1.22)} 70%{transform:scale(0.95)} 100%{transform:scale(1)} }
       @keyframes cdSlideIn { 0%{opacity:0;transform:translateY(6px)} 100%{opacity:1;transform:translateY(0)} }
@@ -9609,16 +11347,55 @@ function App() {
   },[]);
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const wasOfflineRef = useRef(false);
+  useEffect(() => {
+    let confirmedOnline = false;
+    const showOffline = () => {
+      if (document.getElementById('__offline_overlay')) return;
+      wasOfflineRef.current = true;
+      const el = document.createElement('div');
+      el.id = '__offline_overlay';
+      el.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;z-index:999999;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:32px;box-sizing:border-box;font-family:-apple-system,sans-serif;';
+      el.innerHTML = '<div style="font-size:64px">📡</div><div style="font-size:22px;font-weight:800;color:#111;text-align:center">Fără conexiune la internet</div><div style="font-size:14px;color:#555;text-align:center;max-width:260px">Verifică WiFi-ul sau datele mobile. Aplicația se va reîncărca automat.</div>';
+      document.body.appendChild(el);
+    };
+    const hideOffline = () => {
+      confirmedOnline = true;
+      if (wasOfflineRef.current) { window.location.reload(); return; }
+      const el = document.getElementById('__offline_overlay');
+      if (el) el.remove();
+    };
+    // Fallback: dacă după 4s nu s-a confirmat online, arată offline
+    const fallbackTimer = setTimeout(() => { if (!confirmedOnline) showOffline(); }, 4000);
+    const ping = () => {
+      const xhr = new XMLHttpRequest();
+      xhr.timeout = 2000;
+      xhr.onload = hideOffline;
+      xhr.onerror = showOffline;
+      xhr.ontimeout = showOffline;
+      xhr.open('GET', SUPABASE_URL + '/rest/v1/?_=' + Date.now(), true);
+      xhr.setRequestHeader('apikey', import.meta.env.VITE_SUPABASE_ANON_KEY);
+      xhr.setRequestHeader('Authorization', 'Bearer ' + import.meta.env.VITE_SUPABASE_ANON_KEY);
+      xhr.send();
+    };
+    ping();
+    const onOnline = () => { ping(); };
+    window.addEventListener('offline', showOffline);
+    window.addEventListener('online', onOnline);
+    return () => { clearTimeout(fallbackTimer); window.removeEventListener('offline', showOffline); window.removeEventListener('online', onOnline); };
+  }, []);
 
   const setupPushNotifications = React.useCallback(async (userId) => {
-    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return false;
     try {
       const permission = await Notification.requestPermission();
-      if (permission !== 'granted') return;
+      if (permission !== 'granted') return false;
       const reg = await navigator.serviceWorker.ready;
       const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+      if (!VAPID_PUBLIC_KEY) throw new Error('VAPID key missing');
       const existing = await reg.pushManager.getSubscription();
-      const sub = existing ?? await reg.pushManager.subscribe({
+      if (existing) await existing.unsubscribe();
+      const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: Uint8Array.from(
           atob(VAPID_PUBLIC_KEY.replace(/-/g, '+').replace(/_/g, '/')),
@@ -9626,8 +11403,10 @@ function App() {
         ),
       });
       await savePushSubscription(userId, sub);
+      return true;
     } catch (e) {
       console.warn('[push] setup failed:', e);
+      return String(e);
     }
   }, []);
   const [realStandings, setRealStandings] = useState({});
@@ -9706,14 +11485,17 @@ function App() {
         } else if (event === 'SIGNED_IN') {
           Promise.all([loadSystemNotifications(lang), loadNotifReads(u.id)]).then(([notifs, ids]) => { setSystemNotifs(notifs); setNotifReadIds(ids); });
           setupPushNotifications(u.id);
-          setScreen(SCREENS.HOME);
+          const nonRestorable = [SCREENS.SPLASH, SCREENS.LOGIN, SCREENS.RESET_PASSWORD, SCREENS.SET_PASSWORD];
+          const saved = (() => { try { return localStorage.getItem('lastScreen'); } catch { return null; } })();
+          setScreen(saved && !nonRestorable.includes(saved) ? saved : SCREENS.HOME);
         }
         // USER_UPDATED, TOKEN_REFRESHED — only update user state, don't navigate
       } else setScreen(SCREENS.SPLASH);
     });
 
-    supabase.auth.getSession().then(() => setAuthLoading(false));
-    return () => subscription.unsubscribe();
+    const authTimeout = setTimeout(() => setAuthLoading(false), 3000);
+    supabase.auth.getSession().then(() => { clearTimeout(authTimeout); setAuthLoading(false); });
+    return () => { subscription.unsubscribe(); clearTimeout(authTimeout); };
   }, []);
 
   useEffect(() => {
@@ -9749,6 +11531,8 @@ function App() {
         setAllChampionPicks(p => ({ ...p, [boardId]: special.champion }));
       if (special?.topScorer)
         setAllTopScorerPicks(p => ({ ...p, [boardId]: special.topScorer }));
+      if (special?.runnerUp)
+        setAllRunnerUpPicks(p => ({ ...p, [boardId]: special.runnerUp }));
       setPredictionsLoaded(p => ({ ...p, [boardId]: true }));
     };
 
@@ -9777,6 +11561,8 @@ function App() {
       const counts = await fetchMemberCounts(allIds);
       const freshBoards = allMyBoards.map(b => ({ ...b, members: counts[b.id] ?? b.members }));
       setMyBoards(freshBoards);
+      // Preîncarcă imaginile boardurilor ca să nu apară cu delay în slider
+      freshBoards.forEach(b => { if (b.image_url) { const i = new Image(); i.src = b.image_url; } });
       if (!freshBoards.some(b => b.id === activeBoardIdRef.current)) {
         setActiveBoardId('global');
       }
@@ -9808,13 +11594,17 @@ function App() {
   const inRecoveryRef = useRef(false);
   const notificationsBackRef = useRef(SCREENS.HOME);
   const [screen, setScreen] = useState(SCREENS.SPLASH);
+  const [showPushPrompt, setShowPushPrompt] = useState(false);
+  const [pushSubActive, setPushSubActive] = useState(false);
   const [systemNotifs, setSystemNotifs] = useState([]);
   const [notifReadIds, setNotifReadIds] = useState([]);
   const hasUnread = systemNotifs.some(n => !notifReadIds.includes(n.id));
   const [championMode, setChampionMode] = useState("champion");
+  const [championBackScreen, setChampionBackScreen] = useState(SCREENS.HOME);
   const [boardsInitialTab, setBoardsInitialTab] = useState("my");
   const [boardsSubView, setBoardsSubView] = useState("main");
   const [showDevOverlay, setShowDevOverlay] = useState(false);
+  const [appConfig, setAppConfig] = useState({});
   const [simDay, setSimDay] = useState(null);
   const [simHour, setSimHour] = useState(12);
   const [simMin, setSimMin] = useState(0);
@@ -9823,6 +11613,14 @@ function App() {
   const simDate = simDay ? new Date(2026,5,simDay,simHour,simMin,0) : null;
   const [lang, setLang] = useState(() => { try { return localStorage.getItem('predicto_lang')||"en"; } catch { return "en"; } });
   useEffect(()=>{ try { localStorage.setItem('predicto_lang', lang); } catch {} }, [lang]);
+  useEffect(() => {
+    supabase.from('app_config').select('key,value').then(({ data }) => {
+      if (!data) return;
+      const cfg = Object.fromEntries(data.map(r => [r.key, r.value]));
+      setAppConfig(cfg);
+      if (cfg.bonus_pick_deadline) _bonusDeadlineMs = new Date(cfg.bonus_pick_deadline).getTime();
+    });
+  }, []);
   useEffect(() => {
     if (user) loadSystemNotifications(lang).then(setSystemNotifs);
   }, [lang]);
@@ -9834,6 +11632,7 @@ function App() {
   const [skipOnboarding, setSkipOnboarding] = useState(false);
   const [showFirstAction, setShowFirstAction] = useState(false);
   const [groupsInitialWeek, setGroupsInitialWeek] = useState(null);
+  const [groupsInitialDay, setGroupsInitialDay] = useState(null);
   const [createdBoards, setCreatedBoards] = useState([]);
   const [leaderboardData, setLeaderboardData] = useState({});
 
@@ -9856,8 +11655,10 @@ function App() {
   useEffect(() => {
     if (!user || (screen !== SCREENS.LEADERBOARD && screen !== SCREENS.HOME)) return;
     loadLeaderboard(activeBoardId, null, user.id).then(rows => {
-      if (rows.length > 0)
+      if (rows.length > 0) {
         setLeaderboardData(prev => ({ ...prev, [activeBoardId]: rows }));
+        rows.forEach(r => { if (r.avatarUrl) { const i = new Image(); i.src = r.avatarUrl; } });
+      }
     });
   }, [user, screen, activeBoardId]);
 
@@ -9866,8 +11667,10 @@ function App() {
     myBoards.forEach(b => {
       if (leaderboardData[b.id]?.length > 0) return;
       loadLeaderboard(b.id, null, user.id).then(rows => {
-        if (rows.length > 0)
+        if (rows.length > 0) {
           setLeaderboardData(prev => ({ ...prev, [b.id]: rows }));
+          rows.forEach(r => { if (r.avatarUrl) { const i = new Image(); i.src = r.avatarUrl; } });
+        }
       });
     });
   }, [user, screen, myBoards]);
@@ -9891,6 +11694,8 @@ function App() {
 
   const [allInstantPickStates, setAllInstantPickStates] = useState({});
   const [exactScoresByBoard, setExactScoresByBoard] = useState({});
+  const [koTeams, setKoTeams] = useState({});
+  useEffect(() => { loadKoTeams().then(setKoTeams); }, []);
   const exactScores = exactScoresByBoard[activeBoardId] || {};
   const setExactScores = (updater) => {
     setExactScoresByBoard(prev => {
@@ -9899,12 +11704,23 @@ function App() {
       return {...prev, [activeBoardId]: next};
     });
   };
+  useEffect(() => {
+    if (screen !== SCREENS.HOME || !user || !activeBoardId) return;
+    loadExactScores(user.id, activeBoardId).then(dbScores => {
+      if (dbScores && Object.keys(dbScores).length > 0)
+        setExactScoresByBoard(prev => ({
+          ...prev,
+          [activeBoardId]: { ...dbScores, ...(prev[activeBoardId] || {}) },
+        }));
+    });
+  }, [screen, user?.id, activeBoardId]);
   const [allInstantPickDone, setAllInstantPickDone] = useState({});
   const [allGroupsDoneByBoard, setAllGroupsDoneByBoard] = useState({});
   const [groupsDoneCountByBoard, setGroupsDoneCountByBoard] = useState({});
   const [allKoPickDone, setAllKoPickDone] = useState({});
   const [allChampionPicks, setAllChampionPicks] = useState({});
   const [allTopScorerPicks, setAllTopScorerPicks] = useState({});
+  const [allRunnerUpPicks, setAllRunnerUpPicks] = useState({});
   const [bugLog, setBugLog] = useState([]);
   useEffect(()=>{
     const fmt = ()=>new Date().toLocaleTimeString("ro-RO",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
@@ -9919,6 +11735,36 @@ function App() {
     window.addEventListener("unhandledrejection",onUnhandled);
     return ()=>{ window.removeEventListener("error",onErr); window.removeEventListener("unhandledrejection",onUnhandled); };
   },[]);
+
+  useEffect(() => {
+    if (screen !== SCREENS.HOME || !user) return;
+    if (user.user_metadata?.push_asked) return;
+    if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+      setupPushNotifications(user.id);
+      return;
+    }
+    const t = setTimeout(() => setShowPushPrompt(true), 1500);
+    return () => clearTimeout(t);
+  }, [screen, user]);
+
+  useEffect(() => {
+    if (screen !== SCREENS.ACCOUNT) return;
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+    navigator.serviceWorker.ready
+      .then(reg => reg.pushManager.getSubscription().then(sub => setPushSubActive(!!sub)))
+      .catch(() => {});
+  }, [screen]);
+
+  const handlePushPromptYes = async () => {
+    setShowPushPrompt(false);
+    await setupPushNotifications(user.id);
+    await supabase.auth.updateUser({ data: { push_asked: true } });
+  };
+  const handlePushPromptNo = async () => {
+    setShowPushPrompt(false);
+    await supabase.auth.updateUser({ data: { push_asked: 'declined' } });
+  };
+
   const instantPickState = allInstantPickStates[activeBoardId]||null;
   const instantPickDone = allInstantPickDone[activeBoardId]||false;
   const koPickDone = allKoPickDone[activeBoardId]||false;
@@ -9934,29 +11780,42 @@ function App() {
   const setKoPickDone = (v) => setAllKoPickDone(p=>({...p,[activeBoardId]:v}));
   const championPick = allChampionPicks[activeBoardId]||null;
   const topScorerPick = allTopScorerPicks[activeBoardId]||null;
+  const runnerUpPick = allRunnerUpPicks[activeBoardId]||null;
   const setChampionPick = (v) => {
+    if (isBonusPickLocked(simDay, simHour, simMin)) return;
     setAllChampionPicks(p => {
       const next = { ...p, [activeBoardId]: v };
-      if (user) saveSpecialPick(user.id, activeBoardId, { champion: v, topScorer: allTopScorerPicks[activeBoardId] || null });
+      if (user) saveSpecialPick(user.id, activeBoardId, { champion: v, topScorer: allTopScorerPicks[activeBoardId] || null, runnerUp: allRunnerUpPicks[activeBoardId] || null });
       return next;
     });
   };
   const setTopScorerPick = (v) => {
+    if (isBonusPickLocked(simDay, simHour, simMin)) return;
     setAllTopScorerPicks(p => {
       const next = { ...p, [activeBoardId]: v };
-      if (user) saveSpecialPick(user.id, activeBoardId, { champion: allChampionPicks[activeBoardId] || null, topScorer: v });
+      if (user) saveSpecialPick(user.id, activeBoardId, { champion: allChampionPicks[activeBoardId] || null, topScorer: v, runnerUp: allRunnerUpPicks[activeBoardId] || null });
       return next;
     });
   };
-  const koUnlocked = simDay ? (simDay > 27 || (simDay === 27 && (simHour||0) >= 21)) : new Date() >= new Date(2026,5,27,21,0,0);
-  const task1DeadlinePassed = simDay ? (simDay > 11 || (simDay === 11 && (simHour||0) >= 19)) : new Date() >= new Date(2026,5,11,19,0,0);
+  const setRunnerUpPick = (v) => {
+    if (isBonusPickLocked(simDay, simHour, simMin)) return;
+    setAllRunnerUpPicks(p => {
+      const next = { ...p, [activeBoardId]: v };
+      if (user) saveSpecialPick(user.id, activeBoardId, { champion: allChampionPicks[activeBoardId] || null, topScorer: allTopScorerPicks[activeBoardId] || null, runnerUp: v });
+      return next;
+    });
+  };
+  const _koUnlockDate = new Date(appConfig.ko_unlock_date || '2026-06-28T04:00:00Z');
+  const _predDeadline = new Date(appConfig.prediction_deadline || '2026-06-11T20:00:00Z');
+  const koUnlocked = simDay ? simDay > 27 : new Date() >= _koUnlockDate;
+  const task1DeadlinePassed = simDay ? (simDay > 11 || (simDay === 11 && (simHour||0) >= 19)) : new Date() >= _predDeadline;
   const shouldStartAtKo = koUnlocked && instantPickDone && !koPickDone;
 
   // Auto-save: persistă selecțiile intermediare în DB (debounced 1s)
   // Previne pierderea datelor la refresh de browser
   const _autoSaveTimer = useRef(null);
   useEffect(() => {
-    if (!user || !instantPickState) return;
+    if (!user || !instantPickState || tournamentStarted) return;
     const hasData = Object.keys(instantPickState.groupRankings || {}).length > 0 ||
                     (instantPickState.best3 || []).length > 0 ||
                     Object.keys(instantPickState.koPicks || {}).length > 0;
@@ -9976,9 +11835,10 @@ function App() {
     return {...a, [boardId]: next};
   });
   // Tournament starts June 11 2026
-  const tournamentStarted = simDate ? simDate >= new Date(2026,5,11,19,0,0) : new Date() >= new Date("2026-06-11T19:00:00");
+  const _tournStart = new Date(appConfig.tournament_start || '2026-06-11T23:00:00Z');
+  const tournamentStarted = simDate ? simDate >= _tournStart : new Date() >= _tournStart;
 
-  const noFooter = [SCREENS.SPLASH, SCREENS.LOGIN, SCREENS.INSTANT_PICK, SCREENS.GROUPS_SCHEDULE, SCREENS.CHAMPION];
+  const noFooter = [SCREENS.SPLASH, SCREENS.LOGIN, SCREENS.INSTANT_PICK, SCREENS.GROUPS_SCHEDULE, SCREENS.CHAMPION, SCREENS.BONUS];
   const showFooter = !noFooter.includes(screen) && !(screen===SCREENS.BOARDS && boardsSubView==="create");
   const _nonSaveable = [SCREENS.SPLASH, SCREENS.LOGIN, SCREENS.RESET_PASSWORD, SCREENS.SET_PASSWORD];
   if (!_nonSaveable.includes(screen)) { try { localStorage.setItem('lastScreen', screen); } catch {} }
@@ -10025,7 +11885,8 @@ function App() {
               onPredictKo={(boardId)=>{ setActiveBoardId(boardId); setShowFirstAction(false); setScreen(SCREENS.INSTANT_PICK); }}
               onLeaderboard={()=>setScreen(SCREENS.LEADERBOARD)}
               onBoards={(tab)=>{ setBoardsInitialTab(tab||"my"); setScreen(SCREENS.BOARDS); }}
-              onOpenGroups={(week)=>{ setGroupsInitialWeek(week||null); setScreen(SCREENS.GROUPS_SCHEDULE); }}
+              onOpenGroups={(week, day)=>{ setGroupsInitialWeek(week||null); setGroupsInitialDay(day??null); setScreen(SCREENS.GROUPS_SCHEDULE); }}
+              onCentralStats={()=>setScreen(SCREENS.CENTRAL_STATS)}
               onCopyExactScores={async (targetBoardId, weekStart)=>{
                 if(!user) return;
                 const scores = exactScoresByBoard[activeBoardId] || {};
@@ -10066,8 +11927,9 @@ function App() {
               }}
               onAccount={()=>setScreen(SCREENS.ACCOUNT)}
               onNotifications={()=>{ notificationsBackRef.current=SCREENS.HOME; setScreen(SCREENS.NOTIFICATIONS); }}
-              onChampion={(mode)=>{ setChampionMode(mode||"champion"); setScreen(SCREENS.CHAMPION); }}
+              onChampion={(mode)=>{ setChampionBackScreen(SCREENS.HOME); setChampionMode(mode||"champion"); setScreen(SCREENS.CHAMPION); }}
               onBooster={()=>setScreen(SCREENS.BOOSTER)}
+              onBonus={()=>setScreen(SCREENS.BONUS)}
               myBoards={myBoards}
               predictionsComplete={predictionsComplete}
               instantPickState={instantPickState}
@@ -10087,22 +11949,38 @@ function App() {
               boardsLoading={boardsLoading}
               predictionsLoaded={predictionsLoaded}
               championPick={championPick}
+              runnerUpPick={runnerUpPick}
               topScorerPick={topScorerPick}
               setChampionPick={setChampionPick}
               setTopScorerPick={setTopScorerPick}
               myScoreBreakdown={myScoreBreakdowns[activeBoardId]}
               hasUnread={hasUnread}/>
           </div>}
+          {screen===SCREENS.CENTRAL_STATS&&<CentralStatsScreen
+            onBack={()=>setScreen(SCREENS.HOME)}
+            boardId={activeBoardId}
+            boardName={myBoards.find(b=>b.id===activeBoardId)?.name||""}
+            simDay={simDay} simHour={simHour} simMin={simMin}
+          />}
           {screen===SCREENS.NOTIFICATIONS&&<NotificationsScreen onBack={()=>setScreen(notificationsBackRef.current)} notifs={systemNotifs} readIds={notifReadIds} onMarkRead={(id)=>{ setNotifReadIds(p=>[...p,id]); }}/>}
           {screen===SCREENS.PREMIUM&&<PremiumScreen onBack={()=>setScreen(SCREENS.ACCOUNT)}/>}
           {screen===SCREENS.CHAMPION&&<ChampionScreen
-            onBack={()=>setScreen(SCREENS.HOME)}
+            onBack={()=>setScreen(championBackScreen)}
             initialMode={championMode}
             championPick={championPick}
             topScorerPick={topScorerPick}
+            runnerUpPick={runnerUpPick}
             setChampionPick={setChampionPick}
             setTopScorerPick={setTopScorerPick}
+            setRunnerUpPick={setRunnerUpPick}
             showToast={showToast}
+            simDay={simDay} simHour={simHour} simMin={simMin}/>}
+          {screen===SCREENS.BONUS&&<BonusPredictionScreen
+            onBack={()=>setScreen(SCREENS.HOME)}
+            onChampion={(mode)=>{ setChampionBackScreen(SCREENS.BONUS); setChampionMode(mode||"champion"); setScreen(SCREENS.CHAMPION); }}
+            championPick={championPick}
+            runnerUpPick={runnerUpPick}
+            topScorerPick={topScorerPick}
             simDay={simDay} simHour={simHour} simMin={simMin}/>}
           {screen===SCREENS.BOOSTER&&<BoosterScreen onBack={()=>setScreen(SCREENS.HOME)}/>}
           {screen===SCREENS.BOARDS&&<BoardsScreen
@@ -10128,6 +12006,24 @@ function App() {
               setActiveBoardId(data.id);
               return data;
             }}
+            onUpdateBoard={async (boardId, boardData) => {
+              if (!user) return null;
+              let image_url;
+              if (boardData.imageFile) {
+                if (showToast) showToast("Se încarcă poza...", "⏳");
+                image_url = await uploadBoardImage(user.id, boardId, boardData.imageFile);
+                if (!image_url) { showToast("Eroare la incarcarea pozei", "x"); return null; }
+              } else if (boardData.removeImage) {
+                image_url = null;
+              }
+              const { data, error } = await updateBoard(boardId, { ...boardData, image_url });
+              if (error) { showToast("Eroare la salvare", "❌"); return null; }
+              setCreatedBoards(prev => prev.map(b => b.id === boardId ? { ...b, ...data } : b));
+              setMyBoards(prev => prev.map(b => b.id === boardId ? { ...b, ...data } : b));
+              setAvailableBoards(prev => prev.map(b => b.id === boardId ? { ...b, ...data } : b));
+              if (showToast) showToast("Liga actualizată!", "✏️");
+              return data;
+            }}
             onJoinByCode={async (code) => {
               if (!user) return null;
               const { data, error } = await joinBoardByCode(user.id, code);
@@ -10142,6 +12038,7 @@ function App() {
               setPredictionsLoaded(prev => ({ ...prev, [bid]: true }));
               setAllChampionPicks(prev => { const n = {...prev}; delete n[bid]; return n; });
               setAllTopScorerPicks(prev => { const n = {...prev}; delete n[bid]; return n; });
+              setAllRunnerUpPicks(prev => { const n = {...prev}; delete n[bid]; return n; });
               setMyBoards(prev => appendJoinedBoard(prev, { ...data, isMember: true, members: (data.members || 0) + 1 }));
               setAvailableBoards(prev => prev.filter(b => b.id !== bid));
               return data;
@@ -10161,6 +12058,7 @@ function App() {
               setPredictionsLoaded(prev => ({ ...prev, [boardId]: true }));
               setAllChampionPicks(prev => { const n = {...prev}; delete n[boardId]; return n; });
               setAllTopScorerPicks(prev => { const n = {...prev}; delete n[boardId]; return n; });
+              setAllRunnerUpPicks(prev => { const n = {...prev}; delete n[boardId]; return n; });
               const board = availableBoards.find(b => b.id === boardId) || createdBoards.find(b => b.id === boardId);
               if (board) {
                 setMyBoards(prev => appendJoinedBoard(prev, { ...board, isMember: true, members: (board.members || 0) + 1 }));
@@ -10187,6 +12085,7 @@ function App() {
               setPredictionsLoaded(prev => { const n = {...prev}; delete n[boardId]; return n; });
               setAllChampionPicks(prev => { const n = {...prev}; delete n[boardId]; return n; });
               setAllTopScorerPicks(prev => { const n = {...prev}; delete n[boardId]; return n; });
+              setAllRunnerUpPicks(prev => { const n = {...prev}; delete n[boardId]; return n; });
               if (activeBoardId === boardId) setActiveBoardId('global');
               showToast("Ligă ștearsă", "🗑️");
             }}
@@ -10231,13 +12130,14 @@ function App() {
               ];
             })()}/>}
           {screen===SCREENS.INSTANT_PICK&&<InstantPickScreen
+            koTeams={koTeams}
             realStandings={realStandings}
             savedState={shouldStartAtKo
               ? {...(instantPickState||{}), stage:"ko", koRound:"R32", koIdx:0, showIntro:false, showFinalSummary:false, koShowIntro:true}
               : instantPickDone
                 ? {...instantPickState, stage:"groups", groupIdx:0, showIntro:false, showFinalSummary:false, koShowIntro:false}
                 : instantPickState}
-            viewMode={(instantPickDone && !shouldStartAtKo) && task1DeadlinePassed}
+            viewMode={task1DeadlinePassed && !shouldStartAtKo}
             startAtKo={shouldStartAtKo}
             onStateChange={setInstantPickState}
             tournamentStarted={tournamentStarted}
@@ -10277,28 +12177,87 @@ function App() {
           {user&&<div style={{display:screen===SCREENS.RULES?'flex':'none',flex:1,flexDirection:'column',overflow:'hidden',minHeight:0}}>
             <RulesScreen onBack={()=>setScreen(SCREENS.HOME)}/>
           </div>}
-          {screen===SCREENS.GROUPS_SCHEDULE&&<GroupsScheduleScreen scores={exactScores} setScores={async (newScores)=>{
+          {screen===SCREENS.GROUPS_SCHEDULE&&<GroupsScheduleScreen boardId={activeBoardId} boardName={myBoards.find(b=>b.id===activeBoardId)?.name||"Global"} koTeams={koTeams} scores={exactScores} setScores={async (newScores)=>{
               const oldScores = exactScores;
               setExactScores(newScores);
               if (user) {
                 const fmt = ()=>new Date().toLocaleTimeString("ro-RO",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
+                let saveOk = true;
                 for (const matchKey of Object.keys(newScores)) {
                   const o = oldScores[matchKey], n = newScores[matchKey];
                   if (!o || o.home !== n.home || o.away !== n.away) {
                     const result = await saveExactScore(user.id, activeBoardId, matchKey, n.home, n.away);
                     if (result?.error) {
+                      saveOk = false;
                       setBugLog(p=>[...p,{message:`Save failed for match ${matchKey}: ${result.error}`,source:"saveExactScore",line:null,stack:null,time:fmt()}]);
                     }
                   }
                 }
-                showToast("Exact Score saved", "⚽");
+                if (saveOk) showToast("Exact Score saved", "⚽");
+                else showToast("Save failed — retry", "❌");
               }
-            }} simDay={simDay} simHour={simHour} simMin={simMin} initialWeek={groupsInitialWeek} onBack={()=>{ setGroupsInitialWeek(null); setScreen(SCREENS.HOME); }}/>}
+            }} simDay={simDay} simHour={simHour} simMin={simMin} initialWeek={groupsInitialWeek} initialDay={groupsInitialDay}
+              myBoards={myBoards}
+              onCopyDayScores={async (targetBoardId, matchKeys)=>{
+                if(!user) return;
+                const scores = exactScoresByBoard[activeBoardId] || {};
+                for(const matchKey of matchKeys){
+                  const sc = scores[matchKey];
+                  if(sc) await saveExactScore(user.id,targetBoardId,matchKey,sc.home,sc.away);
+                }
+                setExactScoresByBoard(prev => {
+                  const target = prev[targetBoardId] || {};
+                  const copied = {};
+                  matchKeys.forEach(k => { if(scores[k]) copied[k] = scores[k]; });
+                  return { ...prev, [targetBoardId]: { ...target, ...copied } };
+                });
+                showToast("Scores copied!","⚽");
+              }}
+              onBack={()=>{ setGroupsInitialWeek(null); setGroupsInitialDay(null); setScreen(SCREENS.HOME); }}/>}
           {user&&<div style={{display:screen===SCREENS.ACCOUNT?'flex':'none',flex:1,flexDirection:'column',overflow:'hidden',minHeight:0}}>
-            <AccountScreen setLang={setLang} onBoards={()=>{ setBoardsInitialTab("my"); setScreen(SCREENS.BOARDS); }} onSignOut={()=>setScreen(SCREENS.SPLASH)} onShowGuide={()=>{ setShowOnboarding(true); }} onPremium={()=>setScreen(SCREENS.PREMIUM)} onNotifications={()=>{ notificationsBackRef.current=SCREENS.ACCOUNT; setScreen(SCREENS.NOTIFICATIONS); }} user={user} isActive={screen===SCREENS.ACCOUNT}/>
+            <AccountScreen setLang={setLang} onBoards={()=>{ setBoardsInitialTab("my"); setScreen(SCREENS.BOARDS); }} onSignOut={()=>setScreen(SCREENS.SPLASH)} onShowGuide={()=>{ setShowOnboarding(true); }} onPremium={()=>setScreen(SCREENS.PREMIUM)} onNotifications={()=>{ notificationsBackRef.current=SCREENS.ACCOUNT; setScreen(SCREENS.NOTIFICATIONS); }} onEnablePush={user?async()=>{
+              if(typeof Notification!=='undefined'&&Notification.permission==='denied'){
+                alert('Notificările push sunt blocate.\n\niOS: Setări → [Aplicație] → Notificări\nAndroid: Setări → Aplicații → [browser] → Notificări\n\nActivează și revino în app.');
+                return;
+              }
+              if(!('serviceWorker' in navigator)||!('PushManager' in window)){
+                alert('Browser-ul nu suportă notificări push.');
+                return;
+              }
+              const reg = await navigator.serviceWorker.ready;
+              const existing = await reg.pushManager.getSubscription();
+              if(existing){
+                await existing.unsubscribe();
+                await supabase.from('push_subscriptions').delete().eq('user_id',user.id);
+                setPushSubActive(false);
+                alert('🔕 Notificările push au fost dezactivate.');
+              } else {
+                const result = await setupPushNotifications(user.id);
+                if(result===true){
+                  await supabase.auth.updateUser({data:{push_asked:true}});
+                  setPushSubActive(true);
+                  alert('✅ Notificările push au fost activate!');
+                } else {
+                  alert('❌ Eroare: '+(result||'Permisiune refuzată'));
+                }
+              }
+            }:undefined} pushSubActive={pushSubActive} user={user} isActive={screen===SCREENS.ACCOUNT}/>
           </div>}
         </div>
         <Toast message={toast.message} emoji={toast.emoji} visible={toast.visible}/>
+        {screen===SCREENS.HOME && activeBoardId && <ChatWidget boardId={activeBoardId} user={user} boardName={myBoards.find(b=>b.id===activeBoardId)?.name || (activeBoardId==='global'?'Global League':'')}/>}
+        {screen===SCREENS.HOME && <LiveWidget simDay={simDay} simHour={simHour} simMin={simMin}/>}
+        {showPushPrompt && (
+          <div style={{position:'fixed',inset:0,zIndex:3000,display:'flex',alignItems:'flex-end',justifyContent:'center',padding:'0 16px 32px',background:'rgba(0,0,0,0.45)'}}>
+            <div style={{background:'#fff',borderRadius:20,padding:'24px 20px 20px',width:'100%',maxWidth:400,boxShadow:'0 8px 40px rgba(0,0,0,0.18)'}}>
+              <div style={{fontSize:32,textAlign:'center',marginBottom:8}}>🔔</div>
+              <p style={{fontSize:16,fontWeight:700,color:'#1F2937',textAlign:'center',margin:'0 0 8px'}}>{T[lang].pushPromptTitle}</p>
+              <p style={{fontSize:13,color:'#6B7280',textAlign:'center',margin:'0 0 20px',lineHeight:1.5}}>{T[lang].pushPromptBody}</p>
+              <button onClick={handlePushPromptYes} style={{width:'100%',padding:'13px',background:NAVY,color:'#fff',border:'none',borderRadius:12,fontSize:15,fontWeight:700,cursor:'pointer',marginBottom:10}}>{T[lang].pushPromptYes}</button>
+              <button onClick={handlePushPromptNo} style={{width:'100%',padding:'11px',background:'transparent',color:'#9CA3AF',border:'1px solid #E5E7EB',borderRadius:12,fontSize:14,cursor:'pointer'}}>{T[lang].pushPromptNo}</button>
+            </div>
+          </div>
+        )}
         {showFooter&&(
           <div style={{
             position:"fixed",

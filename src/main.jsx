@@ -12,6 +12,10 @@ const updateSW = registerSW({
     if (!registration) return
     registration.update()
     setInterval(() => registration.update(), 60 * 1000)
+    // Check on every app focus/visibility — critical for PWA home screen users
+    const checkUpdate = () => { if (!document.hidden) registration.update() }
+    document.addEventListener('visibilitychange', checkUpdate)
+    window.addEventListener('focus', checkUpdate)
   },
   onNeedRefresh() {
     updateSW(true)

@@ -14,11 +14,36 @@ const mapBoard = (b) => ({
 // â”€â”€â”€ MATCH KEY â†’ ID MAP (cached) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 let _matchKeyMap = null
 async function getMatchKeyMap() {
-  if (_matchKeyMap) return _matchKeyMap
-  const { data } = await supabase.from('matches').select('id, match_key')
+  if (_matchKeyMap && Object.keys(_matchKeyMap).length > 0) return _matchKeyMap
+  const { data, error } = await supabase.from('matches').select('id, match_key')
+  if (error) {
+    console.error('getMatchKeyMap:', error)
+    return {}
+  }
+  if (!data || data.length === 0) return {}
   _matchKeyMap = {}
-  ;(data || []).forEach(m => { _matchKeyMap[m.match_key] = m.id })
+  data.forEach(m => { _matchKeyMap[m.match_key] = m.id })
   return _matchKeyMap
+}
+
+async function getMatchIdByKey(matchKey) {
+  const map = await getMatchKeyMap()
+  if (map[matchKey]) return map[matchKey]
+
+  const { data, error } = await supabase
+    .from('matches')
+    .select('id, match_key')
+    .eq('match_key', matchKey)
+    .maybeSingle()
+
+  if (error) {
+    console.error('getMatchIdByKey:', error)
+    return null
+  }
+  if (!data?.id) return null
+
+  _matchKeyMap = { ...(_matchKeyMap || {}), [data.match_key]: data.id }
+  return data.id
 }
 
 // â”€â”€â”€ SCORING RULES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -59,33 +84,35 @@ export async function savePredictions(userId, boardId, pickState) {
       ko_picks:       pickState.koPicks ?? {},
       updated_at:     new Date().toISOString(),
     }, { onConflict: 'user_id,board_id' })
-  if (error) console.error('savePredictions:', error)
+  if (error && error.code !== '42501') console.error('savePredictions:', error)
 }
 
 // â”€â”€â”€ SPECIAL PICKS (champion + top scorer) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function loadSpecialPick(userId, boardId) {
   const { data } = await supabase
     .from('special_picks')
-    .select('champion, top_scorer_team, top_scorer_player')
+    .select('champion, top_scorer_team, top_scorer_player, runner_up')
     .eq('user_id', userId)
     .eq('board_id', boardId)
     .maybeSingle()
-  if (!data) return { champion: null, topScorer: null }
+  if (!data) return { champion: null, topScorer: null, runnerUp: null }
   return {
     champion: data.champion || null,
     topScorer: data.top_scorer_player
       ? { team: data.top_scorer_team, player: data.top_scorer_player }
       : null,
+    runnerUp: data.runner_up || null,
   }
 }
 
-export async function saveSpecialPick(userId, boardId, { champion, topScorer }) {
+export async function saveSpecialPick(userId, boardId, { champion, topScorer, runnerUp }) {
   const fields = { user_id: userId, board_id: boardId, updated_at: new Date().toISOString() };
   if (champion !== undefined) fields.champion = champion || null;
   if (topScorer !== undefined) {
     fields.top_scorer_team   = topScorer?.team   || null;
     fields.top_scorer_player = topScorer?.player || null;
   }
+  if (runnerUp !== undefined) fields.runner_up = runnerUp || null;
   const { error } = await supabase
     .from('special_picks')
     .upsert(fields, { onConflict: 'user_id,board_id' })
@@ -94,36 +121,48 @@ export async function saveSpecialPick(userId, boardId, { champion, topScorer }) 
 
 // â”€â”€â”€ EXACT SCORES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function loadExactScores(userId, boardId) {
-  const { data } = await supabase
-    .from('exact_scores')
-    .select('team1_score, team2_score, matches!inner(match_key)')
-    .eq('user_id', userId)
-    .eq('board_id', boardId)
+  const [scoresRes, matchesRes] = await Promise.all([
+    supabase.from('exact_scores').select('match_id, team1_score, team2_score').eq('user_id', userId).eq('board_id', boardId),
+    supabase.from('matches').select('id, match_key'),
+  ])
+  const keyById = {}
+  ;(matchesRes.data || []).forEach(m => { keyById[m.id] = m.match_key })
   const result = {}
-  ;(data || []).forEach(row => {
-    result[row.matches.match_key] = { home: row.team1_score, away: row.team2_score }
+  ;(scoresRes.data || []).forEach(row => {
+    const mk = keyById[row.match_id]
+    if (mk) result[mk] = { home: row.team1_score, away: row.team2_score }
   })
+  if (scoresRes.error) console.error('loadExactScores scores:', scoresRes.error)
+  if (matchesRes.error) console.error('loadExactScores matches:', matchesRes.error)
   return result
 }
 
 export async function saveExactScore(userId, boardId, matchKey, home, away) {
-  const map = await getMatchKeyMap()
-  const matchId = map[matchKey]
+  const matchId = await getMatchIdByKey(matchKey)
   if (!matchId) {
     const msg = `match_key not found in DB: "${matchKey}". Matches table may be empty or use a different key format.`
     console.error('saveExactScore:', msg)
     return { error: msg }
   }
-  const { error } = await supabase
-    .from('exact_scores')
-    .upsert({
+  const row = {
       user_id:     userId,
       board_id:    boardId,
       match_id:    matchId,
       team1_score: home,
       team2_score: away,
       updated_at:  new Date().toISOString(),
-    }, { onConflict: 'user_id,board_id,match_id' })
+    }
+  let { error } = await supabase
+    .from('exact_scores')
+    .upsert(row, { onConflict: 'user_id,board_id,match_id' })
+
+  if (error) {
+    await new Promise(resolve => setTimeout(resolve, 250))
+    ;({ error } = await supabase
+      .from('exact_scores')
+      .upsert({ ...row, updated_at: new Date().toISOString() }, { onConflict: 'user_id,board_id,match_id' }))
+  }
+
   if (error) { console.error('saveExactScore:', error); return { error: error.message } }
   return { error: null }
 }
@@ -241,6 +280,21 @@ export async function createBoard(userId, { name, emoji, type, password, max_pla
   return { data: { ...mapBoard(data), isAdmin: true, isMember: true } }
 }
 
+export async function updateBoard(boardId, { name, emoji, type, password, max_players, prizes, image_url }) {
+  const updates = { name, emoji, type, max_players, prizes: prizes || [] };
+  if (image_url !== undefined) updates.image_url = image_url;
+  // Only send password if the user actually typed one; empty string = no change
+  if (password) updates.password = password;
+  const { data, error } = await supabase
+    .from('boards')
+    .update(updates)
+    .eq('id', boardId)
+    .select(BOARD_SAFE_COLUMNS)
+    .single()
+  if (error) { console.error('updateBoard:', error); return { error } }
+  return { data: mapBoard(data) }
+}
+
 export async function joinBoardByCode(userId, code, password = '') {
   const { data, error } = await supabase.rpc('join_board', {
     p_invite_code: code.trim().toUpperCase(),
@@ -270,6 +324,37 @@ export async function loadBoardMembers(boardId) {
     name: profileMap[row.user_id] || '-',
     role: row.role,
   }))
+}
+
+export async function loadMatchPredictions(matchKey, boardId) {
+  const { data, error } = await supabase.rpc('get_match_predictions', {
+    p_match_key: matchKey,
+    p_board_id: boardId,
+  })
+  if (error) { console.error('loadMatchPredictions:', error); return [] }
+  return (data || []).map(row => ({
+    userId: row.user_id,
+    name: row.name || '?',
+    avatarUrl: row.avatar_url || null,
+    predHome: row.pred_home,
+    predAway: row.pred_away,
+  }))
+}
+
+export async function loadCentralStats(boardId) {
+  const resolvedId = boardId === '00000000-0000-0000-0000-000000000000' ? 'global' : boardId
+  const { data, error } = await supabase.rpc('get_central_stats', { p_board_id: resolvedId })
+  if (error) { console.error('loadCentralStats:', error); return { members: [], matches: [] } }
+  const membersMap = {}
+  ;(data || []).forEach(row => {
+    if (!membersMap[row.user_id]) {
+      membersMap[row.user_id] = { userId: row.user_id, name: row.name || '?', avatarUrl: row.avatar_url || null, predictions: {} }
+    }
+    if (row.match_key) {
+      membersMap[row.user_id].predictions[row.match_key] = { home: row.pred_home, away: row.pred_away }
+    }
+  })
+  return { members: Object.values(membersMap) }
 }
 
 export async function joinBoardById(userId, boardId, password = '') {
@@ -361,7 +446,7 @@ export async function loadAllUserPicks(userId) {
       .select('team1_score, team2_score, board_id, matches!inner(match_key)')
       .eq('user_id', userId),
     supabase.from('special_picks')
-      .select('champion, top_scorer_team, top_scorer_player, board_id')
+      .select('champion, top_scorer_team, top_scorer_player, runner_up, board_id')
       .eq('user_id', userId),
   ])
 
@@ -379,6 +464,7 @@ export async function loadAllUserPicks(userId) {
     specialPicks[row.board_id] = {
       champion: row.champion || null,
       topScorer: row.top_scorer_player ? { team: row.top_scorer_team, player: row.top_scorer_player } : null,
+      runnerUp: row.runner_up || null,
     }
   })
 
@@ -531,6 +617,102 @@ export async function updatePlayerStats(date) {
 
 // â”€â”€â”€ REAL GROUP STANDINGS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Returns { "A": ["Mexico","South Africa",...], "B": [...], ... } sorted by rank
+// ─── BOARD CHAT ───────────────────────────────────────────────────────────────
+const resolveChatBoardId = (id) => id === 'global' ? '00000000-0000-0000-0000-000000000000' : id;
+
+export async function loadChatMessages(boardId) {
+  boardId = resolveChatBoardId(boardId);
+  if (!navigator.onLine) return { __offline: true, messages: [] };
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 5000);
+    const { data, error } = await supabase
+      .from('board_chat')
+      .select('id, user_id, nickname, content, is_system, created_at, edited_at, likes, dislikes, reply_to_id, reply_to_nickname, reply_to_content')
+      .eq('board_id', boardId)
+      .order('created_at', { ascending: true })
+      .abortSignal(ctrl.signal);
+    clearTimeout(timer);
+    if (error) {
+      console.error('loadChatMessages:', error);
+      return { __offline: true, messages: [] };
+    }
+    return { __offline: false, messages: data || [] };
+  } catch (e) {
+    console.error('loadChatMessages catch:', e);
+    return { __offline: true, messages: [] };
+  }
+}
+
+export async function sendChatMessage(boardId, userId, nickname, content, reply = null) {
+  boardId = resolveChatBoardId(boardId);
+  const row = { board_id: boardId, user_id: userId, nickname, content };
+  if (reply) {
+    row.reply_to_id      = reply.id;
+    row.reply_to_nickname = reply.nickname;
+    row.reply_to_content  = reply.content;
+  }
+  const { data, error } = await supabase
+    .from('board_chat')
+    .insert(row)
+    .select('id, board_id, user_id, nickname, content, is_system, created_at, edited_at, likes, dislikes, reply_to_id, reply_to_nickname, reply_to_content')
+    .single()
+  if (error) { console.error('sendChatMessage:', error); return { error: error.message, data: null } }
+  return { error: null, data }
+}
+
+export async function toggleChatLike(messageId) {
+  const { data, error } = await supabase.rpc('toggle_chat_like', { p_message_id: messageId })
+  if (error) { console.error('toggleChatLike:', error); return { error: error.message } }
+  return { error: null, likes: data?.likes || [], dislikes: data?.dislikes || [] }
+}
+
+export async function toggleChatDislike(messageId) {
+  const { data, error } = await supabase.rpc('toggle_chat_dislike', { p_message_id: messageId })
+  if (error) { console.error('toggleChatDislike:', error); return { error: error.message } }
+  return { error: null, likes: data?.likes || [], dislikes: data?.dislikes || [] }
+}
+
+export async function editChatMessage(messageId, content) {
+  const { data, error } = await supabase
+    .from('board_chat')
+    .update({ content, edited_at: new Date().toISOString() })
+    .eq('id', messageId)
+    .select('id, content, edited_at')
+    .single()
+  if (error) { console.error('editChatMessage:', error); return { error: error.message, data: null } }
+  return { error: null, data }
+}
+
+export function subscribeChatMessages(boardId, onNew, onEdit, onReaction, onPresence, presenceUser) {
+  boardId = resolveChatBoardId(boardId);
+  let connected = false;
+  const channel = supabase.channel(`chat_${boardId}`, {
+    config: { broadcast: { self: true }, presence: { key: presenceUser?.id || 'anon' } },
+  })
+  channel
+    .on('broadcast', { event: 'chat' }, ({ payload }) => onNew(payload))
+    .on('broadcast', { event: 'chat_edit' }, ({ payload }) => onEdit && onEdit(payload))
+    .on('broadcast', { event: 'chat_reaction' }, ({ payload }) => onReaction && onReaction(payload))
+    .on('presence', { event: 'sync' }, () => {
+      const count = Object.keys(channel.presenceState()).length;
+      onPresence && onPresence(count);
+    })
+    .subscribe(async (status) => {
+      if (status === 'SUBSCRIBED') {
+        connected = true;
+        if (presenceUser) await channel.track({ user_id: presenceUser.id, nickname: presenceUser.nickname });
+      }
+    })
+  const safe = (fn) => (...args) => { if (connected) fn(...args); }
+  return {
+    unsubscribe: () => supabase.removeChannel(channel),
+    broadcast:        safe((msg)  => channel.send({ type: 'broadcast', event: 'chat',          payload: msg })),
+    broadcastEdit:    safe((edit) => channel.send({ type: 'broadcast', event: 'chat_edit',     payload: edit })),
+    broadcastReaction:safe((r)    => channel.send({ type: 'broadcast', event: 'chat_reaction', payload: r })),
+  }
+}
+
 export async function loadRealGroupStandings() {
   const { data, error } = await supabase.rpc('get_group_standings')
   if (error) { console.error('loadRealGroupStandings:', error); return {} }
@@ -548,35 +730,52 @@ export async function loadLiveScores() {
   const result = {}
   ;(data || []).forEach(row => {
     result[row.match_key] = {
-      status: row.status,
-      home:   row.regular_time_home_score,
-      away:   row.regular_time_away_score,
+      status:  row.status,
+      home:    row.regular_time_home_score,
+      away:    row.regular_time_away_score,
       homePen: row.penalty_home_score,
       awayPen: row.penalty_away_score,
-      min:    row.api_minute,
+      min:     row.api_minute,
+      utcDate: row.utc_date ?? null,
     }
   })
   return result
 }
 
+export async function loadKoTeams() {
+  const { data } = await supabase
+    .from('matches')
+    .select('match_key, team1:teams!matches_team1_id_fkey(name), team2:teams!matches_team2_id_fkey(name)')
+    .in('stage', ['r32', 'r16', 'qf', 'sf', 'final'])
+    .not('team1_id', 'is', null)
+    .not('team2_id', 'is', null)
+  const result = {}
+  ;(data || []).forEach(row => {
+    if (row.team1?.name && row.team2?.name)
+      result[row.match_key] = { home: row.team1.name, away: row.team2.name }
+  })
+  return result
+}
+
 export function subscribeLiveScores(onChange) {
-  return supabase
-    .channel('live_scores_realtime')
+  const ch = supabase
+    .channel(`live_scores_${Math.random().toString(36).slice(2)}`)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'live_scores' }, onChange)
     .subscribe()
+  return () => supabase.removeChannel(ch)
 }
 
 // â”€â”€â”€ BOARD IMAGE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function uploadBoardImage(userId, boardId, file) {
   const ext = file.name.split('.').pop().toLowerCase()
-  const path = `${userId}/${boardId}.${ext}`
+  const path = `${userId}/${boardId}-${Date.now()}.${ext}`
   const { error } = await supabase.storage.from('board-images')
-    .upload(path, file, { contentType: file.type, upsert: true })
+    .upload(path, file, { contentType: file.type })
   if (error) { console.error('uploadBoardImage:', error); return null }
   const { data: { publicUrl } } = supabase.storage.from('board-images').getPublicUrl(path)
-  const urlWithBust = `${publicUrl}?t=${Date.now()}`
-  await supabase.from('boards').update({ image_url: urlWithBust }).eq('id', boardId)
-  return urlWithBust
+  const { error: updateError } = await supabase.from('boards').update({ image_url: publicUrl }).eq('id', boardId)
+  if (updateError) { console.error('uploadBoardImage board update:', updateError); return null }
+  return publicUrl
 }
 
 // â”€â”€â”€ AVATAR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -688,6 +887,22 @@ export async function deletePushSubscription(endpoint) {
 }
 
 // ─── LEADERBOARD ──────────────────────────────────────────────────────────────
+export async function hasLiveMatches() {
+  const { count } = await supabase
+    .from('live_scores')
+    .select('*', { count: 'exact', head: true })
+    .in('status', ['LIVE', 'HT', 'ET', 'PEN'])
+  return (count ?? 0) > 0
+}
+
+export async function loadMatchEvents(matchKey) {
+  const { data } = await supabase
+    .from('match_events')
+    .select('type, detail, player_name, assist_name, team_name, minute')
+    .eq('match_key', matchKey)
+    .order('minute', { ascending: true })
+  return data || []
+}
 export async function loadLeaderboard(boardId, search = null, userId = null) {
   const [rpcRes, profileRes] = await Promise.all([
     supabase.rpc('get_leaderboard', {
@@ -705,9 +920,10 @@ export async function loadLeaderboard(boardId, search = null, userId = null) {
     return {
       rank:      i + 1,
       userId:    row.user_id || null,
-      name:      row.display_name || 'â€”',
+      name:      row.display_name || '—',
       pts:       row.total_pts || 0,
       avatarUrl: row.avatar_url || null,
+      movement:  row.movement ?? null,
       accent:    isMe ? '#E8F0FF' : '#fff',
       isMe,
     }
@@ -725,15 +941,47 @@ export async function loadLeaderboard(boardId, search = null, userId = null) {
   return rows
 }
 
+export async function loadBoardExactScores(boardId) {
+  const { data, error } = await supabase.rpc('get_central_stats', { p_board_id: boardId })
+  if (error) { console.error('loadBoardExactScores:', error); return {} }
+  const byUser = {}
+  ;(data || []).forEach(row => {
+    if (!row.match_key) return
+    if (!byUser[row.user_id]) byUser[row.user_id] = {}
+    byUser[row.user_id][row.match_key] = { home: row.pred_home, away: row.pred_away }
+  })
+  return byUser
+}
+
 export async function loadUserBreakdown(userId, boardId) {
-  const [groupRes, exactRes] = await Promise.all([
+  const [groupRes, exactRes, specialRes, best3Res] = await Promise.all([
     supabase.rpc('get_user_group_breakdown', { p_user_id: userId, p_board_id: boardId }),
     supabase.rpc('get_user_exact_breakdown', { p_user_id: userId, p_board_id: boardId }),
+    supabase
+      .from('special_picks')
+      .select('champion, runner_up, top_scorer_player, top_scorer_team, champion_pts, runner_up_pts, top_scorer_pts')
+      .eq('user_id', userId)
+      .eq('board_id', boardId)
+      .maybeSingle(),
+    supabase.rpc('get_user_best3_breakdown', { p_user_id: userId, p_board_id: boardId }),
   ])
   if (groupRes.error) console.error('loadUserBreakdown groups:', groupRes.error)
   if (exactRes.error) console.error('loadUserBreakdown exact:', exactRes.error)
+  if (best3Res.error) console.error('loadUserBreakdown best3:', best3Res.error)
+
+  const sp = specialRes.data
   return {
     groups: groupRes.data || [],
     exact:  exactRes.data || [],
+    best3:  best3Res.data || [],
+    bonus: sp ? {
+      champion:          sp.champion ?? null,
+      champion_pts:      sp.champion_pts ?? 0,
+      runner_up:         sp.runner_up ?? null,
+      runner_up_pts:     sp.runner_up_pts ?? 0,
+      top_scorer_player: sp.top_scorer_player ?? null,
+      top_scorer_team:   sp.top_scorer_team ?? null,
+      top_scorer_pts:    sp.top_scorer_pts ?? 0,
+    } : null,
   }
 }
