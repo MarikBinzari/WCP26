@@ -44,6 +44,26 @@
         setTimeout(function() { if (!confirmed) show(); }, 4500);
       })();
     </script>
+    <script>
+      (function() {
+        var V = '20260628-v3';
+        if (localStorage.getItem('__pwa_v') !== V) {
+          localStorage.setItem('__pwa_v', V);
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(regs) {
+              var p = regs.map(function(r) { return r.unregister(); });
+              return Promise.all(p);
+            }).then(function() {
+              return caches.keys();
+            }).then(function(keys) {
+              return Promise.all(keys.map(function(k) { return caches.delete(k); }));
+            }).then(function() {
+              window.location.reload(true);
+            });
+          }
+        }
+      })();
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
