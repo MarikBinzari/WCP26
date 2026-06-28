@@ -10,7 +10,7 @@ import specialPickBadge from "./assets/special-pick-badge.webp";
 import bellIcon from "./assets/bell-icon.svg";
 import { ALL_GROUPS_DATA, FLAGS, TEAM_COLORS, CALENDAR_EVENTS, CL_FINAL } from "./data/worldcup2026.js";
 import { supabase, SUPABASE_URL } from "./supabase.js";
-import { savePredictions, saveExactScore, loadExactScores, createBoard, updateBoard, joinBoardByCode, joinBoardById, ensureBoardScores, loadLeaderboard, loadMyScoreBreakdown, fetchScoringRules, fetchMemberCounts, removeBoardMember, removeParticipation, deleteBoard, loadBoardMembers, checkDbHealth, checkEmailExists, checkNicknameExists, loadLiveScores, subscribeLiveScores, loadPlayers, loadPlayersByTeam, seedPlayersFromApi, saveSpecialPick, uploadAvatar, uploadBoardImage, loadAllBoards, loadAllUserPicks, loadNotifReads, markNotifRead, loadSystemNotifications, loadRealGroupStandings, loadBest3Advancing, loadUserBreakdown, savePushSubscription, loadChatMessages, sendChatMessage, editChatMessage, toggleChatLike, toggleChatDislike, subscribeChatMessages, loadMatchPredictions, loadCentralStats, loadBoardExactScores, hasLiveMatches, loadKoTeams, loadMatchEvents } from "./db.js";
+import { savePredictions, saveExactScore, loadExactScores, createBoard, updateBoard, joinBoardByCode, joinBoardById, ensureBoardScores, loadLeaderboard, loadMyScoreBreakdown, fetchScoringRules, fetchMemberCounts, removeBoardMember, removeParticipation, deleteBoard, loadBoardMembers, checkDbHealth, checkEmailExists, checkNicknameExists, loadLiveScores, subscribeLiveScores, loadPlayers, loadPlayersByTeam, seedPlayersFromApi, saveSpecialPick, uploadAvatar, uploadBoardImage, loadAllBoards, loadAllUserPicks, loadNotifReads, markNotifRead, loadSystemNotifications, loadRealGroupStandings, loadBest3Advancing, loadUserBreakdown, savePushSubscription, loadChatMessages, sendChatMessage, editChatMessage, toggleChatLike, toggleChatDislike, subscribeChatMessages, loadMatchPredictions, loadCentralStats, loadBoardExactScores, hasLiveMatches, loadKoTeams, loadMatchEvents, getKoBackup } from "./db.js";
 
 const TEAM_CODE = {"Mexico":"MEX","South Africa":"RSA","South Korea":"KOR","Czechia":"CZE","Canada":"CAN","Switzerland":"SUI","Qatar":"QAT","Bosnia-Herzegovina":"BIH","Brazil":"BRA","Morocco":"MAR","Scotland":"SCO","Haiti":"HAI","USA":"USA","Paraguay":"PAR","Australia":"AUS","Turkiye":"TUR","Germany":"GER","Ecuador":"ECU","Ivory Coast":"CIV","Curacao":"CUW","Netherlands":"NED","Japan":"JPN","Tunisia":"TUN","Sweden":"SWE","Belgium":"BEL","Iran":"IRI","Egypt":"EGY","New Zealand":"NZL","Spain":"ESP","Uruguay":"URU","Saudi Arabia":"KSA","Cape Verde":"CPV","France":"FRA","Senegal":"SEN","Norway":"NOR","Iraq":"IRQ","Argentina":"ARG","Austria":"AUT","Algeria":"ALG","Jordan":"JOR","Portugal":"POR","Colombia":"COL","Uzbekistan":"UZB","DR Congo":"COD","England":"ENG","Croatia":"CRO","Panama":"PAN","Ghana":"GHA"};
 
@@ -3333,14 +3333,14 @@ function Best3Screen({ groups, getGroupStanding, picks, best3, setBest3, onDone 
 }
 
 
-function GroupIntroScreen({ group, teams: teamsProp, isKo, onStart, onNext, onPickChange, isMatchLocked=()=>false, hideHeader=false, picks={}, viewMode=false }) {
+function GroupIntroScreen({ group, teams: teamsProp, isKo, onStart, onNext, onPickChange, isRoundComplete, isMatchLocked=()=>false, hideHeader=false, picks={}, viewMode=false }) {
   const lang = useLang();
   const teams = isKo ? null : (ALL_GROUPS_DATA[group]||[]);
   const matchCount = isKo ? (teamsProp||[]).length : (GROUP_MATCHUPS[group]||[]).length;
   const nextRoundLabel = {R32:"Round of 16",R16:"Quarter-Finals",QF:"Semi-Finals",SF:"Final"}[group]||"Next Round";
   const matches = teamsProp||[];
   const hasRoundPicks = matches.some((_,i)=>!!picks[`${group}-${i}`]);
-  const roundComplete = matches.length>0 && matches.every((_,i)=>!!picks[`${group}-${i}`]);
+  const roundComplete = isRoundComplete ?? (matches.length>0 && matches.every((_,i)=>!!picks[`${group}-${i}`]));
   const matchPairs = [];
   for(let i=0;i<matches.length;i+=2) matchPairs.push([matches[i],matches[i+1]]);
 
@@ -4100,6 +4100,7 @@ function InstantPickScreen({ onBack, onComplete, onKoComplete, onModify, savedSt
             ...prev,
             [`${koRound}-${matchIdx}`]:side,
           }))}
+          isRoundComplete={koRoundDone(koRound)}
           isMatchLocked={isCurrentKoMatchLocked}
           picks={koPicks} viewMode={viewMode}/>
       </div>
@@ -5990,12 +5991,26 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
   const predDoneCount = Math.max(predictionProgress.done, groupsDoneCount !== null ? groupsDoneCount : 0);
   const _predStepsTotal = predictionProgress.total;
   const _predStepsDone = _boardDone ? _predStepsTotal : predDoneCount;
-  const r32Total = 16;
-  const r32Done = Array.from({length:r32Total},(_,i)=>`R32-${i}`)
-    .filter(key => !!instantPickState?.koPicks?.[key]).length;
-  const currentPredDone = koUnlocked ? r32Done : predDoneCount;
-  const currentPredTotal = koUnlocked ? r32Total : _predStepsTotal;
+  const koRoundTotals = {R32:16,R16:8,QF:4,SF:2,F:1};
+  const koTotal = Object.values(koRoundTotals).reduce((sum,count)=>sum+count,0);
+  const koDone = Object.entries(koRoundTotals).reduce((sum,[round,count])=>
+    sum + Array.from({length:count},(_,i)=>`${round}-${i}`)
+      .filter(key=>!!instantPickState?.koPicks?.[key]).length
+  ,0);
+  const currentPredDone = koUnlocked ? koDone : predDoneCount;
+  const currentPredTotal = koUnlocked ? koTotal : _predStepsTotal;
+  const koTaskActive = koUnlocked && koDone < koTotal;
   const naCard = (()=>{
+    if(koTaskActive) return {
+      title:T[lang].predCardTitle,
+      sub:T[lang].predCardSub,
+      due:null,
+      progress:koDone,
+      total:koTotal,
+      label:koDone>0?T[lang].continuePredictions:T[lang].startPredictions,
+      onClick:()=>onPredictKo(activeId),
+      badge:T[lang].nextActionLabel,
+    };
     if(nextTask===0) return { title:T[lang].predCardTitle, sub:T[lang].predCardSub, due:!_deadlinePassed?T[lang].dueJun11:null, progress:_predStepsDone, total:_predStepsTotal, label:predDoneCount>0?T[lang].continuePredictions:T[lang].startPredictions, onClick:()=>onPredict(activeId), badge:T[lang].nextActionLabel };
     if(nextTask===1) return { title:T[lang].exactCardTitle, sub:T[lang].exactCardSub, due:!exactWeekHasStarted&&exactWeekStart>8?exactWeekStartLabel:null, progress:exactWeekScored, total:Math.max(2, exactWeekTotal), label:T[lang].openScores, onClick:()=>onOpenGroups&&onOpenGroups(exactWeekStart), badge:T[lang].nextActionLabel };
     return { title:T[lang].allDoneTitle, sub:T[lang].allDoneSub, due:null, progress:1, total:1, label:"", onClick:()=>{}, badge:T[lang].upToDateLabel };
@@ -6118,7 +6133,7 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
           </div>
           <span style={{fontSize:18,color:"rgba(255,255,255,0.35)",fontWeight:700,lineHeight:1,marginLeft:4}}>›</span>
         </button>
-        <NextActionCard card={naCard} pct={naPct} nextTask={nextTask} />
+        <NextActionCard card={naCard} pct={naPct} nextTask={koTaskActive?0:nextTask} />
         <div style={{marginBottom:14}}>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
             <HomeSectionLabel style={{marginBottom:0}}>{T[lang].yourProgress}</HomeSectionLabel>
@@ -6135,7 +6150,7 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
                 value={`${currentPredDone}/${currentPredTotal}`}
                 withDivider
                 onClick={()=>koUnlocked?onPredictKo(activeId):onPredict(activeId)}
-                copyEnabled={(koUnlocked?r32Done===r32Total:predictionProgress.complete&&!_deadlinePassed)}
+                copyEnabled={(koUnlocked?koDone===koTotal:predictionProgress.complete&&!_deadlinePassed)}
                 onCopy={()=>{setCopyDone({});setShowCopySheet("predictions");}}
               />
               <ProgressTile
@@ -11684,15 +11699,24 @@ function App() {
     if (!user) return;
     const uid = user.id;
 
+    const _KO_RE = /^(R32|R16|QF|SF|F)-\d+$/
     const applyPicks = (boardId, preds, scores, special) => {
       if (preds) {
+        // Restore from localStorage if backup is newer than DB (protects against failed DB saves)
+        const backup = getKoBackup(uid, boardId)
+        const dbKo = preds.ko_picks || {}
+        const backupNewer = backup && backup.savedAt > (preds.updated_at || '') &&
+          Object.keys(backup.koPicks || {}).some(k => _KO_RE.test(k))
+        const koPicks = backupNewer ? backup.koPicks : dbKo
+        if (backupNewer) console.info('[ko-backup] restored from localStorage for board', boardId)
+
         setAllInstantPickStates(p => ({
           ...p,
           [boardId]: {
             ...(p[boardId] || {}),
             groupRankings: preds.group_rankings || {},
             best3:         preds.best3_picks    || [],
-            koPicks:       preds.ko_picks       || {},
+            koPicks,
           }
         }));
         const loadedProgress = getPredictionProgress({
@@ -11700,7 +11724,7 @@ function App() {
           best3: preds.best3_picks || [],
         });
         const hasTask1 = loadedProgress.complete;
-        const hasTask2 = Object.keys(preds.ko_picks || {}).length > 0;
+        const hasTask2 = Object.keys(koPicks).some(k => _KO_RE.test(k));
         setPredictionsComplete(p => ({ ...p, [boardId]: hasTask1 || hasTask2 }));
         setAllInstantPickDone(p => ({ ...p, [boardId]: hasTask1 || hasTask2 }));
         if (hasTask2) setAllKoPickDone(p => ({ ...p, [boardId]: true }));
@@ -11948,6 +11972,9 @@ function App() {
   };
 
   const instantPickState = allInstantPickStates[activeBoardId]||null;
+  // Ref always holds the latest state — prevents stale closure in async callbacks (onKoComplete, onBack, auto-save)
+  const instantPickStateRef = useRef(null);
+  useEffect(() => { instantPickStateRef.current = instantPickState; }, [instantPickState]);
   const instantPickDone = allInstantPickDone[activeBoardId]||false;
   const koPickDone = allKoPickDone[activeBoardId]||false;
   const setInstantPickState = (s) => {
@@ -11998,14 +12025,21 @@ function App() {
   // Previne pierderea datelor la refresh de browser
   const _autoSaveTimer = useRef(null);
   useEffect(() => {
-    if (!user || !instantPickState || tournamentStarted) return;
+    if (!user || !instantPickState) return;
+    const hasKoData = Object.keys(instantPickState.koPicks || {})
+      .some(key => /^(R32|R16|QF|SF|F)-\d+$/.test(key));
+    // După startul turneului, grupele rămân blocate, dar Second Chance KO
+    // trebuie salvat pe măsură ce utilizatorul completează bracket-ul.
+    if (tournamentStarted && !hasKoData) return;
     const hasData = Object.keys(instantPickState.groupRankings || {}).length > 0 ||
                     (instantPickState.best3 || []).length > 0 ||
-                    Object.keys(instantPickState.koPicks || {}).length > 0;
+                    hasKoData;
     if (!hasData) return;
     clearTimeout(_autoSaveTimer.current);
     _autoSaveTimer.current = setTimeout(() => {
-      savePredictions(user.id, activeBoardId, instantPickState);
+      // Use ref to get the latest state — avoids stale closure if user picked quickly
+      const state = instantPickStateRef.current || instantPickState;
+      savePredictions(user.id, activeBoardId, state);
     }, 1000);
     return () => clearTimeout(_autoSaveTimer.current);
   }, [instantPickState, activeBoardId, user]);
@@ -12326,8 +12360,12 @@ function App() {
             tournamentStarted={tournamentStarted}
             koUnlocked={koUnlocked}
             onBack={async ()=>{
-              if (!shouldStartAtKo && !task1DeadlinePassed) {
-                const state = instantPickState;
+              const state = instantPickStateRef.current || instantPickState;
+              if (shouldStartAtKo) {
+                // Second Chance mode: save ko_picks on back (previously never saved here)
+                const hasKo = Object.keys(state?.koPicks || {}).some(k => /^(R32|R16|QF|SF|F)-\d+$/.test(k));
+                if (user && state && hasKo) await savePredictions(user.id, activeBoardId, state);
+              } else if (!task1DeadlinePassed) {
                 const best3Complete = (state?.best3?.length || 0) >= 8;
                 if (best3Complete) {
                   setInstantPickDone(true);
@@ -12350,8 +12388,10 @@ function App() {
             }}
             onKoComplete={async ()=>{
               setKoPickDone(true);
-              if (user && instantPickState) {
-                await savePredictions(user.id, activeBoardId, instantPickState);
+              // Use ref to avoid stale closure — captures the last pick even if state hasn't propagated yet
+              const state = instantPickStateRef.current || instantPickState;
+              if (user && state) {
+                await savePredictions(user.id, activeBoardId, state);
               }
               setScreen(SCREENS.HOME);
             }}/>}

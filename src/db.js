@@ -73,7 +73,35 @@ export async function loadPredictions(userId, boardId) {
   return data
 }
 
+// ── KO PICKS LOCALSTORAGE BACKUP ─────────────────────────────────────────────
+// Fallback safety net: saves ko_picks locally before every DB write.
+// On load, if localStorage is newer than DB, the local copy wins.
+const _LS_KO = (uid, bid) => `wcp26_ko_${uid}_${bid}`
+const _KO_RE = /^(R32|R16|QF|SF|F)-\d+$/
+
+export function backupKoPicks(userId, boardId, koPicks) {
+  try {
+    const hasReal = Object.keys(koPicks || {}).some(k => _KO_RE.test(k))
+    if (!hasReal) return
+    localStorage.setItem(_LS_KO(userId, boardId), JSON.stringify({
+      koPicks,
+      savedAt: new Date().toISOString(),
+    }))
+  } catch {}
+}
+
+export function getKoBackup(userId, boardId) {
+  try {
+    const raw = localStorage.getItem(_LS_KO(userId, boardId))
+    return raw ? JSON.parse(raw) : null
+  } catch { return null }
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 export async function savePredictions(userId, boardId, pickState) {
+  // Backup to localStorage first — protects against DB failures
+  backupKoPicks(userId, boardId, pickState.koPicks)
+
   const { error } = await supabase
     .from('predictions')
     .upsert({
@@ -84,7 +112,7 @@ export async function savePredictions(userId, boardId, pickState) {
       ko_picks:       pickState.koPicks ?? {},
       updated_at:     new Date().toISOString(),
     }, { onConflict: 'user_id,board_id' })
-  if (error && error.code !== '42501') console.error('savePredictions:', error)
+  if (error) console.error('savePredictions:', error)
 }
 
 // â”€â”€â”€ SPECIAL PICKS (champion + top scorer) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
