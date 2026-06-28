@@ -5961,9 +5961,10 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
     const mm = {};
     _exCalendarEvents.forEach(e => {
       if (!isWeekUnlocked(e.day, simDay, simHour, simMin)) return;
+      const _isRealTeam = (n) => !!n && n !== 'TBD' && !/^W\d+$/.test(n);
       mm[e.day] = (e.matches || []).filter(m =>
         m.matchKey !== 'cl-final' &&
-        (m.homeFlag !== '🏆' || !!koTeams[m.matchKey] || (m.home !== 'TBD' && m.away !== 'TBD')) &&
+        (m.homeFlag !== '🏆' || !!koTeams[m.matchKey] || (_isRealTeam(m.home) && _isRealTeam(m.away))) &&
         !isMatchPast(e.day, m.time, simDay, simHour, m.kickoffUtc)
       );
     });
