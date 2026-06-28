@@ -325,32 +325,32 @@ export const CALENDAR_EVENTS = [
 
   // ── R32 (OPTIMI DE FINALĂ) — 28 Iunie - 3 Iulie ────────────────────────────
   {day:28, matches:[
-    {home:"2A",homeFlag:"🏆",away:"2B",awayFlag:"🏆",time:"19:00",group:"R32",venue:"SoFi Stadium"},
+    {home:"South Africa",homeFlag:"🏆",away:"Canada",        awayFlag:"🏆",time:"22:00",group:"R32",venue:"SoFi Stadium",        kickoffUtc:"2026-06-28T19:00:00Z"},
   ]},
   {day:29, matches:[
-    {home:"1E",homeFlag:"🏆",away:"3°",awayFlag:"🏆",time:"16:00",group:"R32",venue:"Gillette Stadium"},
-    {home:"1F",homeFlag:"🏆",away:"2C",awayFlag:"🏆",time:"19:00",group:"R32",venue:"Estadio BBVA"},
-    {home:"1C",homeFlag:"🏆",away:"2F",awayFlag:"🏆",time:"17:00",group:"R32",venue:"NRG Stadium"},
+    {home:"Germany",     homeFlag:"🏆",away:"Paraguay",      awayFlag:"🏆",time:"20:00",group:"R32",venue:"Gillette Stadium",    kickoffUtc:"2026-06-29T17:00:00Z"},
+    {home:"Netherlands", homeFlag:"🏆",away:"Morocco",       awayFlag:"🏆",time:"23:30",group:"R32",venue:"Estadio BBVA",        kickoffUtc:"2026-06-29T20:30:00Z"},
+    {home:"Brazil",      homeFlag:"🏆",away:"Japan",         awayFlag:"🏆",time:"04:00",group:"R32",venue:"NRG Stadium",         kickoffUtc:"2026-06-30T01:00:00Z"},
   ]},
   {day:30, matches:[
-    {home:"1I",homeFlag:"🏆",away:"3°",awayFlag:"🏆",time:"17:00",group:"R32",venue:"MetLife Stadium"},
-    {home:"2E",homeFlag:"🏆",away:"2I",awayFlag:"🏆",time:"17:00",group:"R32",venue:"AT&T Stadium"},
-    {home:"1A",homeFlag:"🏆",away:"3°",awayFlag:"🏆",time:"19:00",group:"R32",venue:"Estadio Azteca"},
+    {home:"France",      homeFlag:"🏆",away:"Sweden",        awayFlag:"🏆",time:"20:00",group:"R32",venue:"MetLife Stadium",     kickoffUtc:"2026-06-30T17:00:00Z"},
+    {home:"Côte d'Ivoire",homeFlag:"🏆",away:"Norway",       awayFlag:"🏆",time:"00:00",group:"R32",venue:"AT&T Stadium",        kickoffUtc:"2026-06-30T21:00:00Z"},
+    {home:"Mexico",      homeFlag:"🏆",away:"Ecuador",       awayFlag:"🏆",time:"04:00",group:"R32",venue:"Estadio Azteca",      kickoffUtc:"2026-07-01T01:00:00Z"},
   ]},
   {day:31, matches:[
-    {home:"1L",homeFlag:"🏆",away:"3°",awayFlag:"🏆",time:"16:00",group:"R32",venue:"Mercedes-Benz Stadium"},
-    {home:"1D",homeFlag:"🏆",away:"3°",awayFlag:"🏆",time:"20:00",group:"R32",venue:"Levi's Stadium"},
-    {home:"1G",homeFlag:"🏆",away:"3°",awayFlag:"🏆",time:"20:00",group:"R32",venue:"Lumen Field"},
+    {home:"England",     homeFlag:"🏆",away:"DR Congo",      awayFlag:"🏆",time:"19:00",group:"R32",venue:"Mercedes-Benz Stadium",kickoffUtc:"2026-07-01T16:00:00Z"},
+    {home:"USA",         homeFlag:"🏆",away:"Bosnia and Herzegovina",awayFlag:"🏆",time:"23:00",group:"R32",venue:"Levi's Stadium",kickoffUtc:"2026-07-01T20:00:00Z"},
+    {home:"Belgium",     homeFlag:"🏆",away:"Senegal",       awayFlag:"🏆",time:"03:00",group:"R32",venue:"Lumen Field",          kickoffUtc:"2026-07-02T00:00:00Z"},
   ]},
   {day:32, matches:[
-    {home:"2K",homeFlag:"🏆",away:"2L",awayFlag:"🏆",time:"19:00",group:"R32",venue:"BMO Field"},
-    {home:"1H",homeFlag:"🏆",away:"2J",awayFlag:"🏆",time:"19:00",group:"R32",venue:"SoFi Stadium"},
-    {home:"1B",homeFlag:"🏆",away:"3°",awayFlag:"🏆",time:"20:00",group:"R32",venue:"BC Place"},
+    {home:"Portugal",    homeFlag:"🏆",away:"Croatia",       awayFlag:"🏆",time:"22:00",group:"R32",venue:"BMO Field",           kickoffUtc:"2026-07-02T19:00:00Z"},
+    {home:"Spain",       homeFlag:"🏆",away:"Austria",       awayFlag:"🏆",time:"02:00",group:"R32",venue:"SoFi Stadium",        kickoffUtc:"2026-07-02T23:00:00Z"},
+    {home:"Switzerland", homeFlag:"🏆",away:"Algeria",       awayFlag:"🏆",time:"06:00",group:"R32",venue:"BC Place",            kickoffUtc:"2026-07-03T03:00:00Z"},
   ]},
   {day:33, matches:[
-    {home:"1J",homeFlag:"🏆",away:"2H",awayFlag:"🏆",time:"18:00",group:"R32",venue:"Hard Rock Stadium"},
-    {home:"1K",homeFlag:"🏆",away:"3°",awayFlag:"🏆",time:"20:30",group:"R32",venue:"Arrowhead Stadium"},
-    {home:"2D",homeFlag:"🏆",away:"2G",awayFlag:"🏆",time:"19:00",group:"R32",venue:"AT&T Stadium"},
+    {home:"Argentina",   homeFlag:"🏆",away:"Cape Verde",    awayFlag:"🏆",time:"01:00",group:"R32",venue:"Hard Rock Stadium",   kickoffUtc:"2026-07-03T22:00:00Z"},
+    {home:"Colombia",    homeFlag:"🏆",away:"Ghana",         awayFlag:"🏆",time:"04:30",group:"R32",venue:"Arrowhead Stadium",   kickoffUtc:"2026-07-04T01:30:00Z"},
+    {home:"Australia",   homeFlag:"🏆",away:"Egypt",         awayFlag:"🏆",time:"21:00",group:"R32",venue:"AT&T Stadium",        kickoffUtc:"2026-07-03T18:00:00Z"},
   ]},
 
   // ── R16 (ȘAISPREZECIMI) — 4-7 Iulie ─────────────────────────────────────────
