@@ -409,11 +409,11 @@ Deno.serve(async () => {
               updated_at: now.toISOString(),
             })
 
-            // Salvează events din fixture response (disponibile în /fixtures?live=all)
+            // Salvează events + apel separat la /fixtures/events pentru meciuri active/FT recente
             const events: any[] = f.events ?? []
-            if (events.length > 0) {
-              const eventRows = events
-                .filter((e: any) => e.player?.name)
+            const saveEventRows = async (evList: any[]) => {
+              const rows = evList
+                .filter((e: any) => ['Goal','Card','subst'].includes(e.type ?? ''))
                 .map((e: any) => ({
                   match_key:    matchKey,
                   minute:       e.time?.elapsed ?? null,
@@ -425,13 +425,17 @@ Deno.serve(async () => {
                   detail:       e.detail ?? null,
                   updated_at:   now.toISOString(),
                 }))
-              if (eventRows.length > 0) {
+              if (rows.length > 0) {
                 await supabase
                   .from('match_events')
-                  .upsert(eventRows, { onConflict: 'match_key,minute,extra_minute,player_name,type' })
+                  .upsert(rows, { onConflict: 'match_key,minute,extra_minute,player_name,type' })
               }
-            } else if (['1H','2H','HT','ET','BT','P'].includes(statusShort) && f.fixture?.id) {
-              // Apel separat la /fixtures/events dacă events nu sunt în fixture response
+            }
+            if (events.length > 0) {
+              await saveEventRows(events)
+            }
+            // Apel separat la /fixtures/events pentru meciuri live/HT/FT recente
+            if (f.fixture?.id && ['1H','2H','HT','ET','BT','P','FT','AET','PEN'].includes(statusShort)) {
               try {
                 const evRes = await fetch(
                   `https://v3.football.api-sports.io/fixtures/events?fixture=${f.fixture.id}`,
@@ -440,27 +444,8 @@ Deno.serve(async () => {
                 if (evRes.ok) {
                   const evData = await evRes.json()
                   const evList: any[] = evData.response ?? []
-                  console.log(`[api-sports] events for fixture ${f.fixture.id} (${homeNorm} vs ${awayNorm}): ${evList.length}`)
-                  if (evList.length > 0) {
-                    const eventRows = evList
-                      .filter((e: any) => e.player?.name)
-                      .map((e: any) => ({
-                        match_key:    matchKey,
-                        minute:       e.time?.elapsed ?? null,
-                        extra_minute: e.time?.extra ?? null,
-                        team_name:    normalizeTeam(e.team?.name ?? ''),
-                        player_name:  e.player?.name ?? null,
-                        assist_name:  e.assist?.name ?? null,
-                        type:         e.type ?? null,
-                        detail:       e.detail ?? null,
-                        updated_at:   now.toISOString(),
-                      }))
-                    if (eventRows.length > 0) {
-                      await supabase
-                        .from('match_events')
-                        .upsert(eventRows, { onConflict: 'match_key,minute,extra_minute,player_name,type' })
-                    }
-                  }
+                  console.log(`[api-sports] events/fixture ${f.fixture.id} (${homeNorm} vs ${awayNorm}): ${evList.length}`)
+                  if (evList.length > 0) await saveEventRows(evList)
                 }
               } catch (evErr) {
                 console.log(`[api-sports] events fetch error for ${f.fixture.id}: ${evErr}`)
