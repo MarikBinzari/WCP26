@@ -3489,7 +3489,7 @@ const normalizeFifaKoPicks = (picks = {}) => {
   return migrated;
 };
 
-function InstantPickScreen({ onBack, onComplete, onKoComplete, onModify, savedState, onStateChange, tournamentStarted, viewMode=false, koUnlocked=false, startAtKo=false, realStandings={}, koTeams={} }) {
+function InstantPickScreen({ onBack, onComplete, onKoComplete, onKoPick, onModify, savedState, onStateChange, tournamentStarted, viewMode=false, koUnlocked=false, startAtKo=false, realStandings={}, koTeams={} }) {
   const lang = useLang();
   const { pred: PRED_SCORING, predMax: PRED_MAX } = useScoringRules();
   const GROUPS = INTERACTIVE_GROUPS;
@@ -4146,7 +4146,9 @@ function InstantPickScreen({ onBack, onComplete, onKoComplete, onModify, savedSt
           locked={viewMode||isCurrentKoMatchLocked(koIdx)}
           onPick={viewMode||isCurrentKoMatchLocked(koIdx) ? undefined : (result)=>{
             const key=`${koRound}-${koIdx}`;
-            setKoPicks(p=>({...p,[key]:result}));
+            const newKoPicks={...koPicks,[key]:result};
+            setKoPicks(newKoPicks);
+            onKoPick&&onKoPick(newKoPicks);
             if(koIdx<koRoundMatchups.length-1){ setKoIdx(i=>i+1); }
             else {
               const nxt={R32:"R16",R16:"QF",QF:"SF",SF:"F"}[koRound];
@@ -12021,6 +12023,17 @@ function App() {
   // depend on the user's old group-stage / best-third predictions being complete.
   const shouldStartAtKo = koUnlocked;
 
+  // Save direct per-pick (cel mai sigur mecanism — bypass orice closure/timing issue)
+  const _koPickSaveTimer = useRef(null);
+  const onKoPickCallback = (koPicks) => {
+    clearTimeout(_koPickSaveTimer.current);
+    _koPickSaveTimer.current = setTimeout(() => {
+      if (!user) return;
+      const state = instantPickStateRef.current;
+      if (state) savePredictions(user.id, activeBoardId, { ...state, koPicks });
+    }, 600);
+  };
+
   // Auto-save: persistă selecțiile intermediare în DB (debounced 1s)
   // Previne pierderea datelor la refresh de browser
   const _autoSaveTimer = useRef(null);
@@ -12357,6 +12370,7 @@ function App() {
             viewMode={task1DeadlinePassed && !shouldStartAtKo}
             startAtKo={shouldStartAtKo}
             onStateChange={setInstantPickState}
+            onKoPick={onKoPickCallback}
             tournamentStarted={tournamentStarted}
             koUnlocked={koUnlocked}
             onBack={async ()=>{
