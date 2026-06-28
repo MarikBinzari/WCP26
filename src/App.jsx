@@ -10,7 +10,7 @@ import specialPickBadge from "./assets/special-pick-badge.webp";
 import bellIcon from "./assets/bell-icon.svg";
 import { ALL_GROUPS_DATA, FLAGS, TEAM_COLORS, CALENDAR_EVENTS, CL_FINAL } from "./data/worldcup2026.js";
 import { supabase, SUPABASE_URL } from "./supabase.js";
-import { savePredictions, saveExactScore, loadExactScores, createBoard, updateBoard, joinBoardByCode, joinBoardById, ensureBoardScores, loadLeaderboard, loadMyScoreBreakdown, fetchScoringRules, fetchMemberCounts, removeBoardMember, removeParticipation, deleteBoard, loadBoardMembers, checkDbHealth, checkEmailExists, checkNicknameExists, loadLiveScores, subscribeLiveScores, loadPlayers, loadPlayersByTeam, seedPlayersFromApi, saveSpecialPick, uploadAvatar, uploadBoardImage, loadAllBoards, loadAllUserPicks, loadNotifReads, markNotifRead, loadSystemNotifications, loadRealGroupStandings, loadUserBreakdown, savePushSubscription, loadChatMessages, sendChatMessage, editChatMessage, toggleChatLike, toggleChatDislike, subscribeChatMessages, loadMatchPredictions, loadCentralStats, loadBoardExactScores, hasLiveMatches, loadKoTeams, loadMatchEvents } from "./db.js";
+import { savePredictions, saveExactScore, loadExactScores, createBoard, updateBoard, joinBoardByCode, joinBoardById, ensureBoardScores, loadLeaderboard, loadMyScoreBreakdown, fetchScoringRules, fetchMemberCounts, removeBoardMember, removeParticipation, deleteBoard, loadBoardMembers, checkDbHealth, checkEmailExists, checkNicknameExists, loadLiveScores, subscribeLiveScores, loadPlayers, loadPlayersByTeam, seedPlayersFromApi, saveSpecialPick, uploadAvatar, uploadBoardImage, loadAllBoards, loadAllUserPicks, loadNotifReads, markNotifRead, loadSystemNotifications, loadRealGroupStandings, loadBest3Advancing, loadUserBreakdown, savePushSubscription, loadChatMessages, sendChatMessage, editChatMessage, toggleChatLike, toggleChatDislike, subscribeChatMessages, loadMatchPredictions, loadCentralStats, loadBoardExactScores, hasLiveMatches, loadKoTeams, loadMatchEvents } from "./db.js";
 
 const TEAM_CODE = {"Mexico":"MEX","South Africa":"RSA","South Korea":"KOR","Czechia":"CZE","Canada":"CAN","Switzerland":"SUI","Qatar":"QAT","Bosnia-Herzegovina":"BIH","Brazil":"BRA","Morocco":"MAR","Scotland":"SCO","Haiti":"HAI","USA":"USA","Paraguay":"PAR","Australia":"AUS","Turkiye":"TUR","Germany":"GER","Ecuador":"ECU","Ivory Coast":"CIV","Curacao":"CUW","Netherlands":"NED","Japan":"JPN","Tunisia":"TUN","Sweden":"SWE","Belgium":"BEL","Iran":"IRI","Egypt":"EGY","New Zealand":"NZL","Spain":"ESP","Uruguay":"URU","Saudi Arabia":"KSA","Cape Verde":"CPV","France":"FRA","Senegal":"SEN","Norway":"NOR","Iraq":"IRQ","Argentina":"ARG","Austria":"AUT","Algeria":"ALG","Jordan":"JOR","Portugal":"POR","Colombia":"COL","Uzbekistan":"UZB","DR Congo":"COD","England":"ENG","Croatia":"CRO","Panama":"PAN","Ghana":"GHA"};
 
@@ -8126,10 +8126,16 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
   const [breakdownLoading, setBreakdownLoading] = useState(false);
   const [zoomedAvatar, setZoomedAvatar] = useState(null);
   const [liveActive, setLiveActive] = useState(false);
+  const [showBest3Popup, setShowBest3Popup] = useState(false);
+  const [best3Advancing, setBest3Advancing] = useState([]);
 
   useEffect(() => {
     hasLiveMatches().then(setLiveActive);
   }, [leaders]);
+
+  useEffect(() => {
+    loadBest3Advancing().then(rows => { if (rows.length > 0) setBest3Advancing(rows); });
+  }, []);
 
   const openBreakdown = (u) => {
     if (!u.userId) return;
@@ -8558,7 +8564,10 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
                   return (
                     <div style={{border:`1.5px solid ${NAVY}22`,borderRadius:12,padding:"10px 12px",marginBottom:10}}>
                       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:(hits.length||possibles.length)?8:0}}>
-                        <span style={{fontSize:12,fontWeight:800,color:NAVY,textTransform:"uppercase",letterSpacing:1}}>🥉 Best 3rd</span>
+                        <span onClick={()=>setShowBest3Popup(true)}
+                          style={{fontSize:12,fontWeight:800,color:NAVY,textTransform:"uppercase",letterSpacing:1,
+                            cursor:"pointer",textDecoration:"underline dotted",
+                            textUnderlineOffset:3}}>🥉 Best 3rd</span>
                         <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:2}}>
                           <span style={{fontSize:13,fontWeight:800,color:NAVY}}>{hits.length>0?best3Total:posTotal}p</span>
                           <span style={{fontSize:9,color:hits.length>0?"#16a34a":"#9CA3AF",fontStyle:"italic",whiteSpace:"nowrap"}}>{subtitle}</span>
@@ -8587,6 +8596,48 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
                     </div>
                   );
                 })()}
+                {/* Best 3rd advancing popup */}
+                {showBest3Popup&&(
+                  <div onClick={()=>setShowBest3Popup(false)}
+                    style={{position:"fixed",inset:0,zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",
+                      background:"rgba(0,0,0,0.45)",backdropFilter:"blur(2px)"}}>
+                    <div onClick={e=>e.stopPropagation()}
+                      style={{background:"#fff",borderRadius:16,padding:"18px 16px",width:"min(320px,90vw)",
+                        boxShadow:"0 20px 60px rgba(0,0,0,0.25)"}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+                        <span style={{fontSize:13,fontWeight:800,color:NAVY,letterSpacing:0.5}}>🥉 Top 8 Locul 3 · Avansează</span>
+                        <button onClick={()=>setShowBest3Popup(false)}
+                          style={{background:"rgba(0,0,0,0.06)",border:"none",borderRadius:8,
+                            width:28,height:28,cursor:"pointer",fontSize:14,color:"#666",
+                            display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
+                      </div>
+                      {best3Advancing.length===0?(
+                        <div style={{textAlign:"center",padding:"24px 0",color:"#9CA3AF",fontSize:13}}>
+                          <div style={{width:20,height:20,border:`2px solid ${NAVY}`,borderTopColor:"transparent",
+                            borderRadius:"50%",animation:"spin 0.8s linear infinite",
+                            display:"inline-block",marginBottom:8}}/>
+                          <div>Se încarcă...</div>
+                        </div>
+                      ):best3Advancing.map((r,i)=>(
+                        <div key={r.team} style={{display:"flex",alignItems:"center",gap:10,
+                          padding:"7px 0",borderBottom:i<7?"1px solid #F3F4F6":"none"}}>
+                          <span style={{fontSize:11,fontWeight:800,color:i<3?GREEN:NAVY,
+                            minWidth:18,textAlign:"right"}}>{r.rank_best3}</span>
+                          <div style={{width:32,height:22,borderRadius:4,overflow:"hidden",
+                            boxShadow:"0 1px 4px rgba(0,0,0,0.12)",flexShrink:0,position:"relative"}}>
+                            <FlagBg team={r.team} style={{}}/>
+                          </div>
+                          <span style={{fontSize:13,fontWeight:700,color:"#111",flex:1,
+                            textTransform:"uppercase",letterSpacing:0.3}}>{r.team}</span>
+                          <span style={{fontSize:10,color:"#9CA3AF",fontWeight:600}}>Gr. {r.group_id}</span>
+                        </div>
+                      ))}
+                      <div style={{marginTop:10,textAlign:"center",fontSize:10,color:"#9CA3AF"}}>
+                        Atinge în afară pentru a închide
+                      </div>
+                    </div>
+                  </div>
+                )}
                 {/* Exact Scores section */}
                 <div style={{border:`1.5px solid ${NAVY}22`,borderRadius:12,padding:"10px 12px",marginBottom:10}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:hasExact?8:0}}>

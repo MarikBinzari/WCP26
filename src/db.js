@@ -713,6 +713,12 @@ export function subscribeChatMessages(boardId, onNew, onEdit, onReaction, onPres
   }
 }
 
+export async function loadBest3Advancing() {
+  const { data, error } = await supabase.rpc('get_best3_advancing')
+  if (error) { console.error('loadBest3Advancing:', error); return [] }
+  return data || []
+}
+
 export async function loadRealGroupStandings() {
   const { data, error } = await supabase.rpc('get_group_standings')
   if (error) { console.error('loadRealGroupStandings:', error); return {} }
