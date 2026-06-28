@@ -302,6 +302,8 @@ const T = {
     yourPredictions:"Your Predictions", maxPossiblePoints:"Maximum possible points",
     possiblePts:"possible pts", selectScore:"Select predicted score",
     customScore:"Other score", saveScore:"Save ✓", modifyBtn:"← Modify", bestThirdBtn:"Best Third →",
+    completePredictions:"Complete predictions", editPredictions:"Edit predictions",
+    nextRoundAction:"Next", viewSummary:"View summary",
     notStarted:"Not Started", winner:"Winner", scheduledMatches:"Scheduled Matches",
     tabMatches:"Matches", tabStanding:"Standing",
     matchSingular:"match", matchPlural:"matches",
@@ -503,6 +505,8 @@ const T = {
     yourPredictions:"Predicțiile tale", maxPossiblePoints:"Total maxim posibil",
     possiblePts:"pts posibile", selectScore:"Selectează scorul prezis",
     customScore:"Alt scor", saveScore:"Salvează ✓", modifyBtn:"← Modifică", bestThirdBtn:"Locul 3 →",
+    completePredictions:"Completează predicțiile", editPredictions:"Editează predicțiile",
+    nextRoundAction:"Următoarea rundă", viewSummary:"Vezi rezumatul",
     notStarted:"Neînceput", winner:"Câștigător", scheduledMatches:"Meciuri Programate",
     tabMatches:"Meciuri", tabStanding:"Clasament",
     matchSingular:"meci", matchPlural:"meciuri",
@@ -704,6 +708,8 @@ const T = {
     yourPredictions:"Vos Pronostics", maxPossiblePoints:"Points maximum possibles",
     possiblePts:"pts possibles", selectScore:"Sélectionner le score prédit",
     customScore:"Autre score", saveScore:"Enregistrer ✓", modifyBtn:"← Modifier", bestThirdBtn:"Best Third →",
+    completePredictions:"Compléter les pronostics", editPredictions:"Modifier les pronostics",
+    nextRoundAction:"Tour suivant", viewSummary:"Voir le résumé",
     notStarted:"Pas commencé", winner:"Vainqueur", scheduledMatches:"Matchs Programmés",
     tabMatches:"Matchs", tabStanding:"Classement",
     matchSingular:"match", matchPlural:"matchs",
@@ -2660,7 +2666,7 @@ function FlagBg({ team, style }) {
   );
 }
 
-function MatchSwipeCard({ home, away, onPick, onFlash, groupLabel, matchNum, totalMatches, existingPick, onBack, canGoBack, isKo }) {
+function MatchSwipeCard({ home, away, onPick, onFlash, groupLabel, matchNum, totalMatches, existingPick, onBack, canGoBack, isKo, locked=false }) {
   const lang = useLang();
   const startX = useRef(null);
   const startY = useRef(null);
@@ -2682,7 +2688,7 @@ function MatchSwipeCard({ home, away, onPick, onFlash, groupLabel, matchNum, tot
       : [];
 
   const pick = (winner) => {
-    if(pickRef.current || overlayState) return;
+    if(locked || pickRef.current || overlayState) return;
     pickRef.current = true;
     setOffset({x:0,y:0});
     if(winner === "draw") {
@@ -2702,7 +2708,7 @@ function MatchSwipeCard({ home, away, onPick, onFlash, groupLabel, matchNum, tot
   };
 
   const onTouchStart = e => {
-    if(overlayState) return;
+    if(locked || overlayState) return;
     startX.current=e.touches[0].clientX;
     startY.current=e.touches[0].clientY;
   };
@@ -2986,9 +2992,9 @@ function MatchSwipeCard({ home, away, onPick, onFlash, groupLabel, matchNum, tot
         )}
 
         {/* ── HOME TEAM — top-left ── */}
-        <div onClick={()=>pick("home")} role="button" tabIndex={0} onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();pick("home");}}} style={{
+        <div onClick={()=>pick("home")} role="button" tabIndex={locked?-1:0} onKeyDown={e=>{if(!locked&&(e.key==="Enter"||e.key===" ")){e.preventDefault();pick("home");}}} style={{
           position:"absolute", top:"9%", left:"4%",
-          zIndex:5, cursor:"pointer",
+          zIndex:5, cursor:locked?"default":"pointer",
           display:"flex", flexDirection:"column", alignItems:"flex-start", gap:10,
           animation:"slideInTopLeft 0.55s cubic-bezier(0.22,1,0.36,1) both",
           transform: swipeLeft
@@ -3079,9 +3085,9 @@ function MatchSwipeCard({ home, away, onPick, onFlash, groupLabel, matchNum, tot
         </div>
 
         {/* ── AWAY TEAM — bottom-right ── */}
-        <div onClick={()=>pick("away")} role="button" tabIndex={0} onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();pick("away");}}} style={{
+        <div onClick={()=>pick("away")} role="button" tabIndex={locked?-1:0} onKeyDown={e=>{if(!locked&&(e.key==="Enter"||e.key===" ")){e.preventDefault();pick("away");}}} style={{
           position:"absolute", bottom:"18%", right:"4%",
-          zIndex:5, cursor:"pointer",
+          zIndex:5, cursor:locked?"default":"pointer",
           display:"flex", flexDirection:"column", alignItems:"flex-end", gap:10,
           animation:"slideInBottomRight 0.55s cubic-bezier(0.22,1,0.36,1) 0.1s both",
           transform: swipeRight
@@ -3115,8 +3121,8 @@ function MatchSwipeCard({ home, away, onPick, onFlash, groupLabel, matchNum, tot
           position:"absolute", zIndex:6, bottom:20, left:14, right:14,
           display:"flex", justifyContent:"space-between", alignItems:"flex-end",
         }}>
-          <button onClick={()=>pick("home")} style={{
-            cursor:"pointer",
+          <button onClick={()=>pick("home")} disabled={locked} style={{
+            cursor:locked?"default":"pointer",
             background:"rgba(0,0,0,0.65)", backdropFilter:"blur(12px)",
             borderRadius:14, padding:"8px 14px",
             border:"1.5px solid rgba(255,255,255,0.18)",
@@ -3143,8 +3149,8 @@ function MatchSwipeCard({ home, away, onPick, onFlash, groupLabel, matchNum, tot
             </button>
           )}
 
-          <button onClick={()=>pick("away")} style={{
-            cursor:"pointer",
+          <button onClick={()=>pick("away")} disabled={locked} style={{
+            cursor:locked?"default":"pointer",
             background:"rgba(0,0,0,0.65)", backdropFilter:"blur(12px)",
             borderRadius:14, padding:"8px 14px", textAlign:"right",
             border:"1.5px solid rgba(255,255,255,0.18)",
@@ -3327,12 +3333,14 @@ function Best3Screen({ groups, getGroupStanding, picks, best3, setBest3, onDone 
 }
 
 
-function GroupIntroScreen({ group, teams: teamsProp, isKo, onStart, hideHeader=false, picks={}, viewMode=false }) {
+function GroupIntroScreen({ group, teams: teamsProp, isKo, onStart, onNext, onPickChange, isMatchLocked=()=>false, hideHeader=false, picks={}, viewMode=false }) {
   const lang = useLang();
   const teams = isKo ? null : (ALL_GROUPS_DATA[group]||[]);
   const matchCount = isKo ? (teamsProp||[]).length : (GROUP_MATCHUPS[group]||[]).length;
   const nextRoundLabel = {R32:"Round of 16",R16:"Quarter-Finals",QF:"Semi-Finals",SF:"Final"}[group]||"Next Round";
   const matches = teamsProp||[];
+  const hasRoundPicks = matches.some((_,i)=>!!picks[`${group}-${i}`]);
+  const roundComplete = matches.length>0 && matches.every((_,i)=>!!picks[`${group}-${i}`]);
   const matchPairs = [];
   for(let i=0;i<matches.length;i+=2) matchPairs.push([matches[i],matches[i+1]]);
 
@@ -3352,16 +3360,26 @@ function GroupIntroScreen({ group, teams: teamsProp, isKo, onStart, hideHeader=f
                   <div key={gi} style={{display:"flex",alignItems:"center",gap:6}}>
                     <div style={{display:"flex",flexDirection:"column",gap:5,flex:1}}>
                       {[m1,m2].filter(Boolean).map(([h,a],mi)=>{
-                        const p=picks[`${group}-${gi*2+mi}`];
+                        const matchIdx=gi*2+mi;
+                        const p=picks[`${group}-${matchIdx}`];
                         const hWon=p==="home", aWon=p==="away";
+                        const locked=isMatchLocked(matchIdx);
+                        const canEdit=!locked&&h!=="TBD"&&a!=="TBD"&&!!onPickChange;
                         return (
                           <div key={mi} style={{background:"#fff",borderRadius:10,border:`1px solid ${hWon||aWon?GREEN+"55":col+"22"}`,overflow:"hidden",boxShadow:"0 1px 4px rgba(0,0,0,0.06)"}}>
-                            <div style={{padding:"7px 10px",borderBottom:"1px solid rgba(0,0,0,0.05)",display:"flex",alignItems:"center",gap:8,background:hWon?GREEN+"15":"transparent"}}>
+                            <div role={canEdit?"button":undefined} tabIndex={canEdit?0:undefined}
+                              onClick={()=>canEdit&&onPickChange(matchIdx,"home")}
+                              onKeyDown={canEdit?e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();onPickChange(matchIdx,"home");}}:undefined}
+                              style={{padding:"7px 10px",borderBottom:"1px solid rgba(0,0,0,0.05)",display:"flex",alignItems:"center",gap:8,background:hWon?GREEN+"15":"transparent",cursor:canEdit?"pointer":"default",WebkitTapHighlightColor:"transparent"}}>
                               <span style={{fontSize:20,lineHeight:1}}>{FLAGS[h]||"🏳"}</span>
                               <span style={{fontSize:12,fontWeight:700,color:hWon?GREEN:DARK,flex:1}}>{h||"TBD"}</span>
                               {hWon&&<span style={{fontSize:11,fontWeight:900,color:GREEN}}>✓</span>}
+                              {locked&&<span style={{fontSize:11,color:"#aaa"}}>🔒</span>}
                             </div>
-                            <div style={{padding:"7px 10px",display:"flex",alignItems:"center",gap:8,background:aWon?GREEN+"15":"transparent"}}>
+                            <div role={canEdit?"button":undefined} tabIndex={canEdit?0:undefined}
+                              onClick={()=>canEdit&&onPickChange(matchIdx,"away")}
+                              onKeyDown={canEdit?e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();onPickChange(matchIdx,"away");}}:undefined}
+                              style={{padding:"7px 10px",display:"flex",alignItems:"center",gap:8,background:aWon?GREEN+"15":"transparent",cursor:canEdit?"pointer":"default",WebkitTapHighlightColor:"transparent"}}>
                               <span style={{fontSize:20,lineHeight:1}}>{FLAGS[a]||"🏳"}</span>
                               <span style={{fontSize:12,fontWeight:700,color:aWon?GREEN:DARK,flex:1}}>{a||"TBD"}</span>
                               {aWon&&<span style={{fontSize:11,fontWeight:900,color:GREEN}}>✓</span>}
@@ -3407,14 +3425,25 @@ function GroupIntroScreen({ group, teams: teamsProp, isKo, onStart, hideHeader=f
             <div style={{fontSize:11,color:"rgba(0,0,0,0.35)",fontWeight:700,textAlign:"center",marginBottom:10,letterSpacing:0.5}}>
               {matchCount} {T[lang].matchesToPredict}
             </div>
-            <button onClick={!viewMode ? onStart : undefined}
-              style={{width:"100%",padding:"15px 0",borderRadius:14,border:"none",
-                background:viewMode?"rgba(0,0,0,0.07)":`linear-gradient(135deg,${NAVY},#003580)`,
-                color:viewMode?"rgba(0,0,0,0.25)":"#fff",fontSize:15,fontWeight:900,
-                cursor:viewMode?"default":"pointer",
-                boxShadow:viewMode?"none":"0 4px 20px rgba(0,32,91,0.3)",letterSpacing:1}}>
-              {viewMode ? T[lang].viewOnly : T[lang].startMatches}
-            </button>
+            <div style={{display:"flex",gap:8}}>
+              <button onClick={!viewMode ? onStart : undefined}
+                style={{flex:1,padding:"15px 8px",borderRadius:14,border:"none",
+                  background:viewMode?"rgba(0,0,0,0.07)":`linear-gradient(135deg,${NAVY},#003580)`,
+                  color:viewMode?"rgba(0,0,0,0.25)":"#fff",fontSize:14,fontWeight:900,
+                  cursor:viewMode?"default":"pointer",
+                  boxShadow:viewMode?"none":"0 4px 20px rgba(0,32,91,0.3)",letterSpacing:0.4}}>
+                {viewMode ? T[lang].viewOnly : hasRoundPicks ? T[lang].editPredictions : T[lang].completePredictions}
+              </button>
+              {roundComplete&&onNext&&(
+                <button onClick={onNext}
+                  style={{flex:1,padding:"15px 8px",borderRadius:14,border:"none",
+                    background:`linear-gradient(135deg,${GREEN},#007A36)`,
+                    color:"#fff",fontSize:14,fontWeight:900,cursor:"pointer",
+                    boxShadow:"0 4px 20px rgba(0,154,68,0.3)",letterSpacing:0.4}}>
+                  {group==="F" ? T[lang].viewSummary : T[lang].nextRoundAction} →
+                </button>
+              )}
+            </div>
           </div>
         </>
       ) : (
@@ -3562,6 +3591,21 @@ function InstantPickScreen({ onBack, onComplete, onKoComplete, onModify, savedSt
     '33-0','33-2', // Argentina-Cabo Verde, Australia-Egypt
     '32-2','33-1', // Switzerland-Algeria, Colombia-Ghana
   ];
+  const KO_MATCH_KEYS = {
+    R32:R32_KEYS,
+    R16:['34-0','34-1','35-0','35-1','36-0','36-1','37-0','37-1'],
+    QF:['39-0','40-0','41-0','41-1'],
+    SF:['44-0','45-0'],
+    F:['49-0'],
+  };
+  const isCurrentKoMatchLocked = (matchIdx) => {
+    const key=KO_MATCH_KEYS[koRound]?.[matchIdx];
+    if(!key) return false;
+    const [sourceDay,sourceIdx]=key.split("-").map(Number);
+    const event=CALENDAR_EVENTS.find(item=>item.day===sourceDay);
+    const match=event?.matches?.[sourceIdx];
+    return match ? isMatchPast(sourceDay,match.time,null,12,match.kickoffUtc) : false;
+  };
   const r32Matchups = R32_KEYS.map(key => ({
     home: koTeams[key]?.home || 'TBD',
     away: koTeams[key]?.away || 'TBD',
@@ -4046,7 +4090,18 @@ function InstantPickScreen({ onBack, onComplete, onKoComplete, onModify, savedSt
         <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.055,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
         {sharedHeader}
         <GroupIntroScreen group={koRound} teams={koRoundMatchups.map(m=>[m.home,m.away])}
-          isKo={true} hideHeader={true} onStart={()=>setKoShowIntro(false)} picks={koPicks} viewMode={viewMode}/>
+          isKo={true} hideHeader={true} onStart={()=>setKoShowIntro(false)}
+          onNext={()=>{
+            const nextRound={R32:"R16",R16:"QF",QF:"SF",SF:"F"}[koRound];
+            if(nextRound){setKoRound(nextRound);setKoIdx(0);setKoShowIntro(true);}
+            else setShowFinalSummary(true);
+          }}
+          onPickChange={(matchIdx, side)=>setKoPicks(prev=>({
+            ...prev,
+            [`${koRound}-${matchIdx}`]:side,
+          }))}
+          isMatchLocked={isCurrentKoMatchLocked}
+          picks={koPicks} viewMode={viewMode}/>
       </div>
     );
     const predictedKo = (predictedMatchupsMap[koRound]||[])[koIdx];
@@ -4087,7 +4142,8 @@ function InstantPickScreen({ onBack, onComplete, onKoComplete, onModify, savedSt
         <MatchSwipeCard key={`ko-${koRound}-${koIdx}`}
           home={currentKo?.home||"TBD"} away={currentKo?.away||"TBD"}
           existingPick={koPicks[`${koRound}-${koIdx}`]||null}
-          onPick={viewMode ? undefined : (result)=>{
+          locked={viewMode||isCurrentKoMatchLocked(koIdx)}
+          onPick={viewMode||isCurrentKoMatchLocked(koIdx) ? undefined : (result)=>{
             const key=`${koRound}-${koIdx}`;
             setKoPicks(p=>({...p,[key]:result}));
             if(koIdx<koRoundMatchups.length-1){ setKoIdx(i=>i+1); }
