@@ -3448,6 +3448,18 @@ function GroupIntroScreen({ group, teams: teamsProp, isKo, onStart, hideHeader=f
 }
 
 
+const FIFA_SECOND_CHANCE_BRACKET_VERSION = 1;
+const FIFA_R32_OLD_INDEX_BY_NEW = [1,4,0,2,10,11,8,9,3,5,6,7,13,15,12,14];
+const normalizeFifaKoPicks = (picks = {}) => {
+  if (picks.__fifaSecondChanceVersion === FIFA_SECOND_CHANCE_BRACKET_VERSION) return picks;
+  const migrated = { __fifaSecondChanceVersion: FIFA_SECOND_CHANCE_BRACKET_VERSION };
+  FIFA_R32_OLD_INDEX_BY_NEW.forEach((oldIdx, newIdx) => {
+    const pick = picks[`R32-${oldIdx}`];
+    if (pick) migrated[`R32-${newIdx}`] = pick;
+  });
+  return migrated;
+};
+
 function InstantPickScreen({ onBack, onComplete, onKoComplete, onModify, savedState, onStateChange, tournamentStarted, viewMode=false, koUnlocked=false, startAtKo=false, realStandings={}, koTeams={} }) {
   const lang = useLang();
   const { pred: PRED_SCORING, predMax: PRED_MAX } = useScoringRules();
@@ -3458,7 +3470,7 @@ function InstantPickScreen({ onBack, onComplete, onKoComplete, onModify, savedSt
   const [groupRankings, setGroupRankings] = useState(savedState?.groupRankings||{});
   const [best3, setBest3] = useState(savedState?.best3||[]);
   const [koIdx, setKoIdx] = useState(savedState?.koIdx||0);
-  const [koPicks, setKoPicks] = useState(savedState?.koPicks||{});
+  const [koPicks, setKoPicks] = useState(()=>normalizeFifaKoPicks(savedState?.koPicks||{}));
   const [koShowIntro, setKoShowIntro] = useState(savedState?.koShowIntro!==undefined?savedState.koShowIntro:true);
   const [koRound, setKoRound] = useState(savedState?.koRound||"R32");
   const [showFinalSummary, setShowFinalSummary] = useState(savedState?.showFinalSummary||false);
@@ -3539,37 +3551,43 @@ function InstantPickScreen({ onBack, onComplete, onKoComplete, onModify, savedSt
   const W = (i) => groupWinners[i] || "TBD";
   const R = (i) => groupRunners[i]  || "TBD";
   const B = (i) => best3Teams[i]    || "TBD";
-  const R32_KEYS = ['28-0','29-0','29-1','29-2','30-0','30-1','30-2','31-0','31-1','31-2','32-0','32-1','32-2','33-0','33-1','33-2'];
+  // FIFA Second Chance bracket order (bracketId 1..16), not calendar order.
+  const R32_KEYS = [
+    '29-0','30-0', // Germany-Paraguay, France-Sweden
+    '28-0','29-1', // South Africa-Canada, Netherlands-Morocco
+    '32-0','32-1', // Portugal-Croatia, Spain-Austria
+    '31-1','31-2', // USA-Bosnia, Belgium-Senegal
+    '29-2','30-1', // Brazil-Japan, Côte d'Ivoire-Norway
+    '30-2','31-0', // Mexico-Ecuador, England-Congo DR
+    '33-0','33-2', // Argentina-Cabo Verde, Australia-Egypt
+    '32-2','33-1', // Switzerland-Algeria, Colombia-Ghana
+  ];
   const r32Matchups = R32_KEYS.map(key => ({
     home: koTeams[key]?.home || 'TBD',
     away: koTeams[key]?.away || 'TBD',
   })); // = 16 meciuri, ordine FIFA reală
 
-  const getWinners = (roundKey) =>
-    Object.entries(koPicks)
-      .filter(([k])=>k.startsWith(roundKey+"-"))
-      .sort(([a],[b])=>parseInt(a.split("-")[1])-parseInt(b.split("-")[1]))
-      .map(([k,v])=>{
-        const idx=parseInt(k.split("-")[1]);
-        const matchups = roundKey==="R32" ? r32Matchups
-          : roundKey==="R16" ? r16Matchups
-          : roundKey==="QF"  ? qfMatchups
-          : roundKey==="SF"  ? sfMatchups : [];
-        const m = matchups[idx];
-        if(!m) return "TBD";
-        return v==="home"?m.home:v==="away"?m.away:"TBD";
-      });
+  const getWinners = (roundKey, matchups) =>
+    (matchups || []).map((m, idx) => {
+      const pick = koPicks[`${roundKey}-${idx}`];
+      if(!m || !pick) return "TBD";
+      return pick==="home" ? m.home : pick==="away" ? m.away : "TBD";
+    });
 
-  const makePairs = (winners) => {
-    const pairs=[];
-    for(let i=0;i<winners.length;i+=2) pairs.push({home:winners[i]||"TBD",away:winners[i+1]||"TBD"});
-    return pairs;
-  };
+  const pairWinners = (winners, pairMap) =>
+    pairMap.map(([homeIdx, awayIdx]) => ({
+      home: winners[homeIdx] || "TBD",
+      away: winners[awayIdx] || "TBD",
+    }));
 
-  const r16Matchups = makePairs(getWinners("R32")); // 8 meciuri
-  const qfMatchups  = makePairs(getWinners("R16")); // 4 meciuri
-  const sfMatchups  = makePairs(getWinners("QF"));  // 2 meciuri
-  const fMatchups   = makePairs(getWinners("SF"));  // 1 meci
+  const r16Matchups = pairWinners(getWinners("R32", r32Matchups), [
+    [0,1], [2,3], [4,5], [6,7], [8,9], [10,11], [12,13], [14,15],
+  ]);
+  const qfMatchups = pairWinners(getWinners("R16", r16Matchups), [
+    [0,1], [2,3], [4,5], [6,7],
+  ]);
+  const sfMatchups = pairWinners(getWinners("QF", qfMatchups), [[0,1], [2,3]]);
+  const fMatchups  = pairWinners(getWinners("SF", sfMatchups), [[0,1]]);
 
   const koRoundMatchupsMap = {R32:r32Matchups,R16:r16Matchups,QF:qfMatchups,SF:sfMatchups,F:fMatchups};
   const koRoundMatchups = stage!=="groups"&&stage!=="best3" ? (koRoundMatchupsMap[koRound]||[]) : [];
@@ -3581,12 +3599,8 @@ function InstantPickScreen({ onBack, onComplete, onKoComplete, onModify, savedSt
   const PW = (i) => predWinners[i]  || "TBD";
   const PR = (i) => predRunners[i]  || "TBD";
   const PB = (i) => predBest3[i]    || "TBD";
-  const predictedR32 = [
-    {home:PW(0),away:PR(2)},{home:PW(2),away:PR(0)},{home:PW(1),away:PR(3)},{home:PW(3),away:PR(1)},
-    {home:PW(4),away:PR(6)},{home:PW(6),away:PR(4)},{home:PW(5),away:PR(7)},{home:PW(7),away:PR(5)},
-    {home:PW(8),away:PR(10)},{home:PW(10),away:PR(8)},{home:PW(9),away:PR(11)},{home:PW(11),away:PR(9)},
-    {home:PB(0),away:PB(1)},{home:PB(2),away:PB(3)},{home:PB(4),away:PB(5)},{home:PB(6),away:PB(7)},
-  ];
+  // Second Chance starts from the real R32 field supplied by FIFA.
+  const predictedR32 = r32Matchups;
   const getPredWinners = (roundKey, predMap) =>
     Array.from({length:(predMap[roundKey]||[]).length},(_,i)=>{
       const pick=koPicks[`${roundKey}-${i}`];
@@ -3595,13 +3609,17 @@ function InstantPickScreen({ onBack, onComplete, onKoComplete, onModify, savedSt
       return pick==="home"?m.home:m.away;
     });
   const predR16Map = {R32:predictedR32};
-  const predictedR16 = makePairs(getPredWinners("R32", predR16Map));
+  const predictedR16 = pairWinners(getPredWinners("R32", predR16Map), [
+    [0,1], [2,3], [4,5], [6,7], [8,9], [10,11], [12,13], [14,15],
+  ]);
   const predR16Full  = {R32:predictedR32,R16:predictedR16};
-  const predictedQF  = makePairs(getPredWinners("R16", predR16Full));
+  const predictedQF  = pairWinners(getPredWinners("R16", predR16Full), [
+    [0,1], [2,3], [4,5], [6,7],
+  ]);
   const predQFFull   = {R32:predictedR32,R16:predictedR16,QF:predictedQF};
-  const predictedSF  = makePairs(getPredWinners("QF",  predQFFull));
+  const predictedSF  = pairWinners(getPredWinners("QF", predQFFull), [[0,1], [2,3]]);
   const predSFFull   = {R32:predictedR32,R16:predictedR16,QF:predictedQF,SF:predictedSF};
-  const predictedF   = makePairs(getPredWinners("SF",  predSFFull));
+  const predictedF   = pairWinners(getPredWinners("SF", predSFFull), [[0,1]]);
   const predictedMatchupsMap = {R32:predictedR32,R16:predictedR16,QF:predictedQF,SF:predictedSF,F:predictedF};
 
   const koLabel={R32:"Round of 32",R16:"Round of 16",QF:"Quarter-Finals",SF:"Semi-Finals",F:"Final"}[koRound]||koRound;
@@ -5916,6 +5934,11 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
   const predDoneCount = Math.max(predictionProgress.done, groupsDoneCount !== null ? groupsDoneCount : 0);
   const _predStepsTotal = predictionProgress.total;
   const _predStepsDone = _boardDone ? _predStepsTotal : predDoneCount;
+  const r32Total = 16;
+  const r32Done = Array.from({length:r32Total},(_,i)=>`R32-${i}`)
+    .filter(key => !!instantPickState?.koPicks?.[key]).length;
+  const currentPredDone = koUnlocked ? r32Done : predDoneCount;
+  const currentPredTotal = koUnlocked ? r32Total : _predStepsTotal;
   const naCard = (()=>{
     if(nextTask===0) return { title:T[lang].predCardTitle, sub:T[lang].predCardSub, due:!_deadlinePassed?T[lang].dueJun11:null, progress:_predStepsDone, total:_predStepsTotal, label:predDoneCount>0?T[lang].continuePredictions:T[lang].startPredictions, onClick:()=>onPredict(activeId), badge:T[lang].nextActionLabel };
     if(nextTask===1) return { title:T[lang].exactCardTitle, sub:T[lang].exactCardSub, due:!exactWeekHasStarted&&exactWeekStart>8?exactWeekStartLabel:null, progress:exactWeekScored, total:Math.max(2, exactWeekTotal), label:T[lang].openScores, onClick:()=>onOpenGroups&&onOpenGroups(exactWeekStart), badge:T[lang].nextActionLabel };
@@ -6053,10 +6076,10 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
               <ProgressTile
                 icon="📋"
                 title={T[lang].predictions}
-                value={`${predDoneCount}/${_predStepsTotal}`}
+                value={`${currentPredDone}/${currentPredTotal}`}
                 withDivider
-                onClick={()=>onPredict(activeId)}
-                copyEnabled={predictionProgress.complete&&!_deadlinePassed}
+                onClick={()=>koUnlocked?onPredictKo(activeId):onPredict(activeId)}
+                copyEnabled={(koUnlocked?r32Done===r32Total:predictionProgress.complete&&!_deadlinePassed)}
                 onCopy={()=>{setCopyDone({});setShowCopySheet("predictions");}}
               />
               <ProgressTile
@@ -11913,7 +11936,7 @@ function App() {
   const task1DeadlinePassed = simDay ? (simDay > 11 || (simDay === 11 && (simHour||0) >= 19)) : new Date() >= _predDeadline;
   // Once the real knockout bracket is available, R32 predictions no longer
   // depend on the user's old group-stage / best-third predictions being complete.
-  const shouldStartAtKo = koUnlocked && !koPickDone;
+  const shouldStartAtKo = koUnlocked;
 
   // Auto-save: persistă selecțiile intermediare în DB (debounced 1s)
   // Previne pierderea datelor la refresh de browser
