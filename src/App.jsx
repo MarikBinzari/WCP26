@@ -4096,10 +4096,11 @@ function InstantPickScreen({ onBack, onComplete, onKoComplete, onKoPick, onModif
             if(nextRound){setKoRound(nextRound);setKoIdx(0);setKoShowIntro(true);}
             else setShowFinalSummary(true);
           }}
-          onPickChange={(matchIdx, side)=>setKoPicks(prev=>({
-            ...prev,
-            [`${koRound}-${matchIdx}`]:side,
-          }))}
+          onPickChange={(matchIdx, side)=>{
+            const newKoPicks={...koPicks,[`${koRound}-${matchIdx}`]:side};
+            setKoPicks(newKoPicks);
+            onKoPick&&onKoPick(newKoPicks);
+          }}
           isRoundComplete={koRoundDone(koRound)}
           isMatchLocked={isCurrentKoMatchLocked}
           picks={koPicks} viewMode={viewMode}/>
