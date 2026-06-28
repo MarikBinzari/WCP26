@@ -874,9 +874,21 @@ const july = (d) => new Date(Date.UTC(2026, 6, d, 5, 0, 0));
 const ET_OFFSET_MS = 4 * 3600_000;
 
 // Convert ET match time to user's local time for display
+const ROMANIA_TIME_ZONE = "Europe/Bucharest";
+const getRomaniaDateParts = (value) => {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: ROMANIA_TIME_ZONE,
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+  }).formatToParts(new Date(value));
+  const read = type => Number(parts.find(part => part.type === type)?.value);
+  return { year: read("year"), month: read("month"), day: read("day") };
+};
+
 const getLocalKickoffDay = (kickoffUtc, fallback) => {
   if (!kickoffUtc) return fallback;
-  return new Date(kickoffUtc).getDate();
+  return getRomaniaDateParts(kickoffUtc).day;
 };
 
 const encodeCalendarDay = (date) => {
@@ -889,8 +901,14 @@ const encodeCalendarDay = (date) => {
   return d;
 };
 
-const getMatchDisplayDay = (match, fallbackDay) =>
-  match?.kickoffUtc ? encodeCalendarDay(new Date(match.kickoffUtc)) : fallbackDay;
+const getMatchDisplayDay = (match, fallbackDay) => {
+  if (!match?.kickoffUtc) return fallbackDay;
+  const local = getRomaniaDateParts(match.kickoffUtc);
+  if (local.year === 2026 && local.month === 5) return local.day - 31;
+  if (local.year === 2026 && local.month === 6) return local.day;
+  if (local.year === 2026 && local.month === 7) return local.day + 30;
+  return fallbackDay;
+};
 
 const CANONICAL_MATCH_KEYS = {
   '27-2': '26-2',
@@ -932,7 +950,12 @@ const getDisplayCalendarEvents = () => {
 
 const fmtMatchTime = (day, timeET, kickoffUtc=null) => {
   if (kickoffUtc) {
-    return new Date(kickoffUtc).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+    return new Date(kickoffUtc).toLocaleTimeString('ro-RO', {
+      timeZone: ROMANIA_TIME_ZONE,
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    });
   }
   if (!day || !timeET) return timeET || '';
   const month = day <= 30 ? 5 : 6;
@@ -9045,11 +9068,11 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
   const requestedDay = initialDay ?? todayDay;
   const defaultDay = requestedDay;
   // Auto-select the week that contains today (pre-WC weeks included)
-  const defaultWeek = initialWeek || [-6,1,8,15,22,29].find(w=>requestedDay>=w&&requestedDay<=w+6) || -6;
+  const defaultWeek = initialWeek || weeks.find(w=>requestedDay>=w&&requestedDay<=w+6) || -6;
   const [weekStart, setWeekStart] = useState(defaultWeek);
   useEffect(()=>{
     if(initialWeek || initialDay != null) {
-      const nextWeek = initialWeek || [-6,1,8,15,22,29].find(w=>requestedDay>=w&&requestedDay<=w+6) || -6;
+      const nextWeek = initialWeek || weeks.find(w=>requestedDay>=w&&requestedDay<=w+6) || -6;
       setWeekStart(nextWeek);
       const mm_ = {};
       calendarEvents.forEach(e => { mm_[e.day] = e.matches; });
@@ -9812,7 +9835,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
           {(()=>{
             const groups = [...new Set(sm.map(m=>m.group))].filter(Boolean);
             const LETTER_GROUPS = ["A","B","C","D","E","F","G","H","I","J","K","L"];
-            const KO_STAGES = ["R16","QF","SF","3rd","Final"];
+            const KO_STAGES = ["R32","R16","QF","SF","3rd","Final"];
             const isUCLDay = groups.length===1 && groups[0]==="UCL";
             const hasGroupMatches = groups.some(g=>LETTER_GROUPS.includes(g));
             const activeGrp = selGroup || (hasGroupMatches ? groups.find(g=>LETTER_GROUPS.includes(g)) : groups.find(g=>KO_STAGES.includes(g))) || groups[0] || "A";
@@ -9871,7 +9894,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                         );
                       })()}
                       {/* KO stage tabs */}
-                      {[{id:"R16",label:"R16"},{id:"QF",label:"QF"},{id:"SF",label:"SF"},{id:"3rd",label:"3rd"},{id:"Final",label:"🏆"}].map(s=>{
+                      {[{id:"R32",label:"R32"},{id:"R16",label:"R16"},{id:"QF",label:"QF"},{id:"SF",label:"SF"},{id:"3rd",label:"3rd"},{id:"Final",label:"🏆"}].map(s=>{
                         const isActive = activeStage===s.id;
                         const hasMatchToday = groups.includes(s.id);
                         return (
@@ -11885,9 +11908,8 @@ function App() {
       return next;
     });
   };
-  const _koUnlockDate = new Date(appConfig.ko_unlock_date || '2026-06-28T04:00:00Z');
   const _predDeadline = new Date(appConfig.prediction_deadline || '2026-06-11T20:00:00Z');
-  const koUnlocked = simDay ? simDay > 27 : new Date() >= _koUnlockDate;
+  const koUnlocked = true;
   const task1DeadlinePassed = simDay ? (simDay > 11 || (simDay === 11 && (simHour||0) >= 19)) : new Date() >= _predDeadline;
   // Once the real knockout bracket is available, R32 predictions no longer
   // depend on the user's old group-stage / best-third predictions being complete.
