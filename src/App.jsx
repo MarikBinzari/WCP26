@@ -5963,7 +5963,7 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
       if (!isWeekUnlocked(e.day, simDay, simHour, simMin)) return;
       mm[e.day] = (e.matches || []).filter(m =>
         m.matchKey !== 'cl-final' &&
-        (m.homeFlag !== '🏆' || !!koTeams[m.matchKey]) &&
+        (m.homeFlag !== '🏆' || !!koTeams[m.matchKey] || (m.home !== 'TBD' && m.away !== 'TBD')) &&
         !isMatchPast(e.day, m.time, simDay, simHour, m.kickoffUtc)
       );
     });
@@ -5978,8 +5978,8 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
   const todayCalendarWeek = _calWeeks.find(w=>todaySimEx>=w&&todaySimEx<=w+6) ?? _calWeeks[0];
   const _exSimNow = simDay ? new Date(Date.UTC(2026,5,simDay,(simHour||12)+4,simMin||0,0)) : new Date();
   const _exJune = (d) => new Date(Date.UTC(2026,5,d,5,0,0)); // 08:00 Romania (EEST = UTC+3) = 05:00 UTC
-  // Advance week as soon as unlock fires, even if still same calendar day
-  const exactWeekStart = _exSimNow>=_exJune(28)?29:_exSimNow>=_exJune(20)?22:_exSimNow>=_exJune(14)?15:8;
+  // Advance to next week only after current week's last day passes midnight
+  const exactWeekStart = _exSimNow>=_exJune(29)?29:_exSimNow>=_exJune(21)?22:_exSimNow>=_exJune(14)?15:8;
   const exactWeekTotal = _exWkTotal(exactWeekStart);
   const exactWeekScored = _exWkScored(exactWeekStart);
   const exactWeekDone = exactWeekTotal===0 || exactWeekScored===exactWeekTotal;
