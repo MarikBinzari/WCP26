@@ -291,6 +291,7 @@ const T = {
     rulesTask1Header:"Task 1 · Groups & Best Third", rulesTask1Due:"Deadline Jun 11",
     rulesTask2Header:"Task 2 · Knockout Phase", rulesTask2Due:"Unlocks Jun 27",
     exactDesc:"Predict the exact score of each match every week. New matches available at the latest by Sunday 8:00 AM.",
+    koScore90Note:"Score after 90 minutes · Extra time and penalties excluded",
     exactScore:"EXACT SCORE", confirmScore:"Confirm Score",
     save:"Save", cancel:"Cancel", del:"Delete", done:"Done",
     semiFinalsDone:"Semi-Finals complete", theFinalsAwait:"The Finals Await",
@@ -491,6 +492,7 @@ const T = {
     rulesTask1Header:"Task 1 · Grupe & Cel mai bun loc 3", rulesTask1Due:"Termen 11 Iun",
     rulesTask2Header:"Task 2 · Faza Eliminatorie", rulesTask2Due:"Disponibil din 27 Iun",
     exactDesc:"Prezice scorul exact al fiecărui meci în fiecare săptămână. Meciuri noi disponibile cel târziu duminică la 8:00.",
+    koScore90Note:"Scor după 90 de minute · Fără prelungiri și penalty-uri",
     exactScore:"SCOR EXACT", confirmScore:"Confirmă Scorul",
     save:"Salvează", cancel:"Anulează", del:"Șterge", done:"Gata",
     semiFinalsDone:"Semi-Finale Complete", theFinalsAwait:"Finala Te Așteaptă",
@@ -691,6 +693,7 @@ const T = {
     rulesTask1Header:"Tâche 1 · Groupes & Meilleur 3e", rulesTask1Due:"Date limite 11 Juin",
     rulesTask2Header:"Tâche 2 · Phase Éliminatoire", rulesTask2Due:"Disponible dès le 27 Juin",
     exactDesc:"Prédisez le score exact de chaque match chaque semaine. Nouveaux matchs disponibles au plus tard le dimanche à 8h.",
+    koScore90Note:"Score après 90 minutes · Prolongations et tirs au but exclus",
     exactScore:"SCORE EXACT", confirmScore:"Confirmer le Score",
     save:"Enregistrer", cancel:"Annuler", del:"Supprimer", done:"Terminé",
     semiFinalsDone:"Demi-Finales terminées", theFinalsAwait:"La Finale Vous Attend",
@@ -3593,7 +3596,7 @@ function InstantPickScreen({ onBack, onComplete, onKoComplete, onModify, savedSt
   const activePhaseId = stage==="best3"?"best3":stage==="ko"?koRound:null;
   const phaseAccessible = (id) => {
     if(id==="best3") return allGroupsDone;
-    return koUnlocked && best3Done;
+    return koUnlocked;
   };
   const goToPhase = (id) => {
     if(!phaseAccessible(id)) return;
@@ -9231,12 +9234,21 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
           }}
           onMatchClick={(match,day,idx)=>{
             if(!isWeekUnlocked(day, simDay, simHour, simMin)) return;
-            if(match.homeFlag==='🏆') return; // teams not determined yet
+            const matchKey = getMatchKey(match,day,idx);
+            if(match.homeFlag==='🏆' && !koTeams[matchKey]) return; // teams not determined yet
             // UCL Final (day -1): allow prediction before kickoff only
             const isUCL = match.group==="UCL";
             if(!isUCL && isMatchPast(day, match.time, simDay, simHour, match.kickoffUtc)) return;
             if(isUCL && isMatchPast(day, match.time, null, null, match.kickoffUtc)) return;
-            setScorePick({match,day,idx,key:getMatchKey(match,day,idx)});
+            const resolvedTeams = koTeams[matchKey];
+            const resolvedMatch = resolvedTeams ? {
+              ...match,
+              home: resolvedTeams.home,
+              away: resolvedTeams.away,
+              homeFlag: FLAGS[resolvedTeams.home] || match.homeFlag,
+              awayFlag: FLAGS[resolvedTeams.away] || match.awayFlag,
+            } : match;
+            setScorePick({match:resolvedMatch,day,idx,key:matchKey});
           }}/>
 
 
@@ -9395,7 +9407,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
                     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",
                       padding:"5px 12px",
                       background:isLive?"rgba(0,32,91,0.06)":isFinished?"rgba(0,154,68,0.06)":"rgba(0,0,0,0.03)"}}>
-                      <span style={{fontSize:11,color:"#aaa",fontWeight:600}}>{getLocalKickoffDay(m.kickoffUtc,m.day)} {m.kickoffUtc&&new Date(m.kickoffUtc).getUTCMonth()===6?'July':'June'} · {fmtMatchTime(m.day, m.time, m.kickoffUtc)}</span>
+                      <span style={{fontSize:11,color:"#aaa",fontWeight:600}}>{getLocalKickoffDay(m.kickoffUtc,m.day)} {m.day>30?'July':'June'} · {fmtMatchTime(m.day, m.time, m.kickoffUtc)}</span>
                       {isLive&&<span style={{fontSize:11,fontWeight:800,color:RED,display:"flex",alignItems:"center",gap:3}}>
                         <span style={{width:6,height:6,borderRadius:"50%",background:RED,display:"inline-block"}}/>
                         {liveScorePhaseLabel(live?.status, liveMin)}
@@ -9469,6 +9481,14 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
                         </div>
                       </div>
 
+                      {m.group && m.group.length > 1 && (
+                        <div style={{padding:"0 12px 8px",textAlign:"center"}}>
+                          <span style={{fontSize:10,fontWeight:700,color:NAVY,background:"rgba(0,32,91,0.07)",borderRadius:10,padding:"3px 8px"}}>
+                            ⏱ {T[lang].koScore90Note}
+                          </span>
+                        </div>
+                      )}
+
                       {/* Points earned */}
                       {(isFinished || isMatchPast(m.day, m.time, simDay, simHour, m.kickoffUtc)) && (
                         <div style={{marginTop:6,display:"flex",justifyContent:"center"}}>
@@ -9536,6 +9556,11 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
                   <span style={{fontSize:26}}>{scorePick.match.awayFlag}</span>
                 </div>
                 <p style={{fontSize:12,color:"rgba(255,255,255,0.35)",margin:"2px 0 0"}}>{scorePick.match.home} · {scorePick.match.away}</p>
+                {scorePick.match.group && scorePick.match.group.length > 1 && (
+                  <p style={{fontSize:11,fontWeight:700,color:"#FFCC80",margin:"5px 0 0"}}>
+                    ⏱ {T[lang].koScore90Note}
+                  </p>
+                )}
               </div>
               <button onClick={()=>{
                 // Read scroll position directly from refs at save time
@@ -10035,7 +10060,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                                   const isLive2 = !isFT2 && !isHT2 && (isLiveScoreStatus(db2ko) || (isSimMode2 && !db2ko && m.day===_nd && _now>=_kick && _now<=_kick+115));
                                   const liveScore2 = live2&&live2.home!=null ? live2 : (isSimMode2 && (isLive2||isHT2)?{home:0,away:0}:null);
                                   const penDisplay2 = penaltyScoreLabel(live2);
-                                  const isPastM = m.day<_nd || (m.day===_nd && _mH<=_nh);
+                                  const isPastM = isMatchPast(m.day, m.time, simDay, simHour, m.kickoffUtc);
                                   const canEdit=!isLive2&&!isHT2&&!isFT2&&!isPastM&&isWeekUnlocked(m.day,simDay,simHour,simMin);
                                   const isPreviewable=(isFT2||isPastM)&&!!onMatchPreview;
                                   return (
@@ -10164,10 +10189,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                               const liveScore2 = live2&&live2.home!==null&&live2.home!==undefined ? live2 : (isSimMode2 && (isLive2||isHT2)?{home:0,away:0}:null);
                               const hasScore2 = !!liveScore2;
                               const penDisplay2 = penaltyScoreLabel(live2);
-                              const matchHourM=parseInt((m.time||"23:00").split(":")[0]);
-                              const nowDM = simDay ?? getLocalTournamentDay();
-                              const nowHM = simDay ? (simHour||0) : new Date().getHours();
-                              const isPastM = m.day < nowDM || (m.day === nowDM && matchHourM <= nowHM);
+                              const isPastM = isMatchPast(m.day, m.time, simDay, simHour, m.kickoffUtc);
                               const canEdit=!isLive2&&!isHT2&&!isFT2&&!isPastM&&isWeekUnlocked(m.day,simDay,simHour,simMin);
                               const isPreviewable2=(isFT2||isPastM)&&!!onMatchPreview;
                               return (
@@ -10179,7 +10201,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                                   <span style={{fontSize:18}}>{m.homeFlag}</span>
                                   <span style={{flex:1,fontSize:12,fontWeight:600,color:isPastM?"#bbb":DARK}}>{m.home.length>7?m.home.split(" ")[0]:m.home}</span>
                                   <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
-                                    <span style={{fontSize:11,fontWeight:600,color:"#bbb"}}>{getLocalKickoffDay(m.kickoffUtc,m.day)} Iun · {fmtMatchTime(m.day, m.time, m.kickoffUtc)}</span>
+                                    <span style={{fontSize:11,fontWeight:600,color:"#bbb"}}>{getLocalKickoffDay(m.kickoffUtc,m.day)} {m.day>30?'Iul':'Iun'} · {fmtMatchTime(m.day, m.time, m.kickoffUtc)}</span>
                                     {isPastM?<span style={{fontSize:10,color:"#ccc",fontWeight:700}}>{T[lang].finished}</span>
                                       :isLive2?<span style={{fontSize:10,fontWeight:800,color:RED,animation:"blink 1s infinite"}}>● {liveScorePhaseLabel(db2, live2?.min)}</span>
                                       :isHT2?<span style={{fontSize:10,fontWeight:800,color:"#F59E0B"}}>⏸ HT</span>
@@ -10320,6 +10342,13 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                           <span style={{fontSize:18,flexShrink:0}}>{displayAwayFlag}</span>
                         </div>
                         ); })()}
+                        {m.group && m.group.length > 1 && (
+                          <div style={{padding:"0 14px 9px",textAlign:"center"}}>
+                            <span style={{fontSize:10,fontWeight:700,color:NAVY,background:"rgba(0,32,91,0.07)",borderRadius:10,padding:"3px 8px"}}>
+                              ⏱ {T[lang].koScore90Note}
+                            </span>
+                          </div>
+                        )}
                         {(isFT||isMatchPast(sel,m.time,simDay,simHour,m.kickoffUtc))&&(
                           <div style={{padding:"4px 14px 8px",display:"flex",justifyContent:"center"}}>
                             <div style={{background:exactMatch?"rgba(0,154,68,0.1)":diffMatch?"rgba(245,158,11,0.1)":resultMatch?"rgba(0,32,91,0.07)":"rgba(0,0,0,0.04)",borderRadius:20,padding:"3px 14px"}}>
@@ -11860,7 +11889,9 @@ function App() {
   const _predDeadline = new Date(appConfig.prediction_deadline || '2026-06-11T20:00:00Z');
   const koUnlocked = simDay ? simDay > 27 : new Date() >= _koUnlockDate;
   const task1DeadlinePassed = simDay ? (simDay > 11 || (simDay === 11 && (simHour||0) >= 19)) : new Date() >= _predDeadline;
-  const shouldStartAtKo = koUnlocked && instantPickDone && !koPickDone;
+  // Once the real knockout bracket is available, R32 predictions no longer
+  // depend on the user's old group-stage / best-third predictions being complete.
+  const shouldStartAtKo = koUnlocked && !koPickDone;
 
   // Auto-save: persistă selecțiile intermediare în DB (debounced 1s)
   // Previne pierderea datelor la refresh de browser

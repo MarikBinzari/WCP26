@@ -61,6 +61,54 @@ const SCHEDULE: { matchKey: string; home: string; away: string; kickoffUtc: stri
   { matchKey:'17-1', home:'Uzbekistan',                  away:'Colombia',              kickoffUtc:'2026-06-18T02:00:00Z' },
   { matchKey:'17-2', home:'England',                     away:'Croatia',               kickoffUtc:'2026-06-17T20:00:00Z' },
   { matchKey:'17-3', home:'Ghana',                       away:'Panama',                kickoffUtc:'2026-06-17T23:00:00Z' },
+  { matchKey:'18-0', home:'Czech Republic',              away:'South Africa',          kickoffUtc:'2026-06-18T16:00:00Z' },
+  { matchKey:'18-1', home:'Mexico',                      away:'Korea Republic',        kickoffUtc:'2026-06-19T01:00:00Z' },
+  { matchKey:'18-2', home:'Switzerland',                 away:'Bosnia and Herzegovina',kickoffUtc:'2026-06-18T19:00:00Z' },
+  { matchKey:'18-3', home:'Canada',                      away:'Qatar',                 kickoffUtc:'2026-06-18T22:00:00Z' },
+  { matchKey:'19-0', home:'Brazil',                      away:'Haiti',                 kickoffUtc:'2026-06-20T00:30:00Z' },
+  { matchKey:'19-1', home:'Scotland',                    away:'Morocco',               kickoffUtc:'2026-06-19T22:00:00Z' },
+  { matchKey:'19-2', home:'Turkey',                      away:'Paraguay',              kickoffUtc:'2026-06-20T03:00:00Z' },
+  { matchKey:'19-3', home:'USA',                         away:'Australia',             kickoffUtc:'2026-06-19T19:00:00Z' },
+  { matchKey:'20-0', home:'Germany',                     away:"Côte d'Ivoire",         kickoffUtc:'2026-06-20T20:00:00Z' },
+  { matchKey:'20-1', home:'Ecuador',                     away:'Curaçao',               kickoffUtc:'2026-06-21T00:00:00Z' },
+  { matchKey:'20-2', home:'Netherlands',                 away:'Sweden',                kickoffUtc:'2026-06-20T17:00:00Z' },
+  { matchKey:'20-3', home:'Tunisia',                     away:'Japan',                 kickoffUtc:'2026-06-21T04:00:00Z' },
+  { matchKey:'21-0', home:'Belgium',                     away:'Iran',                  kickoffUtc:'2026-06-21T19:00:00Z' },
+  { matchKey:'21-1', home:'New Zealand',                 away:'Egypt',                 kickoffUtc:'2026-06-22T01:00:00Z' },
+  { matchKey:'21-2', home:'Spain',                       away:'Saudi Arabia',          kickoffUtc:'2026-06-21T16:00:00Z' },
+  { matchKey:'21-3', home:'Uruguay',                     away:'Cape Verde',            kickoffUtc:'2026-06-21T22:00:00Z' },
+  { matchKey:'22-0', home:'France',                      away:'Iraq',                  kickoffUtc:'2026-06-22T21:00:00Z' },
+  { matchKey:'22-1', home:'Norway',                      away:'Senegal',               kickoffUtc:'2026-06-23T00:00:00Z' },
+  { matchKey:'22-2', home:'Argentina',                   away:'Austria',               kickoffUtc:'2026-06-22T17:00:00Z' },
+  { matchKey:'22-3', home:'Jordan',                      away:'Algeria',               kickoffUtc:'2026-06-23T03:00:00Z' },
+  { matchKey:'23-0', home:'Portugal',                    away:'Uzbekistan',            kickoffUtc:'2026-06-23T17:00:00Z' },
+  { matchKey:'23-1', home:'Colombia',                    away:'DR Congo',              kickoffUtc:'2026-06-24T02:00:00Z' },
+  { matchKey:'23-2', home:'England',                     away:'Ghana',                 kickoffUtc:'2026-06-23T20:00:00Z' },
+  { matchKey:'23-3', home:'Panama',                      away:'Croatia',               kickoffUtc:'2026-06-23T23:00:00Z' },
+  { matchKey:'24-0', home:'Czech Republic',              away:'Mexico',                kickoffUtc:'2026-06-25T01:00:00Z' },
+  { matchKey:'24-1', home:'South Africa',                away:'Korea Republic',        kickoffUtc:'2026-06-25T01:00:00Z' },
+  { matchKey:'24-2', home:'Switzerland',                 away:'Canada',                kickoffUtc:'2026-06-24T19:00:00Z' },
+  { matchKey:'24-3', home:'Bosnia and Herzegovina',      away:'Qatar',                 kickoffUtc:'2026-06-24T19:00:00Z' },
+  { matchKey:'24-4', home:'Scotland',                    away:'Brazil',                kickoffUtc:'2026-06-24T22:00:00Z' },
+  { matchKey:'24-5', home:'Morocco',                     away:'Haiti',                 kickoffUtc:'2026-06-24T22:00:00Z' },
+  { matchKey:'25-0', home:'Turkey',                      away:'USA',                   kickoffUtc:'2026-06-26T02:00:00Z' },
+  { matchKey:'25-1', home:'Paraguay',                    away:'Australia',             kickoffUtc:'2026-06-26T02:00:00Z' },
+  { matchKey:'25-2', home:'Ecuador',                     away:'Germany',               kickoffUtc:'2026-06-25T20:00:00Z' },
+  { matchKey:'25-3', home:'Curaçao',                     away:"Côte d'Ivoire",         kickoffUtc:'2026-06-25T20:00:00Z' },
+  { matchKey:'25-4', home:'Tunisia',                     away:'Netherlands',           kickoffUtc:'2026-06-25T23:00:00Z' },
+  { matchKey:'25-5', home:'Japan',                       away:'Sweden',                kickoffUtc:'2026-06-25T23:00:00Z' },
+  { matchKey:'25-6', home:'New Zealand',                 away:'Belgium',               kickoffUtc:'2026-06-27T03:00:00Z' },
+  { matchKey:'25-7', home:'Egypt',                       away:'Iran',                  kickoffUtc:'2026-06-27T03:00:00Z' },
+  { matchKey:'25-8', home:'Uruguay',                     away:'Spain',                 kickoffUtc:'2026-06-27T00:00:00Z' },
+  { matchKey:'25-9', home:'Cape Verde',                  away:'Saudi Arabia',          kickoffUtc:'2026-06-27T00:00:00Z' },
+  { matchKey:'26-0', home:'Norway',                      away:'France',                kickoffUtc:'2026-06-26T19:00:00Z' },
+  { matchKey:'26-1', home:'Senegal',                     away:'Iraq',                  kickoffUtc:'2026-06-26T19:00:00Z' },
+  { matchKey:'26-2', home:'Colombia',                    away:'Portugal',              kickoffUtc:'2026-06-27T23:30:00Z' },
+  { matchKey:'26-3', home:'DR Congo',                    away:'Uzbekistan',            kickoffUtc:'2026-06-27T23:30:00Z' },
+  { matchKey:'26-4', home:'Panama',                      away:'England',               kickoffUtc:'2026-06-27T21:00:00Z' },
+  { matchKey:'26-5', home:'Croatia',                     away:'Ghana',                 kickoffUtc:'2026-06-27T21:00:00Z' },
+  { matchKey:'27-0', home:'Jordan',                      away:'Argentina',             kickoffUtc:'2026-06-28T02:00:00Z' },
+  { matchKey:'27-1', home:'Algeria',                     away:'Austria',               kickoffUtc:'2026-06-28T02:00:00Z' },
 ]
 
 function normalizeTeam(name: string): string {
@@ -89,8 +137,8 @@ Deno.serve(async () => {
   }
 
   const now = new Date()
-  const yesterday = new Date(now.getTime() - 86_400_000).toISOString().slice(0, 10)
-  const dates = dateRange('2026-06-11', yesterday)
+  const todayUtc = now.toISOString().slice(0, 10)
+  const dates = dateRange('2026-06-11', todayUtc)
 
   console.log(`Backfilling dates: ${dates.join(', ')}`)
 
@@ -173,7 +221,7 @@ Deno.serve(async () => {
 
       const { error } = await supabase
         .from('match_events')
-        .upsert(toUpsert, { onConflict: 'match_key,minute,extra_minute,player_name,type' })
+        .upsert(toUpsert, { onConflict: 'match_key,minute,type,team_name' })
 
       if (error) {
         console.log(`[${matchKey}] upsert error: ${error.message}`)
