@@ -5980,8 +5980,8 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
   const _exJune = (d) => new Date(Date.UTC(2026,5,d,5,0,0)); // 08:00 Romania (EEST = UTC+3) = 05:00 UTC
   // Advance to next week only after current week's last day passes midnight
   const exactWeekStart = _exSimNow>=_exJune(29)?29:_exSimNow>=_exJune(21)?22:_exSimNow>=_exJune(14)?15:8;
-  const exactWeekTotal = _exWkTotal(exactWeekStart);
-  const exactWeekScored = _exWkScored(exactWeekStart);
+  const exactWeekTotal = Object.values(_exDisplayMM).reduce((a, ms) => a + ms.length, 0);
+  const exactWeekScored = Object.values(_exDisplayMM).reduce((a, ms) => a + ms.filter(m => !!(exactScores||{})[m.matchKey]).length, 0);
   const exactWeekDone = exactWeekTotal===0 || exactWeekScored===exactWeekTotal;
   const exactWeekHasStarted = _exCalendarEvents
     .filter(e => e.day >= exactWeekStart && e.day <= exactWeekStart + 6)
