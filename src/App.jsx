@@ -5866,7 +5866,7 @@ function LiveWidget({ simDay, simHour, simMin }) {
 }
 
 // ── HOME ────────────────────────────────────────────────────────────────────
-function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateBoard, onOpenGroups, onCentralStats, onCopyPredictions, onCopyExactScores, onCopySpecial, onAccount, onNotifications, onChampion, onBooster, onBonus, myBoards, predictionsComplete, instantPickState=null, instantPickDone, allGroupsDone=false, groupsDoneCount=null, koPickDone, koUnlocked, exactScores, activeBoardId, setActiveBoardId, tournamentStarted, simDay, simHour, simMin, createdBoards=[], showFirstAction, leaderboardData={}, boardsLoading=false, predictionsLoaded={}, championPick=null, runnerUpPick=null, topScorerPick=null, setChampionPick=()=>{}, setTopScorerPick=()=>{}, myScoreBreakdown=null, hasUnread=false }) {
+function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateBoard, onOpenGroups, onCentralStats, onCopyPredictions, onCopyExactScores, onCopySpecial, onAccount, onNotifications, onChampion, onBooster, onBonus, myBoards, predictionsComplete, instantPickState=null, instantPickDone, allGroupsDone=false, groupsDoneCount=null, koPickDone, koUnlocked, exactScores, activeBoardId, setActiveBoardId, tournamentStarted, simDay, simHour, simMin, createdBoards=[], showFirstAction, leaderboardData={}, boardsLoading=false, predictionsLoaded={}, championPick=null, runnerUpPick=null, topScorerPick=null, setChampionPick=()=>{}, setTopScorerPick=()=>{}, myScoreBreakdown=null, hasUnread=false, koTeams={} }) {
   const lang = useLang();
   const user = useUser();
   const displayName = useDisplayName();
@@ -5963,6 +5963,7 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
       if (!isWeekUnlocked(e.day, simDay, simHour, simMin)) return;
       mm[e.day] = (e.matches || []).filter(m =>
         m.matchKey !== 'cl-final' &&
+        (m.homeFlag !== '🏆' || !!koTeams[m.matchKey]) &&
         !isMatchPast(e.day, m.time, simDay, simHour, m.kickoffUtc)
       );
     });
@@ -12186,7 +12187,8 @@ function App() {
               setChampionPick={setChampionPick}
               setTopScorerPick={setTopScorerPick}
               myScoreBreakdown={myScoreBreakdowns[activeBoardId]}
-              hasUnread={hasUnread}/>
+              hasUnread={hasUnread}
+              koTeams={koTeams}/>
           </div>}
           {screen===SCREENS.CENTRAL_STATS&&<CentralStatsScreen
             onBack={()=>setScreen(SCREENS.HOME)}
