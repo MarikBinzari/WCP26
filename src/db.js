@@ -99,20 +99,31 @@ export function getKoBackup(userId, boardId) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function savePredictions(userId, boardId, pickState) {
-  // Backup to localStorage first — protects against DB failures
-  backupKoPicks(userId, boardId, pickState.koPicks)
+  backupKoPicks(userId, boardId, pickState?.koPicks)
+
+  const payload = {
+    user_id:        userId,
+    board_id:       boardId,
+    group_rankings: pickState?.groupRankings ?? {},
+    best3_picks:    pickState?.best3 ?? [],
+    ko_picks:       pickState?.koPicks ?? {},
+    updated_at:     new Date().toISOString(),
+  }
 
   const { error } = await supabase
     .from('predictions')
-    .upsert({
-      user_id: userId,
-      board_id: boardId,
-      group_rankings: pickState.groupRankings ?? {},
-      best3_picks:    pickState.best3 ?? [],
-      ko_picks:       pickState.koPicks ?? {},
-      updated_at:     new Date().toISOString(),
-    }, { onConflict: 'user_id,board_id' })
-  if (error) console.error('savePredictions:', error)
+    .upsert(payload, { onConflict: 'user_id,board_id' })
+
+  if (!error) return
+
+  console.error('[savePredictions] DB error:', error.code, error.message, error.details)
+
+  // Retry once after 2s (handles transient network issues)
+  await new Promise(r => setTimeout(r, 2000))
+  const { error: err2 } = await supabase
+    .from('predictions')
+    .upsert(payload, { onConflict: 'user_id,board_id' })
+  if (err2) console.error('[savePredictions] retry failed:', err2.code, err2.message)
 }
 
 // â”€â”€â”€ SPECIAL PICKS (champion + top scorer) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€

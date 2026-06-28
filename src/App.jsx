@@ -12027,14 +12027,12 @@ function App() {
   // Save direct per-pick (cel mai sigur mecanism — bypass orice closure/timing issue)
   const _koPickSaveTimer = useRef(null);
   const onKoPickCallback = (koPicks) => {
-    // 1. Scrie localStorage IMEDIAT — înainte de orice debounce, protejează la refresh instant
     if (user) backupKoPicks(user.id, activeBoardId, koPicks);
-    // 2. Salvează în DB după 600ms debounce
     clearTimeout(_koPickSaveTimer.current);
-    _koPickSaveTimer.current = setTimeout(() => {
+    _koPickSaveTimer.current = setTimeout(async () => {
       if (!user) return;
-      const state = instantPickStateRef.current;
-      if (state) savePredictions(user.id, activeBoardId, { ...state, koPicks });
+      const state = instantPickStateRef.current || instantPickState;
+      await savePredictions(user.id, activeBoardId, { ...(state||{}), koPicks });
     }, 600);
   };
 
