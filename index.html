@@ -11,6 +11,7 @@
     <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#ffffff" />
     <meta name="color-scheme" content="only light" />
+    <style>html,body,#root{background-color:#ffffff!important;color:#111111!important;color-scheme:light!important;}</style>
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Predicto" />
@@ -46,7 +47,7 @@
     </script>
     <script>
       (function() {
-        var V = '20260628-v4';
+        var V = '20260628-v5';
         if (localStorage.getItem('__pwa_v') !== V) {
           localStorage.setItem('__pwa_v', V);
           if ('serviceWorker' in navigator) {
