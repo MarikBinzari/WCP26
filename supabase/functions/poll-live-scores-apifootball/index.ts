@@ -86,6 +86,23 @@ const SCHEDULE: { matchKey: string; home: string; away: string; kickoffUtc: stri
   { matchKey:'27-3', home:'DR Congo',                    away:'Uzbekistan',            kickoffUtc:'2026-06-27T23:30:00Z' },
   { matchKey:'27-4', home:'Panama',                      away:'England',               kickoffUtc:'2026-06-27T21:00:00Z' },
   { matchKey:'27-5', home:'Croatia',                     away:'Ghana',                 kickoffUtc:'2026-06-27T21:00:00Z' },
+  // R32 — Round of 32
+  { matchKey:'28-0', home:'South Africa',                away:'Canada',                kickoffUtc:'2026-06-28T19:00:00Z' },
+  { matchKey:'29-0', home:'Germany',                     away:'Paraguay',              kickoffUtc:'2026-06-29T17:00:00Z' },
+  { matchKey:'29-1', home:'Netherlands',                 away:'Morocco',               kickoffUtc:'2026-06-29T20:30:00Z' },
+  { matchKey:'29-2', home:'Brazil',                      away:'Japan',                 kickoffUtc:'2026-06-30T01:00:00Z' },
+  { matchKey:'30-0', home:'France',                      away:'Sweden',                kickoffUtc:'2026-06-30T17:00:00Z' },
+  { matchKey:'30-1', home:"Côte d'Ivoire",               away:'Norway',                kickoffUtc:'2026-06-30T21:00:00Z' },
+  { matchKey:'30-2', home:'Mexico',                      away:'Ecuador',               kickoffUtc:'2026-07-01T01:00:00Z' },
+  { matchKey:'31-0', home:'England',                     away:'DR Congo',              kickoffUtc:'2026-07-01T16:00:00Z' },
+  { matchKey:'31-1', home:'USA',                         away:'Bosnia and Herzegovina',kickoffUtc:'2026-07-01T20:00:00Z' },
+  { matchKey:'31-2', home:'Belgium',                     away:'Senegal',               kickoffUtc:'2026-07-02T00:00:00Z' },
+  { matchKey:'32-0', home:'Portugal',                    away:'Croatia',               kickoffUtc:'2026-07-02T19:00:00Z' },
+  { matchKey:'32-1', home:'Spain',                       away:'Austria',               kickoffUtc:'2026-07-02T23:00:00Z' },
+  { matchKey:'32-2', home:'Switzerland',                 away:'Algeria',               kickoffUtc:'2026-07-03T03:00:00Z' },
+  { matchKey:'33-0', home:'Argentina',                   away:'Cape Verde',            kickoffUtc:'2026-07-03T22:00:00Z' },
+  { matchKey:'33-1', home:'Colombia',                    away:'Ghana',                 kickoffUtc:'2026-07-04T01:30:00Z' },
+  { matchKey:'33-2', home:'Australia',                   away:'Egypt',                 kickoffUtc:'2026-07-03T18:00:00Z' },
 ]
 
 const TEAM_NORM: Record<string, string> = {
