@@ -9395,7 +9395,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
                     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",
                       padding:"5px 12px",
                       background:isLive?"rgba(0,32,91,0.06)":isFinished?"rgba(0,154,68,0.06)":"rgba(0,0,0,0.03)"}}>
-                      <span style={{fontSize:11,color:"#aaa",fontWeight:600}}>{getLocalKickoffDay(m.kickoffUtc,m.day)} June · {fmtMatchTime(m.day, m.time, m.kickoffUtc)}</span>
+                      <span style={{fontSize:11,color:"#aaa",fontWeight:600}}>{getLocalKickoffDay(m.kickoffUtc,m.day)} {m.kickoffUtc&&new Date(m.kickoffUtc).getUTCMonth()===6?'July':'June'} · {fmtMatchTime(m.day, m.time, m.kickoffUtc)}</span>
                       {isLive&&<span style={{fontSize:11,fontWeight:800,color:RED,display:"flex",alignItems:"center",gap:3}}>
                         <span style={{width:6,height:6,borderRadius:"50%",background:RED,display:"inline-block"}}/>
                         {liveScorePhaseLabel(live?.status, liveMin)}
@@ -9409,14 +9409,14 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
                       <div style={{display:"flex",alignItems:"center",gap:8}}>
                         {/* Home */}
                         <div style={{flex:1,display:"flex",alignItems:"center",gap:6}}>
-                          <span style={{fontSize:20}}>{m.homeFlag}</span>
+                          <span style={{fontSize:20}}>{m.homeFlag!=='🏆'?m.homeFlag:(FLAGS[koTeams[m.key]?.home]||FLAGS[m.home]||'🏆')}</span>
                           <span style={{fontSize:11,fontWeight:600,color:DARK}}>{m.home.length>8?m.home.split(" ")[0]:m.home}</span>
                         </div>
 
                         {/* Scores — compact single center block */}
                         {(()=>{
                           const isPast = isMatchPast(m.day, m.time, simDay, simHour, m.kickoffUtc);
-                          const canPredict = !isLive && !isFinished && !isPast && isWeekUnlocked(m.day, simDay, simHour, simMin) && m.homeFlag!=='🏆';
+                          const canPredict = !isLive && !isFinished && !isPast && isWeekUnlocked(m.day, simDay, simHour, simMin) && (m.homeFlag!=='🏆' || !!koTeams[m.key]);
                           const scoreDisplay = hasLive ? `${live.home}-${live.away}` : isSimMode && isLive ? "0-0" : "-";
                           const penDisplay = penaltyScoreLabel(live);
                           const predBox = (isPast||isLive||isFinished) ? (sc ? (
@@ -9465,7 +9465,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
                         {/* Away */}
                         <div style={{flex:1,display:"flex",alignItems:"center",gap:6,justifyContent:"flex-end"}}>
                           <span style={{fontSize:11,fontWeight:600,color:DARK,textAlign:"right"}}>{m.away.length>8?m.away.split(" ")[0]:m.away}</span>
-                          <span style={{fontSize:20}}>{m.awayFlag}</span>
+                          <span style={{fontSize:20}}>{m.awayFlag!=='🏆'?m.awayFlag:(FLAGS[koTeams[m.key]?.away]||FLAGS[m.away]||'🏆')}</span>
                         </div>
                       </div>
 
