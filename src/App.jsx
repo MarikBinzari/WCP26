@@ -8376,6 +8376,7 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
   const [best3Advancing, setBest3Advancing] = useState([]);
   const [showKOBracket, setShowKOBracket] = useState(false);
   const [userKoPicks, setUserKoPicks] = useState(null);
+  const [koBracketTab, setKoBracketTab] = useState('R32');
 
   useEffect(() => {
     hasLiveMatches().then(setLiveActive);
@@ -8389,6 +8390,8 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
     if (!u.userId) return;
     setBreakdown(null);
     setBreakdownLoading(true);
+    setShowKOBracket(false);
+    setUserKoPicks(null);
     const boardId = activeBoardId || 'global';
     loadUserBreakdown(u.userId, boardId).then(data => {
       setBreakdown(data);
@@ -8894,11 +8897,11 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
                     style={{position:"fixed",inset:0,zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",
                       background:"rgba(0,0,0,0.45)",backdropFilter:"blur(2px)"}}>
                     <div onClick={e=>e.stopPropagation()}
-                      style={{background:"#fff",borderRadius:16,padding:"18px 16px",width:"min(340px,92vw)",
-                        maxHeight:"85vh",overflowY:"auto",
+                      style={{background:BG,borderRadius:16,padding:"16px 14px",
+                        width:"min(370px,96vw)",maxHeight:"88vh",display:"flex",flexDirection:"column",
                         boxShadow:"0 20px 60px rgba(0,0,0,0.25)"}}>
-                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
-                        <span style={{fontSize:13,fontWeight:800,color:NAVY,letterSpacing:0.5}}>🏆 {selectedUser?.name}</span>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12,flexShrink:0}}>
+                        <span style={{fontSize:13,fontWeight:800,color:NAVY}}>🏆 {selectedUser?.name}</span>
                         <button onClick={()=>setShowKOBracket(false)}
                           style={{background:"rgba(0,0,0,0.06)",border:"none",borderRadius:8,
                             width:28,height:28,cursor:"pointer",fontSize:14,color:"#666",
@@ -8912,103 +8915,84 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
                           <div>Se încarcă...</div>
                         </div>
                       ):(()=>{
-                        const R32_MAP=['29-0','30-0','28-0','29-1','32-0','32-1','31-1','31-2','29-2','30-1','30-2','31-0','33-0','33-2','32-2','33-1'];
-                        const koHitMap={};
-                        (breakdown?.ko||[]).forEach(r=>{ koHitMap[`${r.round}|${r.team_name}`]={is_hit:r.is_hit,pts:r.pts}; });
-                        const r32Rows=R32_MAP.map((mk,idx)=>{
-                          const pick=userKoPicks[`R32-${idx}`];
-                          if(!pick) return null;
-                          const teams=koTeams[mk];
-                          if(!teams) return null;
-                          const teamName=pick==='home'?teams.home:teams.away;
-                          const hit=koHitMap[`R32|${teamName}`];
-                          return {idx,teamName,hit};
-                        }).filter(Boolean);
-                        const LATER_ROUNDS=[
-                          {key:'R16',label:T[lang].koR16,slots:8},
-                          {key:'QF', label:T[lang].koQF, slots:4},
-                          {key:'SF', label:T[lang].koSF, slots:2},
-                          {key:'Final',label:T[lang].koFinal,fKey:'F-0'},
-                        ];
-                        const rowStyle=(is_hit)=>({
-                          display:"flex",justifyContent:"space-between",alignItems:"center",
-                          padding:"5px 4px",borderBottom:"1px solid #F9FAFB",
-                          borderRadius:is_hit?6:0,
-                          background:is_hit==="hit"?"rgba(22,163,74,0.06)":is_hit==="miss"?"rgba(239,68,68,0.06)":"transparent",
+                        const R32_MK=['29-0','30-0','28-0','29-1','32-0','32-1','31-1','31-2','29-2','30-1','30-2','31-0','33-0','33-2','32-2','33-1'];
+                        const KO_MK={R16:['34-0','34-1','35-0','35-1','36-0','36-1','37-0','37-1'],QF:['39-0','40-0','41-0','41-1'],SF:['44-0','45-0'],F:['49-0']};
+                        // Câștigători reali din liveScoresLS (identic cu computeRealKoWinners din InstantPickScreen)
+                        const cRKW=(keys,prefix)=>{
+                          const r={};
+                          (keys||[]).forEach((mk,i)=>{
+                            const sc=liveScoresLS?.[mk];
+                            if(!sc||sc.status!=='FT') return;
+                            const h=sc.home??0,a=sc.away??0,ph=sc.homePen??0,pa=sc.awayPen??0;
+                            const side=h>a?'home':h<a?'away':ph>pa?'home':ph<pa?'away':null;
+                            if(side) r[`${prefix}-${i}`]=side;
+                          });
+                          return r;
+                        };
+                        const realR32W=cRKW(R32_MK,'R32');
+                        const realKoWM={R32:realR32W,...Object.fromEntries(Object.entries(KO_MK).map(([k,v])=>[k,cRKW(v,k)]))};
+                        // Matchup-uri (identic cu getWinners + pairWinners din InstantPickScreen)
+                        const r32M=R32_MK.map(mk=>({home:koTeams[mk]?.home||'TBD',away:koTeams[mk]?.away||'TBD'}));
+                        const getW=(rk,matchups)=>matchups.map((m,i)=>{
+                          const s=realKoWM[rk]?.[`${rk}-${i}`];
+                          if(s) return s==='home'?m.home:m.away;
+                          const p=userKoPicks?.[`${rk}-${i}`];
+                          return p?(p==='home'?m.home:m.away):'TBD';
                         });
+                        const pairW=(winners,pairs)=>pairs.map(([h,a])=>({home:winners[h]||'TBD',away:winners[a]||'TBD'}));
+                        const r16M=pairW(getW('R32',r32M),[[0,1],[2,3],[4,5],[6,7],[8,9],[10,11],[12,13],[14,15]]);
+                        const qfM=pairW(getW('R16',r16M),[[0,1],[2,3],[4,5],[6,7]]);
+                        const sfM=pairW(getW('QF',qfM),[[0,1],[2,3]]);
+                        const fM=pairW(getW('SF',sfM),[[0,1]]);
+                        const matchupsMap={R32:r32M,R16:r16M,QF:qfM,SF:sfM,F:fM};
+                        const autoProp=new Set(Object.keys(realR32W).filter(k=>!userKoPicks?.[k]));
+                        const tabMap={R32:'R32',R16:'R16',QF:'QF',SF:'SF',Final:'F'};
+                        const TABS=['R32','R16','QF','SF','Final'];
+                        const curGroup=tabMap[koBracketTab]||'R32';
+                        const curMatchups=matchupsMap[curGroup]||[];
+                        // locked = meci FT (are rezultat real) → arată banner ✓/✗
+                        const isLocked=(idx)=>!!realKoWM[curGroup]?.[`${curGroup}-${idx}`];
                         return (
-                          <div>
-                            {r32Rows.length>0&&(
-                              <div style={{marginBottom:14}}>
-                                <div style={{fontSize:10,fontWeight:800,color:NAVY,textTransform:"uppercase",letterSpacing:1,marginBottom:6,paddingBottom:4,borderBottom:`1px solid ${NAVY}22`}}>
-                                  {T[lang].koR32}
-                                </div>
-                                {r32Rows.map(({idx,teamName,hit})=>{
-                                  const st=hit===undefined?"pending":hit.is_hit?"hit":"miss";
-                                  return (
-                                    <div key={idx} style={rowStyle(st)}>
-                                      <div style={{display:"flex",gap:8,alignItems:"center"}}>
-                                        <span style={{fontSize:11,fontWeight:900,minWidth:14,
-                                          color:st==="hit"?"#16a34a":st==="miss"?"#ef4444":"#9CA3AF"}}>
-                                          {st==="hit"?"✓":st==="miss"?"✗":"⏳"}
-                                        </span>
-                                        <span style={{fontSize:13,fontWeight:700,
-                                          color:st==="hit"?"#166534":st==="miss"?"#991b1b":"#374151"}}>
-                                          {tCode(teamName)}
-                                        </span>
-                                      </div>
-                                      {st!=="pending"&&(
-                                        <span style={{fontSize:12,fontWeight:700,color:st==="hit"?"#16a34a":"#ef4444"}}>
-                                          {hit.is_hit?`+${hit.pts}p`:"0p"}
-                                        </span>
-                                      )}
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            )}
-                            {LATER_ROUNDS.map(({key,label,slots,fKey})=>{
-                              const ftRows=(breakdown?.ko||[]).filter(r=>r.round===key);
-                              const allKeys=fKey?[fKey]:Array.from({length:slots},(_,i)=>`${key}-${i}`);
-                              const pickedCount=allKeys.filter(k=>userKoPicks[k]).length;
-                              if(!pickedCount&&ftRows.length===0) return null;
-                              const pendingCount=pickedCount-ftRows.length;
-                              return (
-                                <div key={key} style={{marginBottom:12}}>
-                                  <div style={{fontSize:10,fontWeight:800,color:NAVY,textTransform:"uppercase",letterSpacing:1,marginBottom:6,paddingBottom:4,borderBottom:`1px solid ${NAVY}22`}}>
-                                    {label}
-                                  </div>
-                                  {ftRows.map((r,i)=>{
-                                    const st=r.is_hit?"hit":"miss";
-                                    return (
-                                      <div key={i} style={rowStyle(st)}>
-                                        <div style={{display:"flex",gap:8,alignItems:"center"}}>
-                                          <span style={{fontSize:11,fontWeight:900,minWidth:14,color:r.is_hit?"#16a34a":"#ef4444"}}>
-                                            {r.is_hit?"✓":"✗"}
-                                          </span>
-                                          <span style={{fontSize:13,fontWeight:700,color:r.is_hit?"#166534":"#991b1b"}}>
-                                            {tCode(r.team_name)}
-                                          </span>
-                                        </div>
-                                        <span style={{fontSize:12,fontWeight:700,color:r.is_hit?"#16a34a":"#ef4444"}}>
-                                          {r.is_hit?`+${r.pts}p`:"0p"}
-                                        </span>
-                                      </div>
-                                    );
-                                  })}
-                                  {pendingCount>0&&(
-                                    <div style={{display:"flex",alignItems:"center",gap:8,padding:"5px 4px",color:"#9CA3AF",fontSize:11}}>
-                                      <span style={{minWidth:14}}>⏳</span>
-                                      <span>{pendingCount} pick{pendingCount>1?"s":""} · neîncheiat</span>
-                                    </div>
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
+                          <>
+                            {/* Tabs */}
+                            <div style={{display:"flex",gap:4,marginBottom:12,flexShrink:0,
+                              background:"rgba(0,0,0,0.04)",borderRadius:10,padding:3}}>
+                              {TABS.map(tab=>{
+                                const isActive=tab===koBracketTab;
+                                const col={R32:NAVY,R16:"#7B2FBE",QF:RED,SF:"#D4820A",Final:"#D4820A"}[tab]||NAVY;
+                                return (
+                                  <button key={tab} onClick={()=>setKoBracketTab(tab)}
+                                    style={{flex:1,padding:"5px 4px",borderRadius:7,border:"none",
+                                      cursor:"pointer",fontFamily:"inherit",
+                                      fontSize:10,fontWeight:isActive?800:600,
+                                      background:isActive?"#fff":"transparent",
+                                      color:isActive?col:"#9CA3AF",
+                                      boxShadow:isActive?"0 1px 4px rgba(0,0,0,0.10)":"none",
+                                      transition:"all 0.15s",letterSpacing:0.3}}>
+                                    {tab}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                            {/* Identic cu InstantPickScreen KO view */}
+                            <div style={{flex:1,overflowY:"auto",minHeight:0,margin:"0 -14px"}}>
+                              <GroupIntroScreen
+                                group={curGroup}
+                                teams={curMatchups.map(m=>[m.home,m.away])}
+                                isKo={true}
+                                hideHeader={true}
+                                picks={userKoPicks||{}}
+                                viewMode={true}
+                                isRoundComplete={false}
+                                isMatchLocked={isLocked}
+                                autoPropagated={autoProp}
+                                realRoundWinners={realKoWM[curGroup]||{}}
+                              />
+                            </div>
+                          </>
                         );
                       })()}
-                      <div style={{marginTop:10,textAlign:"center",fontSize:10,color:"#9CA3AF"}}>
+                      <div style={{flexShrink:0,marginTop:8,textAlign:"center",fontSize:10,color:"#9CA3AF"}}>
                         Atinge în afară pentru a închide
                       </div>
                     </div>
@@ -9029,7 +9013,7 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
                   return (
                     <div style={{border:`1.5px solid ${NAVY}22`,borderRadius:12,padding:"10px 12px",marginBottom:10}}>
                       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-                        <span onClick={()=>{ setUserKoPicks(null); setShowKOBracket(true); const bid=activeBoardId||'global'; loadUserKoPicks(selectedUser.userId,bid).then(setUserKoPicks); }}
+                        <span onClick={()=>{ setUserKoPicks(null); setKoBracketTab('R32'); setShowKOBracket(true); const bid=activeBoardId||'global'; loadUserKoPicks(selectedUser.userId,bid).then(setUserKoPicks); }}
                           style={{fontSize:12,fontWeight:800,color:NAVY,textTransform:"uppercase",letterSpacing:1,
                             cursor:"pointer",textDecoration:"underline dotted",textUnderlineOffset:3}}>🏆 {T[lang].koPhaseLabel}</span>
                         <span style={{fontSize:13,fontWeight:800,color:NAVY}}>{koTotal}p</span>
