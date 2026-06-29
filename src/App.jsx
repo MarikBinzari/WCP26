@@ -9277,7 +9277,7 @@ function CentralStatsScreen({ onBack, boardId, boardName, simDay, simHour=12, si
                       const sc = scoreOf(pred, live);
                       const col = sc !== null ? scoreColor(sc) : '#9CA3AF';
                       const isFinal = live?.status === 'FT';
-                      const stageGrp = mInfo?.group;
+                      const stageGrp = matchByKey[k]?.group;
                       const ptsLabel = isFinal ? (sc === 3 ? String(getExactPts(stageGrp,'exact')) : sc === 2 ? String(getExactPts(stageGrp,'diff')) : sc === 1 ? String(getExactPts(stageGrp,'result')) : sc === 0 ? '0' : null) : null;
                       return (
                         <td key={k} style={{ padding: '6px 4px', textAlign: 'center', position: 'relative' }}>
