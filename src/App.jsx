@@ -1989,6 +1989,20 @@ const DEFAULT_EXACT_SCORING = {
   sf_result: 90, sf_diff_bonus: 10, sf_exact_bonus: 40,
   final_result: 120, final_diff_bonus: 10, final_exact_bonus: 50,
 };
+const getExactPts = (grp, type) => {
+  const stage = !grp || grp.length <= 1 ? 'group'
+    : grp === 'R32' ? 'r32' : grp === 'R16' ? 'r16' : grp === 'QF' ? 'qf'
+    : grp === 'SF' ? 'sf' : (grp === 'Final' || grp.toLowerCase().includes('final')) ? 'final' : 'group';
+  const M = {
+    group: { result:30, diff:40, exact:90 },
+    r32:   { result:35, diff:45, exact:50 },
+    r16:   { result:40, diff:50, exact:60 },
+    qf:    { result:60, diff:70, exact:90 },
+    sf:    { result:90, diff:100, exact:130 },
+    final: { result:120, diff:130, exact:170 },
+  };
+  return (M[stage] || M.group)[type];
+};
 const computePredMax = (s) => {
   const groups = INTERACTIVE_GROUPS.length * (s.group1st + s.group2nd + s.group3rd);
   const best3  = 8  * s.best3;
@@ -9263,7 +9277,8 @@ function CentralStatsScreen({ onBack, boardId, boardName, simDay, simHour=12, si
                       const sc = scoreOf(pred, live);
                       const col = sc !== null ? scoreColor(sc) : '#9CA3AF';
                       const isFinal = live?.status === 'FT';
-                      const ptsLabel = isFinal ? (sc === 3 ? '90' : sc === 2 ? '40' : sc === 1 ? '30' : sc === 0 ? '0' : null) : null;
+                      const stageGrp = mInfo?.group;
+                      const ptsLabel = isFinal ? (sc === 3 ? String(getExactPts(stageGrp,'exact')) : sc === 2 ? String(getExactPts(stageGrp,'diff')) : sc === 1 ? String(getExactPts(stageGrp,'result')) : sc === 0 ? '0' : null) : null;
                       return (
                         <td key={k} style={{ padding: '6px 4px', textAlign: 'center', position: 'relative' }}>
                           {pred != null ? (
@@ -9775,7 +9790,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
                             borderRadius:20,padding:"3px 12px",display:"flex",alignItems:"center",gap:6}}>
                             <span style={{fontSize:12,fontWeight:700,
                               color:exactMatch?GREEN:diffMatch?"#D97706":resultMatch?NAVY:RED}}>
-                              {exactMatch?"🎯 +90 pts · Scor exact":diffMatch?"⚡ +40 pts · Diferență goluri":resultMatch?"✓ +30 pts · Rezultat corect":"✗ +0 pts"}
+                              {exactMatch?`🎯 +${getExactPts(m.group,'exact')} pts · Scor exact`:diffMatch?`⚡ +${getExactPts(m.group,'diff')} pts · Diferență goluri`:resultMatch?`✓ +${getExactPts(m.group,'result')} pts · Rezultat corect`:"✗ +0 pts"}
                             </span>
                           </div>
                         </div>
@@ -10632,7 +10647,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                           <div style={{padding:"4px 14px 8px",display:"flex",justifyContent:"center"}}>
                             <div style={{background:exactMatch?"rgba(0,154,68,0.1)":diffMatch?"rgba(245,158,11,0.1)":resultMatch?"rgba(0,32,91,0.07)":"rgba(0,0,0,0.04)",borderRadius:20,padding:"3px 14px"}}>
                               <span style={{fontSize:12,fontWeight:700,color:exactMatch?GREEN:diffMatch?"#D97706":resultMatch?NAVY:RED}}>
-                                {exactMatch?"🎯 +90 pts":diffMatch?"⚡ +40 pts":resultMatch?"✓ +30 pts":"✗ +0 pts"}
+                                {exactMatch?`🎯 +${getExactPts(m.group,'exact')} pts`:diffMatch?`⚡ +${getExactPts(m.group,'diff')} pts`:resultMatch?`✓ +${getExactPts(m.group,'result')} pts`:"✗ +0 pts"}
                               </span>
                             </div>
                           </div>
