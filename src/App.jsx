@@ -292,6 +292,7 @@ const T = {
     rulesTask2Header:"Task 2 · Knockout Phase", rulesTask2Due:"Unlocks Jun 27",
     exactDesc:"Predict the exact score of each match every week. New matches available at the latest by Sunday 8:00 AM.",
     koScore90Note:"Score after 90 minutes · Extra time and penalties excluded",
+    koPhaseLabel:"Knockout Phase", koR32:"Round of 32", koR16:"Round of 16", koQF:"Quarter-Finals", koSF:"Semi-Finals", koFinal:"Final", koCorrect:"correct",
     exactScore:"EXACT SCORE", confirmScore:"Confirm Score",
     save:"Save", cancel:"Cancel", del:"Delete", done:"Done",
     semiFinalsDone:"Semi-Finals complete", theFinalsAwait:"The Finals Await",
@@ -495,6 +496,7 @@ const T = {
     rulesTask2Header:"Task 2 · Faza Eliminatorie", rulesTask2Due:"Disponibil din 27 Iun",
     exactDesc:"Prezice scorul exact al fiecărui meci în fiecare săptămână. Meciuri noi disponibile cel târziu duminică la 8:00.",
     koScore90Note:"Scor după 90 de minute · Fără prelungiri și penalty-uri",
+    koPhaseLabel:"Faze Eliminatorii", koR32:"Optimi", koR16:"Optimi de Finală", koQF:"Sferturi", koSF:"Semifinale", koFinal:"Finală", koCorrect:"corecte",
     exactScore:"SCOR EXACT", confirmScore:"Confirmă Scorul",
     save:"Salvează", cancel:"Anulează", del:"Șterge", done:"Gata",
     semiFinalsDone:"Semi-Finale Complete", theFinalsAwait:"Finala Te Așteaptă",
@@ -698,6 +700,7 @@ const T = {
     rulesTask2Header:"Tâche 2 · Phase Éliminatoire", rulesTask2Due:"Disponible dès le 27 Juin",
     exactDesc:"Prédisez le score exact de chaque match chaque semaine. Nouveaux matchs disponibles au plus tard le dimanche à 8h.",
     koScore90Note:"Score après 90 minutes · Prolongations et tirs au but exclus",
+    koPhaseLabel:"Phase Éliminatoire", koR32:"Huitièmes", koR16:"Huitièmes de Finale", koQF:"Quarts de Finale", koSF:"Demi-Finales", koFinal:"Finale", koCorrect:"corrects",
     exactScore:"SCORE EXACT", confirmScore:"Confirmer le Score",
     save:"Enregistrer", cancel:"Annuler", del:"Supprimer", done:"Terminé",
     semiFinalsDone:"Demi-Finales terminées", theFinalsAwait:"La Finale Vous Attend",
@@ -8705,9 +8708,11 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
               const predTotal  = breakdown.groups.reduce((s,g)=>s+g.pts,0);
               const exactTotal = breakdown.exact.reduce((s,m)=>s+m.pts,0);
               const best3Total = (breakdown.best3||[]).reduce((s,p)=>s+p.pts,0);
+              const koTotal    = (breakdown.ko||[]).reduce((s,r)=>s+(r.pts||0),0);
               const hasGroups  = breakdown.groups.length>0;
               const hasExact   = breakdown.exact.length>0;
               const hasBest3   = (breakdown.best3||[]).length>0;
+              const hasKO      = (breakdown.ko||[]).length>0;
               return (<>
                 {/* Bonus section */}
                 {breakdown.bonus&&(()=>{
@@ -8867,6 +8872,54 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
                     </div>
                   </div>
                 )}
+                {/* KO Phase section */}
+                {hasKO&&(()=>{
+                  const ROUND_LABELS = { R32:T[lang].koR32, R16:T[lang].koR16, QF:T[lang].koQF, SF:T[lang].koSF, Final:T[lang].koFinal };
+                  const ROUND_ORDER  = ['R32','R16','QF','SF','Final'];
+                  const byRound = {};
+                  breakdown.ko.forEach(r => {
+                    if (!byRound[r.round]) byRound[r.round] = { pts:0, hits:[], total:0 };
+                    byRound[r.round].total++;
+                    byRound[r.round].pts += r.pts;
+                    if (r.is_hit) byRound[r.round].hits.push(tCode(r.team_name));
+                  });
+                  const rounds = ROUND_ORDER.filter(k => byRound[k]);
+                  return (
+                    <div style={{border:`1.5px solid ${NAVY}22`,borderRadius:12,padding:"10px 12px",marginBottom:10}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                        <span style={{fontSize:12,fontWeight:800,color:NAVY,textTransform:"uppercase",letterSpacing:1}}>🏆 {T[lang].koPhaseLabel}</span>
+                        <span style={{fontSize:13,fontWeight:800,color:NAVY}}>{koTotal}p</span>
+                      </div>
+                      {rounds.map((key,i)=>{
+                        const rd = byRound[key];
+                        const hasPts = rd.pts > 0;
+                        return (
+                          <div key={key} style={{display:"flex",justifyContent:"space-between",
+                            alignItems:"flex-start",padding:"5px 4px",
+                            borderBottom:i<rounds.length-1?"1px solid #F9FAFB":"none",
+                            borderRadius:hasPts?6:0,
+                            background:hasPts?"rgba(22,163,74,0.06)":"transparent",
+                            margin:hasPts?"1px -4px":"0"}}>
+                            <div style={{display:"flex",gap:8,alignItems:"flex-start"}}>
+                              <span style={{fontSize:11,fontWeight:900,color:"#16a34a",minWidth:12,flexShrink:0,paddingTop:1,visibility:rd.hits.length>0?"visible":"hidden"}}>✓</span>
+                              <div style={{display:"flex",flexDirection:"column",gap:2}}>
+                                <span style={{fontSize:12,fontWeight:700,color:hasPts?"#166534":"#374151"}}>
+                                  {ROUND_LABELS[key]||key}
+                                </span>
+                                {rd.hits.length>0&&(
+                                  <span style={{fontSize:11,color:"#16a34a",fontWeight:600,lineHeight:1.3}}>
+                                    {rd.hits.join(", ")}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <span style={{fontSize:12,fontWeight:700,color:hasPts?"#16a34a":"#9CA3AF",flexShrink:0,paddingTop:1}}>{rd.pts}p</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
                 {/* Exact Scores section */}
                 <div style={{border:`1.5px solid ${NAVY}22`,borderRadius:12,padding:"10px 12px",marginBottom:10}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:hasExact?8:0}}>
@@ -8898,19 +8951,19 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
                     );
                   })}
                 </div>
-                {!hasGroups&&!hasExact&&!hasBest3&&!breakdown.bonus&&(
+                {!hasGroups&&!hasExact&&!hasBest3&&!hasKO&&!breakdown.bonus&&(
                   <div style={{textAlign:"center",padding:"24px 0",color:"#9CA3AF",fontSize:13}}>
                     Niciun punct câștigat încă
                   </div>
                 )}
                 {/* Total */}
-                {(hasGroups||hasExact||hasBest3||breakdown.bonus)&&(()=>{
+                {(hasGroups||hasExact||hasBest3||hasKO||breakdown.bonus)&&(()=>{
                   const bonusTotal = breakdown.bonus ? (breakdown.bonus.champion_pts||0)+(breakdown.bonus.runner_up_pts||0)+(breakdown.bonus.top_scorer_pts||0) : 0;
                   return (
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",
                       borderTop:`2px solid ${NAVY}22`,paddingTop:10,marginTop:4}}>
                       <span style={{fontSize:13,fontWeight:800,color:DARK}}>Total</span>
-                      <span style={{fontSize:15,fontWeight:900,color:NAVY}}>{predTotal+best3Total+exactTotal+bonusTotal}p</span>
+                      <span style={{fontSize:15,fontWeight:900,color:NAVY}}>{predTotal+best3Total+koTotal+exactTotal+bonusTotal}p</span>
                     </div>
                   );
                 })()}

@@ -999,7 +999,7 @@ export async function loadBoardExactScores(boardId) {
 }
 
 export async function loadUserBreakdown(userId, boardId) {
-  const [groupRes, exactRes, specialRes, best3Res] = await Promise.all([
+  const [groupRes, exactRes, specialRes, best3Res, koRes] = await Promise.all([
     supabase.rpc('get_user_group_breakdown', { p_user_id: userId, p_board_id: boardId }),
     supabase.rpc('get_user_exact_breakdown', { p_user_id: userId, p_board_id: boardId }),
     supabase
@@ -1009,16 +1009,19 @@ export async function loadUserBreakdown(userId, boardId) {
       .eq('board_id', boardId)
       .maybeSingle(),
     supabase.rpc('get_user_best3_breakdown', { p_user_id: userId, p_board_id: boardId }),
+    supabase.rpc('get_user_ko_hits', { p_user_id: userId, p_board_id: boardId }),
   ])
   if (groupRes.error) console.error('loadUserBreakdown groups:', groupRes.error)
   if (exactRes.error) console.error('loadUserBreakdown exact:', exactRes.error)
   if (best3Res.error) console.error('loadUserBreakdown best3:', best3Res.error)
+  if (koRes.error)    console.error('loadUserBreakdown ko:', koRes.error)
 
   const sp = specialRes.data
   return {
     groups: groupRes.data || [],
     exact:  exactRes.data || [],
     best3:  best3Res.data || [],
+    ko:     koRes.data    || [],
     bonus: sp ? {
       champion:          sp.champion ?? null,
       champion_pts:      sp.champion_pts ?? 0,
