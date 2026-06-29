@@ -3333,8 +3333,10 @@ function Best3Screen({ groups, getGroupStanding, picks, best3, setBest3, onDone 
 }
 
 
-function GroupIntroScreen({ group, teams: teamsProp, isKo, onStart, onNext, onPickChange, isRoundComplete, isMatchLocked=()=>false, hideHeader=false, picks={}, viewMode=false }) {
+function GroupIntroScreen({ group, teams: teamsProp, isKo, onStart, onNext, onPickChange, isRoundComplete, isMatchLocked=()=>false, hideHeader=false, picks={}, viewMode=false, autoPropagated=new Set(), realRoundWinners={} }) {
   const lang = useLang();
+  const { pred: PRED_SCORING } = useScoringRules();
+  const roundPts = {R32:PRED_SCORING.r32,R16:PRED_SCORING.r16,QF:PRED_SCORING.qf,SF:PRED_SCORING.sf,F:PRED_SCORING.final}[group]||0;
   const teams = isKo ? null : (ALL_GROUPS_DATA[group]||[]);
   const matchCount = isKo ? (teamsProp||[]).length : (GROUP_MATCHUPS[group]||[]).length;
   const nextRoundLabel = {R32:"Round of 16",R16:"Quarter-Finals",QF:"Semi-Finals",SF:"Final"}[group]||"Next Round";
@@ -3343,18 +3345,33 @@ function GroupIntroScreen({ group, teams: teamsProp, isKo, onStart, onNext, onPi
   const roundComplete = isRoundComplete ?? (matches.length>0 && matches.every((_,i)=>!!picks[`${group}-${i}`]));
   const matchPairs = [];
   for(let i=0;i<matches.length;i+=2) matchPairs.push([matches[i],matches[i+1]]);
+  const deadlineLocked = isKo && group !== 'R32' && new Date() > new Date('2026-07-04T01:30:00Z');
 
   return (
     <div style={{flex:1,minHeight:0,display:"flex",flexDirection:"column",background:isKo?"transparent":BG,overflow:"hidden",userSelect:"none",position:"relative"}}>
       {isKo ? (
         <>
+          {deadlineLocked && (
+            <div style={{background:"#F8FAFC",borderBottom:"1px solid #E2E8F0",padding:"7px 14px",display:"flex",alignItems:"center",justifyContent:"center",gap:6,flexShrink:0}}>
+              <span style={{fontSize:13}}>🔒</span>
+              <span style={{fontSize:11,fontWeight:800,color:"#64748B",letterSpacing:"0.4px"}}>PREDICȚII ÎNCHISE • DOAR VIZUALIZARE</span>
+            </div>
+          )}
           <div style={{flex:1,minHeight:0,overflowY:"auto",padding:"14px 14px 8px",position:"relative",zIndex:1}}>
             <div style={{display:"flex",flexDirection:"column",gap:10}}>
               {matchPairs.map(([m1,m2],gi)=>{
                 const col={R32:NAVY,R16:"#7B2FBE",QF:RED,SF:"#D4820A",F:"#D4820A"}[group]||NAVY;
                 const resolvePick=(pick,pair)=>pick==="home"?pair[0]:pick==="away"?pair[1]:null;
-                const w1=m1?resolvePick(picks[`${group}-${gi*2}`],m1):null;
-                const w2=m2?resolvePick(picks[`${group}-${gi*2+1}`],m2):null;
+                const resolveWinner=(key,pair)=>{
+                  // R32 FT: real winner mereu (pick greșit e deja șters din DB)
+                  const s=realRoundWinners[`${group}-${key}`];
+                  if(s && group==='R32') return pair[s==='home'?0:1];
+                  const pick=picks[`${group}-${key}`];
+                  if(pick) return resolvePick(pick,pair);
+                  return s?pair[s==='home'?0:1]:null;
+                };
+                const w1=m1?resolveWinner(gi*2,m1):null;
+                const w2=m2?resolveWinner(gi*2+1,m2):null;
                 const code=(t)=>t?TEAM_CODE[t]||t.slice(0,3).toUpperCase():"??";
                 return (
                   <div key={gi} style={{display:"flex",alignItems:"center",gap:6}}>
@@ -3365,23 +3382,42 @@ function GroupIntroScreen({ group, teams: teamsProp, isKo, onStart, onNext, onPi
                         const hWon=p==="home", aWon=p==="away";
                         const locked=isMatchLocked(matchIdx);
                         const canEdit=!locked&&h!=="TBD"&&a!=="TBD"&&!!onPickChange;
+                        const hAutoProp=group==='R16'&&autoPropagated.has(`R32-${2*matchIdx}`);
+                        const aAutoProp=group==='R16'&&autoPropagated.has(`R32-${2*matchIdx+1}`);
+                        const realSide=realRoundWinners[`${group}-${matchIdx}`];
+                        const correctPick=locked&&!!p&&!!realSide&&p===realSide;
+                        const wrongPick=locked&&!!p&&!!realSide&&p!==realSide;
+                        const missedPick=locked&&!p;
+                        const cardBorder=correctPick?GREEN+"55":wrongPick?"#FCA5A555":missedPick?"#FED7AA":hWon||aWon?GREEN+"55":col+"22";
+                        const rowBg=(won,isPick)=>won?GREEN+"15":isPick&&wrongPick?"#FFF1F1":isPick&&correctPick?GREEN+"0A":missedPick?"#FFFBF7":"transparent";
                         return (
-                          <div key={mi} style={{background:"#fff",borderRadius:10,border:`1px solid ${hWon||aWon?GREEN+"55":col+"22"}`,overflow:"hidden",boxShadow:"0 1px 4px rgba(0,0,0,0.06)"}}>
+                          <div key={mi} style={{background:"#fff",borderRadius:10,border:`1px solid ${cardBorder}`,overflow:"hidden",boxShadow:"0 1px 4px rgba(0,0,0,0.06)"}}>
+                            {correctPick&&<div style={{background:"#F0FDF4",borderBottom:"1px solid #BBF7D0",padding:"2px 10px",fontSize:9,fontWeight:800,color:"#15803D",letterSpacing:"0.4px",display:"flex",alignItems:"center",gap:4}}>
+                              <span>✓</span><span>CORECT • +{roundPts} PTS</span>
+                            </div>}
+                            {wrongPick&&<div style={{background:"#FFF1F2",borderBottom:"1px solid #FCA5A5",padding:"2px 10px",fontSize:9,fontWeight:800,color:"#B91C1C",letterSpacing:"0.4px",display:"flex",alignItems:"center",gap:4}}>
+                              <span>✗</span><span>GREȘIT • 0 PTS</span>
+                            </div>}
+                            {missedPick&&<div style={{background:"#FFF7ED",borderBottom:"1px solid #FED7AA",padding:"2px 10px",fontSize:9,fontWeight:800,color:"#C2410C",letterSpacing:"0.4px",display:"flex",alignItems:"center",gap:4}}>
+                              <span>⚠</span><span>NEPREZIS • 0 PTS</span>
+                            </div>}
                             <div role={canEdit?"button":undefined} tabIndex={canEdit?0:undefined}
                               onClick={()=>canEdit&&onPickChange(matchIdx,"home")}
                               onKeyDown={canEdit?e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();onPickChange(matchIdx,"home");}}:undefined}
-                              style={{padding:"7px 10px",borderBottom:"1px solid rgba(0,0,0,0.05)",display:"flex",alignItems:"center",gap:8,background:hWon?GREEN+"15":"transparent",cursor:canEdit?"pointer":"default",WebkitTapHighlightColor:"transparent"}}>
+                              style={{padding:"7px 10px",borderBottom:"1px solid rgba(0,0,0,0.05)",display:"flex",alignItems:"center",gap:8,background:rowBg(hWon,p==="home"),cursor:canEdit?"pointer":"default",WebkitTapHighlightColor:"transparent",opacity:missedPick?0.7:1}}>
                               <span style={{fontSize:20,lineHeight:1}}>{FLAGS[h]||"🏳"}</span>
                               <span style={{fontSize:12,fontWeight:700,color:hWon?GREEN:DARK,flex:1}}>{h||"TBD"}</span>
+                              {hAutoProp&&<span style={{fontSize:9,background:'#FEF3C7',color:'#92400E',borderRadius:4,padding:'1px 5px',fontWeight:800,flexShrink:0}}>real</span>}
                               {hWon&&<span style={{fontSize:11,fontWeight:900,color:GREEN}}>✓</span>}
-                              {locked&&<span style={{fontSize:11,color:"#aaa"}}>🔒</span>}
+                              {locked&&!missedPick&&!correctPick&&!wrongPick&&<span style={{fontSize:11,color:"#aaa"}}>🔒</span>}
                             </div>
                             <div role={canEdit?"button":undefined} tabIndex={canEdit?0:undefined}
                               onClick={()=>canEdit&&onPickChange(matchIdx,"away")}
                               onKeyDown={canEdit?e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();onPickChange(matchIdx,"away");}}:undefined}
-                              style={{padding:"7px 10px",display:"flex",alignItems:"center",gap:8,background:aWon?GREEN+"15":"transparent",cursor:canEdit?"pointer":"default",WebkitTapHighlightColor:"transparent"}}>
+                              style={{padding:"7px 10px",display:"flex",alignItems:"center",gap:8,background:rowBg(aWon,p==="away"),cursor:canEdit?"pointer":"default",WebkitTapHighlightColor:"transparent",opacity:missedPick?0.7:1}}>
                               <span style={{fontSize:20,lineHeight:1}}>{FLAGS[a]||"🏳"}</span>
                               <span style={{fontSize:12,fontWeight:700,color:aWon?GREEN:DARK,flex:1}}>{a||"TBD"}</span>
+                              {aAutoProp&&<span style={{fontSize:9,background:'#FEF3C7',color:'#92400E',borderRadius:4,padding:'1px 5px',fontWeight:800,flexShrink:0}}>real</span>}
                               {aWon&&<span style={{fontSize:11,fontWeight:900,color:GREEN}}>✓</span>}
                             </div>
                           </div>
@@ -3598,25 +3634,67 @@ function InstantPickScreen({ onBack, onComplete, onKoComplete, onKoPick, onModif
     SF:['44-0','45-0'],
     F:['49-0'],
   };
+  // Ultimul meci R32: Colombia vs Ghana (33-1) — după acest kickoff, R16/QF/SF/F se blochează
+  const R32_DEADLINE_UTC = '2026-07-04T01:30:00Z';
+  const pastR32Deadline = new Date() > new Date(R32_DEADLINE_UTC);
+
   const isCurrentKoMatchLocked = (matchIdx) => {
     const key=KO_MATCH_KEYS[koRound]?.[matchIdx];
     if(!key) return false;
     const [sourceDay,sourceIdx]=key.split("-").map(Number);
     const event=CALENDAR_EVENTS.find(item=>item.day===sourceDay);
     const match=event?.matches?.[sourceIdx];
-    return match ? isMatchPast(sourceDay,match.time,null,12,match.kickoffUtc) : false;
+    const individualLock = match ? isMatchPast(sourceDay,match.time,null,12,match.kickoffUtc) : false;
+    const r32DeadlineLock = koRound !== 'R32' && pastR32Deadline;
+    return individualLock || r32DeadlineLock;
   };
   const r32Matchups = R32_KEYS.map(key => ({
     home: koTeams[key]?.home || 'TBD',
     away: koTeams[key]?.away || 'TBD',
   })); // = 16 meciuri, ordine FIFA reală
 
+  // Câștigători reali din scoruri live (FT) — pentru banner corect/greșit și propagare bracket
+  const allLiveScores = useLiveScores(null, null, null);
+  const computeRealKoWinners = (matchKeys, roundPrefix) => {
+    const result = {};
+    matchKeys.forEach((matchKey, idx) => {
+      const sc = allLiveScores[matchKey];
+      if(!sc || sc.status !== 'FT') return;
+      const h = sc.home ?? 0, a = sc.away ?? 0;
+      if(h > a) result[`${roundPrefix}-${idx}`] = 'home';
+      else if(a > h) result[`${roundPrefix}-${idx}`] = 'away';
+      else if(sc.homePen != null && sc.awayPen != null) {
+        if(sc.homePen > sc.awayPen) result[`${roundPrefix}-${idx}`] = 'home';
+        else if(sc.awayPen > sc.homePen) result[`${roundPrefix}-${idx}`] = 'away';
+      }
+    });
+    return result;
+  };
+  const realR32Winners = computeRealKoWinners(R32_KEYS, 'R32');
+  const realKoWinnersMap = {
+    R32: realR32Winners,
+    R16: computeRealKoWinners(KO_MATCH_KEYS.R16||[], 'R16'),
+    QF:  computeRealKoWinners(KO_MATCH_KEYS.QF||[], 'QF'),
+    SF:  computeRealKoWinners(KO_MATCH_KEYS.SF||[], 'SF'),
+    F:   computeRealKoWinners(KO_MATCH_KEYS.F||[], 'F'),
+  };
   const getWinners = (roundKey, matchups) =>
     (matchups || []).map((m, idx) => {
+      if(!m) return "TBD";
+      // R32 FT: real winner mereu (inclusiv pentru pick greșit — pick-ul greșit e deja șters din DB)
+      if(roundKey === 'R32') {
+        const side = realR32Winners[`R32-${idx}`];
+        if(side && m[side] && m[side] !== 'TBD') return m[side];
+      }
       const pick = koPicks[`${roundKey}-${idx}`];
-      if(!m || !pick) return "TBD";
-      return pick==="home" ? m.home : pick==="away" ? m.away : "TBD";
+      if(pick) return pick==="home" ? m.home : pick==="away" ? m.away : "TBD";
+      return "TBD";
     });
+
+  // autoPropagated: R32 cu rezultat cunoscut și fără pick (greșit=șters din DB, sau neprezis)
+  const autoPropagated = new Set(
+    Object.keys(realR32Winners).filter(k => !koPicks[k])
+  );
 
   const pairWinners = (winners, pairMap) =>
     pairMap.map(([homeIdx, awayIdx]) => ({
@@ -3688,8 +3766,12 @@ function InstantPickScreen({ onBack, onComplete, onKoComplete, onKoPick, onModif
     if(id==="best3") { setStage("best3"); }
     else { setStage("ko"); setKoRound(id); setKoShowIntro(true); setKoIdx(0); }
   };
+  // Meciuri din runda curentă care NU sunt blocate (pot fi prezise)
+  const pickableIndices = koRoundMatchups.map((_,i)=>i).filter(i=>!isCurrentKoMatchLocked(i));
+  const pickablePos = pickableIndices.indexOf(koIdx);
   const headerTitle = stage==="groups"?`Group ${currentGroup}`:stage==="best3"?"Best 3rd Place":koLabel;
-  const headerCounterVal = stage==="groups"?`${groupIdx+1}/${GROUPS.length}`:stage==="best3"?`${best3.length}/8`:`${koIdx+1}/${Math.max(koRoundMatchups.length,1)}`;
+  const headerCounterVal = stage==="groups"?`${groupIdx+1}/${GROUPS.length}`:stage==="best3"?`${best3.length}/8`
+    : pickableIndices.length>0 ? `${Math.max(pickablePos,0)+1}/${pickableIndices.length}` : `0/${koRoundMatchups.length}`;
   const headerSub = stage==="groups"?"groups":stage==="best3"?"selected":"matches";
   // When startAtKo=true: groups/best3 are view-only; back from any stage goes to ko/home
   const effectiveViewMode = startAtKo ? (stage === "groups" || stage === "best3") : viewMode;
@@ -4090,7 +4172,11 @@ function InstantPickScreen({ onBack, onComplete, onKoComplete, onKoPick, onModif
         <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.055,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
         {sharedHeader}
         <GroupIntroScreen group={koRound} teams={koRoundMatchups.map(m=>[m.home,m.away])}
-          isKo={true} hideHeader={true} onStart={()=>setKoShowIntro(false)}
+          isKo={true} hideHeader={true} onStart={()=>{
+            const first = pickableIndices[0] ?? 0;
+            setKoIdx(first);
+            setKoShowIntro(false);
+          }}
           onNext={()=>{
             const nextRound={R32:"R16",R16:"QF",QF:"SF",SF:"F"}[koRound];
             if(nextRound){setKoRound(nextRound);setKoIdx(0);setKoShowIntro(true);}
@@ -4103,7 +4189,8 @@ function InstantPickScreen({ onBack, onComplete, onKoComplete, onKoPick, onModif
           }}
           isRoundComplete={koRoundDone(koRound)}
           isMatchLocked={isCurrentKoMatchLocked}
-          picks={koPicks} viewMode={viewMode}/>
+          picks={koPicks} viewMode={viewMode}
+          autoPropagated={autoPropagated} realRoundWinners={realKoWinnersMap[koRound]||{}}/>
       </div>
     );
     const predictedKo = (predictedMatchupsMap[koRound]||[])[koIdx];
@@ -4150,7 +4237,9 @@ function InstantPickScreen({ onBack, onComplete, onKoComplete, onKoPick, onModif
             const newKoPicks={...koPicks,[key]:result};
             setKoPicks(newKoPicks);
             onKoPick&&onKoPick(newKoPicks);
-            if(koIdx<koRoundMatchups.length-1){ setKoIdx(i=>i+1); }
+            const curPos = pickableIndices.indexOf(koIdx);
+            const nextPickable = pickableIndices[curPos+1];
+            if(nextPickable !== undefined){ setKoIdx(nextPickable); }
             else {
               const nxt={R32:"R16",R16:"QF",QF:"SF",SF:"F"}[koRound];
               if(nxt){setKoRound(nxt);setKoIdx(0);setKoShowIntro(true);}
@@ -4158,9 +4247,15 @@ function InstantPickScreen({ onBack, onComplete, onKoComplete, onKoPick, onModif
             }
           }}
           onFlash={()=>{}}
-          onBack={()=>{ if(koIdx>0)setKoIdx(k=>k-1); else setKoShowIntro(true); }}
-          canGoBack={koIdx>0} groupLabel={koLabel} matchNum={koIdx}
-          totalMatches={koRoundMatchups.length} isKo={true}/>
+          onBack={()=>{
+            const curPos = pickableIndices.indexOf(koIdx);
+            const prevPickable = pickableIndices[curPos-1];
+            if(prevPickable !== undefined) setKoIdx(prevPickable);
+            else setKoShowIntro(true);
+          }}
+          canGoBack={pickableIndices.indexOf(koIdx)>0} groupLabel={koLabel}
+          matchNum={Math.max(pickableIndices.indexOf(koIdx),0)}
+          totalMatches={Math.max(pickableIndices.length,1)} isKo={true}/>
       </div>
     );
   }
