@@ -1033,3 +1033,13 @@ export async function loadUserBreakdown(userId, boardId) {
     } : null,
   }
 }
+
+export async function loadUserKoPicks(userId, boardId) {
+  const { data } = await supabase
+    .from('predictions')
+    .select('ko_picks')
+    .eq('user_id', userId)
+    .eq('board_id', boardId)
+    .maybeSingle()
+  return data?.ko_picks || null
+}

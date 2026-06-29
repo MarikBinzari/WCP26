@@ -10,7 +10,7 @@ import specialPickBadge from "./assets/special-pick-badge.webp";
 import bellIcon from "./assets/bell-icon.svg";
 import { ALL_GROUPS_DATA, FLAGS, TEAM_COLORS, CALENDAR_EVENTS, CL_FINAL } from "./data/worldcup2026.js";
 import { supabase, SUPABASE_URL } from "./supabase.js";
-import { savePredictions, saveExactScore, loadExactScores, createBoard, updateBoard, joinBoardByCode, joinBoardById, ensureBoardScores, loadLeaderboard, loadMyScoreBreakdown, fetchScoringRules, fetchMemberCounts, removeBoardMember, removeParticipation, deleteBoard, loadBoardMembers, checkDbHealth, checkEmailExists, checkNicknameExists, loadLiveScores, subscribeLiveScores, loadPlayers, loadPlayersByTeam, seedPlayersFromApi, saveSpecialPick, uploadAvatar, uploadBoardImage, loadAllBoards, loadAllUserPicks, loadNotifReads, markNotifRead, loadSystemNotifications, loadRealGroupStandings, loadBest3Advancing, loadUserBreakdown, savePushSubscription, loadChatMessages, sendChatMessage, editChatMessage, toggleChatLike, toggleChatDislike, subscribeChatMessages, loadMatchPredictions, loadCentralStats, loadBoardExactScores, hasLiveMatches, loadKoTeams, loadMatchEvents, getKoBackup, backupKoPicks } from "./db.js";
+import { savePredictions, saveExactScore, loadExactScores, createBoard, updateBoard, joinBoardByCode, joinBoardById, ensureBoardScores, loadLeaderboard, loadMyScoreBreakdown, fetchScoringRules, fetchMemberCounts, removeBoardMember, removeParticipation, deleteBoard, loadBoardMembers, checkDbHealth, checkEmailExists, checkNicknameExists, loadLiveScores, subscribeLiveScores, loadPlayers, loadPlayersByTeam, seedPlayersFromApi, saveSpecialPick, uploadAvatar, uploadBoardImage, loadAllBoards, loadAllUserPicks, loadNotifReads, markNotifRead, loadSystemNotifications, loadRealGroupStandings, loadBest3Advancing, loadUserBreakdown, loadUserKoPicks, savePushSubscription, loadChatMessages, sendChatMessage, editChatMessage, toggleChatLike, toggleChatDislike, subscribeChatMessages, loadMatchPredictions, loadCentralStats, loadBoardExactScores, hasLiveMatches, loadKoTeams, loadMatchEvents, getKoBackup, backupKoPicks } from "./db.js";
 
 const TEAM_CODE = {"Mexico":"MEX","South Africa":"RSA","South Korea":"KOR","Czechia":"CZE","Canada":"CAN","Switzerland":"SUI","Qatar":"QAT","Bosnia-Herzegovina":"BIH","Brazil":"BRA","Morocco":"MAR","Scotland":"SCO","Haiti":"HAI","USA":"USA","Paraguay":"PAR","Australia":"AUS","Turkiye":"TUR","Germany":"GER","Ecuador":"ECU","Ivory Coast":"CIV","Curacao":"CUW","Netherlands":"NED","Japan":"JPN","Tunisia":"TUN","Sweden":"SWE","Belgium":"BEL","Iran":"IRI","Egypt":"EGY","New Zealand":"NZL","Spain":"ESP","Uruguay":"URU","Saudi Arabia":"KSA","Cape Verde":"CPV","France":"FRA","Senegal":"SEN","Norway":"NOR","Iraq":"IRQ","Argentina":"ARG","Austria":"AUT","Algeria":"ALG","Jordan":"JOR","Portugal":"POR","Colombia":"COL","Uzbekistan":"UZB","DR Congo":"COD","England":"ENG","Croatia":"CRO","Panama":"PAN","Ghana":"GHA"};
 
@@ -8360,7 +8360,7 @@ function getCompletedGroups(liveScores) {
   return completed;
 }
 
-function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, myBoards=[], activeBoardId, setActiveBoardId, userId }) {
+function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, myBoards=[], activeBoardId, setActiveBoardId, userId, koTeams={} }) {
   const lang = useLang();
   const { pred: scoringPred } = useScoringRules();
   const liveScoresLS = useLiveScores(null, null, null);
@@ -8374,6 +8374,8 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
   const [liveActive, setLiveActive] = useState(false);
   const [showBest3Popup, setShowBest3Popup] = useState(false);
   const [best3Advancing, setBest3Advancing] = useState([]);
+  const [showKOBracket, setShowKOBracket] = useState(false);
+  const [userKoPicks, setUserKoPicks] = useState(null);
 
   useEffect(() => {
     hasLiveMatches().then(setLiveActive);
@@ -8886,6 +8888,132 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
                     </div>
                   </div>
                 )}
+                {/* KO bracket popup */}
+                {showKOBracket&&(
+                  <div onClick={()=>setShowKOBracket(false)}
+                    style={{position:"fixed",inset:0,zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",
+                      background:"rgba(0,0,0,0.45)",backdropFilter:"blur(2px)"}}>
+                    <div onClick={e=>e.stopPropagation()}
+                      style={{background:"#fff",borderRadius:16,padding:"18px 16px",width:"min(340px,92vw)",
+                        maxHeight:"85vh",overflowY:"auto",
+                        boxShadow:"0 20px 60px rgba(0,0,0,0.25)"}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+                        <span style={{fontSize:13,fontWeight:800,color:NAVY,letterSpacing:0.5}}>🏆 {selectedUser?.name}</span>
+                        <button onClick={()=>setShowKOBracket(false)}
+                          style={{background:"rgba(0,0,0,0.06)",border:"none",borderRadius:8,
+                            width:28,height:28,cursor:"pointer",fontSize:14,color:"#666",
+                            display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
+                      </div>
+                      {!userKoPicks?(
+                        <div style={{textAlign:"center",padding:"24px 0",color:"#9CA3AF",fontSize:13}}>
+                          <div style={{width:20,height:20,border:`2px solid ${NAVY}`,borderTopColor:"transparent",
+                            borderRadius:"50%",animation:"spin 0.8s linear infinite",
+                            display:"inline-block",marginBottom:8}}/>
+                          <div>Se încarcă...</div>
+                        </div>
+                      ):(()=>{
+                        const R32_MAP=['29-0','30-0','28-0','29-1','32-0','32-1','31-1','31-2','29-2','30-1','30-2','31-0','33-0','33-2','32-2','33-1'];
+                        const koHitMap={};
+                        (breakdown?.ko||[]).forEach(r=>{ koHitMap[`${r.round}|${r.team_name}`]={is_hit:r.is_hit,pts:r.pts}; });
+                        const r32Rows=R32_MAP.map((mk,idx)=>{
+                          const pick=userKoPicks[`R32-${idx}`];
+                          if(!pick) return null;
+                          const teams=koTeams[mk];
+                          if(!teams) return null;
+                          const teamName=pick==='home'?teams.home:teams.away;
+                          const hit=koHitMap[`R32|${teamName}`];
+                          return {idx,teamName,hit};
+                        }).filter(Boolean);
+                        const LATER_ROUNDS=[
+                          {key:'R16',label:T[lang].koR16,slots:8},
+                          {key:'QF', label:T[lang].koQF, slots:4},
+                          {key:'SF', label:T[lang].koSF, slots:2},
+                          {key:'Final',label:T[lang].koFinal,fKey:'F-0'},
+                        ];
+                        const rowStyle=(is_hit)=>({
+                          display:"flex",justifyContent:"space-between",alignItems:"center",
+                          padding:"5px 4px",borderBottom:"1px solid #F9FAFB",
+                          borderRadius:is_hit?6:0,
+                          background:is_hit==="hit"?"rgba(22,163,74,0.06)":is_hit==="miss"?"rgba(239,68,68,0.06)":"transparent",
+                        });
+                        return (
+                          <div>
+                            {r32Rows.length>0&&(
+                              <div style={{marginBottom:14}}>
+                                <div style={{fontSize:10,fontWeight:800,color:NAVY,textTransform:"uppercase",letterSpacing:1,marginBottom:6,paddingBottom:4,borderBottom:`1px solid ${NAVY}22`}}>
+                                  {T[lang].koR32}
+                                </div>
+                                {r32Rows.map(({idx,teamName,hit})=>{
+                                  const st=hit===undefined?"pending":hit.is_hit?"hit":"miss";
+                                  return (
+                                    <div key={idx} style={rowStyle(st)}>
+                                      <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                                        <span style={{fontSize:11,fontWeight:900,minWidth:14,
+                                          color:st==="hit"?"#16a34a":st==="miss"?"#ef4444":"#9CA3AF"}}>
+                                          {st==="hit"?"✓":st==="miss"?"✗":"⏳"}
+                                        </span>
+                                        <span style={{fontSize:13,fontWeight:700,
+                                          color:st==="hit"?"#166534":st==="miss"?"#991b1b":"#374151"}}>
+                                          {tCode(teamName)}
+                                        </span>
+                                      </div>
+                                      {st!=="pending"&&(
+                                        <span style={{fontSize:12,fontWeight:700,color:st==="hit"?"#16a34a":"#ef4444"}}>
+                                          {hit.is_hit?`+${hit.pts}p`:"0p"}
+                                        </span>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                            {LATER_ROUNDS.map(({key,label,slots,fKey})=>{
+                              const ftRows=(breakdown?.ko||[]).filter(r=>r.round===key);
+                              const allKeys=fKey?[fKey]:Array.from({length:slots},(_,i)=>`${key}-${i}`);
+                              const pickedCount=allKeys.filter(k=>userKoPicks[k]).length;
+                              if(!pickedCount&&ftRows.length===0) return null;
+                              const pendingCount=pickedCount-ftRows.length;
+                              return (
+                                <div key={key} style={{marginBottom:12}}>
+                                  <div style={{fontSize:10,fontWeight:800,color:NAVY,textTransform:"uppercase",letterSpacing:1,marginBottom:6,paddingBottom:4,borderBottom:`1px solid ${NAVY}22`}}>
+                                    {label}
+                                  </div>
+                                  {ftRows.map((r,i)=>{
+                                    const st=r.is_hit?"hit":"miss";
+                                    return (
+                                      <div key={i} style={rowStyle(st)}>
+                                        <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                                          <span style={{fontSize:11,fontWeight:900,minWidth:14,color:r.is_hit?"#16a34a":"#ef4444"}}>
+                                            {r.is_hit?"✓":"✗"}
+                                          </span>
+                                          <span style={{fontSize:13,fontWeight:700,color:r.is_hit?"#166534":"#991b1b"}}>
+                                            {tCode(r.team_name)}
+                                          </span>
+                                        </div>
+                                        <span style={{fontSize:12,fontWeight:700,color:r.is_hit?"#16a34a":"#ef4444"}}>
+                                          {r.is_hit?`+${r.pts}p`:"0p"}
+                                        </span>
+                                      </div>
+                                    );
+                                  })}
+                                  {pendingCount>0&&(
+                                    <div style={{display:"flex",alignItems:"center",gap:8,padding:"5px 4px",color:"#9CA3AF",fontSize:11}}>
+                                      <span style={{minWidth:14}}>⏳</span>
+                                      <span>{pendingCount} pick{pendingCount>1?"s":""} · neîncheiat</span>
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        );
+                      })()}
+                      <div style={{marginTop:10,textAlign:"center",fontSize:10,color:"#9CA3AF"}}>
+                        Atinge în afară pentru a închide
+                      </div>
+                    </div>
+                  </div>
+                )}
                 {/* KO Phase section */}
                 {hasKO&&(()=>{
                   const ROUND_LABELS = { R32:T[lang].koR32, R16:T[lang].koR16, QF:T[lang].koQF, SF:T[lang].koSF, Final:T[lang].koFinal };
@@ -8901,7 +9029,9 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
                   return (
                     <div style={{border:`1.5px solid ${NAVY}22`,borderRadius:12,padding:"10px 12px",marginBottom:10}}>
                       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-                        <span style={{fontSize:12,fontWeight:800,color:NAVY,textTransform:"uppercase",letterSpacing:1}}>🏆 {T[lang].koPhaseLabel}</span>
+                        <span onClick={()=>{ setUserKoPicks(null); setShowKOBracket(true); const bid=activeBoardId||'global'; loadUserKoPicks(selectedUser.userId,bid).then(setUserKoPicks); }}
+                          style={{fontSize:12,fontWeight:800,color:NAVY,textTransform:"uppercase",letterSpacing:1,
+                            cursor:"pointer",textDecoration:"underline dotted",textUnderlineOffset:3}}>🏆 {T[lang].koPhaseLabel}</span>
                         <span style={{fontSize:13,fontWeight:800,color:NAVY}}>{koTotal}p</span>
                       </div>
                       {rounds.map((key,i)=>{
@@ -12526,7 +12656,7 @@ function App() {
           {screen===SCREENS.RESET_PASSWORD&&<ResetPasswordScreen onDone={()=>{ inRecoveryRef.current=false; setScreen(SCREENS.HOME); }}/>}
           {screen===SCREENS.LEADERBOARD&&<LeaderboardScreen onBack={()=>setScreen(SCREENS.HOME)} tournamentStarted={tournamentStarted}
             myBoards={myBoards} activeBoardId={activeBoardId} setActiveBoardId={setActiveBoardId}
-            userId={user?.id}
+            userId={user?.id} koTeams={koTeams}
             leaders={(()=>{
               if (leaderboardData[activeBoardId]?.length > 0) return leaderboardData[activeBoardId];
               const ab = myBoards.find(b=>b.id===activeBoardId)||myBoards[0];
