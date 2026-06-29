@@ -8898,8 +8898,8 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
                       background:"rgba(0,0,0,0.45)",backdropFilter:"blur(2px)"}}>
                     <div onClick={e=>e.stopPropagation()}
                       style={{background:BG,borderRadius:16,padding:"16px 14px",
-                        width:"min(370px,96vw)",maxHeight:"88vh",display:"flex",flexDirection:"column",
-                        boxShadow:"0 20px 60px rgba(0,0,0,0.25)"}}>
+                        width:"min(370px,96vw)",height:"min(88vh,680px)",display:"flex",flexDirection:"column",
+                        overflow:"hidden",boxShadow:"0 20px 60px rgba(0,0,0,0.25)"}}>
                       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12,flexShrink:0}}>
                         <span style={{fontSize:13,fontWeight:800,color:NAVY}}>🏆 {selectedUser?.name}</span>
                         <button onClick={()=>setShowKOBracket(false)}
@@ -8975,7 +8975,7 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
                               })}
                             </div>
                             {/* Identic cu InstantPickScreen KO view */}
-                            <div style={{flex:1,overflowY:"auto",minHeight:0,margin:"0 -14px"}}>
+                            <div style={{flex:1,minHeight:0,display:"flex",flexDirection:"column",overflow:"hidden"}}>
                               <GroupIntroScreen
                                 group={curGroup}
                                 teams={curMatchups.map(m=>[m.home,m.away])}
@@ -8992,9 +8992,6 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
                           </>
                         );
                       })()}
-                      <div style={{flexShrink:0,marginTop:8,textAlign:"center",fontSize:10,color:"#9CA3AF"}}>
-                        Atinge în afară pentru a închide
-                      </div>
                     </div>
                   </div>
                 )}
