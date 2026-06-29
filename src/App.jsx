@@ -3346,6 +3346,11 @@ function GroupIntroScreen({ group, teams: teamsProp, isKo, onStart, onNext, onPi
   const matchPairs = [];
   for(let i=0;i<matches.length;i+=2) matchPairs.push([matches[i],matches[i+1]]);
   const deadlineLocked = isKo && group !== 'R32' && new Date() > new Date('2026-07-04T01:30:00Z');
+  // Câte meciuri pot fi prezise (echipe cunoscute + neblocate)
+  const pickableCount = isKo ? matches.filter(([h,a],i)=>
+    !isMatchLocked(i) && h!=='TBD' && a!=='TBD'
+  ).length : matchCount;
+  const hasPickable = pickableCount > 0;
 
   return (
     <div style={{flex:1,minHeight:0,display:"flex",flexDirection:"column",background:isKo?"transparent":BG,overflow:"hidden",userSelect:"none",position:"relative"}}>
@@ -3462,13 +3467,13 @@ function GroupIntroScreen({ group, teams: teamsProp, isKo, onStart, onNext, onPi
               {matchCount} {T[lang].matchesToPredict}
             </div>
             <div style={{display:"flex",gap:8}}>
-              <button onClick={!viewMode ? onStart : undefined}
+              <button onClick={(!viewMode && hasPickable) ? onStart : undefined}
                 style={{flex:1,padding:"15px 8px",borderRadius:14,border:"none",
-                  background:viewMode?"rgba(0,0,0,0.07)":`linear-gradient(135deg,${NAVY},#003580)`,
-                  color:viewMode?"rgba(0,0,0,0.25)":"#fff",fontSize:14,fontWeight:900,
-                  cursor:viewMode?"default":"pointer",
-                  boxShadow:viewMode?"none":"0 4px 20px rgba(0,32,91,0.3)",letterSpacing:0.4}}>
-                {viewMode ? T[lang].viewOnly : hasRoundPicks ? T[lang].editPredictions : T[lang].completePredictions}
+                  background:(viewMode||!hasPickable)?"rgba(0,0,0,0.07)":`linear-gradient(135deg,${NAVY},#003580)`,
+                  color:(viewMode||!hasPickable)?"rgba(0,0,0,0.25)":"#fff",fontSize:14,fontWeight:900,
+                  cursor:(viewMode||!hasPickable)?"default":"pointer",
+                  boxShadow:(viewMode||!hasPickable)?"none":"0 4px 20px rgba(0,32,91,0.3)",letterSpacing:0.4}}>
+                {viewMode ? T[lang].viewOnly : !hasPickable ? '🔒 ' + T[lang].viewOnly : hasRoundPicks ? T[lang].editPredictions : T[lang].completePredictions}
               </button>
               {roundComplete&&onNext&&(
                 <button onClick={onNext}
@@ -3766,8 +3771,12 @@ function InstantPickScreen({ onBack, onComplete, onKoComplete, onKoPick, onModif
     if(id==="best3") { setStage("best3"); }
     else { setStage("ko"); setKoRound(id); setKoShowIntro(true); setKoIdx(0); }
   };
-  // Meciuri din runda curentă care NU sunt blocate (pot fi prezise)
-  const pickableIndices = koRoundMatchups.map((_,i)=>i).filter(i=>!isCurrentKoMatchLocked(i));
+  // Meciuri din runda curentă care NU sunt blocate și NU au TBD (pot fi prezise)
+  const pickableIndices = koRoundMatchups.map((_,i)=>i).filter(i=>
+    !isCurrentKoMatchLocked(i) &&
+    koRoundMatchups[i]?.home !== 'TBD' &&
+    koRoundMatchups[i]?.away !== 'TBD'
+  );
   const pickablePos = pickableIndices.indexOf(koIdx);
   const headerTitle = stage==="groups"?`Group ${currentGroup}`:stage==="best3"?"Best 3rd Place":koLabel;
   const headerCounterVal = stage==="groups"?`${groupIdx+1}/${GROUPS.length}`:stage==="best3"?`${best3.length}/8`
