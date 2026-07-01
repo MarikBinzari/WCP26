@@ -85,9 +85,16 @@ Deno.serve(async (req) => {
 
   const sent   = results.filter(r => r.status === 'fulfilled').length
   const failed = results.filter(r => r.status === 'rejected').length
+  const failureCodes: Record<string, number> = {}
+  results.forEach(result => {
+    if (result.status !== 'rejected') return
+    const code = String((result.reason as any)?.statusCode ?? 'unknown')
+    failureCodes[code] = (failureCodes[code] ?? 0) + 1
+    console.error(`[push] failed ${code}: ${(result.reason as any)?.body ?? (result.reason as any)?.message ?? result.reason}`)
+  })
 
   return new Response(
-    JSON.stringify({ sent, failed, notifId: notif.id }),
+    JSON.stringify({ total:subs.length, sent, failed, removed:expiredEndpoints.length, failureCodes, notifId:notif.id }),
     { headers: { 'Content-Type': 'application/json' } }
   )
 })

@@ -63,9 +63,13 @@ Deno.serve(async (req) => {
 
   // Șterge subscripțiile expirate / invalide (410 Gone, 404 Not Found)
   const expiredEndpoints: string[] = []
+  const failureCodes: Record<string, number> = {}
   results.forEach((r, i) => {
     if (r.status === 'rejected') {
       const statusCode = (r.reason as any)?.statusCode
+      const code = String(statusCode ?? 'unknown')
+      failureCodes[code] = (failureCodes[code] ?? 0) + 1
+      console.error(`[push] failed ${code}: ${(r.reason as any)?.body ?? (r.reason as any)?.message ?? r.reason}`)
       if (statusCode === 410 || statusCode === 404) {
         expiredEndpoints.push(subs[i].endpoint)
       }
@@ -83,7 +87,7 @@ Deno.serve(async (req) => {
   const failed = results.filter(r => r.status === 'rejected').length
 
   return new Response(
-    JSON.stringify({ sent, failed, removed: expiredEndpoints.length }),
+    JSON.stringify({ total:subs.length, sent, failed, removed:expiredEndpoints.length, failureCodes }),
     { headers: { 'Content-Type': 'application/json' } }
   )
 })

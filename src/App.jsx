@@ -11927,16 +11927,17 @@ function App() {
       const reg = await navigator.serviceWorker.ready;
       const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY;
       if (!VAPID_PUBLIC_KEY) throw new Error('VAPID key missing');
-      const existing = await reg.pushManager.getSubscription();
-      if (existing) await existing.unsubscribe();
-      const sub = await reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: Uint8Array.from(
-          atob(VAPID_PUBLIC_KEY.replace(/-/g, '+').replace(/_/g, '/')),
-          c => c.charCodeAt(0)
-        ),
-      });
-      await savePushSubscription(userId, sub);
+      let sub = await reg.pushManager.getSubscription();
+      if (!sub) {
+        const base64 = VAPID_PUBLIC_KEY.replace(/-/g, '+').replace(/_/g, '/');
+        const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, '=');
+        sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey:Uint8Array.from(atob(padded), c => c.charCodeAt(0)),
+        });
+      }
+      const saved = await savePushSubscription(userId, sub);
+      if (saved?.error) throw new Error(saved.error);
       return true;
     } catch (e) {
       console.warn('[push] setup failed:', e);
