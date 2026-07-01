@@ -355,50 +355,50 @@ export const CALENDAR_EVENTS = [
 
   // ── R16 (ȘAISPREZECIMI) — 4-7 Iulie ─────────────────────────────────────────
   {day:34, matches:[
-    {home:"W74",homeFlag:"🏆",away:"W77",awayFlag:"🏆",time:"17:00",group:"R16",venue:"Lincoln Financial Field"},
-    {home:"W73",homeFlag:"🏆",away:"W75",awayFlag:"🏆",time:"18:00",group:"R16",venue:"NRG Stadium"},
+    {home:"W74",homeFlag:"🏆",away:"W77",awayFlag:"🏆",time:"17:00",group:"R16",venue:"Lincoln Financial Field",kickoffUtc:"2026-07-04T21:00:00Z"},
+    {home:"W73",homeFlag:"🏆",away:"W75",awayFlag:"🏆",time:"20:00",group:"R16",venue:"NRG Stadium",kickoffUtc:"2026-07-04T17:00:00Z"},
   ]},
   {day:35, matches:[
-    {home:"W76",homeFlag:"🏆",away:"W78",awayFlag:"🏆",time:"16:00",group:"R16",venue:"MetLife Stadium"},
-    {home:"W79",homeFlag:"🏆",away:"W80",awayFlag:"🏆",time:"18:00",group:"R16",venue:"Estadio Azteca"},
+    {home:"W76",homeFlag:"🏆",away:"W78",awayFlag:"🏆",time:"16:00",group:"R16",venue:"MetLife Stadium",kickoffUtc:"2026-07-05T20:00:00Z"},
+    {home:"W79",homeFlag:"🏆",away:"W80",awayFlag:"🏆",time:"18:00",group:"R16",venue:"Estadio Azteca",kickoffUtc:"2026-07-05T22:00:00Z"},
   ]},
   {day:36, matches:[
-    {home:"W83",homeFlag:"🏆",away:"W84",awayFlag:"🏆",time:"19:00",group:"R16",venue:"AT&T Stadium"},
-    {home:"W81",homeFlag:"🏆",away:"W82",awayFlag:"🏆",time:"19:00",group:"R16",venue:"Lumen Field"},
+    {home:"W83",homeFlag:"🏆",away:"W84",awayFlag:"🏆",time:"19:00",group:"R16",venue:"AT&T Stadium",kickoffUtc:"2026-07-06T23:00:00Z"},
+    {home:"W81",homeFlag:"🏆",away:"W82",awayFlag:"🏆",time:"19:00",group:"R16",venue:"Lumen Field",kickoffUtc:"2026-07-06T23:00:00Z"},
   ]},
   {day:37, matches:[
-    {home:"W86",homeFlag:"🏆",away:"W88",awayFlag:"🏆",time:"16:00",group:"R16",venue:"Mercedes-Benz Stadium"},
-    {home:"W85",homeFlag:"🏆",away:"W87",awayFlag:"🏆",time:"19:00",group:"R16",venue:"BC Place"},
+    {home:"W86",homeFlag:"🏆",away:"W88",awayFlag:"🏆",time:"16:00",group:"R16",venue:"Mercedes-Benz Stadium",kickoffUtc:"2026-07-07T20:00:00Z"},
+    {home:"W85",homeFlag:"🏆",away:"W87",awayFlag:"🏆",time:"19:00",group:"R16",venue:"BC Place",kickoffUtc:"2026-07-07T23:00:00Z"},
   ]},
 
   // ── SFERTURI DE FINALĂ (QF) — 9-11 Iulie ────────────────────────────────────
   {day:39, matches:[
-    {home:"W89",homeFlag:"🏆",away:"W90",awayFlag:"🏆",time:"16:00",group:"QF",venue:"Gillette Stadium"},
+    {home:"W89",homeFlag:"🏆",away:"W90",awayFlag:"🏆",time:"16:00",group:"QF",venue:"Gillette Stadium",kickoffUtc:"2026-07-09T20:00:00Z"},
   ]},
   {day:40, matches:[
-    {home:"W93",homeFlag:"🏆",away:"W94",awayFlag:"🏆",time:"19:00",group:"QF",venue:"SoFi Stadium"},
+    {home:"W93",homeFlag:"🏆",away:"W94",awayFlag:"🏆",time:"19:00",group:"QF",venue:"SoFi Stadium",kickoffUtc:"2026-07-10T23:00:00Z"},
   ]},
   {day:41, matches:[
-    {home:"W91",homeFlag:"🏆",away:"W92",awayFlag:"🏆",time:"17:00",group:"QF",venue:"Hard Rock Stadium"},
-    {home:"W95",homeFlag:"🏆",away:"W96",awayFlag:"🏆",time:"20:00",group:"QF",venue:"Arrowhead Stadium"},
+    {home:"W91",homeFlag:"🏆",away:"W92",awayFlag:"🏆",time:"17:00",group:"QF",venue:"Hard Rock Stadium",kickoffUtc:"2026-07-11T21:00:00Z"},
+    {home:"W95",homeFlag:"🏆",away:"W96",awayFlag:"🏆",time:"20:00",group:"QF",venue:"Arrowhead Stadium",kickoffUtc:"2026-07-12T00:00:00Z"},
   ]},
 
   // ── SEMIFINALE — 14-15 Iulie ─────────────────────────────────────────────────
   {day:44, matches:[
-    {home:"W97",homeFlag:"🏆",away:"W98",awayFlag:"🏆",time:"21:00",group:"SF",venue:"AT&T Stadium"},
+    {home:"W97",homeFlag:"🏆",away:"W98",awayFlag:"🏆",time:"21:00",group:"SF",venue:"AT&T Stadium",kickoffUtc:"2026-07-15T01:00:00Z"},
   ]},
   {day:45, matches:[
-    {home:"W99",homeFlag:"🏆",away:"W100",awayFlag:"🏆",time:"21:00",group:"SF",venue:"Mercedes-Benz Stadium"},
+    {home:"W99",homeFlag:"🏆",away:"W100",awayFlag:"🏆",time:"21:00",group:"SF",venue:"Mercedes-Benz Stadium",kickoffUtc:"2026-07-16T01:00:00Z"},
   ]},
 
   // ── FINALA MICĂ — 18 Iulie ───────────────────────────────────────────────────
   {day:48, matches:[
-    {home:"L101",homeFlag:"🥉",away:"L102",awayFlag:"🥉",time:"21:00",group:"3rd",venue:"Hard Rock Stadium"},
+    {home:"L101",homeFlag:"🥉",away:"L102",awayFlag:"🥉",time:"21:00",group:"3rd",venue:"Hard Rock Stadium",kickoffUtc:"2026-07-19T01:00:00Z"},
   ]},
 
   // ── FINALA — 19 Iulie ────────────────────────────────────────────────────────
   {day:49, matches:[
-    {home:"W101",homeFlag:"🏆",away:"W102",awayFlag:"🏆",time:"21:00",group:"Final",venue:"MetLife Stadium"},
+    {home:"W101",homeFlag:"🏆",away:"W102",awayFlag:"🏆",time:"21:00",group:"Final",venue:"MetLife Stadium",kickoffUtc:"2026-07-20T01:00:00Z"},
   ]},
 ];
 

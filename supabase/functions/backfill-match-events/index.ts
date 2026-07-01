@@ -204,7 +204,7 @@ Deno.serve(async (req) => {
       const evData = await evRes.json()
       const events: any[] = evData.response ?? []
 
-      const toUpsert = events
+      const mappedEvents = events
         .filter(e => e.player?.name)
         .map(e => ({
           match_key:    matchKey,
@@ -217,6 +217,12 @@ Deno.serve(async (req) => {
           detail:       e.detail ?? null,
           updated_at:   now.toISOString(),
         }))
+      const toUpsert = Array.from(new Map(
+        mappedEvents.map((row: any) => [
+          `${row.match_key}|${row.minute}|${row.type}|${row.team_name}`,
+          row,
+        ])
+      ).values())
 
       if (!toUpsert.length) {
         console.log(`[${matchKey}] 0 events`)

@@ -205,7 +205,7 @@ function findKoMatchKey(utcDateStr: string): string | null {
   let bestDiff = Infinity
   for (const slot of tbdSlots) {
     const diff = Math.abs(matchMs - new Date(slot.kickoffUtc).getTime())
-    if (diff < bestDiff && diff <= 45 * 60000) {
+    if (diff < bestDiff && diff <= 3 * 60 * 60000) {
       bestDiff = diff
       best = slot
     }
@@ -215,6 +215,135 @@ function findKoMatchKey(utcDateStr: string): string | null {
 
 function normalizeTeam(name: string): string {
   return TEAM_NORM[name] ?? name
+}
+
+const KO_BRACKET_SOURCES: Record<string, [string, string]> = {
+  '34-0': ['29-0', '30-0'],
+  '34-1': ['28-0', '29-1'],
+  '35-0': ['29-2', '30-1'],
+  '35-1': ['30-2', '31-0'],
+  '36-0': ['32-0', '32-1'],
+  '36-1': ['31-1', '31-2'],
+  '37-0': ['33-0', '33-2'],
+  '37-1': ['32-2', '33-1'],
+  '39-0': ['34-0', '34-1'],
+  '40-0': ['36-0', '36-1'],
+  '41-0': ['35-0', '35-1'],
+  '41-1': ['37-0', '37-1'],
+  '44-0': ['39-0', '40-0'],
+  '45-0': ['41-0', '41-1'],
+  '49-0': ['44-0', '45-0'],
+}
+
+const LEGACY_KO_KEYS: Record<string, string> = {
+  '38-0': '34-0', '38-1': '34-1',
+  '39-0': '35-0', '39-1': '35-1',
+  '40-0': '36-0', '40-1': '36-1',
+  '41-0': '37-0', '41-1': '37-1',
+  '44-0': '39-0', '44-1': '40-0',
+  '45-0': '41-0', '45-1': '41-1',
+  '48-0': '44-0', '48-1': '45-0',
+}
+
+const KO_KICKOFFS: Record<string, string> = {
+  '34-0': '2026-07-04T21:00:00Z',
+  '34-1': '2026-07-04T17:00:00Z',
+  '35-0': '2026-07-05T20:00:00Z',
+  '35-1': '2026-07-05T22:00:00Z',
+  '36-0': '2026-07-06T23:00:00Z',
+  '36-1': '2026-07-06T23:00:00Z',
+  '37-0': '2026-07-07T20:00:00Z',
+  '37-1': '2026-07-07T23:00:00Z',
+  '39-0': '2026-07-09T20:00:00Z',
+  '40-0': '2026-07-10T23:00:00Z',
+  '41-0': '2026-07-11T21:00:00Z',
+  '41-1': '2026-07-12T00:00:00Z',
+  '44-0': '2026-07-15T01:00:00Z',
+  '45-0': '2026-07-16T01:00:00Z',
+  '49-0': '2026-07-20T01:00:00Z',
+}
+
+async function alignLegacyKnockoutMatches() {
+  const { data, error } = await supabase
+    .from('matches')
+    .select('match_key')
+    .in('match_key', Object.keys(LEGACY_KO_KEYS))
+  if (error) throw error
+
+  const existing = new Set((data ?? []).map((row: any) => row.match_key))
+  const legacyKeys = Object.keys(LEGACY_KO_KEYS).filter(key => existing.has(key))
+  if (!existing.has('38-0')) return
+
+  // Temporary keys avoid unique-key collisions while old QF/SF keys move into
+  // keys previously occupied by R16 matches.
+  for (const oldKey of legacyKeys) {
+    const { error: renameError } = await supabase
+      .from('matches')
+      .update({ match_key: `legacy-${oldKey}` })
+      .eq('match_key', oldKey)
+    if (renameError) throw renameError
+  }
+  for (const oldKey of legacyKeys) {
+    const newKey = LEGACY_KO_KEYS[oldKey]
+    const update: Record<string, unknown> = {
+      match_key: newKey,
+      team1_id: null,
+      team2_id: null,
+    }
+    if (KO_KICKOFFS[newKey]) update.kickoff_utc = KO_KICKOFFS[newKey]
+    const { error: alignError } = await supabase
+      .from('matches')
+      .update(update)
+      .eq('match_key', `legacy-${oldKey}`)
+    if (alignError) throw alignError
+  }
+  console.log(`[bracket] aligned ${legacyKeys.length} legacy knockout matches`)
+}
+
+async function propagateKnockoutTeams() {
+  const [{ data: matches, error: matchesError }, { data: scores, error: scoresError }] = await Promise.all([
+    supabase
+      .from('matches')
+      .select('match_key,team1_id,team2_id')
+      .in('stage', ['r32', 'r16', 'qf', 'sf', 'final']),
+    supabase
+      .from('live_scores')
+      .select('match_key,status,regular_time_home_score,regular_time_away_score,penalty_home_score,penalty_away_score'),
+  ])
+  if (matchesError || scoresError) {
+    throw matchesError || scoresError
+  }
+
+  const matchesByKey = new Map((matches ?? []).map((match: any) => [match.match_key, match]))
+  const scoresByKey = new Map((scores ?? []).map((score: any) => [score.match_key, score]))
+  const winnerId = (matchKey: string): string | null => {
+    const match: any = matchesByKey.get(matchKey)
+    const score: any = scoresByKey.get(matchKey)
+    if (!match?.team1_id || !match?.team2_id || score?.status !== 'FT') return null
+    const home = score.penalty_home_score ?? score.regular_time_home_score
+    const away = score.penalty_away_score ?? score.regular_time_away_score
+    if (home == null || away == null || home === away) return null
+    return home > away ? match.team1_id : match.team2_id
+  }
+
+  for (const [destinationKey, [homeSource, awaySource]] of Object.entries(KO_BRACKET_SOURCES)) {
+    const destination: any = matchesByKey.get(destinationKey)
+    if (!destination) {
+      console.log(`[bracket] destination missing: ${destinationKey}`)
+      continue
+    }
+    const team1Id = winnerId(homeSource)
+    const team2Id = winnerId(awaySource)
+    const update: Record<string, string> = {}
+    if (team1Id && destination.team1_id !== team1Id) update.team1_id = team1Id
+    if (team2Id && destination.team2_id !== team2Id) update.team2_id = team2Id
+    if (Object.keys(update).length === 0) continue
+
+    const { error } = await supabase.from('matches').update(update).eq('match_key', destinationKey)
+    if (error) throw error
+    Object.assign(destination, update)
+    console.log(`[bracket] updated ${destinationKey}: ${Object.keys(update).join(',')}`)
+  }
 }
 
 function isCLFinalWindow(now: Date): boolean {
@@ -336,7 +465,7 @@ Deno.serve(async (req) => {
     if (apifbKey) {
       const todayUtc = now.toISOString().slice(0, 10)
       const yesterdayUtc = new Date(now.getTime() - 86_400_000).toISOString().slice(0, 10)
-      const tomorrowUtc = new Date(now.getTime() + 86_400_000).toISOString().slice(0, 10)
+      const upcomingUtc = new Date(now.getTime() + 7 * 86_400_000).toISOString().slice(0, 10)
       const ctrl = new AbortController()
       const timer = setTimeout(() => ctrl.abort(), 8000)
       try {
@@ -347,7 +476,7 @@ Deno.serve(async (req) => {
             { headers: { 'x-apisports-key': apifbKey }, signal: ctrl.signal }),
           fetch(`https://v3.football.api-sports.io/fixtures?league=1&season=2026&date=${yesterdayUtc}`,
             { headers: { 'x-apisports-key': apifbKey }, signal: ctrl.signal }),
-          fetch(`https://v3.football.api-sports.io/fixtures?league=1&season=2026&date=${tomorrowUtc}`,
+          fetch(`https://v3.football.api-sports.io/fixtures?league=1&season=2026&from=${todayUtc}&to=${upcomingUtc}`,
             { headers: { 'x-apisports-key': apifbKey }, signal: ctrl.signal }),
         ])
         clearTimeout(timer)
@@ -416,7 +545,7 @@ Deno.serve(async (req) => {
             // Salvează events + apel separat la /fixtures/events pentru meciuri active/FT recente
             const events: any[] = f.events ?? []
             const saveEventRows = async (evList: any[]) => {
-              const rows = evList
+              const mappedRows = evList
                 .filter((e: any) => ['Goal','Card','subst'].includes(e.type ?? ''))
                 .map((e: any) => ({
                   match_key:    matchKey,
@@ -429,6 +558,15 @@ Deno.serve(async (req) => {
                   detail:       e.detail ?? null,
                   updated_at:   now.toISOString(),
                 }))
+              // Production identifies events by match/minute/type/team. API-Sports can
+              // return multiple substitutions for the same team and minute; sending
+              // both in one upsert makes Postgres reject the entire batch.
+              const rows = Array.from(new Map(
+                mappedRows.map((row: any) => [
+                  `${row.match_key}|${row.minute}|${row.type}|${row.team_name}`,
+                  row,
+                ])
+              ).values())
               if (rows.length > 0) {
                 const { error } = await supabase
                   .from('match_events')
@@ -650,6 +788,14 @@ Deno.serve(async (req) => {
     const { error } = await supabase.from('live_scores').upsert(upserts, { onConflict: 'match_key' })
     if (error) {
       return new Response(JSON.stringify({ error: error.message }), { status: 500 })
+    }
+
+    try {
+      await alignLegacyKnockoutMatches()
+      await propagateKnockoutTeams()
+    } catch (error) {
+      console.log(`[bracket] propagation failed: ${error}`)
+      return new Response(JSON.stringify({ error: `Bracket propagation failed: ${error}` }), { status: 500 })
     }
 
     const ftGroupMatchKeys = upserts

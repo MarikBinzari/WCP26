@@ -931,15 +931,18 @@ const getMatchKey = (match, day, idx) => {
   return CANONICAL_MATCH_KEYS[key] || key;
 };
 
-const getDisplayCalendarEvents = () => {
+const getDisplayCalendarEvents = (koTeams={}) => {
   const byDay = new Map();
   CALENDAR_EVENTS.forEach(event => {
     event.matches.forEach((match, idx) => {
-      const displayDay = getMatchDisplayDay(match, event.day);
+      const matchKey = getMatchKey(match, event.day, idx);
+      const apiKickoffUtc = koTeams[matchKey]?.kickoffUtc;
+      const displayMatch = apiKickoffUtc ? { ...match, kickoffUtc:apiKickoffUtc } : match;
+      const displayDay = getMatchDisplayDay(displayMatch, event.day);
       if (!byDay.has(displayDay)) byDay.set(displayDay, []);
       byDay.get(displayDay).push({
-        ...match,
-        matchKey: getMatchKey(match, event.day, idx),
+        ...displayMatch,
+        matchKey,
         sourceDay: event.day,
         sourceIdx: idx,
       });
@@ -1010,19 +1013,16 @@ const isMatchPast = (matchDay, matchTime, simDay=null, simHour=12, kickoffUtc=nu
 };
 
 const isWeekUnlocked = (day, simDay=null, simHour=12, simMin=0) => {
+  // Knockout weeks stay browsable. Individual matches are enabled only after
+  // both qualified teams are known and remain locked after kickoff.
+  if(day >= 29) return true;
   if(simDay) {
     const simDate = new Date(Date.UTC(2026,5,simDay,(simHour||0)+4,simMin||0,0));
-    if(day >= 43) return simDate >= july(12);
-    if(day >= 36) return simDate >= july(5);
-    if(day >= 29) return simDate >= june(28);
     if(day >= 22) return simDate >= june(21);
     if(day >= 15) return simDate >= june(14);
     return true;
   }
   const now2 = new Date();
-  if(day >= 43) return now2 >= july(12);
-  if(day >= 36) return now2 >= july(5);
-  if(day >= 29) return now2 >= june(28);
   if(day >= 22) return now2 >= june(20);
   if(day >= 15) return now2 >= june(14);
   return true;
@@ -6118,7 +6118,7 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
     _pickScrolled.add(activeId);
     setTimeout(()=>scrollTo(exactScoreRef), 700);
   },[instantPickDone,activeId]);
-  const _exCalendarEvents = getDisplayCalendarEvents();
+  const _exCalendarEvents = getDisplayCalendarEvents(koTeams);
   const _exWkMM = (()=>{ const mm={}; _exCalendarEvents.forEach(e=>{mm[e.day]=e.matches;}); return mm; })();
   const _exWkDays = (s)=>Array.from({length:7},(_,i)=>s+i).filter(d=>d>=1&&d<=50);
   // Count exact-score progress by the local display day, matching what is currently possible to predict.
@@ -9465,7 +9465,7 @@ function CentralStatsScreen({ onBack, boardId, boardName, simDay, simHour=12, si
 function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScoresProp, simDay, simHour=12, simMin=0, initialWeek, initialDay, boardId, boardName, myBoards=[], onCopyDayScores, koTeams={} }) {
   const lang = useLang();
   const LIVE_SCORES = useLiveScores(simDay, simHour, simMin);
-  const calendarEvents = getDisplayCalendarEvents();
+  const calendarEvents = getDisplayCalendarEvents(koTeams);
   // Build GROUPS_DATA dynamically from CALENDAR_EVENTS
   const GROUPS_DATA = (() => {
     const gMap = {};
@@ -10171,7 +10171,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
   const lang = useLang();
   const LIVE_SCORES = liveScores || LIVE_SCORES_DEFAULT;
   const [collapsedGroups, setCollapsedGroups] = useState({});
-  const calendarEvents = getDisplayCalendarEvents();
+  const calendarEvents = getDisplayCalendarEvents(koTeams);
   const mm = {};
   calendarEvents.forEach(e => { mm[e.day] = e.matches; });
   const dl = ["L","M","M","J","V","S","D"];
@@ -12256,7 +12256,32 @@ function App() {
   const [allInstantPickStates, setAllInstantPickStates] = useState({});
   const [exactScoresByBoard, setExactScoresByBoard] = useState({});
   const [koTeams, setKoTeams] = useState({});
-  useEffect(() => { loadKoTeams().then(setKoTeams); }, []);
+  useEffect(() => {
+    let active = true;
+    const refreshKoTeams = async () => {
+      const next = await loadKoTeams();
+      if (!active || !next) return;
+      setKoTeams(prev => JSON.stringify(prev) === JSON.stringify(next) ? prev : next);
+    };
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") refreshKoTeams();
+    };
+
+    refreshKoTeams();
+    const channel = supabase
+      .channel("ko_teams_realtime")
+      .on("postgres_changes", { event:"*", schema:"public", table:"matches" }, refreshKoTeams)
+      .subscribe();
+    const interval = setInterval(refreshKoTeams, 30_000);
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    return () => {
+      active = false;
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibility);
+      supabase.removeChannel(channel);
+    };
+  }, []);
   const exactScores = exactScoresByBoard[activeBoardId] || {};
   const setExactScores = (updater) => {
     setExactScoresByBoard(prev => {

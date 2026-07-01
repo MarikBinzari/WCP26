@@ -791,17 +791,86 @@ export async function loadLiveScores() {
 }
 
 export async function loadKoTeams() {
-  const { data } = await supabase
-    .from('matches')
-    .select('match_key, team1:teams!matches_team1_id_fkey(name), team2:teams!matches_team2_id_fkey(name)')
-    .in('stage', ['r32', 'r16', 'qf', 'sf', 'final'])
-    .not('team1_id', 'is', null)
-    .not('team2_id', 'is', null)
+  const [matchesRes, scoresRes] = await Promise.all([
+    supabase
+      .from('matches')
+      .select('match_key,kickoff_utc,team1:teams!matches_team1_id_fkey(name),team2:teams!matches_team2_id_fkey(name)')
+      .in('stage', ['r32', 'r16', 'qf', 'sf', 'third_place', 'final'])
+      .order('match_key'),
+    supabase
+      .from('live_scores')
+      .select('match_key,status,regular_time_home_score,regular_time_away_score,penalty_home_score,penalty_away_score,utc_date'),
+  ])
+  if (matchesRes.error || scoresRes.error) {
+    console.error('loadKoTeams:', matchesRes.error || scoresRes.error)
+    return null
+  }
+
   const result = {}
-  ;(data || []).forEach(row => {
-    if (row.team1?.name && row.team2?.name)
-      result[row.match_key] = { home: row.team1.name, away: row.team2.name }
+  const scores = Object.fromEntries(
+    (scoresRes.data || []).map(row => [row.match_key, row])
+  )
+  ;(matchesRes.data || []).forEach(row => {
+    if (row.team1?.name && row.team2?.name) {
+      result[row.match_key] = {
+        home:row.team1.name,
+        away:row.team2.name,
+        kickoffUtc:scores[row.match_key]?.utc_date || row.kickoff_utc || null,
+      }
+    }
   })
+  const winnerOf = (matchKey) => {
+    const teams = result[matchKey]
+    const score = scores[matchKey]
+    if (!teams || score?.status !== 'FT') return null
+    const home = score.penalty_home_score ?? score.regular_time_home_score
+    const away = score.penalty_away_score ?? score.regular_time_away_score
+    if (home == null || away == null || home === away) return null
+    return home > away ? teams.home : teams.away
+  }
+
+  // Official bracket path. A destination becomes available only after both
+  // source matches have a confirmed winner.
+  const bracketSources = {
+    '34-0': ['29-0', '30-0'], // W74 - W77
+    '34-1': ['28-0', '29-1'], // W73 - W75
+    '35-0': ['29-2', '30-1'], // W76 - W78
+    '35-1': ['30-2', '31-0'], // W79 - W80
+    '36-0': ['32-0', '32-1'], // W83 - W84
+    '36-1': ['31-1', '31-2'], // W81 - W82
+    '37-0': ['33-0', '33-2'], // W86 - W88
+    '37-1': ['32-2', '33-1'], // W85 - W87
+    '39-0': ['34-0', '34-1'], // W89 - W90
+    '40-0': ['36-0', '36-1'], // W93 - W94
+    '41-0': ['35-0', '35-1'], // W91 - W92
+    '41-1': ['37-0', '37-1'], // W95 - W96
+    '44-0': ['39-0', '40-0'], // W97 - W98
+    '45-0': ['41-0', '41-1'], // W99 - W100
+    '49-0': ['44-0', '45-0'], // W101 - W102
+  }
+  Object.entries(bracketSources).forEach(([destination, [homeSource, awaySource]]) => {
+    const home = winnerOf(homeSource)
+    const away = winnerOf(awaySource)
+    if (home && away) {
+      result[destination] = {
+        home,
+        away,
+        kickoffUtc:scores[destination]?.utc_date || result[destination]?.kickoffUtc || null,
+      }
+    }
+  })
+
+  const semi1 = result['44-0']
+  const semi2 = result['45-0']
+  const semi1Winner = winnerOf('44-0')
+  const semi2Winner = winnerOf('45-0')
+  if (semi1 && semi2 && semi1Winner && semi2Winner) {
+    result['48-0'] = {
+      home: semi1.home === semi1Winner ? semi1.away : semi1.home,
+      away: semi2.home === semi2Winner ? semi2.away : semi2.home,
+    }
+  }
+
   return result
 }
 
