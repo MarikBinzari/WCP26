@@ -12335,12 +12335,20 @@ function App() {
   }, [screen, user]);
 
   useEffect(() => {
-    if (screen !== SCREENS.ACCOUNT) return;
+    if (screen !== SCREENS.ACCOUNT || !user?.id) return;
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
     navigator.serviceWorker.ready
-      .then(reg => reg.pushManager.getSubscription().then(sub => setPushSubActive(!!sub)))
-      .catch(() => {});
-  }, [screen]);
+      .then(async reg => {
+        const sub = await reg.pushManager.getSubscription();
+        if (!sub) {
+          setPushSubActive(false);
+          return;
+        }
+        const saved = await savePushSubscription(user.id, sub);
+        setPushSubActive(!saved?.error);
+      })
+      .catch(() => setPushSubActive(false));
+  }, [screen, user?.id]);
 
   const handlePushPromptYes = async () => {
     setShowPushPrompt(false);
