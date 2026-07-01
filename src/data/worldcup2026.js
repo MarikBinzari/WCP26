@@ -328,23 +328,23 @@ export const CALENDAR_EVENTS = [
     {home:"South Africa",homeFlag:"🏆",away:"Canada",        awayFlag:"🏆",time:"22:00",group:"R32",venue:"SoFi Stadium",        kickoffUtc:"2026-06-28T19:00:00Z"},
   ]},
   {day:29, matches:[
-    {home:"Germany",     homeFlag:"🏆",away:"Paraguay",      awayFlag:"🏆",time:"23:30",group:"R32",venue:"Gillette Stadium",    kickoffUtc:"2026-06-29T20:30:00Z"},
-    {home:"Netherlands", homeFlag:"🏆",away:"Morocco",       awayFlag:"🏆",time:"04:00",group:"R32",venue:"Estadio BBVA",        kickoffUtc:"2026-06-30T01:00:00Z"},
-    {home:"Brazil",      homeFlag:"🏆",away:"Japan",         awayFlag:"🏆",time:"20:00",group:"R32",venue:"NRG Stadium",         kickoffUtc:"2026-06-29T17:00:00Z"},
+    {home:"Germany",     homeFlag:"🏆",away:"Paraguay",      awayFlag:"🏆",time:"20:00",group:"R32",venue:"Gillette Stadium",    kickoffUtc:"2026-06-29T17:00:00Z"},
+    {home:"Netherlands", homeFlag:"🏆",away:"Morocco",       awayFlag:"🏆",time:"23:30",group:"R32",venue:"Estadio BBVA",        kickoffUtc:"2026-06-29T20:30:00Z"},
+    {home:"Brazil",      homeFlag:"🏆",away:"Japan",         awayFlag:"🏆",time:"04:00",group:"R32",venue:"NRG Stadium",         kickoffUtc:"2026-06-30T01:00:00Z"},
   ]},
   {day:30, matches:[
-    {home:"France",      homeFlag:"🏆",away:"Sweden",        awayFlag:"🏆",time:"00:00",group:"R32",venue:"MetLife Stadium",     kickoffUtc:"2026-06-30T21:00:00Z"},
-    {home:"Côte d'Ivoire",homeFlag:"🏆",away:"Norway",       awayFlag:"🏆",time:"20:00",group:"R32",venue:"AT&T Stadium",        kickoffUtc:"2026-06-30T17:00:00Z"},
+    {home:"France",      homeFlag:"🏆",away:"Sweden",        awayFlag:"🏆",time:"20:00",group:"R32",venue:"MetLife Stadium",     kickoffUtc:"2026-06-30T17:00:00Z"},
+    {home:"Côte d'Ivoire",homeFlag:"🏆",away:"Norway",       awayFlag:"🏆",time:"00:00",group:"R32",venue:"AT&T Stadium",        kickoffUtc:"2026-06-30T21:00:00Z"},
     {home:"Mexico",      homeFlag:"🏆",away:"Ecuador",       awayFlag:"🏆",time:"04:00",group:"R32",venue:"Estadio Azteca",      kickoffUtc:"2026-07-01T01:00:00Z"},
   ]},
   {day:31, matches:[
     {home:"England",     homeFlag:"🏆",away:"DR Congo",      awayFlag:"🏆",time:"19:00",group:"R32",venue:"Mercedes-Benz Stadium",kickoffUtc:"2026-07-01T16:00:00Z"},
-    {home:"USA",         homeFlag:"🏆",away:"Bosnia and Herzegovina",awayFlag:"🏆",time:"03:00",group:"R32",venue:"Levi's Stadium",kickoffUtc:"2026-07-02T00:00:00Z"},
-    {home:"Belgium",     homeFlag:"🏆",away:"Senegal",       awayFlag:"🏆",time:"23:00",group:"R32",venue:"Lumen Field",          kickoffUtc:"2026-07-01T20:00:00Z"},
+    {home:"USA",         homeFlag:"🏆",away:"Bosnia and Herzegovina",awayFlag:"🏆",time:"23:00",group:"R32",venue:"Levi's Stadium",kickoffUtc:"2026-07-01T20:00:00Z"},
+    {home:"Belgium",     homeFlag:"🏆",away:"Senegal",       awayFlag:"🏆",time:"03:00",group:"R32",venue:"Lumen Field",          kickoffUtc:"2026-07-02T00:00:00Z"},
   ]},
   {day:32, matches:[
-    {home:"Portugal",    homeFlag:"🏆",away:"Croatia",       awayFlag:"🏆",time:"02:00",group:"R32",venue:"BMO Field",           kickoffUtc:"2026-07-02T23:00:00Z"},
-    {home:"Spain",       homeFlag:"🏆",away:"Austria",       awayFlag:"🏆",time:"22:00",group:"R32",venue:"SoFi Stadium",        kickoffUtc:"2026-07-02T19:00:00Z"},
+    {home:"Portugal",    homeFlag:"🏆",away:"Croatia",       awayFlag:"🏆",time:"22:00",group:"R32",venue:"BMO Field",           kickoffUtc:"2026-07-02T19:00:00Z"},
+    {home:"Spain",       homeFlag:"🏆",away:"Austria",       awayFlag:"🏆",time:"02:00",group:"R32",venue:"SoFi Stadium",        kickoffUtc:"2026-07-02T23:00:00Z"},
     {home:"Switzerland", homeFlag:"🏆",away:"Algeria",       awayFlag:"🏆",time:"06:00",group:"R32",venue:"BC Place",            kickoffUtc:"2026-07-03T03:00:00Z"},
   ]},
   {day:33, matches:[
