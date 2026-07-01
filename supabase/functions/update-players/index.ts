@@ -4,6 +4,7 @@
 // Scheduled daily via pg_cron in 6 batches × 5 min apart
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { requireAdminOrServiceRole } from '../_shared/auth.ts'
 
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL')!,
@@ -67,6 +68,9 @@ const DELAY_MS = 2500
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
 
 Deno.serve(async (req) => {
+  const authError = await requireAdminOrServiceRole(req)
+  if (authError) return authError
+
   const url = new URL(req.url)
   const offset = parseInt(url.searchParams.get('offset') || '0')
 

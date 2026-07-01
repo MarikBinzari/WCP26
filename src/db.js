@@ -114,7 +114,7 @@ export async function savePredictions(userId, boardId, pickState) {
     .from('predictions')
     .upsert(payload, { onConflict: 'user_id,board_id' })
 
-  if (!error) return
+  if (!error) return { error: null }
 
   console.error('[savePredictions] DB error:', error.code, error.message, error.details)
 
@@ -123,7 +123,10 @@ export async function savePredictions(userId, boardId, pickState) {
   const { error: err2 } = await supabase
     .from('predictions')
     .upsert(payload, { onConflict: 'user_id,board_id' })
-  if (err2) console.error('[savePredictions] retry failed:', err2.code, err2.message)
+  if (!err2) return { error: null }
+
+  console.error('[savePredictions] retry failed:', err2.code, err2.message)
+  return { error: err2.message || error.message || 'Could not save predictions' }
 }
 
 // â”€â”€â”€ SPECIAL PICKS (champion + top scorer) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€

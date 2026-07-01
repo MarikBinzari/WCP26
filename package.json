@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "backup:predictions": "node scripts/backup-predictions.mjs",
+    "validate:goals": "node scripts/validate-player-goals.mjs",
     "optimize-images": "node scripts/optimize-images.js"
   },
   "dependencies": {

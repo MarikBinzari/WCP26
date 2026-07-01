@@ -2,13 +2,17 @@
 // so that exact-score predictions can be saved for match_key "-1-0"
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { requireAdminOrServiceRole } from '../_shared/auth.ts'
 
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL')!,
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 )
 
-Deno.serve(async () => {
+Deno.serve(async (req) => {
+  const authError = await requireAdminOrServiceRole(req)
+  if (authError) return authError
+
   // 1. Upsert match_day for May 30 (day_number = -1)
   const { error: dayErr } = await supabase
     .from('match_days')

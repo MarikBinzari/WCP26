@@ -5,6 +5,7 @@
 // processes them, then unschedules the cron job when all 48 teams are done.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { requireAdminOrServiceRole } from '../_shared/auth.ts'
 
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL')!,
@@ -67,6 +68,9 @@ const BATCH_SIZE = 8
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
 
 Deno.serve(async (req) => {
+  const authError = await requireAdminOrServiceRole(req)
+  if (authError) return authError
+
   const url = new URL(req.url)
   const dryRun = url.searchParams.get('dry') === '1'
 

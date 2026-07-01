@@ -3,6 +3,7 @@
 // and upserts into live_scores table (Supabase Realtime pushes to all clients).
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { requireServiceRole } from '../_shared/auth.ts'
 
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL')!,
@@ -280,7 +281,10 @@ function getPenaltyScore(match: any, mappedStatus: string): { home: number | nul
 
 // ── Main handler ─────────────────────────────────────────────────────────────
 
-Deno.serve(async () => {
+Deno.serve(async (req) => {
+  const authError = requireServiceRole(req)
+  if (authError) return authError
+
   const now = new Date()
 
   // Verifică dacă există meciuri live ÎNAINTE de procesare (pentru detectarea tranziției)
@@ -426,9 +430,13 @@ Deno.serve(async () => {
                   updated_at:   now.toISOString(),
                 }))
               if (rows.length > 0) {
-                await supabase
+                const { error } = await supabase
                   .from('match_events')
-                  .upsert(rows, { onConflict: 'match_key,minute,extra_minute,player_name,type' })
+                  .upsert(rows, { onConflict: 'match_key,minute,type,team_name' })
+                if (error) {
+                  console.log(`[match_events] upsert failed for ${matchKey}: ${error.message}`)
+                  throw error
+                }
               }
             }
             if (events.length > 0) {

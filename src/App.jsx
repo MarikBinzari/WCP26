@@ -1077,17 +1077,33 @@ const computeLiveScores = (simDay=null, simHour=12, simMin=0) => {
 const LIVE_SCORES_DEFAULT = {};
 let LIVE_SCORES = LIVE_SCORES_DEFAULT;
 
-// Image with fade-in on load
+const loadedImageUrls = new Set();
+
+// Keeps refreshed lists from fading an already loaded image in again.
 function FadeImg({ src, alt="", style={}, ...rest }) {
-  const [loaded, setLoaded] = useState(false);
+  const [loaded, setLoaded] = useState(() => loadedImageUrls.has(src));
+
+  useEffect(() => {
+    setLoaded(loadedImageUrls.has(src));
+  }, [src]);
+
   if (!src) return null;
   return (
     <img
       src={src}
       alt={alt}
       decoding="async"
-      onLoad={() => setLoaded(true)}
-      style={{ ...style, opacity: loaded ? 1 : 0, transition: loaded ? "opacity 0.25s ease" : "none" }}
+      draggable={false}
+      onLoad={() => {
+        loadedImageUrls.add(src);
+        setLoaded(true);
+      }}
+      style={{
+        display:"block",
+        ...style,
+        opacity:loaded ? 1 : 0,
+        transition:loadedImageUrls.has(src) ? "none" : "opacity 0.18s ease",
+      }}
       {...rest}
     />
   );
@@ -2683,7 +2699,7 @@ function FlagBg({ team, style }) {
   );
 }
 
-function MatchSwipeCard({ home, away, onPick, onFlash, groupLabel, matchNum, totalMatches, existingPick, onBack, canGoBack, isKo, locked=false }) {
+function MatchSwipeCard({ home, away, onPick, onFlash, groupLabel, matchNum, totalMatches, existingPick, onBack, canGoBack, isKo, locked=false, played=false }) {
   const lang = useLang();
   const startX = useRef(null);
   const startY = useRef(null);
@@ -2754,6 +2770,7 @@ function MatchSwipeCard({ home, away, onPick, onFlash, groupLabel, matchNum, tot
   const upPct = !isKo ? Math.min(1,(-offset.y-25)/70) : 0;
   const rotation = overlayState ? 0 : offset.x * 0.045;
   const isFlying = Math.abs(offset.x)>200 || offset.y < -200;
+  const playedLabel = lang === "ro" ? "MECI JUCAT" : lang === "fr" ? "MATCH JOUE" : "FINISHED";
 
   // ── DRAW OVERLAY — background Predicto 2026 ──────────────────────────────
   if (overlayState === "draw") {
@@ -2963,25 +2980,38 @@ function MatchSwipeCard({ home, away, onPick, onFlash, groupLabel, matchNum, tot
             ? "transform 0.30s cubic-bezier(0.55,0,1,0.45)"
             : (offset.x===0&&offset.y===0 ? "transform 0.35s cubic-bezier(0.175,0.885,0.32,1.275)" : "transform 0.04s"),
           position:"relative",
-          background:"#050d1a",
+          background:played?"#111827":"#050d1a",
         }}>
 
         {/* ── BACKGROUND — gradient din culorile echipelor ── */}
         <div style={{position:"absolute",inset:0,
-          background:`linear-gradient(135deg, ${homeColors[0]}cc 0%, ${homeColors[0]}88 25%, #0a0e1a 50%, ${awayColors[0]}88 75%, ${awayColors[0]}cc 100%)`}}/>
+          background:played
+            ? "linear-gradient(135deg, #F8FAFC 0%, #E5E7EB 36%, #CBD5E1 100%)"
+            : `linear-gradient(135deg, ${homeColors[0]}cc 0%, ${homeColors[0]}88 25%, #0a0e1a 50%, ${awayColors[0]}88 75%, ${awayColors[0]}cc 100%)`}}/>
 
 
         {/* Dark overlay pentru contrast */}
         <div style={{position:"absolute",inset:0,pointerEvents:"none",
-          background:"linear-gradient(180deg, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.1) 40%, rgba(0,0,0,0.1) 60%, rgba(0,0,0,0.55) 100%)"}}/>
+          background:played
+            ? "linear-gradient(180deg, rgba(15,23,42,0.08) 0%, rgba(15,23,42,0.02) 42%, rgba(15,23,42,0.08) 100%)"
+            : "linear-gradient(180deg, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.1) 40%, rgba(0,0,0,0.1) 60%, rgba(0,0,0,0.55) 100%)"}}/>
         {/* Radial glow home */}
         <div style={{position:"absolute",inset:0,pointerEvents:"none",
-          background:`radial-gradient(ellipse at 15% 20%, ${homeColors[0]}55 0%, transparent 50%)`,
+          background:played?"radial-gradient(ellipse at 15% 20%, rgba(148,163,184,0.34) 0%, transparent 50%)":`radial-gradient(ellipse at 15% 20%, ${homeColors[0]}55 0%, transparent 50%)`,
           animation:"lightBeamLeft 3s ease-in-out infinite"}}/>
         {/* Radial glow away */}
         <div style={{position:"absolute",inset:0,pointerEvents:"none",
-          background:`radial-gradient(ellipse at 85% 80%, ${awayColors[0]}55 0%, transparent 50%)`,
+          background:played?"radial-gradient(ellipse at 85% 80%, rgba(100,116,139,0.28) 0%, transparent 50%)":`radial-gradient(ellipse at 85% 80%, ${awayColors[0]}55 0%, transparent 50%)`,
           animation:"lightBeamRight 3s ease-in-out 1.5s infinite"}}/>
+
+        {played&&(
+          <div style={{position:"absolute",top:14,left:"50%",transform:"translateX(-50%)",zIndex:10,
+            background:"#E2E8F0",border:"1px solid #CBD5E1",borderRadius:999,padding:"6px 14px",
+            boxShadow:"0 4px 16px rgba(15,23,42,0.10)",display:"flex",alignItems:"center",gap:7}}>
+            <span style={{fontSize:12}}>🔒</span>
+            <span style={{fontSize:11,fontWeight:900,color:"#475569",letterSpacing:1.2,textTransform:"uppercase"}}>{playedLabel}</span>
+          </div>
+        )}
 
         {/* Confetti particles */}
         {[...Array(8)].map((_,i)=>(
@@ -3023,8 +3053,10 @@ function MatchSwipeCard({ home, away, onPick, onFlash, groupLabel, matchNum, tot
           <div style={{
             width:170, aspectRatio:"3/2",
             borderRadius:16, overflow:"hidden", position:"relative",
-            animation:`neonPulseHome ${swipeLeft?"0.6s":"2.5s"} ease-in-out infinite`,
+            animation:played?"none":`neonPulseHome ${swipeLeft?"0.6s":"2.5s"} ease-in-out infinite`,
             transform:"rotate(-4deg)",
+            boxShadow:played?"0 6px 18px rgba(15,23,42,0.16), 0 0 0 3px rgba(255,255,255,0.7)":undefined,
+            filter:played?"grayscale(0.35) saturate(0.75)":undefined,
           }}>
             <FlagBg team={home} style={{}}/>
             {/* Glossy shine on top */}
@@ -3034,10 +3066,11 @@ function MatchSwipeCard({ home, away, onPick, onFlash, groupLabel, matchNum, tot
           </div>
           {/* Team name */}
           <span style={{
-            fontSize:17, fontWeight:900, color:"#fff",
+            fontSize:17, fontWeight:900,
             letterSpacing:2, textTransform:"uppercase",
-            textShadow:`0 0 20px ${homeColors[0]}, 0 2px 8px rgba(0,0,0,0.9)`,
+            textShadow:played?"0 1px 0 rgba(255,255,255,0.75)":`0 0 20px ${homeColors[0]}, 0 2px 8px rgba(0,0,0,0.9)`,
             paddingLeft:4,
+            color:played?"#334155":"#fff",
           }}>{home}</span>
         </div>
 
@@ -3116,8 +3149,10 @@ function MatchSwipeCard({ home, away, onPick, onFlash, groupLabel, matchNum, tot
           <div style={{
             width:170, aspectRatio:"3/2",
             borderRadius:16, overflow:"hidden", position:"relative",
-            animation:`neonPulseAway ${swipeRight?"0.6s":"2.5s"} ease-in-out 1.2s infinite`,
+            animation:played?"none":`neonPulseAway ${swipeRight?"0.6s":"2.5s"} ease-in-out 1.2s infinite`,
             transform:"rotate(4deg)",
+            boxShadow:played?"0 6px 18px rgba(15,23,42,0.16), 0 0 0 3px rgba(255,255,255,0.7)":undefined,
+            filter:played?"grayscale(0.35) saturate(0.75)":undefined,
           }}>
             <FlagBg team={away} style={{}}/>
             <div style={{position:"absolute",inset:0,
@@ -3126,10 +3161,11 @@ function MatchSwipeCard({ home, away, onPick, onFlash, groupLabel, matchNum, tot
           </div>
           {/* Team name */}
           <span style={{
-            fontSize:17, fontWeight:900, color:"#fff",
+            fontSize:17, fontWeight:900,
             letterSpacing:2, textTransform:"uppercase",
-            textShadow:`0 0 20px ${awayColors[0]}, 0 2px 8px rgba(0,0,0,0.9)`,
+            textShadow:played?"0 1px 0 rgba(255,255,255,0.75)":`0 0 20px ${awayColors[0]}, 0 2px 8px rgba(0,0,0,0.9)`,
             paddingRight:4,
+            color:played?"#334155":"#fff",
           }}>{away}</span>
         </div>
 
@@ -3140,16 +3176,16 @@ function MatchSwipeCard({ home, away, onPick, onFlash, groupLabel, matchNum, tot
         }}>
           <button onClick={()=>pick("home")} disabled={locked} style={{
             cursor:locked?"default":"pointer",
-            background:"rgba(0,0,0,0.65)", backdropFilter:"blur(12px)",
+            background:played?"rgba(248,250,252,0.92)":"rgba(0,0,0,0.65)", backdropFilter:"blur(12px)",
             borderRadius:14, padding:"8px 14px",
-            border:"1.5px solid rgba(255,255,255,0.18)",
+            border:played?"1.5px solid #CBD5E1":"1.5px solid rgba(255,255,255,0.18)",
             transform:swipeLeft?`scale(${1+leftPct*0.05}) translateY(${-leftPct*4}px)`:"scale(1)",
             transition:"transform 0.08s",
-            boxShadow:swipeLeft?`0 0 22px ${homeColors[0]}88`:"0 2px 12px rgba(0,0,0,0.6)",
+            boxShadow:played?"0 2px 10px rgba(15,23,42,0.12)":swipeLeft?`0 0 22px ${homeColors[0]}88`:"0 2px 12px rgba(0,0,0,0.6)",
             WebkitTapHighlightColor:"transparent", fontFamily:"inherit", textAlign:"left",
           }}>
-            <div style={{fontSize:11,color:"rgba(255,255,255,0.35)",fontWeight:700,letterSpacing:1.5,marginBottom:3}}>← SWIPE</div>
-            <div style={{fontSize:15,fontWeight:900,color:"#fff"}}>{home}</div>
+            <div style={{fontSize:11,color:played?"#64748B":"rgba(255,255,255,0.35)",fontWeight:700,letterSpacing:1.5,marginBottom:3}}>{played?playedLabel:"← SWIPE"}</div>
+            <div style={{fontSize:15,fontWeight:900,color:played?"#334155":"#fff"}}>{home}</div>
           </button>
 
           {!isKo&&(
@@ -3168,16 +3204,16 @@ function MatchSwipeCard({ home, away, onPick, onFlash, groupLabel, matchNum, tot
 
           <button onClick={()=>pick("away")} disabled={locked} style={{
             cursor:locked?"default":"pointer",
-            background:"rgba(0,0,0,0.65)", backdropFilter:"blur(12px)",
+            background:played?"rgba(248,250,252,0.92)":"rgba(0,0,0,0.65)", backdropFilter:"blur(12px)",
             borderRadius:14, padding:"8px 14px", textAlign:"right",
-            border:"1.5px solid rgba(255,255,255,0.18)",
+            border:played?"1.5px solid #CBD5E1":"1.5px solid rgba(255,255,255,0.18)",
             transform:swipeRight?`scale(${1+rightPct*0.05}) translateY(${-rightPct*4}px)`:"scale(1)",
             transition:"transform 0.08s",
-            boxShadow:swipeRight?`0 0 22px ${awayColors[0]}88`:"0 2px 12px rgba(0,0,0,0.6)",
+            boxShadow:played?"0 2px 10px rgba(15,23,42,0.12)":swipeRight?`0 0 22px ${awayColors[0]}88`:"0 2px 12px rgba(0,0,0,0.6)",
             WebkitTapHighlightColor:"transparent", fontFamily:"inherit",
           }}>
-            <div style={{fontSize:11,color:"rgba(255,255,255,0.35)",fontWeight:700,letterSpacing:1.5,marginBottom:3}}>SWIPE →</div>
-            <div style={{fontSize:15,fontWeight:900,color:"#fff"}}>{away}</div>
+            <div style={{fontSize:11,color:played?"#64748B":"rgba(255,255,255,0.35)",fontWeight:700,letterSpacing:1.5,marginBottom:3}}>{played?playedLabel:"SWIPE →"}</div>
+            <div style={{fontSize:15,fontWeight:900,color:played?"#334155":"#fff"}}>{away}</div>
           </button>
         </div>
 
@@ -3407,13 +3443,19 @@ function GroupIntroScreen({ group, teams: teamsProp, isKo, onStart, onNext, onPi
                         const hAutoProp=group==='R16'&&autoPropagated.has(`R32-${2*matchIdx}`);
                         const aAutoProp=group==='R16'&&autoPropagated.has(`R32-${2*matchIdx+1}`);
                         const realSide=realRoundWinners[`${group}-${matchIdx}`];
+                        const played=!!realSide;
                         const correctPick=locked&&!!p&&!!realSide&&p===realSide;
                         const wrongPick=locked&&!!p&&!!realSide&&p!==realSide;
                         const missedPick=locked&&!p;
-                        const cardBorder=correctPick?GREEN+"55":wrongPick?"#FCA5A555":missedPick?"#FED7AA":hWon||aWon?GREEN+"55":col+"22";
-                        const rowBg=(won,isPick)=>won?GREEN+"15":isPick&&wrongPick?"#FFF1F1":isPick&&correctPick?GREEN+"0A":missedPick?"#FFFBF7":"transparent";
+                        const cardBorder=played?"#94A3B8":correctPick?GREEN+"55":wrongPick?"#FCA5A555":missedPick?"#FED7AA":hWon||aWon?GREEN+"55":col+"22";
+                        const cardBg=played?"#E5E7EB":"#fff";
+                        const rowBg=(won,isPick)=>played?(won?"#F8FAFC":"#E2E8F0"):won?GREEN+"15":isPick&&wrongPick?"#FFF1F1":isPick&&correctPick?GREEN+"0A":missedPick?"#FFFBF7":"transparent";
+                        const teamColor=(won)=>played?(won?"#111827":"#64748B"):won?GREEN:DARK;
                         return (
-                          <div key={mi} style={{background:"#fff",borderRadius:10,border:`1px solid ${cardBorder}`,overflow:"hidden",boxShadow:"0 1px 4px rgba(0,0,0,0.06)"}}>
+                          <div key={mi} style={{background:cardBg,borderRadius:10,border:`${played?"2px":"1px"} solid ${cardBorder}`,overflow:"hidden",boxShadow:played?"inset 0 1px 0 rgba(255,255,255,0.85), 0 2px 8px rgba(15,23,42,0.12)":"0 1px 4px rgba(0,0,0,0.06)",position:"relative"}}>
+                            {played&&<div style={{background:"#CBD5E1",borderBottom:"1px solid #94A3B8",padding:"3px 10px",fontSize:9,fontWeight:900,color:"#334155",letterSpacing:"0.8px",display:"flex",alignItems:"center",justifyContent:"space-between",textTransform:"uppercase"}}>
+                              <span>{lang==="ro"?"MECI JUCAT":lang==="fr"?"MATCH JOUE":"PLAYED MATCH"}</span><span>🔒</span>
+                            </div>}
                             {correctPick&&<div style={{background:"#F0FDF4",borderBottom:"1px solid #BBF7D0",padding:"2px 10px",fontSize:9,fontWeight:800,color:"#15803D",letterSpacing:"0.4px",display:"flex",alignItems:"center",gap:4}}>
                               <span>✓</span><span>CORECT • +{roundPts} PTS</span>
                             </div>}
@@ -3426,9 +3468,9 @@ function GroupIntroScreen({ group, teams: teamsProp, isKo, onStart, onNext, onPi
                             <div role={canEdit?"button":undefined} tabIndex={canEdit?0:undefined}
                               onClick={()=>canEdit&&onPickChange(matchIdx,"home")}
                               onKeyDown={canEdit?e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();onPickChange(matchIdx,"home");}}:undefined}
-                              style={{padding:"7px 10px",borderBottom:"1px solid rgba(0,0,0,0.05)",display:"flex",alignItems:"center",gap:8,background:rowBg(hWon,p==="home"),cursor:canEdit?"pointer":"default",WebkitTapHighlightColor:"transparent",opacity:missedPick?0.7:1}}>
+                              style={{padding:"7px 10px",borderBottom:`1px solid ${played?"#E2E8F0":"rgba(0,0,0,0.05)"}`,display:"flex",alignItems:"center",gap:8,background:rowBg(hWon,p==="home"),cursor:canEdit?"pointer":"default",WebkitTapHighlightColor:"transparent",opacity:missedPick?0.7:1}}>
                               <span style={{fontSize:20,lineHeight:1}}>{FLAGS[h]||"🏳"}</span>
-                              <span style={{fontSize:12,fontWeight:700,color:hWon?GREEN:DARK,flex:1}}>{h||"TBD"}</span>
+                              <span style={{fontSize:12,fontWeight:700,color:teamColor(hWon),flex:1}}>{h||"TBD"}</span>
                               {hAutoProp&&<span style={{fontSize:9,background:'#FEF3C7',color:'#92400E',borderRadius:4,padding:'1px 5px',fontWeight:800,flexShrink:0}}>real</span>}
                               {hWon&&<span style={{fontSize:11,fontWeight:900,color:GREEN}}>✓</span>}
                               {locked&&!missedPick&&!correctPick&&!wrongPick&&<span style={{fontSize:11,color:"#aaa"}}>🔒</span>}
@@ -3438,7 +3480,7 @@ function GroupIntroScreen({ group, teams: teamsProp, isKo, onStart, onNext, onPi
                               onKeyDown={canEdit?e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();onPickChange(matchIdx,"away");}}:undefined}
                               style={{padding:"7px 10px",display:"flex",alignItems:"center",gap:8,background:rowBg(aWon,p==="away"),cursor:canEdit?"pointer":"default",WebkitTapHighlightColor:"transparent",opacity:missedPick?0.7:1}}>
                               <span style={{fontSize:20,lineHeight:1}}>{FLAGS[a]||"🏳"}</span>
-                              <span style={{fontSize:12,fontWeight:700,color:aWon?GREEN:DARK,flex:1}}>{a||"TBD"}</span>
+                              <span style={{fontSize:12,fontWeight:700,color:teamColor(aWon),flex:1}}>{a||"TBD"}</span>
                               {aAutoProp&&<span style={{fontSize:9,background:'#FEF3C7',color:'#92400E',borderRadius:4,padding:'1px 5px',fontWeight:800,flexShrink:0}}>real</span>}
                               {aWon&&<span style={{fontSize:11,fontWeight:900,color:GREEN}}>✓</span>}
                             </div>
@@ -4226,6 +4268,7 @@ function InstantPickScreen({ onBack, onComplete, onKoComplete, onKoPick, onModif
     const awayChanged = viewMode && predictedKo && currentKo &&
       predictedKo.away !== currentKo.away &&
       currentKo.away !== "TBD" && predictedKo.away !== "TBD";
+    const currentKoPlayed = !!realKoWinnersMap[koRound]?.[`${koRound}-${koIdx}`];
 
     return (
       <div style={{flex:1,display:"flex",flexDirection:"column",background:BG,userSelect:"none"}}>
@@ -4258,6 +4301,7 @@ function InstantPickScreen({ onBack, onComplete, onKoComplete, onKoPick, onModif
           home={currentKo?.home||"TBD"} away={currentKo?.away||"TBD"}
           existingPick={koPicks[`${koRound}-${koIdx}`]||null}
           locked={viewMode||isCurrentKoMatchLocked(koIdx)}
+          played={currentKoPlayed}
           onPick={viewMode||isCurrentKoMatchLocked(koIdx) ? undefined : (result)=>{
             const key=`${koRound}-${koIdx}`;
             const newKoPicks={...koPicks,[key]:result};
@@ -8631,7 +8675,7 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
                 {/* Rest */}
                 {filtered.length>3&&(
                   <div style={{marginTop:16}}>
-                    {filtered.slice(3).map(u=><LeaderRow key={u.rank} u={u}/>)}
+                    {filtered.slice(3).map(u=><LeaderRow key={u.userId||u.name} u={u}/>)}
                   </div>
                 )}
               </>
@@ -8641,7 +8685,7 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
             const rankBadge = u.rank===1?"🥇":u.rank===2?"🥈":u.rank===3?"🥉":null;
             const initials  = u.name?.split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2)||"?";
             return (
-              <div key={u.rank} onClick={()=>openBreakdown(u)} style={{display:"flex",alignItems:"center",background:u.isMe?"#E8F0FF":"#fff",
+              <div key={u.userId||u.name} onClick={()=>openBreakdown(u)} style={{display:"flex",alignItems:"center",background:u.isMe?"#E8F0FF":"#fff",
                 border:u.isMe?`1.5px solid ${NAVY}`:"1px solid rgba(0,0,0,0.07)",
                 borderRadius:12,padding:"8px 12px",gap:10,marginBottom:6,cursor:"pointer",WebkitTapHighlightColor:"transparent"}}>
                 <div style={{width:26,textAlign:"center",flexShrink:0}}>
@@ -12151,6 +12195,24 @@ function App() {
     try { localStorage.setItem('activeBoardId', activeBoardId); } catch {}
   }, [activeBoardId]);
 
+  const persistPredictions = async (boardId, state, { notify = false } = {}) => {
+    if (!user || !state) return { error: null };
+    try {
+      const result = await savePredictions(user.id, boardId, state);
+      if (result?.error) {
+        console.warn('[persistPredictions] save failed:', result.error);
+        if (notify) showToast("Save failed - retry", "!");
+        return result;
+      }
+      return { error: null };
+    } catch (error) {
+      const message = error?.message || 'Could not save predictions';
+      console.warn('[persistPredictions] save threw:', error);
+      if (notify) showToast("Save failed - retry", "!");
+      return { error: message };
+    }
+  };
+
   useEffect(() => {
     if (!user || (screen !== SCREENS.LEADERBOARD && screen !== SCREENS.HOME)) return;
     loadLeaderboard(activeBoardId, null, user.id).then(rows => {
@@ -12322,7 +12384,7 @@ function App() {
     _koPickSaveTimer.current = setTimeout(async () => {
       if (!user) return;
       const state = instantPickStateRef.current || instantPickState;
-      await savePredictions(user.id, activeBoardId, { ...(state||{}), koPicks });
+      await persistPredictions(activeBoardId, { ...(state||{}), koPicks });
     }, 600);
   };
 
@@ -12344,7 +12406,7 @@ function App() {
     _autoSaveTimer.current = setTimeout(() => {
       // Use ref to get the latest state — avoids stale closure if user picked quickly
       const state = instantPickStateRef.current || instantPickState;
-      savePredictions(user.id, activeBoardId, state);
+      persistPredictions(activeBoardId, state);
     }, 1000);
     return () => clearTimeout(_autoSaveTimer.current);
   }, [instantPickState, activeBoardId, user]);
@@ -12429,7 +12491,8 @@ function App() {
               }}
               onCopyPredictions={async (targetBoardId)=>{
                 if(!user||!instantPickState) return;
-                await savePredictions(user.id, targetBoardId, instantPickState);
+                const result = await persistPredictions(targetBoardId, instantPickState, { notify: true });
+                if (result?.error) return;
                 setAllInstantPickDone(p=>({...p,[targetBoardId]:true}));
                 setPredictionsComplete(p=>({...p,[targetBoardId]:true}));
                 setAllInstantPickStates(p=>({...p,[targetBoardId]:instantPickState}));
@@ -12671,13 +12734,19 @@ function App() {
               if (shouldStartAtKo) {
                 // Second Chance mode: save ko_picks on back (previously never saved here)
                 const hasKo = Object.keys(state?.koPicks || {}).some(k => /^(R32|R16|QF|SF|F)-\d+$/.test(k));
-                if (user && state && hasKo) await savePredictions(user.id, activeBoardId, state);
+                if (user && state && hasKo) {
+                  const result = await persistPredictions(activeBoardId, state, { notify: true });
+                  if (result?.error) return;
+                }
               } else if (!task1DeadlinePassed) {
                 const best3Complete = (state?.best3?.length || 0) >= 8;
                 if (best3Complete) {
+                  if (user && state) {
+                    const result = await persistPredictions(activeBoardId, state, { notify: true });
+                    if (result?.error) return;
+                  }
                   setInstantPickDone(true);
                   const _gr = state?.groupRankings||{}; if(Object.keys(_gr).filter(g=>INTERACTIVE_GROUPS.includes(g)).length>=INTERACTIVE_GROUPS.length) setAllGroupsDoneByBoard(p=>({...p,[activeBoardId]:true}));
-                  if (user && state) await savePredictions(user.id, activeBoardId, state);
                 } else {
                   setInstantPickDone(false);
                 }
@@ -12686,20 +12755,22 @@ function App() {
             }}
             onModify={()=>setInstantPickDone(false)}
             onComplete={async ()=>{
+              if (user && instantPickState) {
+                const result = await persistPredictions(activeBoardId, instantPickState, { notify: true });
+                if (result?.error) return;
+              }
               setInstantPickDone(true);
               const _gr2 = instantPickState?.groupRankings||{}; if(Object.keys(_gr2).filter(g=>INTERACTIVE_GROUPS.includes(g)).length>=INTERACTIVE_GROUPS.length) setAllGroupsDoneByBoard(p=>({...p,[activeBoardId]:true}));
-              if (user && instantPickState) {
-                await savePredictions(user.id, activeBoardId, instantPickState);
-              }
               setScreen(SCREENS.HOME);
             }}
             onKoComplete={async ()=>{
-              setKoPickDone(true);
               // Use ref to avoid stale closure — captures the last pick even if state hasn't propagated yet
               const state = instantPickStateRef.current || instantPickState;
               if (user && state) {
-                await savePredictions(user.id, activeBoardId, state);
+                const result = await persistPredictions(activeBoardId, state, { notify: true });
+                if (result?.error) return;
               }
+              setKoPickDone(true);
               setScreen(SCREENS.HOME);
             }}/>}
 

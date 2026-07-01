@@ -12,6 +12,7 @@
 // or set a pg_cron / Supabase scheduler at e.g. 23:30 UTC on match days.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { requireAdminOrServiceRole } from '../_shared/auth.ts'
 
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL')!,
@@ -73,6 +74,9 @@ const TEAM_IDS: Record<string, number> = {
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
 
 Deno.serve(async (req) => {
+  const authError = await requireAdminOrServiceRole(req)
+  if (authError) return authError
+
   const apiKey = Deno.env.get('API_FOOTBALL_KEY')
   if (!apiKey) {
     return new Response(

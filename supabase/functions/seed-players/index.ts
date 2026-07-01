@@ -5,6 +5,7 @@
 // or from the Admin panel in the app.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { requireAdminOrServiceRole } from '../_shared/auth.ts'
 
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL')!,
@@ -74,7 +75,10 @@ const TEAM_NORM: Record<string, string> = {
   'Congo DR': 'DR Congo',
 }
 
-Deno.serve(async () => {
+Deno.serve(async (req) => {
+  const authError = await requireAdminOrServiceRole(req)
+  if (authError) return authError
+
   const apiKey = Deno.env.get('FOOTBALL_DATA_API_KEY')
   if (!apiKey) {
     return new Response(

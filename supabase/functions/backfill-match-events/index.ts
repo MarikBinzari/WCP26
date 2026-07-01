@@ -3,6 +3,7 @@
 // and populates match_events table with goals, cards, substitutions.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { requireAdminOrServiceRole } from '../_shared/auth.ts'
 
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL')!,
@@ -130,7 +131,10 @@ function dateRange(from: string, to: string): string[] {
   return dates
 }
 
-Deno.serve(async () => {
+Deno.serve(async (req) => {
+  const authError = await requireAdminOrServiceRole(req)
+  if (authError) return authError
+
   const apiKey = Deno.env.get('API_FOOTBALL_KEY')
   if (!apiKey) {
     return new Response(JSON.stringify({ error: 'API_FOOTBALL_KEY not set' }), { status: 500 })

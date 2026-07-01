@@ -1,4 +1,9 @@
+import { requireAdminOrServiceRole } from '../_shared/auth.ts'
+
 Deno.serve(async (req) => {
+  const authError = await requireAdminOrServiceRole(req)
+  if (authError) return authError
+
   const apiKey = Deno.env.get('API_FOOTBALL_KEY')
   if (!apiKey) return new Response(JSON.stringify({ error: 'API_FOOTBALL_KEY not set' }), { status: 500 })
 
