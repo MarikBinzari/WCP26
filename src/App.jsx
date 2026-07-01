@@ -931,6 +931,12 @@ const getMatchKey = (match, day, idx) => {
   return CANONICAL_MATCH_KEYS[key] || key;
 };
 
+// Knockout placeholder markers: '🏆' (winner slot) and '🥉' (loser/3rd-place slot).
+// A match with a placeholder flag has undetermined teams until koTeams resolves it.
+const isKoPlaceholderFlag = (f) => f === '🏆' || f === '🥉';
+// Placeholder team names in the calendar: W## (winners) and L### (losers of semis).
+const isKoPlaceholderTeam = (n) => !n || n === 'TBD' || /^[WL]\d+$/.test(n);
+
 const getDisplayCalendarEvents = (koTeams={}) => {
   const byDay = new Map();
   CALENDAR_EVENTS.forEach(event => {
@@ -6127,10 +6133,10 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
     const mm = {};
     _exCalendarEvents.forEach(e => {
       if (!isWeekUnlocked(e.day, simDay, simHour, simMin)) return;
-      const _isRealTeam = (n) => !!n && n !== 'TBD' && !/^W\d+$/.test(n);
+      const _isRealTeam = (n) => !isKoPlaceholderTeam(n);
       mm[e.day] = (e.matches || []).filter(m =>
         m.matchKey !== 'cl-final' &&
-        (m.homeFlag !== '🏆' || !!koTeams[m.matchKey] || (_isRealTeam(m.home) && _isRealTeam(m.away))) &&
+        (!isKoPlaceholderFlag(m.homeFlag) || !!koTeams[m.matchKey] || (_isRealTeam(m.home) && _isRealTeam(m.away))) &&
         !isMatchPast(e.day, m.time, simDay, simHour, m.kickoffUtc)
       );
     });
@@ -9641,7 +9647,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
     (mm0[d] || [])
       .map((m, i) => ({ match: m, day: d, idx: i, key: getMatchKey(m, d, i) }))
       .filter(({ match: m, key }) =>
-        (m.homeFlag !== '🏆' || !!koTeams[key]) &&
+        (!isKoPlaceholderFlag(m.homeFlag) || !!koTeams[key]) &&
         isWeekUnlocked(d, simDay, simHour, simMin) &&
         !isMatchPast(d, m.time, simDay, simHour, m.kickoffUtc)
       )
@@ -9685,7 +9691,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
           onMatchClick={(match,day,idx)=>{
             if(!isWeekUnlocked(day, simDay, simHour, simMin)) return;
             const matchKey = getMatchKey(match,day,idx);
-            if(match.homeFlag==='🏆' && !koTeams[matchKey]) return; // teams not determined yet
+            if(isKoPlaceholderFlag(match.homeFlag) && !koTeams[matchKey]) return; // teams not determined yet
             // UCL Final (day -1): allow prediction before kickoff only
             const isUCL = match.group==="UCL";
             if(!isUCL && isMatchPast(day, match.time, simDay, simHour, match.kickoffUtc)) return;
@@ -9871,14 +9877,14 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
                       <div style={{display:"flex",alignItems:"center",gap:8}}>
                         {/* Home */}
                         <div style={{flex:1,display:"flex",alignItems:"center",gap:6}}>
-                          <span style={{fontSize:20}}>{m.homeFlag!=='🏆'?m.homeFlag:(FLAGS[koTeams[m.key]?.home]||FLAGS[m.home]||'🏆')}</span>
+                          <span style={{fontSize:20}}>{!isKoPlaceholderFlag(m.homeFlag)?m.homeFlag:(FLAGS[koTeams[m.key]?.home]||FLAGS[m.home]||m.homeFlag)}</span>
                           <span style={{fontSize:11,fontWeight:600,color:DARK}}>{m.home.length>8?m.home.split(" ")[0]:m.home}</span>
                         </div>
 
                         {/* Scores — compact single center block */}
                         {(()=>{
                           const isPast = isMatchPast(m.day, m.time, simDay, simHour, m.kickoffUtc);
-                          const canPredict = !isLive && !isFinished && !isPast && isWeekUnlocked(m.day, simDay, simHour, simMin) && (m.homeFlag!=='🏆' || !!koTeams[m.key]);
+                          const canPredict = !isLive && !isFinished && !isPast && isWeekUnlocked(m.day, simDay, simHour, simMin) && (!isKoPlaceholderFlag(m.homeFlag) || !!koTeams[m.key]);
                           const scoreDisplay = hasLive ? `${live.home}-${live.away}` : isSimMode && isLive ? "0-0" : "-";
                           const penDisplay = penaltyScoreLabel(live);
                           const predBox = (isPast||isLive||isFinished) ? (sc ? (
@@ -9927,7 +9933,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
                         {/* Away */}
                         <div style={{flex:1,display:"flex",alignItems:"center",gap:6,justifyContent:"flex-end"}}>
                           <span style={{fontSize:11,fontWeight:600,color:DARK,textAlign:"right"}}>{m.away.length>8?m.away.split(" ")[0]:m.away}</span>
-                          <span style={{fontSize:20}}>{m.awayFlag!=='🏆'?m.awayFlag:(FLAGS[koTeams[m.key]?.away]||FLAGS[m.away]||'🏆')}</span>
+                          <span style={{fontSize:20}}>{!isKoPlaceholderFlag(m.awayFlag)?m.awayFlag:(FLAGS[koTeams[m.key]?.away]||FLAGS[m.away]||m.awayFlag)}</span>
                         </div>
                       </div>
 
@@ -9954,7 +9960,7 @@ function GroupsScheduleScreen({ onBack, scores: scoresProp, setScores: setScores
                     </div>
 
                     {/* Edit prediction */}
-                    {!isMatchPast(m.day, m.time, simDay, simHour, m.kickoffUtc) && !isLive && !isFinished && sc && isWeekUnlocked(m.day, simDay, simHour, simMin) && m.homeFlag!=='🏆' && todaySim <= m.day && (
+                    {!isMatchPast(m.day, m.time, simDay, simHour, m.kickoffUtc) && !isLive && !isFinished && sc && isWeekUnlocked(m.day, simDay, simHour, simMin) && !isKoPlaceholderFlag(m.homeFlag) && todaySim <= m.day && (
                       <button onClick={()=>setScorePick({match:m,day:m.day,idx:m.idx,key:m.key})}
                         style={{width:"100%",padding:"6px 12px",borderTop:"1px solid rgba(0,0,0,0.05)",
                           background:"none",border:"none",borderTop:"1px solid rgba(0,0,0,0.05)",
@@ -10181,7 +10187,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
   const sm = (sel !== null && sel !== undefined && mm[sel]) ? mm[sel] : null;
   const copyableDayMatches = sm ? sm
     .map((m, idx) => ({ match: m, idx, key: getMatchKey(m, sel, idx) }))
-    .filter(({ match: m, key }) => (m.homeFlag !== '🏆' || !!koTeams[key]) && isWeekUnlocked(sel || 0, simDay, simHour, simMin)) : [];
+    .filter(({ match: m, key }) => (!isKoPlaceholderFlag(m.homeFlag) || !!koTeams[key]) && isWeekUnlocked(sel || 0, simDay, simHour, simMin)) : [];
   const dayAllPredicted = copyableDayMatches.length > 0 && copyableDayMatches.every(({ key }) => !!scores?.[key]);
   const dayNotStarted = copyableDayMatches.length > 0 && copyableDayMatches.every(({ match, key }) => {
     const status = LIVE_SCORES[key]?.status;
@@ -10691,7 +10697,7 @@ function WeeklyCalendar({ weekStart, setWeekStart, weeks, weekIdx, selDay, onDay
                     const displayHomeFlag = kt ? (FLAGS[kt.home]  || '🏆') : m.homeFlag;
                     const displayAway     = kt ? kt.away                    : m.away;
                     const displayAwayFlag = kt ? (FLAGS[kt.away]  || '🏆') : m.awayFlag;
-                    const teamsKnown = m.homeFlag !== '🏆' || !!kt;
+                    const teamsKnown = !isKoPlaceholderFlag(m.homeFlag) || !!kt;
                     // key used below for data-match-key
                     const sc = scores&&scores[key];
                     const live = LIVE_SCORES[key];
