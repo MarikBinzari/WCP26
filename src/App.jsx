@@ -5773,7 +5773,7 @@ function BonusPredictionScreen({ onBack, onChampion, championPick, runnerUpPick,
 }
 
 // ── LIVE WIDGET ──────────────────────────────────────────────────────────────
-function LiveWidget({ simDay, simHour, simMin }) {
+function LiveWidget({ simDay, simHour, simMin, koTeams={} }) {
   const [open, setOpen] = React.useState(false);
   const [matchEvents, setMatchEvents] = useState({});
   const [eventsLoaded, setEventsLoaded] = useState(false);
@@ -5934,10 +5934,11 @@ function LiveWidget({ simDay, simHour, simMin }) {
             {eventsLoaded && liveMatchKeys.map(k => {
               const live = liveScores[k];
               const info = matchByKey[k];
-              const homeTeam = info?.home || '';
-              const awayTeam = info?.away || '';
-              const homeFlag = info?.homeFlag || FLAGS[homeTeam] || '🏳';
-              const awayFlag = info?.awayFlag || FLAGS[awayTeam] || '🏳';
+              const homeTeam = koTeams[k]?.home || info?.home || '';
+              const awayTeam = koTeams[k]?.away || info?.away || '';
+              const isPlaceholderFlag = (f) => !f || f === '🏆' || f === '🥉';
+              const homeFlag = isPlaceholderFlag(info?.homeFlag) ? (FLAGS[homeTeam] || '🏳') : info.homeFlag;
+              const awayFlag = isPlaceholderFlag(info?.awayFlag) ? (FLAGS[awayTeam] || '🏳') : info.awayFlag;
               const evs = matchEvents[k] || [];
               const homeEvs = filterTeamEvents(evs, homeTeam);
               const awayEvs = filterTeamEvents(evs, awayTeam);
@@ -12881,7 +12882,7 @@ function App() {
         </div>
         <Toast message={toast.message} emoji={toast.emoji} visible={toast.visible}/>
         {screen===SCREENS.HOME && activeBoardId && <ChatWidget boardId={activeBoardId} user={user} boardName={myBoards.find(b=>b.id===activeBoardId)?.name || (activeBoardId==='global'?'Global League':'')}/>}
-        {screen===SCREENS.HOME && <LiveWidget simDay={simDay} simHour={simHour} simMin={simMin}/>}
+        {screen===SCREENS.HOME && <LiveWidget simDay={simDay} simHour={simHour} simMin={simMin} koTeams={koTeams}/>}
         {showPushPrompt && (
           <div style={{position:'fixed',inset:0,zIndex:3000,display:'flex',alignItems:'flex-end',justifyContent:'center',padding:'0 16px 32px',background:'rgba(0,0,0,0.45)'}}>
             <div style={{background:'#fff',borderRadius:20,padding:'24px 20px 20px',width:'100%',maxWidth:400,boxShadow:'0 8px 40px rgba(0,0,0,0.18)'}}>
