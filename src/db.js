@@ -994,6 +994,15 @@ export async function savePushSubscription(userId, subscription) {
   if (!endpoint || !keys?.p256dh || !keys?.auth) {
     return { error: 'Invalid browser push subscription' }
   }
+  const { error: cleanupError } = await supabase
+    .from('push_subscriptions')
+    .delete()
+    .eq('user_id', userId)
+    .neq('endpoint', endpoint)
+  if (cleanupError) {
+    console.error('savePushSubscription cleanup:', cleanupError)
+    return { error: cleanupError.message }
+  }
   const { error } = await supabase
     .from('push_subscriptions')
     .upsert(

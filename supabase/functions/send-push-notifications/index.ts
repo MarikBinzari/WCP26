@@ -37,16 +37,22 @@ Deno.serve(async (req) => {
 
   if (!title) return new Response('title is required', { status: 400 })
 
-  let query = supabase.from('push_subscriptions').select('endpoint, p256dh, auth')
+  let query = supabase.from('push_subscriptions').select('user_id,endpoint,p256dh,auth,created_at')
   if (userIds?.length) query = query.in('user_id', userIds)
 
-  const { data: subs, error } = await query
+  const { data: subscriptionRows, error } = await query.order('created_at', { ascending: false })
 
   if (error) {
     return new Response(JSON.stringify({ error: error.message }), { status: 500 })
   }
 
-  if (!subs?.length) {
+  const latestByUser = new Map<string, any>()
+  for (const sub of subscriptionRows ?? []) {
+    if (!latestByUser.has(sub.user_id)) latestByUser.set(sub.user_id, sub)
+  }
+  const subs = Array.from(latestByUser.values())
+
+  if (!subs.length) {
     return new Response(JSON.stringify({ sent: 0, failed: 0, removed: 0 }), { status: 200 })
   }
 

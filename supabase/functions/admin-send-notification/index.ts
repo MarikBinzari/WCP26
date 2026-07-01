@@ -52,11 +52,18 @@ Deno.serve(async (req) => {
   }
 
   // Trimite push la toți abonații
-  const { data: subs } = await supabaseAdmin
+  const { data: subscriptionRows } = await supabaseAdmin
     .from('push_subscriptions')
-    .select('endpoint, p256dh, auth')
+    .select('user_id,endpoint,p256dh,auth,created_at')
+    .order('created_at', { ascending: false })
 
-  if (!subs?.length) {
+  const latestByUser = new Map<string, any>()
+  for (const sub of subscriptionRows ?? []) {
+    if (!latestByUser.has(sub.user_id)) latestByUser.set(sub.user_id, sub)
+  }
+  const subs = Array.from(latestByUser.values())
+
+  if (!subs.length) {
     return new Response(JSON.stringify({ sent: 0, notifId: notif.id }), { status: 200 })
   }
 
