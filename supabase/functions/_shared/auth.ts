@@ -41,12 +41,31 @@ export async function requireAdminOrServiceRole(req: Request): Promise<Response 
   return null
 }
 
-export function requireServiceRole(req: Request): Response | null {
+export async function requireServiceRole(req: Request): Promise<Response | null> {
   const token = bearerToken(req)
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
   const cronSecret = Deno.env.get('POLL_LIVE_SCORES_SECRET')
-  if (!token || (token !== serviceRoleKey && token !== cronSecret)) {
-    return json({ error: 'Unauthorized' }, 401)
+  if (!token) return json({ error: 'Unauthorized' }, 401)
+  if (token === serviceRoleKey || token === cronSecret) return null
+
+  // Supabase projects can have both a legacy service_role JWT and a newer
+  // secret key. Validate legacy JWTs against PostgREST before trusting role.
+  try {
+    const payloadPart = token.split('.')[1]
+    if (!payloadPart) return json({ error: 'Unauthorized' }, 401)
+    const padded = payloadPart.replace(/-/g, '+').replace(/_/g, '/')
+      .padEnd(Math.ceil(payloadPart.length / 4) * 4, '=')
+    const payload = JSON.parse(atob(padded))
+    if (payload?.role !== 'service_role') return json({ error: 'Unauthorized' }, 401)
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')
+    if (!supabaseUrl) return json({ error: 'Auth not configured' }, 500)
+    const verification = await fetch(`${supabaseUrl}/rest/v1/`, {
+      headers: { apikey: token, Authorization: `Bearer ${token}` },
+    })
+    if (verification.ok) return null
+  } catch {
+    // Return the common unauthorized response below.
   }
-  return null
+  return json({ error: 'Unauthorized' }, 401)
 }

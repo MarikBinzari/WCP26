@@ -5,6 +5,7 @@
 
 import webpush from 'npm:web-push@3'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { requireServiceRole } from '../_shared/auth.ts'
 
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL')!,
@@ -18,11 +19,8 @@ webpush.setVapidDetails(
 )
 
 Deno.serve(async (req) => {
-  const authHeader = req.headers.get('Authorization') ?? ''
-  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-  if (authHeader !== `Bearer ${serviceKey}`) {
-    return new Response('Unauthorized', { status: 401 })
-  }
+  const authError = await requireServiceRole(req)
+  if (authError) return authError
 
   let title = '', body = '', url = '/', userIds: string[] | null = null
   try {

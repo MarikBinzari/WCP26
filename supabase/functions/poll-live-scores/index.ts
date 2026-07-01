@@ -411,7 +411,7 @@ function getPenaltyScore(match: any, mappedStatus: string): { home: number | nul
 // ── Main handler ─────────────────────────────────────────────────────────────
 
 Deno.serve(async (req) => {
-  const authError = requireServiceRole(req)
+  const authError = await requireServiceRole(req)
   if (authError) return authError
 
   const now = new Date()
