@@ -114,8 +114,8 @@ const SCHEDULE: { matchKey: string; kickoffUtc: string; home: string; away: stri
   { matchKey:'34-1', home:'TBD', away:'TBD', kickoffUtc:'2026-07-04T22:00:00Z' },
   { matchKey:'35-0', home:'TBD', away:'TBD', kickoffUtc:'2026-07-05T20:00:00Z' },
   { matchKey:'35-1', home:'TBD', away:'TBD', kickoffUtc:'2026-07-05T22:00:00Z' },
-  { matchKey:'36-0', home:'TBD', away:'TBD', kickoffUtc:'2026-07-06T23:00:00Z' },
-  { matchKey:'36-1', home:'TBD', away:'TBD', kickoffUtc:'2026-07-06T23:00:00Z' },
+  { matchKey:'36-0', home:'TBD', away:'TBD', kickoffUtc:'2026-07-06T19:00:00Z' },
+  { matchKey:'36-1', home:'TBD', away:'TBD', kickoffUtc:'2026-07-07T00:00:00Z' },
   { matchKey:'37-0', home:'TBD', away:'TBD', kickoffUtc:'2026-07-07T20:00:00Z' },
   { matchKey:'37-1', home:'TBD', away:'TBD', kickoffUtc:'2026-07-07T23:00:00Z' },
   // ── QF ──────────────────────────────────────────────────────────────────────
@@ -201,16 +201,12 @@ function findKoMatchKey(utcDateStr: string): string | null {
   if (!utcDateStr) return null
   const matchMs = new Date(utcDateStr).getTime()
   const tbdSlots = SCHEDULE.filter(s => s.home === 'TBD')
-  let best: typeof SCHEDULE[0] | null = null
-  let bestDiff = Infinity
-  for (const slot of tbdSlots) {
-    const diff = Math.abs(matchMs - new Date(slot.kickoffUtc).getTime())
-    if (diff < bestDiff && diff <= 3 * 60 * 60000) {
-      bestDiff = diff
-      best = slot
-    }
-  }
-  return best?.matchKey ?? null
+  const candidates = tbdSlots.filter(slot =>
+    Math.abs(matchMs - new Date(slot.kickoffUtc).getTime()) <= 90 * 60000
+  )
+  // Never guess between overlapping knockout slots. A missed update is safer
+  // than writing a live score under another match's prediction key.
+  return candidates.length === 1 ? candidates[0].matchKey : null
 }
 
 function normalizeTeam(name: string): string {
@@ -250,8 +246,8 @@ const KO_KICKOFFS: Record<string, string> = {
   '34-1': '2026-07-04T17:00:00Z',
   '35-0': '2026-07-05T20:00:00Z',
   '35-1': '2026-07-05T22:00:00Z',
-  '36-0': '2026-07-06T23:00:00Z',
-  '36-1': '2026-07-06T23:00:00Z',
+  '36-0': '2026-07-06T19:00:00Z',
+  '36-1': '2026-07-07T00:00:00Z',
   '37-0': '2026-07-07T20:00:00Z',
   '37-1': '2026-07-07T23:00:00Z',
   '39-0': '2026-07-09T20:00:00Z',
@@ -455,6 +451,19 @@ Deno.serve(async (req) => {
   }[] = []
 
   const koTeamUpdates: { matchKey: string; home: string; away: string }[] = []
+  const { data: knownKoMatches, error: knownKoError } = await supabase
+    .from('matches')
+    .select('match_key,team1:teams!matches_team1_id_fkey(name),team2:teams!matches_team2_id_fkey(name)')
+    .in('stage', ['r16', 'qf', 'sf', 'third_place', 'final'])
+  if (knownKoError) {
+    return new Response(JSON.stringify({ error: knownKoError.message }), { status: 500 })
+  }
+  const koKeyByTeams = new Map<string, string>()
+  for (const match of knownKoMatches ?? []) {
+    const home = normalizeTeam((match as any).team1?.name ?? '')
+    const away = normalizeTeam((match as any).team2?.name ?? '')
+    if (home && away) koKeyByTeams.set(`${home}|${away}`, (match as any).match_key)
+  }
 
   // ── WC 2026 matches ────────────────────────────────────────────────────────
   if (inWCWindow || now >= TOURNAMENT_START) {
@@ -500,6 +509,8 @@ Deno.serve(async (req) => {
             const awayNorm = normalizeTeam(f.teams?.away?.name ?? '')
             const statusShort: string = f.fixture?.status?.short ?? 'NS'
             let matchKey = findMatchKey(homeNorm, awayNorm)
+              ?? koKeyByTeams.get(`${homeNorm}|${awayNorm}`)
+              ?? null
 
             if (!matchKey) {
               const fixtureUtc = f.fixture?.date ?? null
@@ -525,6 +536,14 @@ Deno.serve(async (req) => {
             const regularAway: number | null = isAfterRegular
               ? (f.score?.fulltime?.away ?? f.goals?.away ?? null)
               : (f.goals?.away ?? null)
+            // The schema has no separate extra-time score columns. For AET
+            // matches without a shootout, keep the 90-minute score in the
+            // regular fields (needed by exact-score scoring) and store the
+            // final score in the decider fields used by knockout scoring.
+            const deciderHome: number | null = f.score?.penalty?.home
+              ?? (statusShort === 'AET' ? (f.goals?.home ?? null) : null)
+            const deciderAway: number | null = f.score?.penalty?.away
+              ?? (statusShort === 'AET' ? (f.goals?.away ?? null) : null)
 
             console.log(`[api-sports] ${homeNorm} vs ${awayNorm} | status: ${statusShort}→${mappedStatus} | score: ${regularHome}-${regularAway} | min: ${f.fixture?.status?.elapsed}`)
 
@@ -533,12 +552,12 @@ Deno.serve(async (req) => {
               status: mappedStatus,
               regular_time_home_score: regularHome,
               regular_time_away_score: regularAway,
-              penalty_home_score: f.score?.penalty?.home ?? null,
-              penalty_away_score: f.score?.penalty?.away ?? null,
+              penalty_home_score: deciderHome,
+              penalty_away_score: deciderAway,
               raw_api_response: f,
               api_minute: (mappedStatus === 'LIVE' || mappedStatus === 'ET')
                 ? (f.fixture?.status?.elapsed ?? null) : null,
-              utc_date: f.fixture?.date ?? null,
+              utc_date: KO_KICKOFFS[matchKey] ?? f.fixture?.date ?? null,
               updated_at: now.toISOString(),
             })
 
@@ -624,6 +643,8 @@ Deno.serve(async (req) => {
           const homeNorm = normalizeTeam(m.homeTeam?.name ?? '')
           const awayNorm = normalizeTeam(m.awayTeam?.name ?? '')
           let matchKey = findMatchKey(homeNorm, awayNorm)
+            ?? koKeyByTeams.get(`${homeNorm}|${awayNorm}`)
+            ?? null
 
           if (!matchKey && m.utcDate) {
             const koKey = findKoMatchKey(m.utcDate)
@@ -654,7 +675,7 @@ Deno.serve(async (req) => {
             penalty_away_score: penaltyScore.away,
             raw_api_response: m,
             api_minute: liveMin,
-            utc_date: m.utcDate ?? null,
+            utc_date: KO_KICKOFFS[matchKey] ?? m.utcDate ?? null,
             updated_at: now.toISOString(),
           })
         }

@@ -34,7 +34,9 @@ const liveScorePhaseLabel = (status, min) => {
   return min != null ? `LIVE ${min}'` : "LIVE";
 };
 const hasPenaltyScore = (live) => live?.homePen != null && live?.awayPen != null;
-const penaltyScoreLabel = (live) => hasPenaltyScore(live) ? `${live.homePen}-${live.awayPen} pen` : null;
+const penaltyScoreLabel = (live) => hasPenaltyScore(live)
+  ? `${live.homePen}-${live.awayPen} ${live.decidedInExtraTime ? "AET" : "pen"}`
+  : null;
 
 
 const SCREENS = {
@@ -1138,6 +1140,8 @@ function useLiveScores(simDay, simHour, simMin) {
           away:    row.regular_time_away_score,
           homePen: row.penalty_home_score,
           awayPen: row.penalty_away_score,
+          decidedInExtraTime: row.raw_api_response?.fixture?.status?.short === 'AET'
+            && row.raw_api_response?.score?.penalty?.home == null,
           min:     row.api_minute,
           utcDate: row.utc_date ?? null,
         },
@@ -12279,6 +12283,7 @@ function App() {
     const channel = supabase
       .channel("ko_teams_realtime")
       .on("postgres_changes", { event:"*", schema:"public", table:"matches" }, refreshKoTeams)
+      .on("postgres_changes", { event:"*", schema:"public", table:"live_scores" }, refreshKoTeams)
       .subscribe();
     const interval = setInterval(refreshKoTeams, 30_000);
     document.addEventListener("visibilitychange", handleVisibility);

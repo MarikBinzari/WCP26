@@ -363,8 +363,8 @@ export const CALENDAR_EVENTS = [
     {home:"W79",homeFlag:"🏆",away:"W80",awayFlag:"🏆",time:"18:00",group:"R16",venue:"Estadio Azteca",kickoffUtc:"2026-07-05T22:00:00Z"},
   ]},
   {day:36, matches:[
-    {home:"W83",homeFlag:"🏆",away:"W84",awayFlag:"🏆",time:"19:00",group:"R16",venue:"AT&T Stadium",kickoffUtc:"2026-07-06T23:00:00Z"},
-    {home:"W81",homeFlag:"🏆",away:"W82",awayFlag:"🏆",time:"19:00",group:"R16",venue:"Lumen Field",kickoffUtc:"2026-07-06T23:00:00Z"},
+    {home:"W83",homeFlag:"🏆",away:"W84",awayFlag:"🏆",time:"19:00",group:"R16",venue:"AT&T Stadium",kickoffUtc:"2026-07-06T19:00:00Z"},
+    {home:"W81",homeFlag:"🏆",away:"W82",awayFlag:"🏆",time:"21:00",group:"R16",venue:"Lumen Field",kickoffUtc:"2026-07-07T00:00:00Z"},
   ]},
   {day:37, matches:[
     {home:"W86",homeFlag:"🏆",away:"W88",awayFlag:"🏆",time:"16:00",group:"R16",venue:"Mercedes-Benz Stadium",kickoffUtc:"2026-07-07T20:00:00Z"},

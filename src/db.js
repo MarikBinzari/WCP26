@@ -783,6 +783,8 @@ export async function loadLiveScores() {
       away:    row.regular_time_away_score,
       homePen: row.penalty_home_score,
       awayPen: row.penalty_away_score,
+      decidedInExtraTime: row.raw_api_response?.fixture?.status?.short === 'AET'
+        && row.raw_api_response?.score?.penalty?.home == null,
       min:     row.api_minute,
       utcDate: row.utc_date ?? null,
     }
@@ -799,7 +801,7 @@ export async function loadKoTeams() {
       .order('match_key'),
     supabase
       .from('live_scores')
-      .select('match_key,status,regular_time_home_score,regular_time_away_score,penalty_home_score,penalty_away_score,utc_date'),
+      .select('match_key,status,regular_time_home_score,regular_time_away_score,penalty_home_score,penalty_away_score,raw_api_response,utc_date'),
   ])
   if (matchesRes.error || scoresRes.error) {
     console.error('loadKoTeams:', matchesRes.error || scoresRes.error)
@@ -822,7 +824,10 @@ export async function loadKoTeams() {
   const winnerOf = (matchKey) => {
     const teams = result[matchKey]
     const score = scores[matchKey]
-    if (!teams || score?.status !== 'FT') return null
+    const isFinished = ['FT', 'AET', 'PEN', 'AWD', 'WO'].includes(
+      String(score?.status || '').toUpperCase()
+    )
+    if (!teams || !isFinished) return null
     const home = score.penalty_home_score ?? score.regular_time_home_score
     const away = score.penalty_away_score ?? score.regular_time_away_score
     if (home == null || away == null || home === away) return null
