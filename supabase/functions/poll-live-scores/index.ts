@@ -111,7 +111,7 @@ const SCHEDULE: { matchKey: string; kickoffUtc: string; home: string; away: stri
   { matchKey:'33-2', home:'Australia',       away:'Egypt',                 kickoffUtc:'2026-07-03T18:00:00Z' },
   // ── R16 ─────────────────────────────────────────────────────────────────────
   { matchKey:'34-0', home:'TBD', away:'TBD', kickoffUtc:'2026-07-04T21:00:00Z' },
-  { matchKey:'34-1', home:'TBD', away:'TBD', kickoffUtc:'2026-07-04T22:00:00Z' },
+  { matchKey:'34-1', home:'TBD', away:'TBD', kickoffUtc:'2026-07-04T17:00:00Z' },
   { matchKey:'35-0', home:'TBD', away:'TBD', kickoffUtc:'2026-07-05T20:00:00Z' },
   { matchKey:'35-1', home:'TBD', away:'TBD', kickoffUtc:'2026-07-05T22:00:00Z' },
   { matchKey:'36-0', home:'TBD', away:'TBD', kickoffUtc:'2026-07-06T19:00:00Z' },
@@ -462,7 +462,7 @@ Deno.serve(async (req) => {
   const { data: knownKoMatches, error: knownKoError } = await supabase
     .from('matches')
     .select('match_key,team1:teams!matches_team1_id_fkey(name),team2:teams!matches_team2_id_fkey(name)')
-    .in('stage', ['r16', 'qf', 'sf', 'third_place', 'final'])
+    .in('stage', ['r16', 'qf', 'sf', 'final'])
   if (knownKoError) {
     return new Response(JSON.stringify({ error: knownKoError.message }), { status: 500 })
   }
@@ -539,10 +539,10 @@ Deno.serve(async (req) => {
             const mappedStatus = mapApiSportsStatus(statusShort)
             const isAfterRegular = statusShort === 'AET' || statusShort === 'PEN'
             const regularHome: number | null = isAfterRegular
-              ? (f.score?.fulltime?.home ?? f.goals?.home ?? null)
+              ? (f.score?.fulltime?.home ?? null)
               : (f.goals?.home ?? null)
             const regularAway: number | null = isAfterRegular
-              ? (f.score?.fulltime?.away ?? f.goals?.away ?? null)
+              ? (f.score?.fulltime?.away ?? null)
               : (f.goals?.away ?? null)
             // The schema has no separate extra-time score columns. For AET
             // matches without a shootout, keep the 90-minute score in the
@@ -823,7 +823,10 @@ Deno.serve(async (req) => {
           previous?.penalty_away_score != null &&
           previous.penalty_home_score !== previous.penalty_away_score
         if (previous?.regular_time_home_score != null && previous?.regular_time_away_score != null) {
-          if (hasApiPenalty || row.regular_time_home_score == null || row.regular_time_away_score == null) {
+          // Preserve the previous 90-minute score only when the provider omits
+          // it. Never overwrite a newly supplied fulltime (90') score with an
+          // older value, even when the match also has an ET/penalty decider.
+          if (row.regular_time_home_score == null || row.regular_time_away_score == null) {
             row.regular_time_home_score = previous.regular_time_home_score
             row.regular_time_away_score = previous.regular_time_away_score
           }

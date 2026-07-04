@@ -797,7 +797,7 @@ export async function loadKoTeams() {
     supabase
       .from('matches')
       .select('match_key,kickoff_utc,team1:teams!matches_team1_id_fkey(name),team2:teams!matches_team2_id_fkey(name)')
-      .in('stage', ['r32', 'r16', 'qf', 'sf', 'third_place', 'final'])
+      .in('stage', ['r32', 'r16', 'qf', 'sf', 'final'])
       .order('match_key'),
     supabase
       .from('live_scores')
