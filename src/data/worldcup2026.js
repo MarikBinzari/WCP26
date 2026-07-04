@@ -367,8 +367,8 @@ export const CALENDAR_EVENTS = [
     {home:"W81",homeFlag:"🏆",away:"W82",awayFlag:"🏆",time:"21:00",group:"R16",venue:"Lumen Field",kickoffUtc:"2026-07-07T00:00:00Z"},
   ]},
   {day:37, matches:[
-    {home:"W86",homeFlag:"🏆",away:"W88",awayFlag:"🏆",time:"16:00",group:"R16",venue:"Mercedes-Benz Stadium",kickoffUtc:"2026-07-07T20:00:00Z"},
-    {home:"W85",homeFlag:"🏆",away:"W87",awayFlag:"🏆",time:"19:00",group:"R16",venue:"BC Place",kickoffUtc:"2026-07-07T23:00:00Z"},
+    {home:"W86",homeFlag:"🏆",away:"W88",awayFlag:"🏆",time:"19:00",group:"R16",venue:"Mercedes-Benz Stadium",kickoffUtc:"2026-07-07T16:00:00Z"},
+    {home:"W85",homeFlag:"🏆",away:"W87",awayFlag:"🏆",time:"23:00",group:"R16",venue:"BC Place",kickoffUtc:"2026-07-07T20:00:00Z"},
   ]},
 
   // ── SFERTURI DE FINALĂ (QF) — 9-11 Iulie ────────────────────────────────────

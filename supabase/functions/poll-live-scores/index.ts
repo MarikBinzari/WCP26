@@ -116,8 +116,8 @@ const SCHEDULE: { matchKey: string; kickoffUtc: string; home: string; away: stri
   { matchKey:'35-1', home:'TBD', away:'TBD', kickoffUtc:'2026-07-05T22:00:00Z' },
   { matchKey:'36-0', home:'TBD', away:'TBD', kickoffUtc:'2026-07-06T19:00:00Z' },
   { matchKey:'36-1', home:'TBD', away:'TBD', kickoffUtc:'2026-07-07T00:00:00Z' },
-  { matchKey:'37-0', home:'TBD', away:'TBD', kickoffUtc:'2026-07-07T20:00:00Z' },
-  { matchKey:'37-1', home:'TBD', away:'TBD', kickoffUtc:'2026-07-07T23:00:00Z' },
+  { matchKey:'37-0', home:'TBD', away:'TBD', kickoffUtc:'2026-07-07T16:00:00Z' },
+  { matchKey:'37-1', home:'TBD', away:'TBD', kickoffUtc:'2026-07-07T20:00:00Z' },
   // ── QF ──────────────────────────────────────────────────────────────────────
   { matchKey:'39-0', home:'TBD', away:'TBD', kickoffUtc:'2026-07-09T20:00:00Z' },
   { matchKey:'40-0', home:'TBD', away:'TBD', kickoffUtc:'2026-07-10T23:00:00Z' },
@@ -248,8 +248,8 @@ const KO_KICKOFFS: Record<string, string> = {
   '35-1': '2026-07-05T22:00:00Z',
   '36-0': '2026-07-06T19:00:00Z',
   '36-1': '2026-07-07T00:00:00Z',
-  '37-0': '2026-07-07T20:00:00Z',
-  '37-1': '2026-07-07T23:00:00Z',
+  '37-0': '2026-07-07T16:00:00Z',
+  '37-1': '2026-07-07T20:00:00Z',
   '39-0': '2026-07-09T20:00:00Z',
   '40-0': '2026-07-10T23:00:00Z',
   '41-0': '2026-07-11T21:00:00Z',
@@ -401,6 +401,14 @@ function getPenaltyScore(match: any, mappedStatus: string): { home: number | nul
   const score =
     scorePair(match.score?.penalties) ??
     scorePair(match.score?.penaltyShootout)
+  if (
+    mappedStatus === 'FT' &&
+    regular?.home === regular?.away &&
+    (!score || score.home == null || score.away == null || score.home === score.away)
+  ) {
+    if (match.score?.winner === 'HOME_TEAM') return { home: 1, away: 0 }
+    if (match.score?.winner === 'AWAY_TEAM') return { home: 0, away: 1 }
+  }
   return { home: score?.home ?? null, away: score?.away ?? null }
 }
 
@@ -540,10 +548,24 @@ Deno.serve(async (req) => {
             // matches without a shootout, keep the 90-minute score in the
             // regular fields (needed by exact-score scoring) and store the
             // final score in the decider fields used by knockout scoring.
-            const deciderHome: number | null = f.score?.penalty?.home
+            let deciderHome: number | null = f.score?.penalty?.home
               ?? (statusShort === 'AET' ? (f.goals?.home ?? null) : null)
-            const deciderAway: number | null = f.score?.penalty?.away
+            let deciderAway: number | null = f.score?.penalty?.away
               ?? (statusShort === 'AET' ? (f.goals?.away ?? null) : null)
+            // Some providers briefly (or permanently) report 0-0 for the
+            // shootout while still exposing the winner on the team object.
+            // Store a decisive marker so bracket propagation cannot get stuck;
+            // the 90-minute score remains untouched in the regular fields.
+            const deciderMissing = deciderHome == null || deciderAway == null || deciderHome === deciderAway
+            if (mappedStatus === 'FT' && regularHome === regularAway && deciderMissing) {
+              if (f.teams?.home?.winner === true) {
+                deciderHome = 1
+                deciderAway = 0
+              } else if (f.teams?.away?.winner === true) {
+                deciderHome = 0
+                deciderAway = 1
+              }
+            }
 
             console.log(`[api-sports] ${homeNorm} vs ${awayNorm} | status: ${statusShort}→${mappedStatus} | score: ${regularHome}-${regularAway} | min: ${f.fixture?.status?.elapsed}`)
 
@@ -792,14 +814,21 @@ Deno.serve(async (req) => {
 
       for (const row of upserts) {
         const previous = previousByKey.get(row.match_key)
-        const hasApiPenalty = row.penalty_home_score != null || row.penalty_away_score != null
+        const hasApiPenalty =
+          row.penalty_home_score != null &&
+          row.penalty_away_score != null &&
+          row.penalty_home_score !== row.penalty_away_score
+        const hasPreviousPenalty =
+          previous?.penalty_home_score != null &&
+          previous?.penalty_away_score != null &&
+          previous.penalty_home_score !== previous.penalty_away_score
         if (previous?.regular_time_home_score != null && previous?.regular_time_away_score != null) {
           if (hasApiPenalty || row.regular_time_home_score == null || row.regular_time_away_score == null) {
             row.regular_time_home_score = previous.regular_time_home_score
             row.regular_time_away_score = previous.regular_time_away_score
           }
         }
-        if (previous?.penalty_home_score != null && previous?.penalty_away_score != null) {
+        if (!hasApiPenalty && hasPreviousPenalty) {
           row.penalty_home_score = previous.penalty_home_score
           row.penalty_away_score = previous.penalty_away_score
         }

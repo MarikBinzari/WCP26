@@ -998,6 +998,8 @@ const getRealTournamentDay = () => {
 };
 
 const getLocalTournamentDay = () => encodeCalendarDay(new Date());
+const R32_BRACKET_LOCK_UTC = '2026-07-04T01:30:00Z';
+const isBracketCopyLocked = () => Date.now() >= Date.parse(R32_BRACKET_LOCK_UTC);
 
 const getBonusPickNow = (simDay=null, simHour=12, simMin=0) =>
   simDay ? new Date(Date.UTC(2026, 5, simDay, (simHour || 0) + 4, simMin || 0, 0)) : new Date();
@@ -3709,8 +3711,7 @@ function InstantPickScreen({ onBack, onComplete, onKoComplete, onKoPick, onModif
     F:['49-0'],
   };
   // Ultimul meci R32: Colombia vs Ghana (33-1) — după acest kickoff, R16/QF/SF/F se blochează
-  const R32_DEADLINE_UTC = '2026-07-04T01:30:00Z';
-  const pastR32Deadline = new Date() > new Date(R32_DEADLINE_UTC);
+  const pastR32Deadline = isBracketCopyLocked();
 
   const isCurrentKoMatchLocked = (matchIdx) => {
     const key=KO_MATCH_KEYS[koRound]?.[matchIdx];
@@ -6112,6 +6113,7 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
   const topCount = Math.max(3, prizeSlots || 3);
   const top3 = leaders.slice(0, topCount);
   const _deadlinePassed = isMatchPast(11, '16:00', simDay, simHour);
+  const bracketCopyLocked = isBracketCopyLocked();
   const predictionProgress = getPredictionProgress(instantPickState || {});
   const task1Done = predictionProgress.complete || instantPickDone || !!predictionsComplete[activeId];
   const _boardDone = task1Done;
@@ -6331,7 +6333,7 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
                 value={`${currentPredDone}/${currentPredTotal}`}
                 withDivider
                 onClick={()=>koUnlocked?onPredictKo(activeId):onPredict(activeId)}
-                copyEnabled={(koUnlocked?koDone===koTotal:predictionProgress.complete&&!_deadlinePassed)}
+                copyEnabled={!bracketCopyLocked&&(koUnlocked?koDone===koTotal:predictionProgress.complete&&!_deadlinePassed)}
                 onCopy={()=>{setCopyDone({});setShowCopySheet("predictions");}}
               />
               <ProgressTile
@@ -6367,7 +6369,7 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
       </div>
       </div>
       {/* Copy predictions sheet */}
-    {showCopySheet&&(
+    {showCopySheet && (showCopySheet !== "predictions" || !bracketCopyLocked) && (
       <div style={{position:"fixed",inset:0,zIndex:1100,display:"flex",flexDirection:"column",justifyContent:"flex-end"}}
         onClick={()=>setShowCopySheet(false)}>
         <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.5)"}}/>
@@ -12536,7 +12538,7 @@ function App() {
                 showToast("Scores copied!","⚽");
               }}
               onCopyPredictions={async (targetBoardId)=>{
-                if(!user||!instantPickState) return;
+                if(!user||!instantPickState||isBracketCopyLocked()) return;
                 const result = await persistPredictions(targetBoardId, instantPickState, { notify: true });
                 if (result?.error) return;
                 setAllInstantPickDone(p=>({...p,[targetBoardId]:true}));
