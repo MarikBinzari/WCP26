@@ -9401,16 +9401,32 @@ function CentralStatsScreen({ onBack, boardId, boardName, simDay, simHour=12, si
                   const mInfo = matchByKey[k];
                   const hasScore = live?.home != null;
                   const abbr = name => (name || '').slice(0, 3).toUpperCase();
+                  const hasDecider = live?.status === 'FT'
+                    && live?.homePen != null
+                    && live?.awayPen != null
+                    && live.homePen !== live.awayPen;
+                  const homeAdvanced = hasDecider && live.homePen > live.awayPen;
+                  const awayAdvanced = hasDecider && live.awayPen > live.homePen;
+                  const deciderLabel = live?.decidedInExtraTime ? 'AET' : 'PEN';
                   const d = mInfo?.day ?? Number(String(k).split('-')[0]);
                   const dateLabel = d > 30 ? `${d-30}.Jul` : d > 0 ? `${d}.Jun` : `${d+31}.May`;
                   const timeLabel = live?.utcDate ? new Date(live.utcDate).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Bucharest' }) : null;
                   return (
                     <th key={k} style={thStyle}>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: DARK, letterSpacing: 0.3 }}>{abbr(mInfo?.home)}–{abbr(mInfo?.away)}</div>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: DARK, letterSpacing: 0.3 }}>
+                        <span style={{color:homeAdvanced?GREEN:DARK,fontWeight:homeAdvanced?900:700}}>{abbr(mInfo?.home)}{homeAdvanced?' ✓':''}</span>
+                        <span style={{color:'#9CA3AF'}}>–</span>
+                        <span style={{color:awayAdvanced?GREEN:DARK,fontWeight:awayAdvanced?900:700}}>{abbr(mInfo?.away)}{awayAdvanced?' ✓':''}</span>
+                      </div>
                       <div style={{ fontSize: 10, color: '#9CA3AF', fontWeight: 600, marginTop: 2 }}>{dateLabel}{timeLabel ? ` ${timeLabel}` : ''}</div>
                       <div style={{ fontSize: 12, fontWeight: 800, color: hasScore ? (['LIVE','HT','ET','PEN'].includes(live?.status) ? '#EF4444' : NAVY) : '#C7C7CC', marginTop: 2 }}>
                         {hasScore ? `${live.home}–${live.away}` : '· · ·'}
                       </div>
+                      {hasDecider && (
+                        <div style={{display:'inline-flex',alignItems:'center',gap:3,marginTop:3,padding:'2px 6px',borderRadius:8,background:'rgba(212,130,10,0.12)',color:'#B46900',fontSize:8,fontWeight:900,whiteSpace:'nowrap'}}>
+                          {deciderLabel} {live.homePen}–{live.awayPen} · {homeAdvanced?abbr(mInfo?.home):abbr(mInfo?.away)} ✓
+                        </div>
+                      )}
                       <div style={{ fontSize: 9, fontWeight: 800, marginTop: 2, letterSpacing: 0.3, height: 13,
                         color: live?.status === 'LIVE' ? '#EF4444' : live?.status === 'HT' ? '#F59E0B' : 'transparent',
                         animation: live?.status === 'LIVE' ? 'livePulse 1.4s ease-in-out infinite' : 'none' }}>
