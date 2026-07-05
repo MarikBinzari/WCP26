@@ -5874,8 +5874,13 @@ function LiveWidget({ simDay, simHour, simMin, koTeams={} }) {
       // Deduplicare jucător: același jucător nu poate primi același card de două ori
       const keyPlayer = e.type === 'Card' ? `card-${e.player_name}-${(e.detail||'').slice(0,8)}` : null;
       if (keyPlayer && seen.has(keyPlayer)) return false;
+      const keySub = e.type === 'subst'
+        ? `subst-${(e.player_name||'').trim().toLowerCase()}-${(e.assist_name||'').trim().toLowerCase()}`
+        : null;
+      if (keySub && seen.has(keySub)) return false;
       seen.add(keyMinute);
       if (keyPlayer) seen.add(keyPlayer);
+      if (keySub) seen.add(keySub);
       return true;
     });
   };

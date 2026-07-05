@@ -600,11 +600,18 @@ Deno.serve(async (req) => {
                   updated_at:   now.toISOString(),
                 }))
               // Production identifies events by match/minute/type/team. API-Sports can
-              // return multiple substitutions for the same team and minute; sending
-              // both in one upsert makes Postgres reject the entire batch.
+              // repeat the same substitution with a slightly different minute.
+              // Use the player pair as the semantic identity for substitutions.
+              const semanticEventKey = (row: any) => {
+                const norm = (value: unknown) => String(value ?? '').trim().toLowerCase()
+                if (row.type === 'subst') {
+                  return `${row.match_key}|subst|${norm(row.team_name)}|${norm(row.player_name)}|${norm(row.assist_name)}`
+                }
+                return `${row.match_key}|${row.minute}|${norm(row.type)}|${norm(row.team_name)}|${norm(row.player_name)}|${norm(row.detail)}`
+              }
               const rows = Array.from(new Map(
                 mappedRows.map((row: any) => [
-                  `${row.match_key}|${row.minute}|${row.type}|${row.team_name}`,
+                  semanticEventKey(row),
                   row,
                 ])
               ).values())
