@@ -5867,6 +5867,7 @@ function LiveWidget({ simDay, simHour, simMin, koTeams={} }) {
     return events.filter(e => {
       if (e.team_name !== teamName) return false;
       if (e.type === 'Goal' && varSet.has(`${e.minute}-${e.player_name}`)) return false;
+      if (e.type === 'Var') return false;
       // Deduplicare minut exact: același minut + tip + primele caractere din detail
       const keyMinute = `${e.minute}-${e.type}-${(e.detail||'').slice(0,8)}`;
       if (seen.has(keyMinute)) return false;
@@ -5880,8 +5881,8 @@ function LiveWidget({ simDay, simHour, simMin, koTeams={} }) {
   };
 
   const evIcon = (type, detail) => {
-    if (type === 'Goal') return '⚽';
     const d = (detail||'').toLowerCase();
+    if (type === 'Goal') return d.includes('missed penalty') ? '❌' : '⚽';
     if (type === 'Card') return d.includes('red') ? '🟥' : '🟨';
     return null;
   };

@@ -585,9 +585,9 @@ Deno.serve(async (req) => {
 
             // Salvează events + apel separat la /fixtures/events pentru meciuri active/FT recente
             const events: any[] = f.events ?? []
-            const saveEventRows = async (evList: any[]) => {
+            const saveEventRows = async (evList: any[], replace = false) => {
               const mappedRows = evList
-                .filter((e: any) => ['Goal','Card','subst'].includes(e.type ?? ''))
+                .filter((e: any) => ['Goal','Card','subst','Var'].includes(e.type ?? ''))
                 .map((e: any) => ({
                   match_key:    matchKey,
                   minute:       e.time?.elapsed ?? null,
@@ -608,6 +608,13 @@ Deno.serve(async (req) => {
                   row,
                 ])
               ).values())
+              if (replace) {
+                const { error: deleteError } = await supabase
+                  .from('match_events')
+                  .delete()
+                  .eq('match_key', matchKey)
+                if (deleteError) throw deleteError
+              }
               if (rows.length > 0) {
                 const { error } = await supabase
                   .from('match_events')
@@ -618,9 +625,9 @@ Deno.serve(async (req) => {
                 }
               }
             }
-            if (events.length > 0) {
-              await saveEventRows(events)
-            }
+            // The fixture payload is an authoritative snapshot. Replacing the
+            // stored list removes goals later cancelled by VAR.
+            await saveEventRows(events, true)
             // Apel separat la /fixtures/events pentru meciuri live/HT/FT recente
             if (f.fixture?.id && ['1H','2H','HT','ET','BT','P','FT','AET','PEN'].includes(statusShort)) {
               try {
@@ -632,7 +639,7 @@ Deno.serve(async (req) => {
                   const evData = await evRes.json()
                   const evList: any[] = evData.response ?? []
                   console.log(`[api-sports] events/fixture ${f.fixture.id} (${homeNorm} vs ${awayNorm}): ${evList.length}`)
-                  if (evList.length > 0) await saveEventRows(evList)
+                  await saveEventRows(evList, true)
                 }
               } catch (evErr) {
                 console.log(`[api-sports] events fetch error for ${f.fixture.id}: ${evErr}`)
