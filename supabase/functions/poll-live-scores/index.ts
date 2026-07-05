@@ -599,22 +599,26 @@ Deno.serve(async (req) => {
                   detail:       e.detail ?? null,
                   updated_at:   now.toISOString(),
                 }))
-              // Production identifies events by match/minute/type/team. API-Sports can
-              // repeat the same substitution with a slightly different minute.
-              // Use the player pair as the semantic identity for substitutions.
-              const semanticEventKey = (row: any) => {
-                const norm = (value: unknown) => String(value ?? '').trim().toLowerCase()
-                if (row.type === 'subst') {
-                  return `${row.match_key}|subst|${norm(row.team_name)}|${norm(row.player_name)}|${norm(row.assist_name)}`
+              // Production allows one event per match/minute/type/team. Merge
+              // simultaneous substitutions into that row instead of rejecting
+              // the entire batch or displaying the same change twice.
+              const groupedRows = new Map<string, any>()
+              for (const row of mappedRows) {
+                const key = `${row.match_key}|${row.minute}|${row.type}|${row.team_name}`
+                const previous = groupedRows.get(key)
+                if (!previous) {
+                  groupedRows.set(key, row)
+                  continue
                 }
-                return `${row.match_key}|${row.minute}|${norm(row.type)}|${norm(row.team_name)}|${norm(row.player_name)}|${norm(row.detail)}`
+                if (row.type === 'subst') {
+                  const mergeNames = (left: string | null, right: string | null) =>
+                    [...new Set([left, right].filter(Boolean))].join(' / ') || null
+                  previous.player_name = mergeNames(previous.player_name, row.player_name)
+                  previous.assist_name = mergeNames(previous.assist_name, row.assist_name)
+                  previous.detail = 'Multiple substitutions'
+                }
               }
-              const rows = Array.from(new Map(
-                mappedRows.map((row: any) => [
-                  semanticEventKey(row),
-                  row,
-                ])
-              ).values())
+              const rows = [...groupedRows.values()]
               if (replace) {
                 const { error: deleteError } = await supabase
                   .from('match_events')
@@ -625,9 +629,9 @@ Deno.serve(async (req) => {
               if (rows.length > 0) {
                 const { error } = await supabase
                   .from('match_events')
-                  .upsert(rows, { onConflict: 'match_key,minute,type,team_name' })
+                  .insert(rows)
                 if (error) {
-                  console.log(`[match_events] upsert failed for ${matchKey}: ${error.message}`)
+                  console.log(`[match_events] insert failed for ${matchKey}: ${error.message}`)
                   throw error
                 }
               }
@@ -646,7 +650,9 @@ Deno.serve(async (req) => {
                   const evData = await evRes.json()
                   const evList: any[] = evData.response ?? []
                   console.log(`[api-sports] events/fixture ${f.fixture.id} (${homeNorm} vs ${awayNorm}): ${evList.length}`)
-                  await saveEventRows(evList, true)
+                  // An empty response from this secondary endpoint is not
+                  // authoritative; keep the embedded fixture events instead.
+                  if (evList.length > 0) await saveEventRows(evList, true)
                 }
               } catch (evErr) {
                 console.log(`[api-sports] events fetch error for ${f.fixture.id}: ${evErr}`)
