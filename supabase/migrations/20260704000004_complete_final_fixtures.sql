@@ -1,7 +1,8 @@
 -- Complete the two final-week fixtures so polling can resolve them by the same
 -- canonical keys and kickoff times used by the app calendar.
 update public.matches
-set kickoff_utc = '2026-07-20T01:00:00Z'::timestamptz
+set kickoff_utc = '2026-07-19T19:00:00Z'::timestamptz,
+    match_time = '15:00'
 where match_key = '49-0';
 
 insert into public.matches (
@@ -18,8 +19,8 @@ insert into public.matches (
 select
   '48-0',
   md.id,
-  '21:00',
-  '2026-07-19T01:00:00Z'::timestamptz,
+  '17:00',
+  '2026-07-18T21:00:00Z'::timestamptz,
   'final',
   'SF L1',
   'SF L2',

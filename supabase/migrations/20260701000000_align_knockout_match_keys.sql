@@ -30,18 +30,18 @@ set kickoff_utc = case match_key
   when '34-0' then '2026-07-04T21:00:00Z'::timestamptz
   when '34-1' then '2026-07-04T17:00:00Z'::timestamptz
   when '35-0' then '2026-07-05T20:00:00Z'::timestamptz
-  when '35-1' then '2026-07-05T22:00:00Z'::timestamptz
+  when '35-1' then '2026-07-06T00:00:00Z'::timestamptz
   when '36-0' then '2026-07-06T23:00:00Z'::timestamptz
   when '36-1' then '2026-07-06T23:00:00Z'::timestamptz
   when '37-0' then '2026-07-07T20:00:00Z'::timestamptz
   when '37-1' then '2026-07-07T23:00:00Z'::timestamptz
   when '39-0' then '2026-07-09T20:00:00Z'::timestamptz
-  when '40-0' then '2026-07-10T23:00:00Z'::timestamptz
+  when '40-0' then '2026-07-10T19:00:00Z'::timestamptz
   when '41-0' then '2026-07-11T21:00:00Z'::timestamptz
-  when '41-1' then '2026-07-12T00:00:00Z'::timestamptz
-  when '44-0' then '2026-07-15T01:00:00Z'::timestamptz
-  when '45-0' then '2026-07-16T01:00:00Z'::timestamptz
-  when '49-0' then '2026-07-20T01:00:00Z'::timestamptz
+  when '41-1' then '2026-07-12T01:00:00Z'::timestamptz
+  when '44-0' then '2026-07-14T19:00:00Z'::timestamptz
+  when '45-0' then '2026-07-15T19:00:00Z'::timestamptz
+  when '49-0' then '2026-07-19T19:00:00Z'::timestamptz
   else kickoff_utc
 end
 where match_key in (

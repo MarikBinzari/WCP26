@@ -113,22 +113,22 @@ const SCHEDULE: { matchKey: string; kickoffUtc: string; home: string; away: stri
   { matchKey:'34-0', home:'TBD', away:'TBD', kickoffUtc:'2026-07-04T21:00:00Z' },
   { matchKey:'34-1', home:'TBD', away:'TBD', kickoffUtc:'2026-07-04T17:00:00Z' },
   { matchKey:'35-0', home:'TBD', away:'TBD', kickoffUtc:'2026-07-05T20:00:00Z' },
-  { matchKey:'35-1', home:'TBD', away:'TBD', kickoffUtc:'2026-07-05T22:00:00Z' },
+  { matchKey:'35-1', home:'TBD', away:'TBD', kickoffUtc:'2026-07-06T00:00:00Z' },
   { matchKey:'36-0', home:'TBD', away:'TBD', kickoffUtc:'2026-07-06T19:00:00Z' },
   { matchKey:'36-1', home:'TBD', away:'TBD', kickoffUtc:'2026-07-07T00:00:00Z' },
   { matchKey:'37-0', home:'TBD', away:'TBD', kickoffUtc:'2026-07-07T16:00:00Z' },
   { matchKey:'37-1', home:'TBD', away:'TBD', kickoffUtc:'2026-07-07T20:00:00Z' },
   // ── QF ──────────────────────────────────────────────────────────────────────
   { matchKey:'39-0', home:'TBD', away:'TBD', kickoffUtc:'2026-07-09T20:00:00Z' },
-  { matchKey:'40-0', home:'TBD', away:'TBD', kickoffUtc:'2026-07-10T23:00:00Z' },
+  { matchKey:'40-0', home:'TBD', away:'TBD', kickoffUtc:'2026-07-10T19:00:00Z' },
   { matchKey:'41-0', home:'TBD', away:'TBD', kickoffUtc:'2026-07-11T21:00:00Z' },
-  { matchKey:'41-1', home:'TBD', away:'TBD', kickoffUtc:'2026-07-12T00:00:00Z' },
+  { matchKey:'41-1', home:'TBD', away:'TBD', kickoffUtc:'2026-07-12T01:00:00Z' },
   // ── SF ──────────────────────────────────────────────────────────────────────
-  { matchKey:'44-0', home:'TBD', away:'TBD', kickoffUtc:'2026-07-15T01:00:00Z' },
-  { matchKey:'45-0', home:'TBD', away:'TBD', kickoffUtc:'2026-07-16T01:00:00Z' },
+  { matchKey:'44-0', home:'TBD', away:'TBD', kickoffUtc:'2026-07-14T19:00:00Z' },
+  { matchKey:'45-0', home:'TBD', away:'TBD', kickoffUtc:'2026-07-15T19:00:00Z' },
   // ── Locul 3 + Finală ─────────────────────────────────────────────────────────
-  { matchKey:'48-0', home:'TBD', away:'TBD', kickoffUtc:'2026-07-19T01:00:00Z' },
-  { matchKey:'49-0', home:'TBD', away:'TBD', kickoffUtc:'2026-07-20T01:00:00Z' },
+  { matchKey:'48-0', home:'TBD', away:'TBD', kickoffUtc:'2026-07-18T21:00:00Z' },
+  { matchKey:'49-0', home:'TBD', away:'TBD', kickoffUtc:'2026-07-19T19:00:00Z' },
 ]
 
 // ── api-sports.io status → our status ────────────────────────────────────────
@@ -245,18 +245,18 @@ const KO_KICKOFFS: Record<string, string> = {
   '34-0': '2026-07-04T21:00:00Z',
   '34-1': '2026-07-04T17:00:00Z',
   '35-0': '2026-07-05T20:00:00Z',
-  '35-1': '2026-07-05T22:00:00Z',
+  '35-1': '2026-07-06T00:00:00Z',
   '36-0': '2026-07-06T19:00:00Z',
   '36-1': '2026-07-07T00:00:00Z',
   '37-0': '2026-07-07T16:00:00Z',
   '37-1': '2026-07-07T20:00:00Z',
   '39-0': '2026-07-09T20:00:00Z',
-  '40-0': '2026-07-10T23:00:00Z',
+  '40-0': '2026-07-10T19:00:00Z',
   '41-0': '2026-07-11T21:00:00Z',
-  '41-1': '2026-07-12T00:00:00Z',
-  '44-0': '2026-07-15T01:00:00Z',
-  '45-0': '2026-07-16T01:00:00Z',
-  '49-0': '2026-07-20T01:00:00Z',
+  '41-1': '2026-07-12T01:00:00Z',
+  '44-0': '2026-07-14T19:00:00Z',
+  '45-0': '2026-07-15T19:00:00Z',
+  '49-0': '2026-07-19T19:00:00Z',
 }
 
 async function alignLegacyKnockoutMatches() {

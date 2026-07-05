@@ -944,8 +944,10 @@ const getDisplayCalendarEvents = (koTeams={}) => {
   CALENDAR_EVENTS.forEach(event => {
     event.matches.forEach((match, idx) => {
       const matchKey = getMatchKey(match, event.day, idx);
-      const apiKickoffUtc = koTeams[matchKey]?.kickoffUtc;
-      const displayMatch = apiKickoffUtc ? { ...match, kickoffUtc:apiKickoffUtc } : match;
+      // The bundled calendar is the canonical confirmed schedule. Database
+      // values may briefly be stale until the kickoff-time migration runs.
+      const kickoffUtc = match.kickoffUtc || koTeams[matchKey]?.kickoffUtc;
+      const displayMatch = kickoffUtc ? { ...match, kickoffUtc } : match;
       const displayDay = getMatchDisplayDay(displayMatch, event.day);
       if (!byDay.has(displayDay)) byDay.set(displayDay, []);
       byDay.get(displayDay).push({
@@ -6165,10 +6167,9 @@ function HomeScreen({ onPredict, onPredictKo, onLeaderboard, onBoards, onCreateB
   const todaySimEx = simDay ?? getLocalTournamentDay();
   const _calWeeks = [-6,1,8,15,22,29,36,43];
   const todayCalendarWeek = _calWeeks.find(w=>todaySimEx>=w&&todaySimEx<=w+6) ?? _calWeeks[0];
-  const _exSimNow = simDay ? new Date(Date.UTC(2026,5,simDay,(simHour||12)+4,simMin||0,0)) : new Date();
-  const _exJune = (d) => new Date(Date.UTC(2026,5,d,5,0,0)); // 08:00 Romania (EEST = UTC+3) = 05:00 UTC
-  // Advance to next week only after current week's last day passes midnight
-  const exactWeekStart = _exSimNow>=_exJune(29)?29:_exSimNow>=_exJune(21)?22:_exSimNow>=_exJune(14)?15:8;
+  // Keep Exact Score navigation aligned with the current calendar week,
+  // including the knockout weeks encoded as July day + 30.
+  const exactWeekStart = todayCalendarWeek;
   const exactWeekTotal = Object.values(_exDisplayMM).reduce((a, ms) => a + ms.length, 0);
   const exactWeekScored = Object.values(_exDisplayMM).reduce((a, ms) => a + ms.filter(m => !!(exactScores||{})[m.matchKey]).length, 0);
   const exactWeekDone = exactWeekTotal===0 || exactWeekScored===exactWeekTotal;
