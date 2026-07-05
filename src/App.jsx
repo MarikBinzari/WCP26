@@ -5999,7 +5999,9 @@ function LiveWidget({ simDay, simHour, simMin, koTeams={} }) {
                                 ) : (
                                   <span style={{textAlign:'right',lineHeight:1.3}}>
                                     {ev.player_name}
-                                    {ev.assist_name && <><br/><span style={{color:'#9CA3AF',fontSize:8}}>assist: {ev.assist_name}</span></>}
+                                    {(ev.detail||'').toLowerCase().includes('missed penalty')
+                                      ? <><br/><span style={{color:'#DC2626',fontSize:8,fontWeight:800}}>Penalty miss</span></>
+                                      : ev.assist_name && <><br/><span style={{color:'#9CA3AF',fontSize:8}}>assist: {ev.assist_name}</span></>}
                                   </span>
                                 )}
                                 {icon && <span style={{flexShrink:0,fontSize:12}}>{icon}</span>}
@@ -6028,7 +6030,9 @@ function LiveWidget({ simDay, simHour, simMin, koTeams={} }) {
                                 ) : (
                                   <span style={{lineHeight:1.3}}>
                                     {ev.player_name}
-                                    {ev.assist_name && <><br/><span style={{color:'#9CA3AF',fontSize:8}}>assist: {ev.assist_name}</span></>}
+                                    {(ev.detail||'').toLowerCase().includes('missed penalty')
+                                      ? <><br/><span style={{color:'#DC2626',fontSize:8,fontWeight:800}}>Penalty miss</span></>
+                                      : ev.assist_name && <><br/><span style={{color:'#9CA3AF',fontSize:8}}>assist: {ev.assist_name}</span></>}
                                   </span>
                                 )}
                               </div>
