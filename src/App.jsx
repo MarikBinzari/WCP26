@@ -3400,7 +3400,7 @@ function Best3Screen({ groups, getGroupStanding, picks, best3, setBest3, onDone 
 }
 
 
-function GroupIntroScreen({ group, teams: teamsProp, isKo, onStart, onNext, onPickChange, isRoundComplete, isMatchLocked=()=>false, hideHeader=false, picks={}, viewMode=false, autoPropagated=new Set(), realRoundWinners={} }) {
+function GroupIntroScreen({ group, teams: teamsProp, realTeams=[], isKo, onStart, onNext, onPickChange, isRoundComplete, isMatchLocked=()=>false, hideHeader=false, picks={}, viewMode=false, autoPropagated=new Set(), realRoundWinners={} }) {
   const lang = useLang();
   const { pred: PRED_SCORING } = useScoringRules();
   const roundPts = {R32:PRED_SCORING.r32,R16:PRED_SCORING.r16,QF:PRED_SCORING.qf,SF:PRED_SCORING.sf,F:PRED_SCORING.final}[group]||0;
@@ -3461,9 +3461,16 @@ function GroupIntroScreen({ group, teams: teamsProp, isKo, onStart, onNext, onPi
                         const correctPick=played&&!!p&&p===realSide;
                         const wrongPick=played&&!!p&&p!==realSide;
                         const missedPick=played&&!p;
-                        const cardBorder=played?"#94A3B8":correctPick?GREEN+"55":wrongPick?"#FCA5A555":missedPick?"#FED7AA":hWon||aWon?GREEN+"55":col+"22";
-                        const cardBg=played?"#E5E7EB":"#fff";
-                        const rowBg=(won,isPick)=>played?(won?"#F8FAFC":"#E2E8F0"):won?GREEN+"15":isPick&&wrongPick?"#FFF1F1":isPick&&correctPick?GREEN+"0A":missedPick?"#FFFBF7":"transparent";
+                        // Rută moartă: echipa prezisă (propagată) diferă de echipa reală de pe poziție (R16+)
+                        const rMatch=realTeams[matchIdx]||[];
+                        const realH=rMatch[0], realA=rMatch[1];
+                        const hDead=!!realH&&realH!=='TBD'&&!!h&&h!=='TBD'&&realH!==h;
+                        const aDead=!!realA&&realA!=='TBD'&&!!a&&a!=='TBD'&&realA!==a;
+                        // Pick mort: meci nejucat, dar echipa pe care ai pus-o câștigătoare e deja eliminată → 0 pct garantat
+                        const deadPick=!played&&!!p&&((p==='home'&&hDead)||(p==='away'&&aDead));
+                        const cardBorder=played?"#94A3B8":deadPick?"#FCA5A5AA":correctPick?GREEN+"55":wrongPick?"#FCA5A555":missedPick?"#FED7AA":hWon||aWon?GREEN+"55":col+"22";
+                        const cardBg=played?"#E5E7EB":deadPick?"#FEF6F6":"#fff";
+                        const rowBg=(won,isPick,dead)=>played?(won?"#F8FAFC":"#E2E8F0"):dead?"#FFF1F1":won?GREEN+"15":isPick&&wrongPick?"#FFF1F1":isPick&&correctPick?GREEN+"0A":missedPick?"#FFFBF7":"transparent";
                         const teamColor=(won)=>played?(won?"#111827":"#64748B"):won?GREEN:DARK;
                         return (
                           <div key={mi} style={{background:cardBg,borderRadius:10,border:`${played?"2px":"1px"} solid ${cardBorder}`,overflow:"hidden",boxShadow:played?"inset 0 1px 0 rgba(255,255,255,0.85), 0 2px 8px rgba(15,23,42,0.12)":"0 1px 4px rgba(0,0,0,0.06)",position:"relative"}}>
@@ -3479,24 +3486,33 @@ function GroupIntroScreen({ group, teams: teamsProp, isKo, onStart, onNext, onPi
                             {missedPick&&<div style={{background:"#FFF7ED",borderBottom:"1px solid #FED7AA",padding:"2px 10px",fontSize:9,fontWeight:800,color:"#C2410C",letterSpacing:"0.4px",display:"flex",alignItems:"center",gap:4}}>
                               <span>⚠</span><span>NEPREZIS • 0 PTS</span>
                             </div>}
+                            {deadPick&&<div style={{background:"#FFF1F2",borderBottom:"1px solid #FCA5A5",padding:"2px 10px",fontSize:9,fontWeight:800,color:"#B91C1C",letterSpacing:"0.4px",display:"flex",alignItems:"center",gap:4}}>
+                              <span>✗</span><span>{lang==="en"?"DEAD ROUTE • 0 PTS":lang==="fr"?"ROUTE MORTE • 0 PTS":"RUTĂ MOARTĂ • 0 PTS"}</span>
+                            </div>}
                             <div role={canEdit?"button":undefined} tabIndex={canEdit?0:undefined}
                               onClick={()=>canEdit&&onPickChange(matchIdx,"home")}
                               onKeyDown={canEdit?e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();onPickChange(matchIdx,"home");}}:undefined}
-                              style={{padding:"7px 10px",borderBottom:`1px solid ${played?"#E2E8F0":"rgba(0,0,0,0.05)"}`,display:"flex",alignItems:"center",gap:8,background:rowBg(hWon,p==="home"),cursor:canEdit?"pointer":"default",WebkitTapHighlightColor:"transparent",opacity:missedPick?0.7:1}}>
-                              <span style={{fontSize:20,lineHeight:1}}>{FLAGS[h]||"🏳"}</span>
-                              <span style={{fontSize:12,fontWeight:700,color:teamColor(hWon),flex:1}}>{h||"TBD"}</span>
+                              style={{padding:"7px 10px",borderBottom:`1px solid ${played?"#E2E8F0":"rgba(0,0,0,0.05)"}`,display:"flex",alignItems:"center",gap:8,background:rowBg(hWon,p==="home",hDead),cursor:canEdit?"pointer":"default",WebkitTapHighlightColor:"transparent",opacity:missedPick?0.7:1}}>
+                              <span style={{fontSize:20,lineHeight:1,opacity:hDead?0.5:1}}>{FLAGS[h]||"🏳"}</span>
+                              <span style={{fontSize:12,fontWeight:700,color:hDead?"#9CA3AF":teamColor(hWon),flex:1,minWidth:0,display:"flex",alignItems:"center",gap:5}}>
+                                <span style={{textDecoration:hDead?"line-through":"none",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{h||"TBD"}</span>
+                                {hDead&&<span style={{fontSize:9,fontWeight:800,color:"#B91C1C",background:"#FEE2E2",borderRadius:4,padding:"1px 5px",flexShrink:0,letterSpacing:0.2,whiteSpace:"nowrap"}}>✗ {realH}</span>}
+                              </span>
                               {hAutoProp&&<span style={{fontSize:9,background:'#FEF3C7',color:'#92400E',borderRadius:4,padding:'1px 5px',fontWeight:800,flexShrink:0}}>real</span>}
-                              {hWon&&<span style={{fontSize:11,fontWeight:900,color:GREEN}}>✓</span>}
+                              {hWon&&!hDead&&<span style={{fontSize:11,fontWeight:900,color:GREEN}}>✓</span>}
                               {locked&&!missedPick&&!correctPick&&!wrongPick&&<span style={{fontSize:11,color:"#aaa"}}>🔒</span>}
                             </div>
                             <div role={canEdit?"button":undefined} tabIndex={canEdit?0:undefined}
                               onClick={()=>canEdit&&onPickChange(matchIdx,"away")}
                               onKeyDown={canEdit?e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();onPickChange(matchIdx,"away");}}:undefined}
-                              style={{padding:"7px 10px",display:"flex",alignItems:"center",gap:8,background:rowBg(aWon,p==="away"),cursor:canEdit?"pointer":"default",WebkitTapHighlightColor:"transparent",opacity:missedPick?0.7:1}}>
-                              <span style={{fontSize:20,lineHeight:1}}>{FLAGS[a]||"🏳"}</span>
-                              <span style={{fontSize:12,fontWeight:700,color:teamColor(aWon),flex:1}}>{a||"TBD"}</span>
+                              style={{padding:"7px 10px",display:"flex",alignItems:"center",gap:8,background:rowBg(aWon,p==="away",aDead),cursor:canEdit?"pointer":"default",WebkitTapHighlightColor:"transparent",opacity:missedPick?0.7:1}}>
+                              <span style={{fontSize:20,lineHeight:1,opacity:aDead?0.5:1}}>{FLAGS[a]||"🏳"}</span>
+                              <span style={{fontSize:12,fontWeight:700,color:aDead?"#9CA3AF":teamColor(aWon),flex:1,minWidth:0,display:"flex",alignItems:"center",gap:5}}>
+                                <span style={{textDecoration:aDead?"line-through":"none",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a||"TBD"}</span>
+                                {aDead&&<span style={{fontSize:9,fontWeight:800,color:"#B91C1C",background:"#FEE2E2",borderRadius:4,padding:"1px 5px",flexShrink:0,letterSpacing:0.2,whiteSpace:"nowrap"}}>✗ {realA}</span>}
+                              </span>
                               {aAutoProp&&<span style={{fontSize:9,background:'#FEF3C7',color:'#92400E',borderRadius:4,padding:'1px 5px',fontWeight:800,flexShrink:0}}>real</span>}
-                              {aWon&&<span style={{fontSize:11,fontWeight:900,color:GREEN}}>✓</span>}
+                              {aWon&&!aDead&&<span style={{fontSize:11,fontWeight:900,color:GREEN}}>✓</span>}
                             </div>
                           </div>
                         );
@@ -9002,10 +9018,15 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
                         // Matchup-uri (identic cu getWinners + pairWinners din InstantPickScreen)
                         const r32M=R32_MK.map(mk=>({home:koTeams[mk]?.home||'TBD',away:koTeams[mk]?.away||'TBD'}));
                         const getW=(rk,matchups)=>matchups.map((m,i)=>{
-                          const s=realKoWM[rk]?.[`${rk}-${i}`];
-                          if(s) return s==='home'?m.home:m.away;
+                          if(!m) return 'TBD';
+                          // R32 FT: câștigător real mereu (bază second-chance; pick greșit deja șters din DB).
+                          // R16+ : păstrează pick-ul userului — o rută greșită rămâne moartă, NU se suprascrie cu echipa reală.
+                          if(rk==='R32'){
+                            const s=realR32W[`R32-${i}`];
+                            if(s && m[s] && m[s]!=='TBD') return m[s];
+                          }
                           const p=userKoPicks?.[`${rk}-${i}`];
-                          return p?(p==='home'?m.home:m.away):'TBD';
+                          return p?(p==='home'?m.home:p==='away'?m.away:'TBD'):'TBD';
                         });
                         const pairW=(winners,pairs)=>pairs.map(([h,a])=>({home:winners[h]||'TBD',away:winners[a]||'TBD'}));
                         const r16M=pairW(getW('R32',r32M),[[0,1],[2,3],[4,5],[6,7],[8,9],[10,11],[12,13],[14,15]]);
@@ -9013,6 +9034,19 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
                         const sfM=pairW(getW('QF',qfM),[[0,1],[2,3]]);
                         const fM=pairW(getW('SF',sfM),[[0,1]]);
                         const matchupsMap={R32:r32M,R16:r16M,QF:qfM,SF:sfM,F:fM};
+                        // Bracket REAL (propagare cu câștigători reali toate rundele) — ca să știm ce echipă e de fapt pe fiecare poziție
+                        const getWR=(rk,matchups)=>matchups.map((m,i)=>{
+                          if(!m) return 'TBD';
+                          const s=realKoWM[rk]?.[`${rk}-${i}`];
+                          if(s && m[s] && m[s]!=='TBD') return m[s];
+                          const p=userKoPicks?.[`${rk}-${i}`];
+                          return p?(p==='home'?m.home:p==='away'?m.away:'TBD'):'TBD';
+                        });
+                        const rr16M=pairW(getWR('R32',r32M),[[0,1],[2,3],[4,5],[6,7],[8,9],[10,11],[12,13],[14,15]]);
+                        const rqfM=pairW(getWR('R16',rr16M),[[0,1],[2,3],[4,5],[6,7]]);
+                        const rsfM=pairW(getWR('QF',rqfM),[[0,1],[2,3]]);
+                        const rfM=pairW(getWR('SF',rsfM),[[0,1]]);
+                        const realMatchupsMap={R32:r32M,R16:rr16M,QF:rqfM,SF:rsfM,F:rfM};
                         const autoProp=new Set(Object.keys(realR32W).filter(k=>!userKoPicks?.[k]));
                         const tabMap={R32:'R32',R16:'R16',QF:'QF',SF:'SF',Final:'F'};
                         const TABS=['R32','R16','QF','SF','Final'];
@@ -9047,6 +9081,7 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
                               <GroupIntroScreen
                                 group={curGroup}
                                 teams={curMatchups.map(m=>[m.home,m.away])}
+                                realTeams={(realMatchupsMap[curGroup]||[]).map(m=>[m.home,m.away])}
                                 isKo={true}
                                 hideHeader={true}
                                 picks={userKoPicks||{}}
