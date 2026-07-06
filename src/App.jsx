@@ -3454,8 +3454,8 @@ function GroupIntroScreen({ group, teams: teamsProp, isKo, onStart, onNext, onPi
                         const hWon=p==="home", aWon=p==="away";
                         const locked=isMatchLocked(matchIdx);
                         const canEdit=!locked&&h!=="TBD"&&a!=="TBD"&&!!onPickChange;
-                        const hAutoProp=group==='R16'&&autoPropagated.has(`R32-${2*matchIdx}`);
-                        const aAutoProp=group==='R16'&&autoPropagated.has(`R32-${2*matchIdx+1}`);
+                        const hAutoProp=false;
+                        const aAutoProp=false;
                         const realSide=realRoundWinners[`${group}-${matchIdx}`];
                         const played=!!realSide;
                         const correctPick=played&&!!p&&p===realSide;
