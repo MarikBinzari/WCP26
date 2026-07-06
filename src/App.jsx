@@ -3458,9 +3458,9 @@ function GroupIntroScreen({ group, teams: teamsProp, isKo, onStart, onNext, onPi
                         const aAutoProp=group==='R16'&&autoPropagated.has(`R32-${2*matchIdx+1}`);
                         const realSide=realRoundWinners[`${group}-${matchIdx}`];
                         const played=!!realSide;
-                        const correctPick=locked&&!!p&&!!realSide&&p===realSide;
-                        const wrongPick=locked&&!!p&&!!realSide&&p!==realSide;
-                        const missedPick=locked&&!p;
+                        const correctPick=played&&!!p&&p===realSide;
+                        const wrongPick=played&&!!p&&p!==realSide;
+                        const missedPick=played&&!p;
                         const cardBorder=played?"#94A3B8":correctPick?GREEN+"55":wrongPick?"#FCA5A555":missedPick?"#FED7AA":hWon||aWon?GREEN+"55":col+"22";
                         const cardBg=played?"#E5E7EB":"#fff";
                         const rowBg=(won,isPick)=>played?(won?"#F8FAFC":"#E2E8F0"):won?GREEN+"15":isPick&&wrongPick?"#FFF1F1":isPick&&correctPick?GREEN+"0A":missedPick?"#FFFBF7":"transparent";
@@ -3707,7 +3707,7 @@ function InstantPickScreen({ onBack, onComplete, onKoComplete, onKoPick, onModif
   ];
   const KO_MATCH_KEYS = {
     R32:R32_KEYS,
-    R16:['34-0','34-1','35-0','35-1','36-0','36-1','37-0','37-1'],
+    R16:['34-0','34-1','36-0','36-1','35-0','35-1','37-0','37-1'],
     QF:['39-0','40-0','41-0','41-1'],
     SF:['44-0','45-0'],
     F:['49-0'],
@@ -8984,7 +8984,7 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
                         </div>
                       ):(()=>{
                         const R32_MK=['29-0','30-0','28-0','29-1','32-0','32-1','31-1','31-2','29-2','30-1','30-2','31-0','33-0','33-2','32-2','33-1'];
-                        const KO_MK={R16:['34-0','34-1','35-0','35-1','36-0','36-1','37-0','37-1'],QF:['39-0','40-0','41-0','41-1'],SF:['44-0','45-0'],F:['49-0']};
+                        const KO_MK={R16:['34-0','34-1','36-0','36-1','35-0','35-1','37-0','37-1'],QF:['39-0','40-0','41-0','41-1'],SF:['44-0','45-0'],F:['49-0']};
                         // Câștigători reali din liveScoresLS (identic cu computeRealKoWinners din InstantPickScreen)
                         const cRKW=(keys,prefix)=>{
                           const r={};
