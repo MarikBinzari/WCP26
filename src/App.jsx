@@ -3499,7 +3499,7 @@ function GroupIntroScreen({ group, teams: teamsProp, realTeams=[], isKo, onStart
                                 {hDead&&<span style={{fontSize:9,fontWeight:800,color:"#B91C1C",background:"#FEE2E2",borderRadius:4,padding:"1px 5px",flexShrink:0,letterSpacing:0.2,whiteSpace:"nowrap"}}>✗ {realH}</span>}
                               </span>
                               {hAutoProp&&<span style={{fontSize:9,background:'#FEF3C7',color:'#92400E',borderRadius:4,padding:'1px 5px',fontWeight:800,flexShrink:0}}>real</span>}
-                              {hWon&&!hDead&&<span style={{fontSize:11,fontWeight:900,color:GREEN}}>✓</span>}
+                              {hWon&&<span style={{fontSize:11,fontWeight:900,color:hDead?"#B91C1C":GREEN}}>✓</span>}
                               {locked&&!missedPick&&!correctPick&&!wrongPick&&<span style={{fontSize:11,color:"#aaa"}}>🔒</span>}
                             </div>
                             <div role={canEdit?"button":undefined} tabIndex={canEdit?0:undefined}
@@ -3512,7 +3512,7 @@ function GroupIntroScreen({ group, teams: teamsProp, realTeams=[], isKo, onStart
                                 {aDead&&<span style={{fontSize:9,fontWeight:800,color:"#B91C1C",background:"#FEE2E2",borderRadius:4,padding:"1px 5px",flexShrink:0,letterSpacing:0.2,whiteSpace:"nowrap"}}>✗ {realA}</span>}
                               </span>
                               {aAutoProp&&<span style={{fontSize:9,background:'#FEF3C7',color:'#92400E',borderRadius:4,padding:'1px 5px',fontWeight:800,flexShrink:0}}>real</span>}
-                              {aWon&&!aDead&&<span style={{fontSize:11,fontWeight:900,color:GREEN}}>✓</span>}
+                              {aWon&&<span style={{fontSize:11,fontWeight:900,color:aDead?"#B91C1C":GREEN}}>✓</span>}
                             </div>
                           </div>
                         );
@@ -3806,6 +3806,23 @@ function InstantPickScreen({ onBack, onComplete, onKoComplete, onKoPick, onModif
 
   const koRoundMatchupsMap = {R32:r32Matchups,R16:r16Matchups,QF:qfMatchups,SF:sfMatchups,F:fMatchups};
   const koRoundMatchups = stage!=="groups"&&stage!=="best3" ? (koRoundMatchupsMap[koRound]||[]) : [];
+
+  // Bracket REAL (câștigători reali toate rundele) — ca să marcăm rutele moarte (echipă prezisă eliminată)
+  const getWinnersReal = (roundKey, matchups) =>
+    (matchups||[]).map((m,idx)=>{
+      if(!m) return "TBD";
+      const side=realKoWinnersMap[roundKey]?.[`${roundKey}-${idx}`];
+      if(side && m[side] && m[side]!=='TBD') return m[side];
+      const pick=koPicks[`${roundKey}-${idx}`];
+      if(pick) return pick==="home"?m.home:pick==="away"?m.away:"TBD";
+      return "TBD";
+    });
+  const rR16Matchups = pairWinners(getWinnersReal("R32", r32Matchups), [[0,1],[2,3],[4,5],[6,7],[8,9],[10,11],[12,13],[14,15]]);
+  const rQFMatchups  = pairWinners(getWinnersReal("R16", rR16Matchups), [[0,1],[2,3],[4,5],[6,7]]);
+  const rSFMatchups  = pairWinners(getWinnersReal("QF", rQFMatchups), [[0,1],[2,3]]);
+  const rFMatchups   = pairWinners(getWinnersReal("SF", rSFMatchups), [[0,1]]);
+  const realKoMatchupsMap = {R32:r32Matchups,R16:rR16Matchups,QF:rQFMatchups,SF:rSFMatchups,F:rFMatchups};
+  const realKoMatchups = stage!=="groups"&&stage!=="best3" ? (realKoMatchupsMap[koRound]||[]) : [];
 
   // Matchup-uri PREZISE de user (din groupRankings, nu din realStandings)
   const predWinners  = GROUPS.map(g=>(allGroupStandings[g]||[])[0]).filter(Boolean);
@@ -4269,6 +4286,7 @@ function InstantPickScreen({ onBack, onComplete, onKoComplete, onKoPick, onModif
         <img src={trophy} alt="" style={{position:"absolute",width:"130%",height:"100%",left:"-30%",top:"15%",objectFit:"cover",objectPosition:"center top",opacity:0.055,pointerEvents:"none",zIndex:0,filter:"grayscale(1) contrast(1.5)"}}/>
         {sharedHeader}
         <GroupIntroScreen group={koRound} teams={koRoundMatchups.map(m=>[m.home,m.away])}
+          realTeams={realKoMatchups.map(m=>[m.home,m.away])}
           isKo={true} hideHeader={true} onStart={()=>{
             const first = pickableIndices[0] ?? 0;
             setKoIdx(first);
