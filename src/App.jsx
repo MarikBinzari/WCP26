@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import confetti from "canvas-confetti";
 import HCaptcha from "@hcaptcha/react-hcaptcha";
 import trophy from "./assets/hands-trophy.webp";
@@ -9273,7 +9273,7 @@ const scA = (sc) => Array.isArray(sc) ? sc[1] : (sc?.away ?? 0);
 function CentralStatsScreen({ onBack, boardId, boardName, simDay, simHour=12, simMin=0, koTeams={} }) {
   const lang = useLang();
   const LIVE_SCORES = useLiveScores(simDay, simHour, simMin);
-  const calendarEvents = getDisplayCalendarEvents(koTeams);
+  const calendarEvents = useMemo(() => getDisplayCalendarEvents(koTeams), [koTeams]);
   const [members, setMembers] = useState([]);
   const [predsByMatch, setPredsByMatch] = useState({}); // { matchKey: [{userId, predHome, predAway}] }
   const [loadingMembers, setLoadingMembers] = useState(true);
@@ -9292,12 +9292,13 @@ function CentralStatsScreen({ onBack, boardId, boardName, simDay, simHour=12, si
   }, [boardId]);
 
   // build matchByKey from calendar
-  const matchByKey = {};
-  calendarEvents.forEach(e => {
+  const matchByKey = useMemo(() => {
+    const byKey = {};
+    calendarEvents.forEach(e => {
     (e.matches || []).forEach((m, i) => {
       const k = getMatchKey(m, e.day, i);
       const resolved = koTeams[k];
-      matchByKey[k] = {
+      byKey[k] = {
         ...m,
         home: resolved?.home || m.home,
         away: resolved?.away || m.away,
@@ -9306,19 +9307,28 @@ function CentralStatsScreen({ onBack, boardId, boardName, simDay, simHour=12, si
         day: e.day,
       };
     });
-  });
+    });
+    return byKey;
+  }, [calendarEvents, koTeams]);
 
-  // all played WC matches from LIVE_SCORES, sorted by utcDate then match_key
-  const allMatches = Object.entries(LIVE_SCORES)
-    .filter(([k, v]) => /^\d/.test(k) && (v.status === 'FT' || v.status === 'LIVE' || v.status === 'HT' || v.status === 'ET' || v.status === 'PEN'))
-    .map(([k]) => k)
+  // All played/live WC matches known by the calendar and live_scores. Build
+  // from the calendar first so a valid FT knockout row cannot disappear from
+  // Central Stats because of object insertion order or a partial live payload.
+  const allMatches = useMemo(() => [...new Set([
+    ...calendarEvents.flatMap(e => (e.matches || []).map((m, i) => getMatchKey(m, e.day, i))),
+    ...Object.keys(LIVE_SCORES),
+  ])]
+    .filter(k => {
+      const v = LIVE_SCORES[k];
+      return /^\d/.test(k) && (v?.status === 'FT' || v?.status === 'LIVE' || v?.status === 'HT' || v?.status === 'ET' || v?.status === 'PEN');
+    })
     .sort((a, b) => {
       const da = LIVE_SCORES[a]?.utcDate, db = LIVE_SCORES[b]?.utcDate;
       if (da && db) return da < db ? -1 : da > db ? 1 : 0;
       const [ad, ai] = a.split('-').map(Number);
       const [bd, bi] = b.split('-').map(Number);
       return ad !== bd ? ad - bd : ai - bi;
-    });
+    }), [calendarEvents, LIVE_SCORES]);
 
   const visibleCount = 2;
   const maxOffset = Math.max(0, allMatches.length - visibleCount);
@@ -9331,7 +9341,10 @@ function CentralStatsScreen({ onBack, boardId, boardName, simDay, simHour=12, si
   }, [allMatches.length, maxOffset]);
 
   const currentOffset = offset ?? maxOffset;
-  const visibleMatches = allMatches.slice(currentOffset, currentOffset + visibleCount);
+  const visibleMatches = useMemo(
+    () => allMatches.slice(currentOffset, currentOffset + visibleCount),
+    [allMatches, currentOffset, visibleCount]
+  );
 
   // fetch predictions for visible matches via loadMatchPredictions (bypasses RLS)
   useEffect(() => {
