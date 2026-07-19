@@ -12,7 +12,7 @@
 // or set a pg_cron / Supabase scheduler at e.g. 23:30 UTC on match days.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { requireAdminOrServiceRole } from '../_shared/auth.ts'
+import { requireServiceRole } from '../_shared/auth.ts'
 
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL')!,
@@ -74,7 +74,7 @@ const TEAM_IDS: Record<string, number> = {
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
 
 Deno.serve(async (req) => {
-  const authError = await requireAdminOrServiceRole(req)
+  const authError = await requireServiceRole(req)
   if (authError) return authError
 
   const apiKey = Deno.env.get('API_FOOTBALL_KEY')
@@ -208,18 +208,19 @@ Deno.serve(async (req) => {
     )
   }
 
-  const { error: upsertError } = await supabase
-    .from('world_cup_football_players')
-    .upsert(upserts, { onConflict: 'api_football_id' })
+  const { data: changed, error: writeError } = await supabase.rpc('bulk_update_player_stats', {
+    p_players: upserts,
+  })
 
   return new Response(
     JSON.stringify({
-      ok:       !upsertError,
+      ok:       !writeError,
       date:     targetDate,
       teams:    teamNames,
-      updated:  upserts.length,
+      fetched:  upserts.length,
+      updated:  changed ?? 0,
       warnings: warnings.length ? warnings : undefined,
-      error:    upsertError?.message,
+      error:    writeError?.message,
     }),
     { headers: { 'Content-Type': 'application/json' } }
   )

@@ -926,7 +926,7 @@ export async function loadMyScoreBreakdown(userId, boardId) {
   const [specialRes, boardRes] = await Promise.all([
     supabase
       .from('special_picks')
-      .select('champion_pts, top_scorer_pts')
+      .select('champion_pts, runner_up_pts, top_scorer_pts')
       .eq('user_id', userId)
       .eq('board_id', boardId)
       .maybeSingle(),
@@ -941,7 +941,10 @@ export async function loadMyScoreBreakdown(userId, boardId) {
   const pred  = boardRes.data?.pred_pts  ?? total  // fallback: total dacÄƒ coloana nu existÄƒ Ã®ncÄƒ
   const exact = boardRes.data?.exact_pts ?? 0
   return {
-    specialPts: (specialRes.data?.champion_pts ?? 0) + (specialRes.data?.top_scorer_pts ?? 0),
+    specialPts:
+      (specialRes.data?.champion_pts ?? 0) +
+      (specialRes.data?.runner_up_pts ?? 0) +
+      (specialRes.data?.top_scorer_pts ?? 0),
     predPts:    pred,
     exactPts:   exact,
   }

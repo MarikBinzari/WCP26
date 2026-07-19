@@ -10,7 +10,7 @@ import specialPickBadge from "./assets/special-pick-badge.webp";
 import bellIcon from "./assets/bell-icon.svg";
 import { ALL_GROUPS_DATA, FLAGS, TEAM_COLORS, CALENDAR_EVENTS, CL_FINAL } from "./data/worldcup2026.js";
 import { supabase, SUPABASE_URL } from "./supabase.js";
-import { savePredictions, saveExactScore, loadExactScores, createBoard, updateBoard, joinBoardByCode, joinBoardById, ensureBoardScores, loadLeaderboard, loadMyScoreBreakdown, fetchScoringRules, fetchMemberCounts, removeBoardMember, removeParticipation, deleteBoard, loadBoardMembers, checkDbHealth, checkEmailExists, checkNicknameExists, loadLiveScores, subscribeLiveScores, loadPlayers, loadPlayersByTeam, seedPlayersFromApi, saveSpecialPick, uploadAvatar, uploadBoardImage, loadAllBoards, loadAllUserPicks, loadNotifReads, markNotifRead, loadSystemNotifications, loadRealGroupStandings, loadBest3Advancing, loadUserBreakdown, loadUserKoPicks, savePushSubscription, loadChatMessages, sendChatMessage, editChatMessage, toggleChatLike, toggleChatDislike, subscribeChatMessages, loadMatchPredictions, loadCentralStats, loadBoardExactScores, hasLiveMatches, loadKoTeams, loadMatchEvents, getKoBackup, backupKoPicks } from "./db.js";
+import { savePredictions, saveExactScore, loadExactScores, createBoard, updateBoard, joinBoardByCode, joinBoardById, ensureBoardScores, loadLeaderboard, loadMyScoreBreakdown, fetchScoringRules, fetchMemberCounts, removeBoardMember, removeParticipation, deleteBoard, loadBoardMembers, checkDbHealth, checkEmailExists, checkNicknameExists, loadLiveScores, subscribeLiveScores, loadPlayers, loadPlayersByTeam, loadTopScorers, seedPlayersFromApi, saveSpecialPick, uploadAvatar, uploadBoardImage, loadAllBoards, loadAllUserPicks, loadNotifReads, markNotifRead, loadSystemNotifications, loadRealGroupStandings, loadBest3Advancing, loadUserBreakdown, loadUserKoPicks, savePushSubscription, loadChatMessages, sendChatMessage, editChatMessage, toggleChatLike, toggleChatDislike, subscribeChatMessages, loadMatchPredictions, loadCentralStats, loadBoardExactScores, hasLiveMatches, loadKoTeams, loadMatchEvents, getKoBackup, backupKoPicks } from "./db.js";
 
 const TEAM_CODE = {"Mexico":"MEX","South Africa":"RSA","South Korea":"KOR","Czechia":"CZE","Canada":"CAN","Switzerland":"SUI","Qatar":"QAT","Bosnia-Herzegovina":"BIH","Brazil":"BRA","Morocco":"MAR","Scotland":"SCO","Haiti":"HAI","USA":"USA","Paraguay":"PAR","Australia":"AUS","Turkiye":"TUR","Germany":"GER","Ecuador":"ECU","Ivory Coast":"CIV","Curacao":"CUW","Netherlands":"NED","Japan":"JPN","Tunisia":"TUN","Sweden":"SWE","Belgium":"BEL","Iran":"IRI","Egypt":"EGY","New Zealand":"NZL","Spain":"ESP","Uruguay":"URU","Saudi Arabia":"KSA","Cape Verde":"CPV","France":"FRA","Senegal":"SEN","Norway":"NOR","Iraq":"IRQ","Argentina":"ARG","Austria":"AUT","Algeria":"ALG","Jordan":"JOR","Portugal":"POR","Colombia":"COL","Uzbekistan":"UZB","DR Congo":"COD","England":"ENG","Croatia":"CRO","Panama":"PAN","Ghana":"GHA"};
 
@@ -8476,6 +8476,9 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
   const [liveActive, setLiveActive] = useState(false);
   const [showBest3Popup, setShowBest3Popup] = useState(false);
   const [best3Advancing, setBest3Advancing] = useState([]);
+  const [showTopScorersPopup, setShowTopScorersPopup] = useState(false);
+  const [topScorers, setTopScorers] = useState([]);
+  const [topScorersLoading, setTopScorersLoading] = useState(false);
   const [showKOBracket, setShowKOBracket] = useState(false);
   const [userKoPicks, setUserKoPicks] = useState(null);
   const [koBracketTab, setKoBracketTab] = useState('R32');
@@ -8488,11 +8491,21 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
     loadBest3Advancing().then(rows => { if (rows.length > 0) setBest3Advancing(rows); });
   }, []);
 
+  const openTopScorersPopup = () => {
+    setShowTopScorersPopup(true);
+    if (topScorers.length || topScorersLoading) return;
+    setTopScorersLoading(true);
+    loadTopScorers(10)
+      .then(rows => setTopScorers(rows || []))
+      .finally(() => setTopScorersLoading(false));
+  };
+
   const openBreakdown = (u) => {
     if (!u.userId) return;
     setBreakdown(null);
     setBreakdownLoading(true);
     setShowKOBracket(false);
+    setShowTopScorersPopup(false);
     setUserKoPicks(null);
     const boardId = activeBoardId || 'global';
     loadUserBreakdown(u.userId, boardId).then(data => {
@@ -8842,7 +8855,7 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
                   const rows = [
                     { icon:"🏆", label: b.champion ? `${FLAGS[b.champion]||""} ${b.champion}` : "—", pts: b.champion_pts||0 },
                     { icon:"🥈", label: b.runner_up ? `${FLAGS[b.runner_up]||""} ${b.runner_up}` : "—", pts: b.runner_up_pts||0 },
-                    { icon:"⚽", label: b.top_scorer_player || "—", pts: b.top_scorer_pts||0 },
+                    { icon:"⚽", label: b.top_scorer_player || "—", pts: b.top_scorer_pts||0, isTopScorer:true },
                   ];
                   return (
                     <div style={{border:`1.5px solid ${NAVY}22`,borderRadius:12,padding:"10px 12px",marginBottom:10}}>
@@ -8850,12 +8863,15 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
                         <span style={{fontSize:12,fontWeight:800,color:NAVY,textTransform:"uppercase",letterSpacing:1}}>⚡ Bonus</span>
                         <span style={{fontSize:13,fontWeight:800,color:NAVY}}>{bonusTotal}p</span>
                       </div>
-                      {rows.map(({icon,label,pts})=>(
-                        <div key={icon} style={{display:"flex",justifyContent:"space-between",alignItems:"center",
+                      {rows.map(({icon,label,pts,isTopScorer})=>(
+                        <div key={icon} onClick={isTopScorer ? openTopScorersPopup : undefined}
+                          style={{display:"flex",justifyContent:"space-between",alignItems:"center",
+                          cursor:isTopScorer?"pointer":"default",
                           padding:"5px 0",borderBottom:"1px solid #F9FAFB"}}>
                           <div style={{display:"flex",gap:8,alignItems:"center"}}>
                             <span style={{fontSize:14}}>{icon}</span>
-                            <span style={{fontSize:12,fontWeight:600,color:DARK}}>{label}</span>
+                            <span style={{fontSize:12,fontWeight:600,color:isTopScorer?NAVY:DARK,
+                              textDecoration:isTopScorer?"underline dotted":"none",textUnderlineOffset:3}}>{label}</span>
                           </div>
                           <span style={{fontSize:12,fontWeight:700,color:NAVY}}>{pts}p</span>
                         </div>
@@ -8989,6 +9005,69 @@ function LeaderboardScreen({ onBack, tournamentStarted, leaders: leadersProp, my
                       ))}
                       <div style={{marginTop:10,textAlign:"center",fontSize:10,color:"#9CA3AF"}}>
                         Atinge în afară pentru a închide
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {/* Top scorers popup */}
+                {showTopScorersPopup&&(
+                  <div onClick={()=>setShowTopScorersPopup(false)}
+                    style={{position:"fixed",inset:0,zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",
+                      background:"rgba(0,0,0,0.45)",backdropFilter:"blur(2px)"}}>
+                    <div onClick={e=>e.stopPropagation()}
+                      style={{background:"#fff",borderRadius:16,padding:"18px 16px",width:"min(350px,92vw)",
+                        maxHeight:"min(76vh,560px)",display:"flex",flexDirection:"column",
+                        boxShadow:"0 20px 60px rgba(0,0,0,0.25)"}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12,flexShrink:0}}>
+                        <span style={{fontSize:13,fontWeight:800,color:NAVY,letterSpacing:0.5}}>⚽ Top 10 marcatori</span>
+                        <button onClick={()=>setShowTopScorersPopup(false)}
+                          style={{background:"rgba(0,0,0,0.06)",border:"none",borderRadius:8,
+                            width:28,height:28,cursor:"pointer",fontSize:14,color:"#666",
+                            display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
+                      </div>
+                      <div style={{display:"grid",gridTemplateColumns:"1fr 54px 54px",gap:8,
+                        padding:"0 0 6px",borderBottom:"1px solid #E5E7EB",flexShrink:0}}>
+                        <span style={{fontSize:10,fontWeight:800,color:"#9CA3AF"}}>Scorer</span>
+                        <span style={{fontSize:10,fontWeight:800,color:"#9CA3AF",textAlign:"right"}}>Assist</span>
+                        <span style={{fontSize:10,fontWeight:800,color:"#9CA3AF",textAlign:"right"}}>Goals</span>
+                      </div>
+                      <div style={{overflowY:"auto",minHeight:0}}>
+                        {topScorersLoading?(
+                          <div style={{textAlign:"center",padding:"24px 0",color:"#9CA3AF",fontSize:13}}>
+                            <div style={{width:20,height:20,border:`2px solid ${NAVY}`,borderTopColor:"transparent",
+                              borderRadius:"50%",animation:"spin 0.8s linear infinite",
+                              display:"inline-block",marginBottom:8}}/>
+                            <div>Se incarca...</div>
+                          </div>
+                        ):topScorers.length===0?(
+                          <div style={{textAlign:"center",padding:"24px 0",color:"#9CA3AF",fontSize:13}}>
+                            Nu exista statistici disponibile
+                          </div>
+                        ):[...topScorers]
+                          .sort((a,b)=>
+                            (Number(b.goals)||0) - (Number(a.goals)||0) ||
+                            (Number(b.assists)||0) - (Number(a.assists)||0) ||
+                            String(a.name||"").localeCompare(String(b.name||""))
+                          )
+                          .map((p,i)=>(
+                          <div key={`${p.team}-${p.name}-${i}`} style={{display:"grid",gridTemplateColumns:"1fr 54px 54px",gap:8,
+                            alignItems:"center",padding:"8px 0",borderBottom:i<topScorers.length-1?"1px solid #F3F4F6":"none"}}>
+                            <div style={{display:"flex",alignItems:"center",gap:8,minWidth:0}}>
+                              <span style={{fontSize:11,fontWeight:900,color:i<3?GREEN:NAVY,minWidth:18,textAlign:"right",flexShrink:0}}>{i+1}</span>
+                              <span style={{fontSize:18,lineHeight:1,flexShrink:0}}>{FLAGS[p.team]||"🏳"}</span>
+                              <div style={{minWidth:0}}>
+                                <div style={{fontSize:12,fontWeight:800,color:DARK,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+                                  {p.name}
+                                </div>
+                              </div>
+                            </div>
+                            <span style={{fontSize:12,fontWeight:800,color:"#6B7280",textAlign:"right"}}>{p.assists||0}</span>
+                            <span style={{fontSize:12,fontWeight:900,color:NAVY,textAlign:"right"}}>{p.goals||0}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <div style={{marginTop:10,textAlign:"center",fontSize:10,color:"#9CA3AF",flexShrink:0}}>
+                        Atinge in afara pentru a inchide
                       </div>
                     </div>
                   </div>
